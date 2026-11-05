@@ -74,12 +74,12 @@ describe('buildActionPaletteCommandEntries', () => {
 
   it('searches the shortcut group alongside the registry keywords', () => {
     const [entry] = buildActionPaletteCommandEntries(
-      [makeDefinition('terminal.splitRight', { group: 'Terminal Panes' })],
+      [makeDefinition('terminal.splitRight', { group: 'Terminal panes' })],
       () => true
     )
 
-    expect(entry.detail).toBe('Terminal Panes')
-    expect(entry.keywords).toEqual(['Terminal Panes', 'keyword'])
+    expect(entry.detail).toBe('Terminal panes')
+    expect(entry.keywords).toEqual(['Terminal panes', 'keyword'])
   })
 })
 
@@ -88,7 +88,7 @@ describe('buildActionPaletteSettingsEntries', () => {
     const entries = buildActionPaletteSettingsEntries([
       makeSection({
         searchEntries: [
-          { title: 'Font Size', targetSectionId: 'terminal-font' },
+          { title: 'Font size', targetSectionId: 'terminal-font' },
           { title: 'Untargeted' }
         ]
       })
@@ -96,7 +96,7 @@ describe('buildActionPaletteSettingsEntries', () => {
 
     expect(entries.map((entry) => [entry.title, entry.detail])).toEqual([
       ['Terminal', 'Terminal'],
-      ['Font Size', 'Terminal › Font Size']
+      ['Font size', 'Terminal › Font size']
     ])
   })
 
@@ -104,12 +104,12 @@ describe('buildActionPaletteSettingsEntries', () => {
     const [, targeted] = buildActionPaletteSettingsEntries([
       makeSection({
         searchEntries: [
-          { title: 'Font Size', targetSectionId: 'terminal-font', cmdJKeywords: ['typeface'] }
+          { title: 'Font size', targetSectionId: 'terminal-font', cmdJKeywords: ['typeface'] }
         ]
       })
     ])
 
-    expect(targeted.keywords).toContain('Terminal › Font Size')
+    expect(targeted.keywords).toContain('Terminal › Font size')
     expect(targeted.keywords).toContain('typeface')
     expect(targeted.keybindingActionId).toBeNull()
   })

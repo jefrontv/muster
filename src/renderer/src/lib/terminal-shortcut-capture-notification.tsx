@@ -86,7 +86,7 @@ export function showTerminalShortcutCaptureNotification({
       action: {
         label: translate(
           'auto.lib.terminal.shortcut.capture.notification.b0536028c9',
-          'Open Shortcuts'
+          'Open shortcuts'
         ),
         onClick: openShortcutSettings
       }

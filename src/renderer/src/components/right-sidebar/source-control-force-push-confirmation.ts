@@ -42,7 +42,7 @@ export function resolveForcePushConfirmation(
     description,
     confirmLabel: translate(
       'auto.components.right.sidebar.SourceControl.forcePushConfirm.confirm',
-      'Force Push'
+      'Force push'
     ),
     confirmVariant: 'destructive'
   }

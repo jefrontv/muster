@@ -1,4 +1,5 @@
 import React from 'react'
+import { Input } from '@/components/ui/input'
 import { ArrowDown, ArrowUp, Plus, Settings, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -120,7 +121,7 @@ export default function WorkspaceKanbanSettingsMenu({
               >
                 <div className="flex items-center gap-1">
                   <meta.icon className={cn('size-3.5 shrink-0', meta.tone)} />
-                  <input
+                  <Input
                     defaultValue={status.label}
                     onBlur={(event) => onRenameStatus(status.id, event.target.value)}
                     onKeyDown={(event) => {
@@ -129,7 +130,7 @@ export default function WorkspaceKanbanSettingsMenu({
                         event.currentTarget.blur()
                       }
                     }}
-                    className="h-7 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-[12px] text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="h-7 flex-1 text-[12px]"
                     aria-label={translate(
                       'auto.components.sidebar.WorkspaceKanbanSettingsMenu.8ce44af9a8',
                       'Rename {{value0}}',

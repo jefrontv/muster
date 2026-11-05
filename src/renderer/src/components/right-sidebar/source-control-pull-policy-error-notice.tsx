@@ -78,7 +78,7 @@ export function PullPolicyRemoteActionNotice({
                   'Pull needs a policy'
                 )}
               </span>
-              <span className="shrink-0 rounded-full bg-destructive/10 px-1.5 py-px text-[10px] leading-4 font-semibold text-destructive">
+              <span className="shrink-0 rounded-full bg-destructive/10 px-1.5 py-px text-[11px] leading-4 font-semibold text-destructive">
                 {translate('auto.components.right.sidebar.pull.policy.notice.diverged', 'Diverged')}
               </span>
             </div>

@@ -1,9 +1,9 @@
 import type { JSX } from 'react'
-import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import type { ContextualTourStepControl } from '../../../../shared/contextual-tours'
 import { CONTEXTUAL_TOUR_ENABLE_AUTO_WORKSPACE_NAME_EVENT } from './contextual-tour-composer-events'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
 
 export function ContextualTourControl({
   control
@@ -43,10 +43,8 @@ function AutoRenameBranchFromWorkControl(): JSX.Element {
             )}
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
+        <Switch
+          checked={enabled}
           aria-label={translate(
             'auto.components.contextual.tours.ContextualTourControl.186eecc34f',
             'Auto-name workspace from first agent message'
@@ -58,18 +56,8 @@ function AutoRenameBranchFromWorkControl(): JSX.Element {
               dispatchEvent: (event) => window.dispatchEvent(event)
             })
           }}
-          className={cn(
-            'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors',
-            enabled ? 'bg-foreground' : 'bg-muted-foreground/30'
-          )}
-        >
-          <span
-            className={cn(
-              'pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform',
-              enabled ? 'translate-x-4' : 'translate-x-0.5'
-            )}
-          />
-        </button>
+          className="shrink-0"
+        />
       </div>
     </div>
   )

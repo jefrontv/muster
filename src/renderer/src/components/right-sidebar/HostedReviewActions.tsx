@@ -123,7 +123,7 @@ export default function HostedReviewActions({
                     className={cn(
                       'rounded-r-none px-3 text-[11px]',
                       RIGHT_SIDEBAR_MERGE_PRIMARY_BUTTON_CLASS,
-                      'bg-green-600 text-white hover:bg-green-700',
+                      'bg-status-success-solid text-white hover:bg-status-success-solid/90',
                       'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
                     onClick={() =>
@@ -142,7 +142,7 @@ export default function HostedReviewActions({
                       {merging
                         ? translate(
                             'auto.components.right.sidebar.HostedReviewActions.d2ca293f3d',
-                            'Working...'
+                            'Working…'
                           )
                         : mergePresentation.directMergeAvailable
                           ? mergeMethods.defaultLabel
@@ -163,8 +163,8 @@ export default function HostedReviewActions({
                   type="button"
                   size="xs"
                   className={cn(
-                    'rounded-l-none border-l border-green-700/50 px-1.5 shrink-0',
-                    'bg-green-600 text-white hover:bg-green-700',
+                    'rounded-l-none border-l border-status-success/50 px-1.5 shrink-0',
+                    'bg-status-success-solid text-white hover:bg-status-success-solid/90',
                     'disabled:opacity-50 disabled:cursor-not-allowed'
                   )}
                   disabled={menuDisabled}

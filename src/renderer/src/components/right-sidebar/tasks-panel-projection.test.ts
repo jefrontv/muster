@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  groupByTaskList,
-  myOpenTasks,
-  UNGROUPED_TASK_LIST_NAME
-} from './tasks-panel-projection'
+import { groupByTaskList, myOpenTasks, UNGROUPED_TASK_LIST_NAME } from './tasks-panel-projection'
 import type {
   ActiveCollabProjectTasks,
   ActiveCollabTask
@@ -35,7 +31,10 @@ function task(overrides: Partial<ActiveCollabTask> = {}): ActiveCollabTask {
   } as ActiveCollabTask
 }
 
-function project(tasks: ActiveCollabTask[], lists = [{ id: 100, name: 'Backlog' }]): ActiveCollabProjectTasks {
+function project(
+  tasks: ActiveCollabTask[],
+  lists = [{ id: 100, name: 'Backlog' }]
+): ActiveCollabProjectTasks {
   return { projectId: 42, tasks, taskLists: lists }
 }
 

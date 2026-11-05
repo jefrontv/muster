@@ -305,7 +305,7 @@ describe('shouldShowAiVaultWorktreeStatusBadge', () => {
 
 describe('aiVaultWorktreeJumpTooltip', () => {
   it('explains active jump targets and disabled states', () => {
-    expect(aiVaultWorktreeJumpTooltip(makeWorktreeInfo('active'))).toBe('Jump to Worktree')
+    expect(aiVaultWorktreeJumpTooltip(makeWorktreeInfo('active'))).toBe('Jump to worktree')
     expect(aiVaultWorktreeJumpTooltip(makeWorktreeInfo('archived'))).toBe(
       'This session is in an archived worktree.'
     )

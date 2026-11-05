@@ -251,7 +251,7 @@ export function BrowserImportHintButton({
                 <DropdownMenuItem onSelect={() => void handleImportFromFile()}>
                   {translate(
                     'auto.components.browser.pane.BrowserImportHintButton.e0e125e074',
-                    'From File…'
+                    'From file…'
                   )}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -260,22 +260,22 @@ export function BrowserImportHintButton({
             <button
               type="button"
               onClick={handleOpenBrowserSettings}
-              className="rounded-sm text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="rounded-md text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {translate(
                 'auto.components.browser.pane.BrowserImportHintButton.77351d22f5',
-                'Browser Settings'
+                'Browser settings'
               )}
             </button>
 
             <button
               type="button"
               onClick={handleHideHint}
-              className="ml-auto rounded-sm text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="ml-auto rounded-md text-xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {translate(
                 'auto.components.browser.pane.BrowserImportHintButton.05e675fe96',
-                'Hide Hint'
+                'Hide hint'
               )}
             </button>
           </div>

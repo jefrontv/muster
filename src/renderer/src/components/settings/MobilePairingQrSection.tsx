@@ -107,7 +107,7 @@ export function MobilePairingQrSection({
             >
               <span className="flex-1 text-left">{pairingUrl}</span>
               {codeCopied ? (
-                <Check className="ml-2 size-3.5 shrink-0 text-emerald-500" />
+                <Check className="ml-2 size-3.5 shrink-0 text-status-success" />
               ) : (
                 <Copy className="ml-2 size-3.5 shrink-0" />
               )}

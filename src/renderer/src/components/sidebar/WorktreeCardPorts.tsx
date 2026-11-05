@@ -42,7 +42,7 @@ export function WorktreeCardPortsTrigger({
   return (
     <button
       type="button"
-      className="inline-flex size-3.5 shrink-0 items-center justify-center rounded text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring"
+      className="hit-area inline-flex size-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring"
       aria-label={translate(
         'auto.components.sidebar.WorktreeCardPorts.fed49903c9',
         '{{value0}} live {{value1}}',
@@ -86,7 +86,7 @@ function PortAction({
           variant="ghost"
           size="icon-xs"
           disabled={disabled}
-          className="size-5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:text-muted-foreground/35"
+          className="hit-area size-5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:text-muted-foreground/35"
           aria-label={label}
           onClick={handleClick}
         >
@@ -121,7 +121,7 @@ function WorktreePortRow({ port }: { port: WorkspacePort }): React.JSX.Element {
   const canStop = canStopWorkspacePort(port)
   const openBrowserLabel = translate(
     'auto.components.sidebar.WorktreeCardPorts.33bc7d7495',
-    'Open in Browser'
+    'Open in browser'
   )
 
   const handleOpen = useCallback(
@@ -246,9 +246,7 @@ function WorktreePortRow({ port }: { port: WorkspacePort }): React.JSX.Element {
             <span className="flex min-w-0 select-text items-baseline gap-1 overflow-hidden pr-[3.75rem] text-[11px] text-muted-foreground">
               <span className="min-w-0 flex-1 truncate">{processLabel}</span>
               <span className="shrink-0 text-muted-foreground/45">-</span>
-              <span className="min-w-0 flex-[1.1] truncate text-muted-foreground/70">
-                {address}
-              </span>
+              <span className="min-w-0 flex-[1.1] truncate text-muted-foreground">{address}</span>
             </span>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>
@@ -280,7 +278,7 @@ function WorktreePortRow({ port }: { port: WorkspacePort }): React.JSX.Element {
           <PortAction
             label={translate(
               'auto.components.sidebar.WorktreeCardPorts.2f854442ff',
-              'Stop Process'
+              'Stop process'
             )}
             disabled={!canStop}
             onClick={handleStop}
@@ -307,10 +305,8 @@ export function WorktreeCardPortsDetails({
       <div className="flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
         <Plug className="size-3" />
         <span>
-          {translate('auto.components.sidebar.WorktreeCardPorts.3240f320d7', 'Live Ports')}{' '}
-          <span className="font-normal tabular-nums text-muted-foreground/70">
-            ({ports.length})
-          </span>
+          {translate('auto.components.sidebar.WorktreeCardPorts.3240f320d7', 'Live ports')}{' '}
+          <span className="font-normal tabular-nums text-muted-foreground">({ports.length})</span>
         </span>
       </div>
       <WorktreeCardDetailSectionContent className="space-y-0.5">

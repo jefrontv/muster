@@ -23,7 +23,7 @@ function kinds(overrides: Partial<DropdownActionInputs> = {}): string[] {
 }
 
 describe('dropdown layout', () => {
-  it('shows Publish Branch after the review rows only for an unpublished branch', () => {
+  it('shows Publish branch after the review rows only for an unpublished branch', () => {
     expect(kinds()).not.toContain('publish')
     const unpublished = kinds({ upstreamStatus: { hasUpstream: false, ahead: 0, behind: 0 } })
     expect(unpublished.slice(unpublished.indexOf('create_pr'))).toEqual([
@@ -35,7 +35,7 @@ describe('dropdown layout', () => {
     ])
   })
 
-  it('keeps Publish Branch visible while upstream status is still loading', () => {
+  it('keeps Publish branch visible while upstream status is still loading', () => {
     expect(kinds({ upstreamStatus: undefined })).toContain('publish')
   })
 
@@ -74,7 +74,7 @@ describe('dropdown layout', () => {
     expect(pull?.kind === 'pull' && pull.title).toBe('Publish the branch first to pull commits')
   })
 
-  it('appends abort rows after Force Push during a rebase', () => {
+  it('appends abort rows after Force push during a rebase', () => {
     const all = kinds({ conflictOperation: 'rebase' })
     expect(all.slice(-3)).toEqual(['force_push', 'separator', 'abort_rebase'])
   })

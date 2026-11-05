@@ -17,7 +17,7 @@ export function TerminalFontSizeSetting({
 }): React.JSX.Element {
   return (
     <SearchableSetting
-      title={translate('auto.components.settings.TerminalFontSizeSetting.a4a352b1e9', 'Font Size')}
+      title={translate('auto.components.settings.TerminalFontSizeSetting.a4a352b1e9', 'Font size')}
       description={translate(
         'auto.components.settings.TerminalFontSizeSetting.0f4c92e595',
         'Default terminal font size for new panes and live updates.'
@@ -30,13 +30,17 @@ export function TerminalFontSizeSetting({
       <SettingsRow
         label={translate(
           'auto.components.settings.TerminalFontSizeSetting.a4a352b1e9',
-          'Font Size'
+          'Font size'
         )}
         control={
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon-sm"
+              aria-label={translate(
+                'auto.components.settings.TerminalFontSizeSetting.decrease',
+                'Smaller font'
+              )}
               onClick={() => {
                 const next = Math.max(10, settings.terminalFontSize - 1)
                 updateSettings({ terminalFontSize: next })
@@ -61,6 +65,10 @@ export function TerminalFontSizeSetting({
             <Button
               variant="outline"
               size="icon-sm"
+              aria-label={translate(
+                'auto.components.settings.TerminalFontSizeSetting.increase',
+                'Larger font'
+              )}
               onClick={() => {
                 const next = Math.min(24, settings.terminalFontSize + 1)
                 updateSettings({ terminalFontSize: next })

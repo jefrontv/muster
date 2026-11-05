@@ -154,11 +154,11 @@ function getWorktreeParentPickerLabel(validParentWorktreeId: string | null): str
   return validParentWorktreeId
     ? translate(
         'auto.components.sidebar.WorktreeContextMenu.changeParentWorkspace',
-        'Change Parent Worktree...'
+        'Change parent workspace…'
       )
     : translate(
         'auto.components.sidebar.WorktreeContextMenu.setParentWorkspace',
-        'Set Parent Worktree...'
+        'Set parent workspace…'
       )
 }
 
@@ -768,7 +768,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
           />
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className={cn('w-52', contentClassName)}
+          className={cn('w-60', contentClassName)}
           sideOffset={0}
           align="start"
           onPointerUpCapture={suppressOpeningPointerEvent}
@@ -781,13 +781,13 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
           onClickCapture={suppressOpeningPointerEvent}
           onCloseAutoFocus={handleCloseAutoFocus}
         >
-          <DropdownMenuLabel className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
+          <DropdownMenuLabel>
             {translate('auto.components.sidebar.WorktreeContextMenu.workspaceSection', 'Workspace')}
           </DropdownMenuLabel>
           {!isMultiContext && (
             <DropdownMenuItem onSelect={handleRename} disabled={isDeleting}>
               <Pencil className="size-3.5" />
-              {translate('auto.components.sidebar.WorktreeContextMenu.439fa94d53', 'Update')}
+              {translate('auto.components.sidebar.WorktreeContextMenu.439fa94d53', 'Edit details')}
             </DropdownMenuItem>
           )}
           <DropdownMenuSub>
@@ -796,11 +796,11 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
               {isMultiContext
                 ? translate(
                     'auto.components.sidebar.WorktreeContextMenu.56cde9e8e6',
-                    'Move Statuses To'
+                    'Move statuses to'
                   )
                 : translate(
                     'auto.components.sidebar.WorktreeContextMenu.84cdbb7e30',
-                    'Move to Status'
+                    'Move to status'
                   )}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="w-44">
@@ -831,7 +831,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
               />
               <DropdownMenuItem onSelect={handleCopyPath} disabled={isDeleting}>
                 <Copy className="size-3.5" />
-                {translate('auto.components.sidebar.WorktreeContextMenu.3350101edb', 'Copy Path')}
+                {translate('auto.components.sidebar.WorktreeContextMenu.3350101edb', 'Copy path')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleTogglePin} disabled={isDeleting}>
@@ -847,10 +847,10 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                   <Bell className="size-3.5" />
                 )}
                 {worktree.isUnread
-                  ? translate('auto.components.sidebar.WorktreeContextMenu.8dacff1fe0', 'Mark Read')
+                  ? translate('auto.components.sidebar.WorktreeContextMenu.8dacff1fe0', 'Mark read')
                   : translate(
                       'auto.components.sidebar.WorktreeContextMenu.f50603c6b2',
-                      'Mark Unread'
+                      'Mark unread'
                     )}
               </DropdownMenuItem>
               {repo ? (
@@ -911,7 +911,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                       <Workflow className="size-3.5" />
                       {translate(
                         'auto.components.sidebar.WorktreeContextMenu.8d9cd19d09',
-                        'Open Parent Worktree'
+                        'Open parent workspace'
                       )}
                     </DropdownMenuItem>
                   )}
@@ -920,7 +920,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                       <Unlink className="size-3.5" />
                       {translate(
                         'auto.components.sidebar.WorktreeContextMenu.579b1a8e61',
-                        'Remove from Parent'
+                        'Remove from parent'
                       )}
                     </DropdownMenuItem>
                   )}
@@ -935,7 +935,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                 <Unlink className="size-3.5" />
                 {translate(
                   'auto.components.sidebar.WorktreeContextMenu.579b1a8e61',
-                  'Remove from Parent'
+                  'Remove from parent'
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -979,7 +979,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                     <Trash2 className="size-3.5" />
                     {translate(
                       'auto.components.sidebar.WorktreeContextMenu.deleteWorktree',
-                      'Delete Worktree'
+                      'Delete workspace'
                     )}
                   </DropdownMenuItem>
                 </div>
@@ -987,7 +987,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
               <TooltipContent side="right" sideOffset={8} className="max-w-[200px] text-pretty">
                 {translate(
                   'auto.components.sidebar.WorktreeContextMenu.primaryDeleteDisabled',
-                  "Primary worktree — can't be deleted. Remove the project instead."
+                  "The primary workspace can't be deleted. Remove the project instead."
                 )}
               </TooltipContent>
             </Tooltip>
@@ -1021,12 +1021,12 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                 : folderWorkspaceId
                   ? translate(
                       'auto.components.sidebar.WorktreeContextMenu.250de158fd',
-                      'Remove Workspace'
+                      'Remove workspace'
                     )
                   : removesProject
                     ? translate(
                         'auto.components.sidebar.WorktreeContextMenu.f5ac91531d',
-                        'Remove Project from Muster'
+                        'Remove project from Muster'
                       )
                     : translate('auto.components.sidebar.WorktreeContextMenu.f4475537d8', 'Delete')}
           </DropdownMenuItem>
@@ -1036,7 +1036,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
         open={createGroupDialogOpen}
         title={translate(
           'auto.components.sidebar.WorktreeContextMenu.6664418e98',
-          'New Project Group'
+          'New project group'
         )}
         description={translate(
           'auto.components.sidebar.WorktreeContextMenu.c39c37676a',

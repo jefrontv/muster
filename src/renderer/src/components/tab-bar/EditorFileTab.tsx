@@ -288,7 +288,7 @@ export default function EditorFileTab({
             defaultValue={basename(file.filePath)}
             // Why: keep the inline field compact enough for the titlebar while
             // giving filenames a little more room than the static tab label.
-            className="mr-1 h-5 w-[12ch] min-w-[72px] max-w-[132px] rounded-sm bg-input/40 px-1 py-0 text-xs text-foreground md:text-xs focus-visible:ring-[1px]"
+            className="mr-1 h-5 w-[12ch] min-w-[72px] max-w-[132px] rounded-sm bg-input/40 px-1 py-0 text-xs text-foreground md:text-xs focus-visible:ring-2"
             spellCheck={false}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
@@ -337,13 +337,13 @@ export default function EditorFileTab({
           </span>
         )}
         {isMissingFileMutation && !isRenaming && (
-          <span className="shrink-0 text-[10px] leading-none font-semibold tracking-wide text-muted-foreground">
+          <span className="shrink-0 text-[11px] leading-none font-semibold tracking-wide text-muted-foreground">
             {file.externalMutation}
           </span>
         )}
         {tabStatus && !isRenaming && !isMissingFileMutation && (
           <span
-            className="shrink-0 text-[10px] leading-none font-semibold tracking-wide"
+            className="shrink-0 text-[11px] leading-none font-semibold tracking-wide"
             style={{ color: tabStatusColor }}
           >
             {STATUS_LABELS[tabStatus]}

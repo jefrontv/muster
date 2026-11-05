@@ -560,7 +560,7 @@ describe('launchAgentInNewTab', () => {
     store.projects = [
       {
         id: 'repo-1',
-        localWindowsRuntimePreference: { kind: 'wsl', distro: 'Ubuntu' }
+        localWindowsRuntimePreference: { kind: 'wsl', distro: 'ubuntu' }
       }
     ]
     store.repos = [{ id: 'repo-1', connectionId: null, path: 'C:\\Users\\jinwo\\repo' }]
@@ -774,7 +774,7 @@ describe('launchAgentInNewTab', () => {
       failureNotified: true
     })
     expect(mockToastMessage).toHaveBeenCalledWith(
-      "Your prompt wasn't sent — paste it once the agent is ready."
+      "Your prompt wasn't sent. Paste it once the agent is ready."
     )
   })
 

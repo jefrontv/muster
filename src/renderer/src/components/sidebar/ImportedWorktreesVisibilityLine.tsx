@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { ChevronRight, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -181,7 +182,7 @@ export default function ImportedWorktreesVisibilityLine({
                   <TooltipTrigger asChild>
                     <span
                       tabIndex={0}
-                      className="block min-w-0 flex-1 truncate font-mono text-[10px] leading-4 text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring"
+                      className="block min-w-0 flex-1 truncate font-mono text-[11px] leading-4 text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring"
                     >
                       {group.path}
                     </span>
@@ -190,9 +191,9 @@ export default function ImportedWorktreesVisibilityLine({
                     {group.path}
                   </TooltipContent>
                 </Tooltip>
-                <span className="shrink-0 rounded-full border border-worktree-sidebar-border px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">
+                <Badge variant="muted" className="shrink-0">
                   {group.worktrees.length}
-                </span>
+                </Badge>
               </div>
               <ul
                 className="list-disc space-y-0.5 py-0 pl-5 pr-2 text-xs text-muted-foreground marker:text-muted-foreground"
@@ -255,7 +256,7 @@ export default function ImportedWorktreesVisibilityLine({
             </div>
           ) : null}
           <div className="grid gap-1 px-1.5 pb-1 pt-1">
-            <p className="rounded-md bg-worktree-sidebar-accent px-2 py-1 text-[10px] font-medium leading-4 text-worktree-sidebar-accent-foreground">
+            <p className="rounded-md bg-worktree-sidebar-accent px-2 py-1 text-[11px] font-medium leading-4 text-worktree-sidebar-accent-foreground">
               {translate(
                 'auto.components.sidebar.ImportedWorktreesVisibilityLine.9f4f14e821',
                 'Change this later from the project menu.'

@@ -78,13 +78,13 @@ export function createCompactCommentMarkdownComponents(
     // Why: compact comment previews live in dense cards; keep diagram fences as
     // bounded source blocks so async SVG renders do not reshape sidebar lists.
     code: ({ children }) => (
-      <code className="rounded bg-accent px-1 py-px text-[10px] font-mono [overflow-wrap:anywhere]">
+      <code className="rounded bg-accent px-1 py-px text-[11px] font-mono [overflow-wrap:anywhere]">
         {children}
       </code>
     ),
     // Compact pre blocks — no syntax highlighting needed for short comments.
     pre: ({ children }) => (
-      <pre className="my-1 max-h-32 max-w-full overflow-x-auto rounded bg-accent p-1.5 text-[10px] font-mono">
+      <pre className="my-1 max-h-32 max-w-full overflow-x-auto rounded bg-accent p-1.5 text-[11px] font-mono">
         {children}
       </pre>
     ),
@@ -184,7 +184,7 @@ export function createCompactCommentMarkdownComponents(
     // user scroll to see the full table.
     table: ({ children }) => (
       <div className="my-1 max-w-full overflow-x-auto">
-        <table className="text-[10px] border-collapse [&_td]:border [&_td]:border-border/40 [&_td]:px-1 [&_td]:py-0.5 [&_th]:border [&_th]:border-border/40 [&_th]:px-1 [&_th]:py-0.5 [&_th]:font-semibold [&_th]:text-left">
+        <table className="text-[11px] border-collapse [&_td]:border [&_td]:border-border/40 [&_td]:px-1 [&_td]:py-0.5 [&_th]:border [&_th]:border-border/40 [&_th]:px-1 [&_th]:py-0.5 [&_th]:font-semibold [&_th]:text-left">
           {children}
         </table>
       </div>

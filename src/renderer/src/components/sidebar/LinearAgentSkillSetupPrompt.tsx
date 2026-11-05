@@ -349,7 +349,7 @@ export function LinearAgentSkillSetupPrompt({
   return (
     <div
       className={cn(
-        'mt-1.5 rounded-md border border-worktree-sidebar-border bg-worktree-sidebar-accent/35 px-2.5 py-2 text-[11px] text-muted-foreground',
+        'mt-1.5 rounded-full border border-worktree-sidebar-border bg-worktree-sidebar-accent/35 px-2.5 py-2 text-[11px] text-muted-foreground',
         className
       )}
       onClick={(event) => event.stopPropagation()}

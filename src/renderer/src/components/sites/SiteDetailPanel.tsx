@@ -225,7 +225,7 @@ export function SiteDetailPanel({ summary }: SiteDetailPanelProps): React.JSX.El
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.sites.SiteDetailPanel.editingDivergence',
-              'Editing {{environment}} — runs target {{target}}.',
+              'Editing {{environment}}: runs target {{target}}.',
               { environment: viewedName, target: runTargetName || '—' }
             )}
           </p>

@@ -578,7 +578,7 @@ export function RemoteFileBrowser({
           type="button"
           onClick={navigateUp}
           disabled={resolvedPath === '/' || loading}
-          className="shrink-0 p-1 rounded hover:bg-accent disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-default"
+          className="shrink-0 p-1 rounded-full hover:bg-accent disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-default outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowUp className="size-3.5" />
         </button>
@@ -586,7 +586,7 @@ export function RemoteFileBrowser({
           type="button"
           onClick={() => navigate('~')}
           disabled={loading}
-          className="shrink-0 p-1 rounded hover:bg-accent transition-colors cursor-pointer"
+          className="shrink-0 p-1 rounded-full hover:bg-accent transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Home className="size-3.5" />
         </button>
@@ -600,7 +600,7 @@ export function RemoteFileBrowser({
           </button>
           {pathSegments.map((segment, i) => (
             <React.Fragment key={i}>
-              <ChevronRight className="size-2.5 shrink-0 text-muted-foreground/50" />
+              <ChevronRight className="size-2.5 shrink-0 text-muted-foreground" />
               <button
                 type="button"
                 onClick={() => navigate(`/${pathSegments.slice(0, i + 1).join('/')}`)}
@@ -635,7 +635,7 @@ export function RemoteFileBrowser({
           aria-describedby={preview?.error ? 'remote-file-browser-path-error' : undefined}
           className={cn(
             'w-full h-7 pl-7 pr-7 text-xs rounded-md bg-background',
-            'border border-border focus:outline-none focus:ring-1 focus:ring-ring',
+            'border border-border focus:outline-none focus:ring-2 focus:ring-ring',
             preview?.error && 'border-destructive/60 focus:ring-destructive/60'
           )}
         />
@@ -708,11 +708,11 @@ export function RemoteFileBrowser({
                   {entry.isDirectory ? (
                     <Folder className="size-3.5 text-muted-foreground shrink-0" />
                   ) : (
-                    <FileIcon className="size-3.5 text-muted-foreground/60 shrink-0" />
+                    <FileIcon className="size-3.5 text-muted-foreground shrink-0" />
                   )}
                   <span className="truncate flex-1 min-w-0">{entry.name}</span>
                   {entry.isDirectory && (
-                    <ChevronRight className="size-3.5 text-muted-foreground/60 shrink-0" />
+                    <ChevronRight className="size-3.5 text-muted-foreground shrink-0" />
                   )}
                 </button>
               )
@@ -723,7 +723,7 @@ export function RemoteFileBrowser({
 
       {/* Footer */}
       <p
-        className="block text-[10px] text-muted-foreground truncate w-full"
+        className="block text-[11px] text-muted-foreground truncate w-full"
         title={fileHint ? undefined : resolvedPath}
       >
         {fileHint

@@ -92,7 +92,7 @@ export function AddRepoNestedImportStep({
             {scanInProgress
               ? translate(
                   'auto.components.sidebar.AddRepoNestedImportStep.24eda6c8b2',
-                  'Scanning... {{value0}}',
+                  'Scanning… {{value0}}',
                   { value0: foundSentence }
                 )
               : foundSentence}
@@ -121,7 +121,7 @@ export function AddRepoNestedImportStep({
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.sidebar.AddRepoNestedImportStep.d75170194e',
-              'Choose this if these projects belong together — a monorepo, or just a set of related repos. Muster will group them and let you work from the parent folder.'
+              'Choose this if these projects belong together, like a monorepo or a set of related repos. Muster will group them and let you work from the parent folder.'
             )}
           </p>
         </div>
@@ -165,7 +165,7 @@ export function AddRepoNestedImportStep({
               {showOpenAsFolderSpinner ? <Loader2 className="size-3.5 animate-spin" /> : null}
               {translate(
                 'auto.components.sidebar.AddRepoNestedImportStep.e52454b7f6',
-                'Open as Folder'
+                'Open as folder'
               )}
             </Button>
           ) : null}

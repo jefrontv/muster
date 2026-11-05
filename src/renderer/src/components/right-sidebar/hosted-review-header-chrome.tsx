@@ -9,12 +9,12 @@ function hostedReviewStateClass(review: HostedReviewInfo): string {
     return 'text-purple-500/80'
   }
   if (review.state === 'open') {
-    return 'text-emerald-500/80'
+    return 'text-status-success'
   }
   if (review.state === 'closed') {
-    return 'text-muted-foreground/60'
+    return 'text-muted-foreground'
   }
-  return 'text-muted-foreground/50'
+  return 'text-muted-foreground'
 }
 
 export function HostedReviewIcon({

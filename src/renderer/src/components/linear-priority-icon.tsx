@@ -46,7 +46,7 @@ export function LinearPriorityIcon({
     return (
       <span
         className={cn(
-          'inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-[10px] font-semibold leading-none text-white',
+          'inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-[11px] font-semibold leading-none text-white',
           className
         )}
         style={{ backgroundColor: LINEAR_PRIORITY_URGENT_FILL }}

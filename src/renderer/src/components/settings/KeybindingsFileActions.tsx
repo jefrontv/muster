@@ -163,7 +163,7 @@ export function KeybindingsFileActions(): React.JSX.Element {
         <FileText className="size-3" />
         {translate(
           'auto.components.settings.KeybindingsFileActions.1c2be2b2c6',
-          'Edit File in Muster'
+          'Edit file in Muster'
         )}
       </Button>
       <DropdownMenu>
@@ -186,7 +186,7 @@ export function KeybindingsFileActions(): React.JSX.Element {
             <ExternalLink className="size-3.5" />
             {translate(
               'auto.components.settings.KeybindingsFileActions.98f1a23e1c',
-              'Open with Default App'
+              'Open with default app'
             )}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void openKeybindingsInExternalEditor('code')}>
@@ -208,14 +208,14 @@ export function KeybindingsFileActions(): React.JSX.Element {
             <FolderOpen className="size-3.5" />
             {translate(
               'auto.components.settings.KeybindingsFileActions.a8a8d6b9d3',
-              'Reveal in File Manager'
+              'Reveal in file manager'
             )}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void reloadKeybindings()}>
             <RefreshCw className="size-3.5" />
             {translate(
               'auto.components.settings.KeybindingsFileActions.abc49853fb',
-              'Reload from Disk'
+              'Reload from disk'
             )}
           </DropdownMenuItem>
         </DropdownMenuContent>

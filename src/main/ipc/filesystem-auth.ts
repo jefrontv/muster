@@ -4,6 +4,7 @@ import { realpathSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import type { Store } from '../persistence'
 import { isRepoRoot, listRepoWorktrees } from '../repo-worktrees'
+import { BULK_WORKTREE_SCAN_REUSE_MS } from '../git/worktree-scan-reuse'
 import { computeWorkspaceRoot, getWorktreePathSettings } from './worktree-logic'
 import { isPathInsideOrEqual } from '../../shared/cross-platform-path'
 import { getProjectGroupSubtreeIds } from '../../shared/project-groups'
@@ -187,7 +188,10 @@ export async function rebuildAuthorizedRootsCache(store: Store): Promise<void> {
       try {
         roots.push(resolve(repo.path))
 
-        for (const worktree of await listRepoWorktrees(repo)) {
+        // Why reuse: at launch this rebuild raced the IPC sweep and listed every repo a second time.
+        for (const worktree of await listRepoWorktrees(repo, {
+          reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+        })) {
           roots.push(resolve(worktree.path))
         }
       } catch (error) {

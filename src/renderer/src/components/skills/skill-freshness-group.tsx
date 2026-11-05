@@ -39,7 +39,7 @@ function chipTooltip(chip: SkillLocationChip): string {
     case 'unrecognized':
       return translate(
         'auto.components.skills.SkillFreshnessRow.tipUnrecognized',
-        'This copy doesn’t match any official version — it may be modified, or a different skill with the same name.'
+        'This copy doesn’t match any official version. It may be modified, or a different skill with the same name.'
       )
     case 'inaccessible':
       return translate(
@@ -90,10 +90,7 @@ export function SkillFreshnessGroup({
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-foreground">{group.name}</span>
         {isBlocked ? (
-          <Badge
-            variant="outline"
-            className="border-amber-600/50 text-amber-700 dark:border-amber-400/40 dark:text-amber-400"
-          >
+          <Badge variant="outline" className="border-status-attention/50 text-status-attention">
             {translate('auto.components.skills.SkillFreshnessRow.statusCantUpdate', 'Skipped')}
           </Badge>
         ) : (

@@ -5,7 +5,7 @@ import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export const getAccountsLocationSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.accounts.search.d09fb5ca92', 'Account Location'),
+    title: translate('auto.components.settings.accounts.search.d09fb5ca92', 'Account location'),
     description: translate(
       'auto.components.settings.accounts.search.b84a5b0c8a',
       'Choose whether provider accounts are inspected and added on this device or in WSL.'
@@ -24,7 +24,7 @@ export const getAccountsLocationSearchEntries = createLocalizedCatalog(() => [
 
 export const getAccountsClaudeSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.accounts.search.75682e1b62', 'Claude Accounts'),
+    title: translate('auto.components.settings.accounts.search.75682e1b62', 'Claude accounts'),
     description: translate(
       'auto.components.settings.accounts.search.dd75a73991',
       'Optional account switching for Claude while preserving shared chat context.'
@@ -46,7 +46,7 @@ export const getAccountsClaudeSearchEntries = createLocalizedCatalog(() => [
 
 export const getAccountsCodexSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.accounts.search.17c5d244eb', 'Codex Accounts'),
+    title: translate('auto.components.settings.accounts.search.17c5d244eb', 'Codex accounts'),
     description: translate(
       'auto.components.settings.accounts.search.b40d5b6570',
       'Optional account switching for Codex and live rate limit fetching.'
@@ -76,7 +76,7 @@ export const getAccountsCodexSearchEntries = createLocalizedCatalog(() => [
     ]
   },
   {
-    title: translate('auto.components.settings.accounts.search.a4bcfd6f86', 'Active Codex Account'),
+    title: translate('auto.components.settings.accounts.search.a4bcfd6f86', 'Active Codex account'),
     description: translate(
       'auto.components.settings.accounts.search.87a4a8584e',
       'Choose which optional saved Codex account powers live quota reads.'
@@ -131,7 +131,7 @@ export const getAccountsOpencodeSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.accounts.search.6ed1401020',
-      'OpenCode Go Session Cookie'
+      'OpenCode Go Session cookie'
     ),
     description: translate(
       'auto.components.settings.accounts.search.d1d2ae383c',
@@ -173,7 +173,7 @@ export const getAccountsOpencodeSearchEntries = createLocalizedCatalog(() => [
 
 export const getAccountsMiniMaxSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.accounts.search.733f9e2a93', 'MiniMax Usage'),
+    title: translate('auto.components.settings.accounts.search.733f9e2a93', 'MiniMax usage'),
     description: translate(
       'auto.components.settings.accounts.search.f8374c3151',
       'Paste your platform.minimax.io session cookie for local rate-limit fetching.'

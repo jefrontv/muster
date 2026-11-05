@@ -177,10 +177,7 @@ function QuickLaunchAgentMenuItemsInner({
   return (
     <>
       {agents.length === 0 ? (
-        <DropdownMenuItem
-          disabled
-          className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 text-muted-foreground"
-        >
+        <DropdownMenuItem disabled className="text-muted-foreground">
           {detectedIds && detectedIds.length > 0
             ? translate('auto.components.tab.bar.QuickLaunchButton.8dea9b5cdf', 'No enabled agents')
             : translate(
@@ -198,7 +195,6 @@ function QuickLaunchAgentMenuItemsInner({
           <DropdownMenuItem
             key={agent}
             onSelect={() => runLaunch(agent)}
-            className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium"
             title={translate(
               'auto.components.tab.bar.QuickLaunchButton.ec2adf093e',
               'Launch {{value0}} in a new terminal',
@@ -213,10 +209,7 @@ function QuickLaunchAgentMenuItemsInner({
           </DropdownMenuItem>
         )
       })}
-      <DropdownMenuItem
-        onSelect={openAgentSettings}
-        className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium text-muted-foreground"
-      >
+      <DropdownMenuItem onSelect={openAgentSettings} className="text-muted-foreground">
         <SettingsIcon className="size-4" />
         {translate('auto.components.tab.bar.QuickLaunchButton.348a04c1ad', 'Agent settings…')}
       </DropdownMenuItem>

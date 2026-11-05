@@ -32,7 +32,7 @@ function sshHost(health: ExecutionHostRegistryEntry['health']): ExecutionHostReg
   return {
     id: 'ssh:ssh-1',
     kind: 'ssh',
-    label: 'SSH Host',
+    label: 'SSH host',
     detail: 'SSH',
     health
   }

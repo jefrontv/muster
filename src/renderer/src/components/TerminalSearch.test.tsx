@@ -35,12 +35,12 @@ describe('TerminalSearch cleanup', () => {
     const addon = createSearchAddon()
     const view = renderSearch(addon)
 
-    fireEvent.change(view.getByPlaceholderText('Search...'), { target: { value: 'needle' } })
+    fireEvent.change(view.getByPlaceholderText('Search…'), { target: { value: 'needle' } })
     await waitFor(() => expect(addon.findNext).toHaveBeenCalled())
     vi.mocked(addon.clearDecorations).mockClear()
     vi.mocked(addon.findNext).mockClear()
 
-    fireEvent.change(view.getByPlaceholderText('Search...'), { target: { value: '' } })
+    fireEvent.change(view.getByPlaceholderText('Search…'), { target: { value: '' } })
 
     await waitFor(() => expect(addon.clearDecorations).toHaveBeenCalledTimes(1))
     expect(addon.findNext).toHaveBeenCalledWith('')
@@ -51,7 +51,7 @@ describe('TerminalSearch cleanup', () => {
     const nextAddon = createSearchAddon()
     const view = renderSearch(previousAddon)
 
-    fireEvent.change(view.getByPlaceholderText('Search...'), { target: { value: 'needle' } })
+    fireEvent.change(view.getByPlaceholderText('Search…'), { target: { value: 'needle' } })
     await waitFor(() => expect(previousAddon.findNext).toHaveBeenCalled())
     vi.mocked(previousAddon.clearDecorations).mockClear()
     vi.mocked(previousAddon.findNext).mockClear()
@@ -73,7 +73,7 @@ describe('TerminalSearch cleanup', () => {
     const addon = createSearchAddon()
     const view = renderSearch(addon)
 
-    fireEvent.change(view.getByPlaceholderText('Search...'), { target: { value: 'needle' } })
+    fireEvent.change(view.getByPlaceholderText('Search…'), { target: { value: 'needle' } })
     await waitFor(() => expect(addon.findNext).toHaveBeenCalled())
     vi.mocked(addon.clearDecorations).mockClear()
     vi.mocked(addon.findNext).mockClear()

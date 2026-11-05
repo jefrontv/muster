@@ -374,7 +374,7 @@ describe('SkillFreshnessUpdateDialog', () => {
     await openViaRequest()
 
     expect(container?.textContent).toContain(
-      'it may be modified, or a different skill with the same name'
+      'It may be modified, or a different skill with the same name'
     )
     expect(container?.textContent).toContain('Unrecognized')
     expect(container?.querySelector('[data-testid="update-terminal"]')).toBeNull()

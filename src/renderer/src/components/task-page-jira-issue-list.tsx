@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -126,7 +127,7 @@ function JiraIssueRow({
         }
       }}
       className={cn(
-        'group/row grid min-h-12 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left transition hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:grid-cols-[90px_minmax(0,1fr)_128px_92px_80px_64px] lg:grid-cols-[96px_minmax(0,1.25fr)_132px_120px_136px_96px_64px] xl:grid-cols-[104px_minmax(0,1.45fr)_144px_132px_160px_128px_72px]',
+        'group/row grid min-h-12 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[90px_minmax(0,1fr)_128px_92px_80px_64px] lg:grid-cols-[96px_minmax(0,1.25fr)_132px_120px_136px_96px_64px] xl:grid-cols-[104px_minmax(0,1.45fr)_144px_132px_160px_128px_72px]',
         selected && 'bg-accent'
       )}
     >
@@ -144,14 +145,12 @@ function JiraIssueRow({
           </h3>
         </div>
         <div className="mt-1 flex min-w-0 items-center gap-1.5 md:!hidden">
-          <span
-            className={cn(
-              'inline-flex min-w-0 items-center rounded-full border px-1.5 py-0.5 text-[11px] font-medium',
-              getStatusTone(issue.status.categoryKey)
-            )}
+          <Badge
+            variant="outline"
+            className={cn('min-w-0', getStatusTone(issue.status.categoryKey))}
           >
             <span className="truncate">{issue.status.name}</span>
-          </span>
+          </Badge>
           <span className="shrink-0 text-[11px] text-muted-foreground">
             {issue.priority?.name ??
               translate('auto.components.TaskPage.713179dfdc', 'No priority')}
@@ -162,19 +161,16 @@ function JiraIssueRow({
           </span>
         </div>
         <div className="mt-1 flex min-w-0 items-center gap-1 max-lg:!hidden">
-          <span className="max-w-[160px] truncate text-[10px] text-muted-foreground xl:!hidden">
+          <span className="max-w-[160px] truncate text-[11px] text-muted-foreground xl:!hidden">
             {contextLabel}
           </span>
           {labels.map((label) => (
-            <span
-              key={label}
-              className="max-w-[140px] truncate rounded-full border border-border/50 bg-muted/35 px-1.5 py-0.5 text-[10px] text-muted-foreground"
-            >
-              {label}
-            </span>
+            <Badge key={label} variant="muted" className="max-w-[140px]">
+              <span className="min-w-0 truncate">{label}</span>
+            </Badge>
           ))}
           {issue.labels.length > labels.length ? (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[11px] text-muted-foreground">
               +{issue.labels.length - labels.length}
             </span>
           ) : null}
@@ -204,7 +200,7 @@ function JiraIssueRow({
             className="size-5 shrink-0 rounded-full"
           />
         ) : (
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border/50 bg-muted/40 text-[10px]">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border/50 bg-muted/40 text-[11px]">
             {issue.assignee?.displayName?.slice(0, 1) ?? '-'}
           </span>
         )}
@@ -316,7 +312,7 @@ export function TaskPageJiraIssueList({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-9 w-full justify-start rounded-none bg-muted/35 px-3 text-left font-normal transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+                className="h-9 w-full justify-start rounded-none bg-muted/35 px-3 text-left font-normal transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
               >
                 {open ? (
                   <ChevronDown className="size-3 shrink-0 text-muted-foreground" />

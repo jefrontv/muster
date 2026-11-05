@@ -92,7 +92,7 @@ describe('external automation source availability', () => {
         isConnectingOverride: true
       })
     ).toMatchObject({
-      statusLabel: 'Connecting...',
+      statusLabel: 'Connecting…',
       summary: 'Hermes binary was not found.',
       detail: 'Waiting for this SSH host before checking the remote automation source.',
       canConnectSsh: true,

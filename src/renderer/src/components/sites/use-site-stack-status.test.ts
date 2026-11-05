@@ -13,6 +13,7 @@ import {
   refreshSiteStackStatus,
   resetSiteStackStatusForTests,
   setSiteStackTransition,
+  DETECT_SLOW_MS,
   SITE_STACK_POLL_INTERVAL_MS,
   useSiteStackStatus
 } from './use-site-stack-status'
@@ -120,5 +121,41 @@ describe('shared site stack poll', () => {
       transition: null,
       detection: { socketReady: true }
     })
+  })
+
+  it('marks a first detection slow, then clears it when the answer lands', async () => {
+    let resolve: (value: unknown) => void = () => {}
+    detect.mockReturnValueOnce(new Promise((r) => (resolve = r)))
+    const pending = refreshSiteStackStatus('site-5')
+    await vi.advanceTimersByTimeAsync(DETECT_SLOW_MS)
+    expect(readSiteStackStatus('site-5').slow).toBe(true)
+    resolve({ ok: true, value: detection() })
+    await pending
+    expect(readSiteStackStatus('site-5').slow).toBeFalsy()
+    expect(readSiteStackStatus('site-5').detection).toMatchObject({ stack: 'ddev' })
+  })
+
+  it('reports a failed first detection instead of loading forever', async () => {
+    detect.mockResolvedValueOnce({ ok: false, error: 'Local is not running' })
+    await refreshSiteStackStatus('site-6')
+    expect(readSiteStackStatus('site-6')).toMatchObject({
+      detection: null,
+      failure: 'Local is not running'
+    })
+    let reject: (error: Error) => void = () => {}
+    detect.mockReturnValueOnce(new Promise((_, r) => (reject = r)))
+    const retry = refreshSiteStackStatus('site-6')
+    expect(readSiteStackStatus('site-6')).toMatchObject({ failure: null, slow: true })
+    reject(new Error('IPC closed'))
+    await retry
+    expect(readSiteStackStatus('site-6').failure).toBe('IPC closed')
+  })
+
+  it('keeps the last good detection when a later poll fails', async () => {
+    await refreshSiteStackStatus('site-7')
+    detect.mockResolvedValueOnce({ ok: false, error: 'flaky' })
+    await refreshSiteStackStatus('site-7')
+    expect(readSiteStackStatus('site-7')).toMatchObject({ detection: { stack: 'ddev' } })
+    expect(readSiteStackStatus('site-7').failure).toBeUndefined()
   })
 })

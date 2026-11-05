@@ -45,7 +45,7 @@ export function InfoRow({
 
 export function SectionHeading({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+    <h3 className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
       {children}
     </h3>
   )
@@ -60,9 +60,7 @@ export function SectionCard({
   className?: string
 }): React.JSX.Element {
   return (
-    <div
-      className={cn('space-y-1.5 rounded-lg border border-border/60 bg-card/40 p-2.5', className)}
-    >
+    <div className={cn('space-y-1.5 rounded-xl border border-border/50 bg-card/40 p-3', className)}>
       {children}
     </div>
   )
@@ -76,7 +74,7 @@ export function RunStatusDot({ status }: { status: string }): React.JSX.Element 
       className={cn(
         'inline-block size-1.5 shrink-0 rounded-full',
         status === 'running' && 'animate-pulse bg-primary',
-        status === 'succeeded' && 'bg-emerald-500/80',
+        status === 'succeeded' && 'bg-status-success/80',
         (status === 'failed' || status === 'blocked') && 'bg-destructive',
         status === 'cancelled' && 'bg-muted-foreground/60'
       )}

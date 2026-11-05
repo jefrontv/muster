@@ -35,10 +35,10 @@ export type GitHubPRMergeStatePresentation = {
 }
 
 const MUTED_TONE = 'border-border/60 bg-background/70 text-muted-foreground'
-const SUCCESS_TONE =
-  'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
-const WARNING_TONE = 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200'
-const DANGER_TONE = 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-200'
+const SUCCESS_TONE = 'border-status-success-border bg-status-success-background text-status-success'
+const WARNING_TONE =
+  'border-status-attention-border bg-status-attention-background text-status-attention'
+const DANGER_TONE = 'border-status-danger-border bg-status-danger-background text-status-danger'
 
 function checksState(item: GitHubPRMergeStateInput): CheckStatus | 'none' | undefined {
   if (item.checksSummary) {

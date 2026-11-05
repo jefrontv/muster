@@ -44,11 +44,7 @@ export function SitePanelEnvironmentSection({
             {environmentNames.map((name) => (
               // Outline for the rest: only the resolved target earns a filled chip, so which one a
               // run uses reads at a glance instead of four pills competing.
-              <Badge
-                key={name}
-                variant={name === targetName ? 'default' : 'outline'}
-                className="px-1.5 py-0 text-[11px] font-normal"
-              >
+              <Badge key={name} variant={name === targetName ? 'default' : 'outline'}>
                 {name}
               </Badge>
             ))}

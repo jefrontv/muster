@@ -1,4 +1,5 @@
 import React from 'react'
+import { badgeVariants } from '@/components/ui/badge'
 import type { GitHubOwnerRepo } from '../../../../shared/types'
 import RepoBadgeLabel from '@/components/repo/RepoBadgeLabel'
 import { cn } from '@/lib/utils'
@@ -76,10 +77,7 @@ export default function IssueSourceIndicator({
   const prefix = variant === 'item' ? LABEL_PREFIX_ITEM : LABEL_PREFIX_LIST
   return (
     <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground',
-        className
-      )}
+      className={cn(badgeVariants({ variant: 'muted' }), className)}
       title={localRepo ? `${localRepo.displayName}: ${prefix}${slug}` : `${prefix}${slug}`}
     >
       {localRepo ? (
@@ -91,7 +89,7 @@ export default function IssueSourceIndicator({
           name={localRepo.displayName}
           color={localRepo.color}
           badgeClassName="size-1.5"
-          className="text-[10px] text-muted-foreground"
+          className="text-[11px] text-muted-foreground"
         />
       ) : null}
       <span className="shrink-0">{prefix}</span>

@@ -21,7 +21,7 @@ export function ActiveCollabTaskSectionHeading({
     <h3 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
       <span>{label}</span>
       {pill === null ? null : (
-        <span className="rounded-full bg-muted px-1.5 py-px text-[10px] font-medium tabular-nums">
+        <span className="rounded-full bg-muted px-1.5 py-px text-2xs font-medium tabular-nums">
           {pill}
         </span>
       )}

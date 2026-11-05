@@ -128,7 +128,7 @@ export function BrowserProfileRow({
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium">{profile.label}</span>
           {isActive ? (
-            <span className="shrink-0 rounded border border-border/50 px-1.5 text-[10px] font-medium leading-4 text-foreground/80">
+            <span className="shrink-0 rounded-full border border-border/50 px-1.5 text-[11px] font-medium leading-4 text-foreground/80">
               {translate('auto.components.settings.BrowserProfileRow.c29648fe5b', 'Active')}
             </span>
           ) : null}
@@ -166,7 +166,7 @@ export function BrowserProfileRow({
               ) : (
                 <Import className="size-3" />
               )}
-              {translate('auto.components.settings.BrowserProfileRow.cdec84552f', 'Import Cookies')}
+              {translate('auto.components.settings.BrowserProfileRow.cdec84552f', 'Import cookies')}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -210,7 +210,7 @@ export function BrowserProfileRow({
             )}
             {detectedBrowsers.length > 0 && <DropdownMenuSeparator />}
             <DropdownMenuItem onSelect={() => void handleImportFromFile()}>
-              {translate('auto.components.settings.BrowserProfileRow.ebb78dfd6f', 'From File…')}
+              {translate('auto.components.settings.BrowserProfileRow.ebb78dfd6f', 'From file…')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -220,6 +220,14 @@ export function BrowserProfileRow({
             size="icon"
             className="size-7 text-muted-foreground hover:text-destructive"
             disabled={!profile.source}
+            aria-label={translate(
+              'auto.components.settings.BrowserProfileRow.clearCookies',
+              'Clear default cookies'
+            )}
+            title={translate(
+              'auto.components.settings.BrowserProfileRow.clearCookies',
+              'Clear default cookies'
+            )}
             onClick={async () => {
               const ok = await useAppStore.getState().clearDefaultSessionCookies()
               if (ok) {
@@ -239,6 +247,14 @@ export function BrowserProfileRow({
             variant="ghost"
             size="icon"
             className="size-7 text-muted-foreground hover:text-destructive"
+            aria-label={translate(
+              'auto.components.settings.BrowserProfileRow.removeProfile',
+              'Remove profile'
+            )}
+            title={translate(
+              'auto.components.settings.BrowserProfileRow.removeProfile',
+              'Remove profile'
+            )}
             onClick={async () => {
               const ok = await useAppStore.getState().deleteBrowserSessionProfile(profile.id)
               if (ok) {

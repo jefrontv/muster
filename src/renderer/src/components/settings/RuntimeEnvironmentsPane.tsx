@@ -248,9 +248,9 @@ function getRuntimeServerConnectionLabel(state: RuntimeServerConnectionState): s
 function getRuntimeServerDotClass(state: RuntimeServerConnectionState): string {
   switch (state) {
     case 'connected':
-      return 'bg-emerald-500'
+      return 'bg-status-success'
     case 'checking':
-      return 'bg-yellow-500'
+      return 'bg-status-attention'
     case 'disconnected':
       return 'bg-muted-foreground/40'
   }
@@ -755,7 +755,7 @@ export function RuntimeEnvironmentsPane({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="default"
                 className="gap-1.5"
                 title={updateCheckHint}
                 onClick={(event) => {
@@ -776,7 +776,7 @@ export function RuntimeEnvironmentsPane({
                     )
                   : translate(
                       'auto.components.settings.RuntimeEnvironmentsPane.reviewServerUpdates',
-                      'Check for Server Updates'
+                      'Check for server updates'
                     )}
               </Button>
             ) : null}
@@ -784,7 +784,7 @@ export function RuntimeEnvironmentsPane({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="default"
                 className="gap-1.5"
                 onClick={() => setAddServerFormOpen(true)}
                 disabled={isBusy}
@@ -792,7 +792,7 @@ export function RuntimeEnvironmentsPane({
                 <Plus />
                 {translate(
                   'auto.components.settings.RuntimeEnvironmentsPane.9bee6bbeeb',
-                  'Add Server'
+                  'Add server'
                 )}
               </Button>
             )}
@@ -823,7 +823,7 @@ export function RuntimeEnvironmentsPane({
                     'auto.components.settings.RuntimeEnvironmentsPane.e038625857',
                     'Dev box'
                   )}
-                  className="h-8 text-xs"
+                  className="text-sm"
                   autoFocus
                 />
               </div>
@@ -841,9 +841,9 @@ export function RuntimeEnvironmentsPane({
                   onChange={(event) => setPairingCode(event.target.value)}
                   placeholder={translate(
                     'auto.components.settings.RuntimeEnvironmentsPane.c3d772c514',
-                    'orca://pair?code=...'
+                    'orca://pair?code=…'
                   )}
-                  className="h-8 min-w-0 font-mono text-xs"
+                  className="min-w-0 font-mono text-sm"
                 />
                 <p id="runtime-server-pairing-code-help" className="text-xs text-muted-foreground">
                   {translate('auto.components.settings.RuntimeEnvironmentsPane.163671f7b5', 'Run')}{' '}
@@ -864,7 +864,7 @@ export function RuntimeEnvironmentsPane({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="default"
                 onClick={closeAddServerForm}
                 disabled={isSaving}
               >
@@ -872,13 +872,13 @@ export function RuntimeEnvironmentsPane({
               </Button>
               <Button
                 type="submit"
-                size="sm"
+                size="default"
                 disabled={isBusy || !name.trim() || !pairingCode.trim()}
               >
                 {isSaving ? <Loader2 className="animate-spin" /> : <Plus />}
                 {translate(
                   'auto.components.settings.RuntimeEnvironmentsPane.9bee6bbeeb',
-                  'Add Server'
+                  'Add server'
                 )}
               </Button>
             </div>
@@ -1044,7 +1044,7 @@ export function RuntimeEnvironmentsPane({
                               setRemoveError(null)
                               setPendingRemove(environment)
                             }}
-                            className="size-7 text-muted-foreground hover:text-red-400"
+                            className="size-7 text-muted-foreground hover:text-status-danger"
                             disabled={isBusy}
                             aria-label={translate(
                               'auto.components.settings.RuntimeEnvironmentsPane.aeb26635d2',
@@ -1075,9 +1075,9 @@ export function RuntimeEnvironmentsPane({
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="default"
           onClick={() => setAdvancedOpen((current) => !current)}
-          className="-ml-2 text-xs"
+          className="-ml-2"
         >
           {translate('auto.components.settings.RuntimeEnvironmentsPane.advanced', 'Advanced')}
           <ChevronDown
@@ -1105,7 +1105,7 @@ export function RuntimeEnvironmentsPane({
                 <Label id="runtime-active-server-label">
                   {translate(
                     'auto.components.settings.RuntimeEnvironmentsPane.64b6bea541',
-                    'Active Server'
+                    'Active server'
                   )}
                 </Label>
                 <p className="text-xs text-muted-foreground">
@@ -1124,7 +1124,6 @@ export function RuntimeEnvironmentsPane({
                   disabled={isBusy}
                 >
                   <SelectTrigger
-                    size="sm"
                     className="min-w-[260px]"
                     aria-labelledby="runtime-active-server-label"
                   >
@@ -1156,7 +1155,7 @@ export function RuntimeEnvironmentsPane({
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon-sm"
+                  size="icon"
                   aria-label={translate(
                     'auto.components.settings.RuntimeEnvironmentsPane.6ce4664003',
                     'Refresh servers'
@@ -1269,7 +1268,7 @@ export function RuntimeEnvironmentsPane({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="default"
                 className="gap-1.5"
                 onClick={() => setShareServerFormOpen((open) => !open)}
               >
@@ -1277,11 +1276,11 @@ export function RuntimeEnvironmentsPane({
                 {shareServerFormOpen
                   ? translate(
                       'auto.components.settings.RuntimeEnvironmentsPane.54dee18f5c',
-                      'Hide Form'
+                      'Hide form'
                     )
                   : translate(
                       'auto.components.settings.RuntimeEnvironmentsPane.3595fd1948',
-                      'New Link'
+                      'New link'
                     )}
               </Button>
             </div>
@@ -1310,7 +1309,7 @@ export function RuntimeEnvironmentsPane({
             <DialogTitle className="text-sm">
               {translate(
                 'auto.components.settings.RuntimeEnvironmentsPane.d570c35a99',
-                'Switch Server'
+                'Switch server'
               )}
             </DialogTitle>
             <DialogDescription>
@@ -1380,7 +1379,7 @@ export function RuntimeEnvironmentsPane({
             <DialogTitle className="text-sm">
               {translate(
                 'auto.components.settings.RuntimeEnvironmentsPane.bb90dd6487',
-                'Remove Server'
+                'Remove server'
               )}
             </DialogTitle>
             <DialogDescription>

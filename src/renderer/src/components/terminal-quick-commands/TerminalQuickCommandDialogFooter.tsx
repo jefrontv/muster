@@ -37,7 +37,7 @@ export function TerminalQuickCommandDialogFooter({
           'auto.components.terminal.quick.commands.TerminalQuickCommandDialogFooter.2e2b958dfc',
           'Save'
         )}
-        <span className="ml-1 text-[10px] opacity-60">{submitShortcutLabel}</span>
+        <span className="ml-1 text-[11px] opacity-60">{submitShortcutLabel}</span>
       </Button>
     </DialogFooter>
   )

@@ -39,7 +39,7 @@ export function AppearanceAdvancedDisclosure({
         // Why: while searching the disclosure is forced open, so disable the
         // toggle's collapse affordance rather than letting it fight the search.
         disabled={isSearching}
-        className="flex w-full items-center gap-2 py-1 text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-default"
+        className="flex w-full items-center gap-2 py-1 text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default"
       >
         <ChevronRight
           className={cn(

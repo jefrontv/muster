@@ -66,7 +66,7 @@ export function FirstLaunchBanner({
     // Fixed non-modal overlay; centered + narrow so it clears the macOS traffic lights.
     // `relative` is load-bearing: the absolutely-positioned ✕ anchors to this container.
     <div
-      className="fixed left-1/2 top-2 z-40 flex w-[min(44.625rem,calc(100vw-2rem))] -translate-x-1/2 items-start gap-4 rounded-lg border border-border bg-card/95 py-3 pl-4 pr-3 shadow-lg backdrop-blur"
+      className="fixed left-1/2 top-2 z-40 flex w-[min(44.625rem,calc(100vw-2rem))] -translate-x-1/2 items-start gap-4 rounded-lg border border-border bg-card/95 py-3 pl-4 pr-3 shadow-floating backdrop-blur"
       role="region"
       aria-label={translate('auto.components.FirstLaunchBanner.fcbee32f08', 'Telemetry notice')}
       aria-live="polite"
@@ -107,7 +107,7 @@ export function FirstLaunchBanner({
         aria-label={translate('auto.components.FirstLaunchBanner.b9e1b966c7', 'Dismiss notice')}
         onClick={handleAcknowledge}
         disabled={inFlight}
-        className="absolute right-1.5 top-1.5 rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        className="absolute right-1.5 top-1.5 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <X className="size-3.5" />
       </button>

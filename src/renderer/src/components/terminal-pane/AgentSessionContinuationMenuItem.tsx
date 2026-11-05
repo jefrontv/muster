@@ -14,7 +14,7 @@ export function AgentSessionContinuationMenuItem({
       <MessageSquarePlus />
       {translate(
         'components.agentSessionContinuation.continueInNewSession',
-        'Continue in New Session…'
+        'Continue in new session…'
       )}
     </DropdownMenuItem>
   )

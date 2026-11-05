@@ -179,7 +179,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
           <WhatItem
             text={translate(
               'auto.components.settings.EphemeralVmsPane.whatScaffold',
-              'Writes the recipe & scripts for your provider — connected over a Muster server or SSH.'
+              'Writes the recipe & scripts for your provider. Connected over a Muster server or SSH.'
             )}
           />
           <WhatItem
@@ -261,7 +261,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
               {isLoading
                 ? translate(
                     'auto.components.settings.EphemeralVmsPane.checking',
-                    'Checking recipes...'
+                    'Checking recipes…'
                   )
                 : translate(
                     'auto.components.settings.EphemeralVmsPane.none',

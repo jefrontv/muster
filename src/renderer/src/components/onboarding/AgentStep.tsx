@@ -28,7 +28,7 @@ function CheckAgainButton({ onClick }: { onClick: () => void }): React.JSX.Eleme
   return (
     <button
       type="button"
-      className="inline-flex shrink-0 items-center rounded-md px-2 py-1 font-medium hover:bg-amber-400/20"
+      className="inline-flex shrink-0 items-center rounded-md px-2 py-1 font-medium hover:bg-status-attention-background"
       onClick={onClick}
     >
       {translate('auto.components.onboarding.AgentStep.checkAgain', 'Check again')}
@@ -127,7 +127,7 @@ export function AgentStep({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5">
       {!hasDetected && !isDetecting && (
-        <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-200/90">
+        <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-status-attention-border bg-status-attention-background px-4 py-3 text-xs text-status-attention">
           <span>
             {translate(
               'auto.components.onboarding.AgentStep.noAgentsFound',
@@ -138,7 +138,7 @@ export function AgentStep({
         </div>
       )}
       {selectedEntry && (
-        <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-xs text-amber-700 dark:text-amber-200/90">
+        <div className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-status-attention-border bg-status-attention-background px-4 py-2.5 text-xs text-status-attention">
           <span>
             <span className="font-medium">{selectedEntry.label}</span>{' '}
             {translate(
@@ -149,7 +149,7 @@ export function AgentStep({
           {onCheckAgain ? <CheckAgainButton onClick={onCheckAgain} /> : null}
           <button
             type="button"
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-400/40 bg-amber-400/10 px-2 py-1 font-medium text-amber-800 hover:bg-amber-400/20 dark:text-amber-100"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-status-attention-border bg-status-attention-background px-2 py-1 font-medium text-status-attention hover:bg-status-attention-background"
             onClick={() => void window.api.shell.openUrl(selectedEntry.homepageUrl)}
           >
             {translate('auto.components.onboarding.AgentStep.9c163bb0e0', 'Install instructions')}
@@ -189,7 +189,7 @@ export function AgentStep({
             </div>
             {fallbackRest.length > 0 && (
               <Collapsible open={openState} onOpenChange={setOpenState}>
-                <CollapsibleTrigger className="cursor-pointer text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 data-[state=open]:mb-3">
+                <CollapsibleTrigger className="cursor-pointer text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:mb-3">
                   {fallbackRestLabel}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="collapsible-height-content">
@@ -252,7 +252,7 @@ function YoloPermissionsControl({
               'Agent permission info'
             )}
             onPointerDown={(event) => event.preventDefault()}
-            className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Info className="size-3.5" />
           </button>
@@ -280,7 +280,7 @@ function SectionHeader({
   return (
     <div className="flex shrink-0 items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
       {showDetectedIndicator && (
-        <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+        <span className="size-1.5 shrink-0 rounded-full bg-status-success" aria-hidden="true" />
       )}
       <span>{label}</span>
       <span className="text-muted-foreground/60">·</span>

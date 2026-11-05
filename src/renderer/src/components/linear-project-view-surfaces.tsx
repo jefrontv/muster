@@ -158,7 +158,7 @@ function ProjectColorMark({ project }: { project: LinearProjectSummary }): React
 function ProjectStatusBadge({ project }: { project: LinearProjectLike }): React.JSX.Element {
   const label = textFromUnknown(project.status) ?? 'Backlog'
   return (
-    <Badge variant="outline" className="max-w-full truncate text-[11px] font-medium">
+    <Badge variant="outline" className="max-w-full truncate">
       {label}
     </Badge>
   )
@@ -249,13 +249,13 @@ export function LinearProjectTable({
             key={index}
             className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(180px,1.5fr)_110px_100px_90px_120px_110px_80px_70px]"
           >
-            <div className="h-4 w-4/5 animate-pulse rounded bg-muted/70" />
-            <div className="h-4 w-20 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-16 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-16 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-24 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-20 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-10 animate-pulse rounded bg-muted/60" />
+            <div className="h-4 w-4/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-20 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-16 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-16 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-24 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-20 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-10 animate-pulse rounded-full bg-foreground/[0.07]" />
             <div />
           </div>
         ))}
@@ -318,7 +318,7 @@ export function LinearProjectTable({
               }
             }}
             className={cn(
-              'group/row grid min-h-12 cursor-pointer grid-cols-[minmax(180px,1.5fr)_110px_100px_90px_120px_110px_80px_70px] items-center gap-3 px-3 py-2 text-left transition hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'group/row grid min-h-12 cursor-pointer grid-cols-[minmax(180px,1.5fr)_110px_100px_90px_120px_110px_80px_70px] items-center gap-3 px-3 py-2 text-left transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected && 'bg-accent'
             )}
           >
@@ -332,7 +332,7 @@ export function LinearProjectTable({
               <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
                 {workspace ? <span className="truncate">{workspace}</span> : null}
                 {labels.map((label) => (
-                  <Badge key={label} variant="outline" className="px-1.5 py-0 text-[10px]">
+                  <Badge key={label} variant="outline">
                     {label}
                   </Badge>
                 ))}
@@ -439,11 +439,11 @@ export function LinearCustomViewTable({
             key={index}
             className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(220px,1.5fr)_120px_120px_120px_130px_60px]"
           >
-            <div className="h-4 w-4/5 animate-pulse rounded bg-muted/70" />
-            <div className="h-4 w-20 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-20 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-20 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-24 animate-pulse rounded bg-muted/60" />
+            <div className="h-4 w-4/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-20 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-20 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-20 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-24 animate-pulse rounded-full bg-foreground/[0.07]" />
             <div />
           </div>
         ))}
@@ -503,7 +503,7 @@ export function LinearCustomViewTable({
               }
             }}
             className={cn(
-              'group/row grid min-h-12 cursor-pointer grid-cols-[minmax(220px,1.5fr)_120px_120px_120px_130px_60px] items-center gap-3 px-3 py-2 text-left transition hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'group/row grid min-h-12 cursor-pointer grid-cols-[minmax(220px,1.5fr)_120px_120px_120px_130px_60px] items-center gap-3 px-3 py-2 text-left transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected && 'bg-accent'
             )}
           >
@@ -669,9 +669,9 @@ export function LinearProjectOverview({
         ) : null}
         {loading && !project ? (
           <div className="space-y-3">
-            <div className="h-5 w-1/3 animate-pulse rounded bg-muted/70" />
-            <div className="h-24 animate-pulse rounded-md bg-muted/50" />
-            <div className="h-40 animate-pulse rounded-md bg-muted/50" />
+            <div className="h-5 w-1/3 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-24 animate-pulse rounded-md bg-foreground/[0.07]" />
+            <div className="h-40 animate-pulse rounded-md bg-foreground/[0.07]" />
           </div>
         ) : projectLike ? (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
@@ -849,7 +849,7 @@ function PropertyRow({
 }): React.JSX.Element {
   return (
     <div className="rounded-md border border-border/50 bg-muted/20 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.05em] text-muted-foreground">
         {icon}
         {label}
       </div>
@@ -869,7 +869,7 @@ function MetadataList({
 }): React.JSX.Element {
   return (
     <div className="rounded-md border border-border/50 bg-muted/20 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.05em] text-muted-foreground">
         {icon}
         {label}
       </div>

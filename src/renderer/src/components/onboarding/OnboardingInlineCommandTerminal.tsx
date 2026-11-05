@@ -306,7 +306,7 @@ export function OnboardingInlineCommandTerminal({
               <Loader2 className="size-4 animate-spin" />
               {translate(
                 'auto.components.onboarding.OnboardingInlineCommandTerminal.4123609efd',
-                'Starting terminal...'
+                'Starting terminal…'
               )}
             </div>
           )}

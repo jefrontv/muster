@@ -43,7 +43,7 @@ function confirmationFor(action: GitSequencerAction): Parameters<ConfirmAction>[
       ),
       confirmLabel: translate(
         'auto.components.right.sidebar.source.control.in_progress.skipCommit',
-        'Skip Commit'
+        'Skip commit'
       ),
       confirmVariant: 'destructive'
     }

@@ -19,7 +19,7 @@ describe('resolveUndoCommitConfirmation', () => {
       behind: 0
     })
     expect(confirmation?.description).toContain('origin/staging')
-    expect(confirmation?.description).toContain('Force Push')
+    expect(confirmation?.description).toContain('force push')
   })
 })
 

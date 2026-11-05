@@ -102,7 +102,7 @@ export function LinearAgentSkillInstallCta({
           <IntegrationStatusPill tone="neutral">
             {translate(
               'auto.components.settings.linear.agent.skill.install.cta.checking',
-              'Checking...'
+              'Checking…'
             )}
           </IntegrationStatusPill>
         ) : skill.installed ? (

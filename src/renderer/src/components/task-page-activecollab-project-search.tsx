@@ -70,10 +70,10 @@ export function ActiveCollabProjectSearchControl({
         {open ? (
           <Command className="overflow-visible bg-transparent">
             <PopoverAnchor asChild>
-              <div className="flex w-56 items-center overflow-hidden rounded-md border border-border bg-popover shadow-xs animate-in fade-in slide-in-from-right-2">
+              <div className="flex h-7 w-56 items-center overflow-hidden rounded-full bg-foreground/[0.05] pl-3 focus-within:ring-2 focus-within:ring-ring animate-in fade-in slide-in-from-right-2">
                 <CommandInput
                   ref={inputRef}
-                  wrapperClassName="min-w-0 flex-1 border-0 bg-transparent py-0"
+                  wrapperClassName="m-0 h-auto min-w-0 flex-1 rounded-none bg-transparent px-0"
                   className="h-7 py-0 text-xs"
                   iconClassName="h-3.5 w-3.5"
                   placeholder={translate(

@@ -168,7 +168,7 @@ export function ChatModeDraftHero({
       <h1
         className={cn(
           CHAT_CONVERSATION_COLUMN_CLASS,
-          'text-center text-[26px] font-medium leading-8 text-foreground'
+          'text-center text-2xl font-medium leading-8 text-foreground'
         )}
       >
         {greetingName
@@ -209,7 +209,7 @@ export function ChatModeDraftHero({
                       'components.native-chat.composer.removeAttachment',
                       'Remove attachment'
                     )}
-                    className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="hit-area flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X className="size-3" />
                   </button>

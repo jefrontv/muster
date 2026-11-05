@@ -61,10 +61,7 @@ export function CmdJPaletteTipDialog({
           <DialogHeader className="gap-4 text-left">
             <div>
               {/* Why: uppercase eyebrow reads as a category label, not a feature launch. */}
-              <Badge
-                variant="outline"
-                className="mb-3 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-              >
+              <Badge variant="outline" className="mb-3 text-muted-foreground">
                 {tip.eyebrow.toUpperCase()}
               </Badge>
               {/* Why: flow the shortcut chip as inline text (not a flex item) so the

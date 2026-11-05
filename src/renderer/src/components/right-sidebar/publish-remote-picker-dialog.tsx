@@ -45,7 +45,7 @@ export function PublishRemotePickerDialog({
       <DialogContent className="sm:max-w-[380px]">
         <DialogHeader>
           <DialogTitle>
-            {translate('auto.components.right.sidebar.publish_remote.title', 'Publish Branch')}
+            {translate('auto.components.right.sidebar.publish_remote.title', 'Publish branch')}
           </DialogTitle>
           <DialogDescription>
             {translate(

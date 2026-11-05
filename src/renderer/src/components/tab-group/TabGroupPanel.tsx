@@ -231,7 +231,7 @@ export default function TabGroupPanel({
                           type="button"
                           aria-label={translate(
                             'auto.components.tab.group.TabGroupPanel.9acaf92093',
-                            'Pane Actions'
+                            'Pane actions'
                           )}
                           onClick={(event) => {
                             event.stopPropagation()
@@ -260,7 +260,7 @@ export default function TabGroupPanel({
                   <TooltipContent side="bottom" sideOffset={6}>
                     {translate(
                       'auto.components.tab.group.TabGroupPanel.9acaf92093',
-                      'Pane Actions'
+                      'Pane actions'
                     )}
                   </TooltipContent>
                 </Tooltip>
@@ -306,7 +306,7 @@ export default function TabGroupPanel({
                   <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                     {translate(
                       'auto.components.tab.group.TabGroupPanel.814fb04c43',
-                      'Loading editor...'
+                      'Loading editor…'
                     )}
                   </div>
                 }

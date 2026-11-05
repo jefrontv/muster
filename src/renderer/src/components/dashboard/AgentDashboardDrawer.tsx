@@ -15,6 +15,7 @@ import {
 import { AgentDashboardSettingsMenu } from './AgentDashboardSettingsMenu'
 import { useLiveDashboardSnapshot } from './useLiveDashboardSnapshot'
 import { translate } from '@/i18n/i18n'
+import { useRenderedLeftSidebarWidth } from '../sidebar/side-panel-room'
 
 // Why: Escape should dismiss interactive nested overlays (e.g. the terminal
 // preview dialog) before this companion sheet, which is excluded by its own
@@ -97,7 +98,7 @@ export function AgentDashboardDrawer({
   const open = useAppStore((s) => s.agentDashboardDrawerOpen)
   const setOpen = useAppStore((s) => s.setAgentDashboardDrawerOpen)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
-  const sidebarWidth = useAppStore((s) => s.sidebarWidth)
+  const sidebarWidth = useRenderedLeftSidebarWidth()
   const [menuOpen, setMenuOpen] = useState(false)
   // Why: like closeWorkspaceBoard, reset the menu flag on close — Radix never
   // reports close for a menu unmounted with the sheet (e.g. the pop-out

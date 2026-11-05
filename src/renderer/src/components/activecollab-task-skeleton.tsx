@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 
 // `motion-reduce:animate-none` belongs on EVERY bone: miss one and a reduced-motion user gets a
 // single blinking bar instead of a calm placeholder.
-const BONE = 'animate-pulse rounded bg-muted/70 motion-reduce:animate-none'
-const BONE_SOFT = 'animate-pulse rounded bg-muted/50 motion-reduce:animate-none'
+const BONE = 'animate-pulse rounded bg-foreground/[0.07] motion-reduce:animate-none'
+const BONE_SOFT = 'animate-pulse rounded bg-foreground/[0.07] motion-reduce:animate-none'
 
 // Enough fixed widths to give the pane a sensible intrinsic width while it holds no text; the long
 // body lines stay proportional so they reflow with the real content's column.

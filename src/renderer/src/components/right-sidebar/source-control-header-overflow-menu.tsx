@@ -94,7 +94,7 @@ export function SourceControlHeaderOverflowMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={onChangeBaseRef}>
           <Settings2 className="size-3.5" />
-          {translate('auto.components.right.sidebar.SourceControl.476b77745b', 'Change Base Ref')}…
+          {translate('auto.components.right.sidebar.SourceControl.476b77745b', 'Change base ref')}…
         </DropdownMenuItem>
         <DropdownMenuItem disabled={branchCompareRefreshDisabled} onSelect={onRefreshBranchCompare}>
           <RefreshCw className="size-3.5" />
@@ -146,14 +146,14 @@ function StashMenuItems({ stashMenu }: { stashMenu: SourceControlStashMenu }): R
         <Archive className="size-3.5" />
         {translate(
           'auto.components.right.sidebar.source.control.stash.stashChanges',
-          'Stash Changes'
+          'Stash changes'
         )}
       </DropdownMenuItem>
       <DropdownMenuItem disabled={disabled || !stash} onSelect={onPop} title={stash?.subject}>
         <ArchiveRestore className="size-3.5" />
         {translate(
           'auto.components.right.sidebar.source.control.stash.popLatest',
-          'Pop Latest Stash'
+          'Pop latest stash'
         )}
         {popDisabledReason ? (
           <span className="ml-auto max-w-[120px] truncate pl-2 text-[11px] text-muted-foreground">

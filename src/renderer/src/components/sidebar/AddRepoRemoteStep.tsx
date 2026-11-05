@@ -125,7 +125,7 @@ export function RemoteStep({
                   <Settings className="size-3.5" />
                   {translate(
                     'auto.components.sidebar.AddRepoRemoteStep.0416bde073',
-                    'Add in Settings'
+                    'Add in settings'
                   )}
                 </Button>
               </div>
@@ -208,7 +208,7 @@ export function RemoteStep({
           className="w-full"
         >
           {isAddingRemote
-            ? translate('auto.components.sidebar.AddRepoRemoteStep.35831a7312', 'Adding...')
+            ? translate('auto.components.sidebar.AddRepoRemoteStep.35831a7312', 'Adding…')
             : translate(
                 'auto.components.sidebar.AddRepoRemoteStep.36d427bb66',
                 'Add project on SSH host'

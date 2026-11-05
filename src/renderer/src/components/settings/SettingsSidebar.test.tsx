@@ -44,7 +44,7 @@ function renderSidebar(
         generalGroups={[
           {
             id: 'capabilities',
-            title: 'AI Capabilities',
+            title: 'AI capabilities',
             sections: [
               {
                 id: 'agents',
@@ -65,7 +65,7 @@ function renderSidebar(
               },
               {
                 id: 'developer-permissions',
-                title: 'Developer Permissions',
+                title: 'Developer permissions',
                 icon: Bot,
                 installStatus: 'up-to-date'
               }
@@ -73,11 +73,11 @@ function renderSidebar(
           },
           {
             id: 'setup',
-            title: 'Set Up',
+            title: 'Set up',
             sections: [
               {
                 id: 'accounts',
-                title: 'AI Provider Accounts',
+                title: 'AI provider accounts',
                 icon: Bot,
                 badge: 'Optional'
               }

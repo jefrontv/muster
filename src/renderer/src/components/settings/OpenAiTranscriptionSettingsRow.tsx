@@ -24,7 +24,7 @@ export function OpenAiTranscriptionSettingsRow({
           <Label>
             {translate(
               'auto.components.settings.OpenAiTranscriptionSettingsRow.27e0cb656d',
-              'OpenAI Transcription'
+              'OpenAI transcription'
             )}
           </Label>
           {configured && (
@@ -64,7 +64,7 @@ export function OpenAiTranscriptionSettingsRow({
               'Disconnect OpenAI API key'
             )}
             disabled={disabled}
-            className="rounded-md p-1 text-muted-foreground/50 transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full p-1 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Unlink className="size-3.5" />
           </button>

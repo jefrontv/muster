@@ -66,11 +66,11 @@ export function BrowserExtensionsSection(): React.JSX.Element {
 
   const title = translate(
     'auto.components.settings.BrowserExtensionsSection.b8d3f5a219',
-    'Browser Extensions'
+    'Browser extensions'
   )
   const description = translate(
     'auto.components.settings.BrowserExtensionsSection.c9e1740b6d',
-    'Load unpacked Chrome extensions into the in-app browser. Electron supports a subset of the extension APIs — content scripts and storage work, while background service workers and request blocking may not.'
+    'Load unpacked Chrome extensions into the in-app browser. Electron supports a subset of the extension APIs. Content scripts and storage work, while background service workers and request blocking may not.'
   )
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export function BrowserExtensionsSection(): React.JSX.Element {
         <Button type="button" variant="outline" size="sm" disabled={busy} onClick={handleAdd}>
           {translate(
             'auto.components.settings.BrowserExtensionsSection.a3f9026b7c',
-            'Add Extension Folder'
+            'Add extension folder'
           )}
         </Button>
         {statuses.length > 0 ? (

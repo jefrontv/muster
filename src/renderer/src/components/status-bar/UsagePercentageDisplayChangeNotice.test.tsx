@@ -188,7 +188,7 @@ describe('UsagePercentageDisplayChangeNotice', () => {
 
     const openSettingsButton = Array.from(
       document.querySelectorAll('.status-bar-change-notice-card button')
-    ).find((button) => button.textContent === 'Open Settings')
+    ).find((button) => button.textContent === 'Open settings')
     expect(openSettingsButton).toBeTruthy()
     act(() => {
       openSettingsButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))

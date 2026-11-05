@@ -1,9 +1,10 @@
 // IPC for the Bots tab: start the bots server on first open, report its state, restart on request.
-import { BrowserWindow, ipcMain } from 'electron'
-import { readFileSync } from 'node:fs'
+import { BrowserWindow, ipcMain, shell } from 'electron'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import {
   botsDataDir,
+  botsLogPath,
   getBotsSidecarStatus,
   onBotsSidecarStatus,
   readBotsServerConfig,
@@ -23,6 +24,7 @@ const CHANNELS = [
   'bots:start',
   'bots:status',
   'bots:restart',
+  'bots:openLog',
   'bots:composioKeyStatus',
   'bots:setComposioKey'
 ] as const
@@ -52,6 +54,10 @@ export function registerBotsHandlers(
   ipcMain.handle('bots:start', () => startBotsSidecar())
   ipcMain.handle('bots:status', () => getBotsSidecarStatus())
   ipcMain.handle('bots:restart', () => restartBotsSidecar())
+  // Falls back to the data folder when the server never wrote a log.
+  ipcMain.handle('bots:openLog', () =>
+    shell.openPath(existsSync(botsLogPath()) ? botsLogPath() : botsDataDir())
+  )
   ipcMain.handle('bots:composioKeyStatus', () => composioKeyStatus())
   ipcMain.handle(
     'bots:setComposioKey',

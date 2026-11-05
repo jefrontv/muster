@@ -159,7 +159,7 @@ export function CreateProjectLocationField({
           </span>
           {translate(
             'auto.components.sidebar.CreateProjectLocationField.95548e33bf',
-            'Choose parent folder...'
+            'Choose parent folder…'
           )}
         </Button>
       )}

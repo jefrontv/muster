@@ -1,5 +1,6 @@
 import { Label } from '../ui/label'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
 
 // Why: anything in this group is deliberately unfinished or staff-only. The
 // orange treatment (header tint, label colors) is the shared visual signal
@@ -38,17 +39,14 @@ export function HiddenExperimentalGroup(): React.JSX.Element {
             )}
           </p>
         </div>
-        <button
-          type="button"
+        <Switch
+          checked={false}
+          disabled
           aria-label={translate(
             'auto.components.settings.HiddenExperimentalGroup.d0f914a528',
             'Placeholder toggle'
           )}
-          className="relative inline-flex h-5 w-9 shrink-0 cursor-not-allowed items-center rounded-full border border-orange-500/40 bg-orange-500/20 opacity-70"
-          disabled
-        >
-          <span className="inline-block h-3.5 w-3.5 translate-x-0.5 transform rounded-full bg-orange-200 shadow-sm dark:bg-orange-100" />
-        </button>
+        />
       </div>
     </section>
   )

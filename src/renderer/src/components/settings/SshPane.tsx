@@ -364,7 +364,7 @@ export function SshPane({ addTargetIntentSignal }: SshPaneProps): React.JSX.Elem
           {!showForm ? (
             <Button variant="outline" size="xs" onClick={openAddTargetForm} className="gap-1.5">
               <Plus className="size-3" />
-              {translate('auto.components.settings.SshPane.639ceb3698', 'Add Target')}
+              {translate('auto.components.settings.SshPane.639ceb3698', 'Add target')}
             </Button>
           ) : null}
         </div>

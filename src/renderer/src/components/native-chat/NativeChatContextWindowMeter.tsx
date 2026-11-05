@@ -44,7 +44,7 @@ export function NativeChatContextWindowMeter({
         <span
           className={cn(
             'flex size-7 items-center justify-center',
-            overloaded ? 'text-destructive' : 'text-muted-foreground/50'
+            overloaded ? 'text-destructive' : 'text-muted-foreground'
           )}
           role="img"
           aria-label={translate(

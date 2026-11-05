@@ -8,7 +8,7 @@ const items = (['explorer', 'source-control', 'checks', 'ports'] as ActiveRightS
 
 describe('getTopActivityBarLayout', () => {
   it('shows every item when the top activity strip has enough room', () => {
-    const layout = getTopActivityBarLayout(items, 144, 'explorer')
+    const layout = getTopActivityBarLayout(items, 120, 'explorer')
 
     expect(layout.visibleItems.map((item) => item.id)).toEqual([
       'explorer',
@@ -20,14 +20,14 @@ describe('getTopActivityBarLayout', () => {
   })
 
   it('moves trailing items behind the overflow menu when width is tight', () => {
-    const layout = getTopActivityBarLayout(items, 124, 'explorer')
+    const layout = getTopActivityBarLayout(items, 100, 'explorer')
 
     expect(layout.visibleItems.map((item) => item.id)).toEqual(['explorer', 'source-control'])
     expect(layout.overflowItems.map((item) => item.id)).toEqual(['checks', 'ports'])
   })
 
   it('keeps the active tab visible even when it would otherwise overflow', () => {
-    const layout = getTopActivityBarLayout(items, 124, 'ports')
+    const layout = getTopActivityBarLayout(items, 100, 'ports')
 
     expect(layout.visibleItems.map((item) => item.id)).toEqual(['explorer', 'ports'])
     expect(layout.overflowItems.map((item) => item.id)).toEqual(['source-control', 'checks'])

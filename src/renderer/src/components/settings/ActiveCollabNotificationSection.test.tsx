@@ -12,10 +12,10 @@ import { getNotificationsPaneSearchEntries } from './notifications-search'
 type NotificationSettings = GlobalSettings['notifications']
 
 const TOGGLES = [
-  { key: 'activeCollabAssigned', label: 'Task Assigned To You' },
-  { key: 'activeCollabComments', label: 'New Comments' },
-  { key: 'activeCollabDue', label: 'Due Date Getting Closer' },
-  { key: 'activeCollabUpdated', label: 'Task Details Edited' }
+  { key: 'activeCollabAssigned', label: 'Task assigned to you' },
+  { key: 'activeCollabComments', label: 'New comments' },
+  { key: 'activeCollabDue', label: 'Due date getting closer' },
+  { key: 'activeCollabUpdated', label: 'Task details edited' }
 ] as const satisfies readonly { key: keyof NotificationSettings; label: string }[]
 
 function createNotificationSettings(
@@ -72,7 +72,7 @@ describe('ActiveCollabNotificationSection', () => {
   it('renders every ActiveCollab toggle under one group', () => {
     renderSection()
 
-    expect(screen.getByText('ActiveCollab Tasks')).toBeInTheDocument()
+    expect(screen.getByText('ActiveCollab tasks')).toBeInTheDocument()
     for (const toggle of TOGGLES) {
       expect(screen.getByRole('switch', { name: toggle.label })).toBeInTheDocument()
     }
@@ -101,12 +101,12 @@ describe('ActiveCollabNotificationSection', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'An assigned task moves into a nearer due window — this week, then tomorrow, then today, then overdue.'
+        'An assigned task moves into a nearer due window: this week, then tomorrow, then today, then overdue.'
       )
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'An assigned task is edited without a new comment — renamed, re-described, re-labelled, or its due date changed.'
+        'An assigned task is edited without a new comment: renamed, re-described, re-labelled, or its due date changed.'
       )
     ).toBeInTheDocument()
   })
@@ -114,19 +114,19 @@ describe('ActiveCollabNotificationSection', () => {
   it('reflects persisted state per toggle', () => {
     renderSection({ activeCollabComments: true, activeCollabDue: true })
 
-    expect(screen.getByRole('switch', { name: 'Task Assigned To You' })).toHaveAttribute(
+    expect(screen.getByRole('switch', { name: 'Task assigned to you' })).toHaveAttribute(
       'aria-checked',
       'false'
     )
-    expect(screen.getByRole('switch', { name: 'New Comments' })).toHaveAttribute(
+    expect(screen.getByRole('switch', { name: 'New comments' })).toHaveAttribute(
       'aria-checked',
       'true'
     )
-    expect(screen.getByRole('switch', { name: 'Due Date Getting Closer' })).toHaveAttribute(
+    expect(screen.getByRole('switch', { name: 'Due date getting closer' })).toHaveAttribute(
       'aria-checked',
       'true'
     )
-    expect(screen.getByRole('switch', { name: 'Task Details Edited' })).toHaveAttribute(
+    expect(screen.getByRole('switch', { name: 'Task details edited' })).toHaveAttribute(
       'aria-checked',
       'false'
     )
@@ -150,7 +150,7 @@ describe('ActiveCollabNotificationSection', () => {
     const user = userEvent.setup()
     const { onUpdate } = renderSection({ activeCollabDue: true })
 
-    await user.click(screen.getByRole('switch', { name: 'Due Date Getting Closer' }))
+    await user.click(screen.getByRole('switch', { name: 'Due date getting closer' }))
 
     expect(onUpdate).toHaveBeenCalledWith({ activeCollabDue: false })
   })
@@ -163,7 +163,7 @@ describe('ActiveCollabNotificationSection', () => {
       expect(screen.getByRole('switch', { name: toggle.label })).toBeDisabled()
     }
 
-    await user.click(screen.getByRole('switch', { name: 'Task Assigned To You' }))
+    await user.click(screen.getByRole('switch', { name: 'Task assigned to you' }))
     expect(onUpdate).not.toHaveBeenCalled()
   })
 
@@ -196,9 +196,9 @@ describe('ActiveCollab notification settings search', () => {
 
     const keywordsFor = (title: string): string[] =>
       entries.find((entry) => entry.title === title)?.keywords ?? []
-    expect(keywordsFor('Task Assigned To You')).toContain('assigned')
-    expect(keywordsFor('New Comments')).toContain('comments')
-    expect(keywordsFor('Due Date Getting Closer')).toContain('overdue')
-    expect(keywordsFor('Task Details Edited')).toContain('edited')
+    expect(keywordsFor('Task assigned to you')).toContain('assigned')
+    expect(keywordsFor('New comments')).toContain('comments')
+    expect(keywordsFor('Due date getting closer')).toContain('overdue')
+    expect(keywordsFor('Task details edited')).toContain('edited')
   })
 })

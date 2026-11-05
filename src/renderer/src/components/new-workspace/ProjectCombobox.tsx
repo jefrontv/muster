@@ -182,7 +182,7 @@ export default function ProjectCombobox({
             ref={setInputNode}
             placeholder={translate(
               'auto.components.new.workspace.ProjectCombobox.search',
-              'Search projects...'
+              'Search projects…'
             )}
             value={query}
             onValueChange={setQuery}

@@ -108,7 +108,7 @@ export function QuickOpenInstallRgGuidance({
     <div className="px-4 py-5 text-sm text-muted-foreground space-y-3">
       <div
         role="alert"
-        className="flex items-start gap-2.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-amber-700 dark:text-amber-300"
+        className="flex items-start gap-2.5 rounded-md border border-status-attention-border bg-status-attention-background px-3 py-2.5 text-status-attention"
       >
         <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
         <p className="text-[13px] leading-5">

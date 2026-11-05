@@ -278,7 +278,7 @@ async function click(element: HTMLElement): Promise<void> {
  */
 async function openComposer(): Promise<void> {
   const prompt = Array.from(container.querySelectorAll('button')).find(
-    (candidate) => candidate.textContent?.trim() === 'Write a comment...'
+    (candidate) => candidate.textContent?.trim() === 'Write a comment…'
   )
   if (prompt !== undefined) {
     await click(prompt)
@@ -534,7 +534,7 @@ describe('ActiveCollabTaskWorkspace write settlement', () => {
     // Collapsed, the reply surface locks as the prompt itself: there is no editor to disable.
     expect(
       Array.from(container.querySelectorAll('button')).find(
-        (candidate) => candidate.textContent?.trim() === 'Write a comment...'
+        (candidate) => candidate.textContent?.trim() === 'Write a comment…'
       )?.disabled
     ).toBe(true)
 

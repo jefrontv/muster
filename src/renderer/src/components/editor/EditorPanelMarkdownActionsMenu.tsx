@@ -52,7 +52,7 @@ export function EditorPanelMarkdownActionsMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+          className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={translate(
             'auto.components.editor.EditorPanelMarkdownActionsMenu.561251019a',
             'More actions'
@@ -69,7 +69,7 @@ export function EditorPanelMarkdownActionsMenu({
         <DropdownMenuCheckboxItem checked={wordWrapChecked} onCheckedChange={onToggleWordWrap}>
           {translate(
             'auto.components.editor.EditorPanelMarkdownActionsMenu.1eef809708',
-            'Word Wrap'
+            'Word wrap'
           )}
         </DropdownMenuCheckboxItem>
         {hasMarkdownActions ? <DropdownMenuSeparator /> : null}

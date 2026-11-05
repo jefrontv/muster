@@ -15,6 +15,7 @@ type TerminalWindowSectionProps = {
 }
 
 import { COLOR_OVERRIDE_GROUPS } from './terminal-window-color-groups'
+import { Switch } from '@/components/ui/switch'
 
 export function TerminalWindowSection({
   settings,
@@ -63,7 +64,7 @@ export function TerminalWindowSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalWindowSection.ea7b1a158e',
-            'Background Opacity'
+            'Background opacity'
           )}
           description={translate(
             'auto.components.settings.TerminalWindowSection.03acb60aa0',
@@ -74,7 +75,7 @@ export function TerminalWindowSection({
           <NumberField
             label={translate(
               'auto.components.settings.TerminalWindowSection.ea7b1a158e',
-              'Background Opacity'
+              'Background opacity'
             )}
             description={translate(
               'auto.components.settings.TerminalWindowSection.809f37738d',
@@ -95,7 +96,7 @@ export function TerminalWindowSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalWindowSection.2b82242f43',
-            'Window Blur'
+            'Window blur'
           )}
           description={translate(
             'auto.components.settings.TerminalWindowSection.97950bb087',
@@ -109,7 +110,7 @@ export function TerminalWindowSection({
               <Label>
                 {translate(
                   'auto.components.settings.TerminalWindowSection.2b82242f43',
-                  'Window Blur'
+                  'Window blur'
                 )}
               </Label>
               <p className="text-xs text-muted-foreground">
@@ -119,30 +120,18 @@ export function TerminalWindowSection({
                 )}
               </p>
             </div>
-            <button
-              role="switch"
-              aria-checked={settings.windowBackgroundBlur ?? false}
+            <Switch
+              checked={settings.windowBackgroundBlur ?? false}
               onClick={() =>
                 updateSettings({ windowBackgroundBlur: !settings.windowBackgroundBlur })
               }
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-                (settings.windowBackgroundBlur ?? false)
-                  ? 'bg-foreground'
-                  : 'bg-muted-foreground/30'
-              }`}
-            >
-              <span
-                className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-                  (settings.windowBackgroundBlur ?? false) ? 'translate-x-4' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            />
           </div>
 
           {blurPendingRestart ? (
-            <div className="flex items-center justify-between gap-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-3 rounded-md border border-status-attention/50 bg-status-attention-background px-3 py-2.5">
               <div className="min-w-0 flex-1 space-y-0.5">
-                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                <p className="text-sm font-medium text-status-attention">
                   {translate(
                     'auto.components.settings.TerminalWindowSection.c65bb9ce63',
                     'Restart required'
@@ -180,7 +169,7 @@ export function TerminalWindowSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalWindowSection.36b8402015',
-            'Horizontal Padding'
+            'Horizontal padding'
           )}
           description={translate(
             'auto.components.settings.TerminalWindowSection.25e2f8e8e1',
@@ -191,7 +180,7 @@ export function TerminalWindowSection({
           <NumberField
             label={translate(
               'auto.components.settings.TerminalWindowSection.36b8402015',
-              'Horizontal Padding'
+              'Horizontal padding'
             )}
             description=""
             value={settings.terminalPaddingX ?? 4}
@@ -207,7 +196,7 @@ export function TerminalWindowSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalWindowSection.1afcc1d973',
-            'Vertical Padding'
+            'Vertical padding'
           )}
           description={translate(
             'auto.components.settings.TerminalWindowSection.1846f6ee6a',
@@ -218,7 +207,7 @@ export function TerminalWindowSection({
           <NumberField
             label={translate(
               'auto.components.settings.TerminalWindowSection.1afcc1d973',
-              'Vertical Padding'
+              'Vertical padding'
             )}
             description=""
             value={settings.terminalPaddingY ?? 4}
@@ -234,7 +223,7 @@ export function TerminalWindowSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalWindowSection.3530908ef9',
-            'Hide Mouse While Typing'
+            'Hide mouse while typing'
           )}
           description={translate(
             'auto.components.settings.TerminalWindowSection.1d1920dc8a',
@@ -249,38 +238,24 @@ export function TerminalWindowSection({
             <Label>
               {translate(
                 'auto.components.settings.TerminalWindowSection.3530908ef9',
-                'Hide Mouse While Typing'
+                'Hide mouse while typing'
               )}
             </Label>
           </div>
-          <button
-            role="switch"
-            aria-checked={settings.terminalMouseHideWhileTyping ?? false}
+          <Switch
+            checked={settings.terminalMouseHideWhileTyping ?? false}
             onClick={() =>
               updateSettings({
                 terminalMouseHideWhileTyping: !settings.terminalMouseHideWhileTyping
               })
             }
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-              (settings.terminalMouseHideWhileTyping ?? false)
-                ? 'bg-foreground'
-                : 'bg-muted-foreground/30'
-            }`}
-          >
-            <span
-              className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-                (settings.terminalMouseHideWhileTyping ?? false)
-                  ? 'translate-x-4'
-                  : 'translate-x-0.5'
-              }`}
-            />
-          </button>
+          />
         </SearchableSetting>
 
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalWindowSection.63f8d9336e',
-            'Color Overrides'
+            'Color overrides'
           )}
           description={translate(
             'auto.components.settings.TerminalWindowSection.e86e09b5c7',
@@ -299,7 +274,7 @@ export function TerminalWindowSection({
               </span>
               {translate(
                 'auto.components.settings.TerminalWindowSection.63f8d9336e',
-                'Color Overrides'
+                'Color overrides'
               )}
             </button>
             <div

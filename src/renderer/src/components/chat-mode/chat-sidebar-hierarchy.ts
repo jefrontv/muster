@@ -1,3 +1,5 @@
+import { SECTION_LABEL } from '../ui/section-label-classes'
+
 // The chat sidebar's three visual levels, kept in one place because the bug they
 // fix is drift: region labels and workspace names were styled identically, so a
 // workspace read as a caption rather than as the owner of the rows beneath it,
@@ -7,9 +9,8 @@
 //   group   — a workspace's name. Authored case, because it is a name, not a category.
 //   rows    — bound to their group by an indent and a hairline spine.
 
-/** Uppercase eyebrow for a whole region of the sidebar. */
-export const CHAT_SIDEBAR_REGION_LABEL =
-  'text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/60'
+/** Uppercase eyebrow for a whole region of the sidebar: the app-wide section label. */
+export const CHAT_SIDEBAR_REGION_LABEL = SECTION_LABEL
 
 /** A workspace heading: the strongest structural text in the list. */
 export const CHAT_SIDEBAR_GROUP_LABEL =

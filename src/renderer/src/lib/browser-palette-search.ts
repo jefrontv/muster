@@ -51,7 +51,7 @@ export function isBlankBrowserUrl(url: string): boolean {
 
 export function formatBrowserPaletteUrl(url: string): string {
   if (isBlankBrowserUrl(url)) {
-    return 'New Tab'
+    return 'New tab'
   }
   try {
     const parsed = new URL(url)

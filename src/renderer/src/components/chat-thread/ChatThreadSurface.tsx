@@ -150,7 +150,7 @@ export function ChatThreadSurface(props: {
               {props.placeholder ? (
                 props.placeholder
               ) : hero ? (
-                <h2 className="text-center text-[26px] font-medium leading-8 text-foreground">
+                <h2 className="text-center text-2xl font-medium leading-8 text-foreground">
                   {translate('components.chat-thread.emptyTitle', 'What should we work on?')}
                 </h2>
               ) : !loaded ? (

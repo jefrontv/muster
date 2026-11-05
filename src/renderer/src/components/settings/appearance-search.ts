@@ -9,11 +9,7 @@ import { getStatusBarToggles } from './appearance-status-bar-search'
 import { getUsagePercentageDisplayEntry } from './appearance-usage-percentage-search'
 import { getSystemTrayEntries } from './appearance-system-presence-search'
 
-export {
-  getStatusBarToggles,
-  getSystemTrayEntries,
-  getUsagePercentageDisplayEntry
-}
+export { getStatusBarToggles, getSystemTrayEntries, getUsagePercentageDisplayEntry }
 
 export const getThemeEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   {
@@ -72,7 +68,7 @@ export const getLanguageEntries = createLocalizedCatalog((): SettingsSearchEntry
 
 export const getZoomEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   {
-    title: translate('auto.components.settings.appearance.search.c5e933970f', 'UI Zoom'),
+    title: translate('auto.components.settings.appearance.search.c5e933970f', 'UI zoom'),
     description: translate(
       'auto.components.settings.appearance.search.adddb91a3d',
       'Scale the entire application interface.'
@@ -84,7 +80,7 @@ export const getZoomEntries = createLocalizedCatalog((): SettingsSearchEntry[] =
     ]
   },
   {
-    title: translate('auto.components.settings.appearance.search.terminalZoom', 'Terminal Zoom'),
+    title: translate('auto.components.settings.appearance.search.terminalZoom', 'Terminal zoom'),
     description: translate(
       'auto.components.settings.appearance.search.terminalZoomDesc',
       'Default zoom for terminal panes.'
@@ -99,7 +95,7 @@ export const getZoomEntries = createLocalizedCatalog((): SettingsSearchEntry[] =
 
 export const getTypographyEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   {
-    title: translate('auto.components.settings.appearance.search.ddb991024d', 'IDE Font'),
+    title: translate('auto.components.settings.appearance.search.ddb991024d', 'IDE font'),
     description: translate(
       'auto.components.settings.appearance.search.07c7c38fac',
       'Choose the font used by the Muster interface.'
@@ -130,7 +126,7 @@ export const getLayoutEntries = createLocalizedCatalog((): SettingsSearchEntry[]
   {
     title: translate(
       'auto.components.settings.appearance.search.f8129fb544',
-      'Show Git-Ignored Files'
+      'Show Git-ignored files'
     ),
     description: translate(
       'auto.components.settings.appearance.search.7164edf71a',
@@ -155,7 +151,7 @@ export const getLayoutEntries = createLocalizedCatalog((): SettingsSearchEntry[]
 
 export const getTitlebarEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   {
-    title: translate('auto.components.settings.appearance.search.fdd31b00d0', 'Titlebar App Name'),
+    title: translate('auto.components.settings.appearance.search.fdd31b00d0', 'Titlebar app name'),
     description: translate(
       'auto.components.settings.appearance.search.18b4c4c30b',
       'Show Muster in the titlebar.'
@@ -186,7 +182,7 @@ export { getLeftSidebarAppearanceEntry, getSidebarEntries }
 
 export const getAppIconEntries = createLocalizedCatalog((): SettingsSearchEntry[] => [
   {
-    title: translate('auto.components.settings.appearance.search.2b313598c6', 'App Icon'),
+    title: translate('auto.components.settings.appearance.search.2b313598c6', 'App icon'),
     description: translate(
       'auto.components.settings.appearance.search.e80c2af428',
       'Choose the app icon shown in the Dock and window switcher.'
@@ -222,7 +218,7 @@ const getAppearanceSectionEntries = createLocalizedCatalog((): SettingsSearchEnt
   {
     title: translate(
       'auto.components.settings.AppearancePane.windowSidebarTitle',
-      'Window & Sidebar'
+      'Window & sidebar'
     ),
     description: translate(
       'auto.components.settings.AppearancePane.windowSidebarSummary',

@@ -137,7 +137,7 @@ export function MarkupOverlay({
             onClear={editor.clear}
           />
         </div>
-        <div className="pointer-events-auto flex items-center gap-2 rounded-md border border-border bg-card/95 p-1.5 shadow-md backdrop-blur">
+        <div className="pointer-events-auto flex items-center gap-2 rounded-md border border-border bg-card/95 p-1.5 shadow-floating backdrop-blur">
           <span className="px-1 text-xs text-muted-foreground">
             {translate(
               'auto.components.browser-pane.markup.hint',
@@ -150,7 +150,7 @@ export function MarkupOverlay({
           </Button>
           <Button type="button" size="sm" onClick={handleDone} disabled={busy || !baseLoaded}>
             <Check className="size-4" />
-            {translate('auto.components.browser-pane.markup.copy', 'Copy Markup')}
+            {translate('auto.components.browser-pane.markup.copy', 'Copy markup')}
           </Button>
         </div>
       </div>

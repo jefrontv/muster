@@ -19,7 +19,7 @@ vi.mock('./native-chat-composer-target', () => ({
 }))
 
 vi.mock('./native-chat-attachment-upload', () => ({
-  nativeChatWorktreeNotReadyNotice: () => 'Worktree not ready — try again in a moment.'
+  nativeChatWorktreeNotReadyNotice: () => 'Worktree not ready: try again in a moment.'
 }))
 
 vi.stubGlobal('window', {

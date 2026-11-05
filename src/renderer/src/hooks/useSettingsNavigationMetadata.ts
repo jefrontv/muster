@@ -177,13 +177,13 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: Bot,
       searchEntries: getAgentsPaneSearchEntries({ includeAgentRuntime: isWindowsTerminalHost }),
-      group: 'capabilities'
+      group: 'agents'
     },
     {
       id: 'accounts',
       title: translate(
         'auto.hooks.useSettingsNavigationMetadata.f70ac54d38',
-        'AI Provider Accounts'
+        'AI provider accounts'
       ),
       description: translate(
         'auto.hooks.useSettingsNavigationMetadata.b1c2f8b0ac',
@@ -191,7 +191,7 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: UserCog,
       searchEntries: getAccountsPaneSearchEntries(),
-      group: 'capabilities',
+      group: 'agents',
       badge: translate('auto.hooks.useSettingsNavigationMetadata.7c79d3b7bf', 'Optional')
     },
     // Why desktop-only: both switches govern things that live on this machine — the bundled skill
@@ -202,7 +202,7 @@ export function buildSettingsNavigationMetadata({
             id: 'agent-capabilities',
             title: translate(
               'auto.hooks.useSettingsNavigationMetadata.agentCapabilitiesTitle',
-              'Agent Capabilities'
+              'Agent capabilities'
             ),
             description: translate(
               'auto.hooks.useSettingsNavigationMetadata.agentCapabilitiesDescription',
@@ -210,7 +210,7 @@ export function buildSettingsNavigationMetadata({
             ),
             icon: Boxes,
             searchEntries: getAgentCapabilitiesPaneSearchEntries(),
-            group: 'capabilities'
+            group: 'agents'
           },
           {
             id: 'extensions',
@@ -224,12 +224,10 @@ export function buildSettingsNavigationMetadata({
             ),
             icon: Blocks,
             searchEntries: getExtensionsPaneSearchEntries(),
-            group: 'capabilities',
+            group: 'agents',
             // Why a badge rather than a count: the sidebar's job is to say there is work here; the
             // pane itself says how much, and two numbers that can disagree are worse than one.
-            ...(extensionUpdateCount > 0
-              ? { installStatus: 'update-available' as const }
-              : {})
+            ...(extensionUpdateCount > 0 ? { installStatus: 'update-available' as const } : {})
           }
         ]
       : []),
@@ -242,40 +240,8 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: Network,
       searchEntries: getOrchestrationPaneSearchEntries(),
-      group: 'capabilities'
+      group: 'agents'
     },
-    // Why: only surfaced once Linear is connected — a capability that needs a
-    // linked provider before the agent skill has anything to act on.
-    ...(isLinearConnected
-      ? [
-          {
-            id: 'linear',
-            title: translate('auto.hooks.useSettingsNavigationMetadata.linearTitle', 'Linear'),
-            description: translate(
-              'auto.hooks.useSettingsNavigationMetadata.linearDescription',
-              'Give agents the skill to read and update your linked Linear tickets.'
-            ),
-            icon: LinearIcon,
-            searchEntries: getLinearAgentSkillPaneSearchEntries(),
-            group: 'capabilities'
-          }
-        ]
-      : []),
-    ...(showDesktopOnlySettings
-      ? [
-          {
-            id: 'voice',
-            title: translate('auto.hooks.useSettingsNavigationMetadata.6a50cdcd7c', 'Voice'),
-            description: translate(
-              'auto.hooks.useSettingsNavigationMetadata.8ac3de82f5',
-              'Local speech-to-text dictation with on-device models.'
-            ),
-            icon: Mic,
-            searchEntries: getVoicePaneSearchEntries(),
-            group: 'capabilities'
-          }
-        ]
-      : []),
     {
       id: 'setup-guide',
       title: translate('auto.hooks.useSettingsNavigationMetadata.setupGuideTitle', 'Setup guide'),
@@ -304,7 +270,7 @@ export function buildSettingsNavigationMetadata({
           ]
         }
       ],
-      group: 'setup'
+      group: 'app'
     },
     {
       id: 'general',
@@ -315,112 +281,7 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: SlidersHorizontal,
       searchEntries: getGeneralPaneSearchEntries({ includeProjectRuntime: isWindowsTerminalHost }),
-      group: 'setup'
-    },
-    {
-      id: 'integrations',
-      title: translate('auto.hooks.useSettingsNavigationMetadata.2b043783ef', 'Integrations'),
-      description: translate(
-        'auto.hooks.useSettingsNavigationMetadata.33a5e1d597',
-        'Connect GitHub, GitLab, Linear, and source-hosting services.'
-      ),
-      icon: Blocks,
-      searchEntries: getIntegrationsPaneSearchEntries(),
-      group: 'setup'
-    },
-    ...(showDesktopOnlySettings
-      ? [
-          {
-            id: 'mobile',
-            title: translate('auto.hooks.useSettingsNavigationMetadata.1cd25673df', 'Mobile'),
-            description: translate(
-              'auto.hooks.useSettingsNavigationMetadata.95a1886d94',
-              'Control terminals and agents from your phone.'
-            ),
-            icon: Smartphone,
-            searchEntries: getMobileSettingsPaneSearchEntries(),
-            group: 'setup'
-          }
-        ]
-      : []),
-    {
-      id: 'git',
-      title: translate(
-        'auto.hooks.useSettingsNavigationMetadata.09607cb0fe',
-        'Git & Source Control'
-      ),
-      description: translate(
-        'auto.hooks.useSettingsNavigationMetadata.ab4b21b58e',
-        'Branch naming, base refs, attribution, and Git AI Author.'
-      ),
-      icon: GitBranch,
-      // Why: Git AI Author is rendered inside Git, so shared
-      // metadata must search both surfaces wherever Git appears.
-      searchEntries: [
-        ...getGitPaneSearchEntries(),
-        ...getCommitMessageAiPaneSearchEntries(),
-        ...getGitProviderApiBudgetSearchEntries()
-      ],
-      group: 'workflows'
-    },
-    {
-      id: 'tasks',
-      title: translate('auto.hooks.useSettingsNavigationMetadata.85f4fd7710', 'Task Sources'),
-      description: translate(
-        'auto.hooks.useSettingsNavigationMetadata.5235c215ca',
-        'Choose which task providers appear in the Tasks page and sidebar.'
-      ),
-      icon: ListChecks,
-      searchEntries: getTasksPaneSearchEntries(),
-      group: 'workflows'
-    },
-    {
-      id: 'terminal',
-      title: translate('auto.hooks.useSettingsNavigationMetadata.a9fb10afca', 'Terminal'),
-      description: translate(
-        'auto.hooks.useSettingsNavigationMetadata.c33bfd664c',
-        'Shells, renderer, sessions, and terminal behavior.'
-      ),
-      icon: SquareTerminal,
-      searchEntries: terminalPaneSearchEntries,
-      group: 'workflows'
-    },
-    {
-      id: 'quick-commands',
-      title: translate('auto.hooks.useSettingsNavigationMetadata.3fc3db144f', 'Quick Commands'),
-      description: translate(
-        'auto.hooks.useSettingsNavigationMetadata.42ae40842f',
-        'Saved terminal commands, scoped globally or per project.'
-      ),
-      icon: Play,
-      searchEntries: getQuickCommandsPaneSearchEntries(),
-      group: 'workflows'
-    },
-    ...(showDesktopOnlySettings
-      ? [
-          {
-            id: 'browser',
-            title: translate('auto.hooks.useSettingsNavigationMetadata.8c197f74a1', 'Browser'),
-            description: translate(
-              'auto.hooks.useSettingsNavigationMetadata.e815fd01bd',
-              'Home page, link routing, and session cookies.'
-            ),
-            icon: Globe,
-            searchEntries: getBrowserPaneSearchEntries(),
-            group: 'workflows'
-          }
-        ]
-      : []),
-    {
-      id: 'floating-workspace',
-      title: translate('auto.hooks.useSettingsNavigationMetadata.65b19f5bde', 'Floating Workspace'),
-      description: translate(
-        'auto.hooks.useSettingsNavigationMetadata.2d0659f6f0',
-        'Global terminal, browser, and markdown tabs.'
-      ),
-      icon: PanelsTopLeft,
-      searchEntries: getFloatingWorkspaceSearchEntries(),
-      group: 'workflows'
+      group: 'app'
     },
     {
       id: 'appearance',
@@ -434,18 +295,18 @@ export function buildSettingsNavigationMetadata({
         showWarpImport: showDesktopOnlySettings,
         showSystemTray: showDesktopOnlySettings && isWindows
       }),
-      group: 'interface'
+      group: 'app'
     },
     {
       id: 'input',
-      title: translate('auto.hooks.useSettingsNavigationMetadata.0c6ee88a5f', 'Input & Editing'),
+      title: translate('auto.hooks.useSettingsNavigationMetadata.0c6ee88a5f', 'Input & editing'),
       description: translate(
         'auto.hooks.useSettingsNavigationMetadata.1f452cbd4c',
         'Selection and editing behavior.'
       ),
       icon: TextCursorInput,
       searchEntries: getInputPaneSearchEntries(),
-      group: 'interface'
+      group: 'app'
     },
     ...(showDesktopOnlySettings
       ? [
@@ -461,7 +322,7 @@ export function buildSettingsNavigationMetadata({
             ),
             icon: Bell,
             searchEntries: getNotificationsPaneSearchEntries(),
-            group: 'interface'
+            group: 'app'
           }
         ]
       : []),
@@ -474,31 +335,168 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: Keyboard,
       searchEntries: getShortcutsPaneSearchEntries(),
-      group: 'interface'
+      group: 'app'
     },
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'voice',
+            title: translate('auto.hooks.useSettingsNavigationMetadata.6a50cdcd7c', 'Voice'),
+            description: translate(
+              'auto.hooks.useSettingsNavigationMetadata.8ac3de82f5',
+              'Local speech-to-text dictation with on-device models.'
+            ),
+            icon: Mic,
+            searchEntries: getVoicePaneSearchEntries(),
+            group: 'app'
+          }
+        ]
+      : []),
     {
       id: 'stats',
-      title: translate('auto.hooks.useSettingsNavigationMetadata.d72a58b5b9', 'Stats & Usage'),
+      title: translate('auto.hooks.useSettingsNavigationMetadata.d72a58b5b9', 'Stats & usage'),
       description: translate(
         'auto.hooks.useSettingsNavigationMetadata.b351014180',
         'Muster stats plus Claude, Codex, OpenCode token analytics and Grok subscription usage.'
       ),
       icon: BarChart3,
       searchEntries: getStatsPaneSearchEntries(),
-      group: 'interface'
+      group: 'app'
+    },
+    {
+      id: 'git',
+      title: translate(
+        'auto.hooks.useSettingsNavigationMetadata.09607cb0fe',
+        'Git & source control'
+      ),
+      description: translate(
+        'auto.hooks.useSettingsNavigationMetadata.ab4b21b58e',
+        'Branch naming, base refs, attribution, and Git AI Author.'
+      ),
+      icon: GitBranch,
+      // Why: Git AI Author is rendered inside Git, so shared
+      // metadata must search both surfaces wherever Git appears.
+      searchEntries: [
+        ...getGitPaneSearchEntries(),
+        ...getCommitMessageAiPaneSearchEntries(),
+        ...getGitProviderApiBudgetSearchEntries()
+      ],
+      group: 'workspaces'
+    },
+    {
+      id: 'terminal',
+      title: translate('auto.hooks.useSettingsNavigationMetadata.a9fb10afca', 'Terminal'),
+      description: translate(
+        'auto.hooks.useSettingsNavigationMetadata.c33bfd664c',
+        'Shells, renderer, sessions, and terminal behavior.'
+      ),
+      icon: SquareTerminal,
+      searchEntries: terminalPaneSearchEntries,
+      group: 'workspaces'
+    },
+    {
+      id: 'quick-commands',
+      title: translate('auto.hooks.useSettingsNavigationMetadata.3fc3db144f', 'Quick commands'),
+      description: translate(
+        'auto.hooks.useSettingsNavigationMetadata.42ae40842f',
+        'Saved terminal commands, scoped globally or per project.'
+      ),
+      icon: Play,
+      searchEntries: getQuickCommandsPaneSearchEntries(),
+      group: 'workspaces'
+    },
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'browser',
+            title: translate('auto.hooks.useSettingsNavigationMetadata.8c197f74a1', 'Browser'),
+            description: translate(
+              'auto.hooks.useSettingsNavigationMetadata.e815fd01bd',
+              'Home page, link routing, and session cookies.'
+            ),
+            icon: Globe,
+            searchEntries: getBrowserPaneSearchEntries(),
+            group: 'workspaces'
+          }
+        ]
+      : []),
+    {
+      id: 'floating-workspace',
+      title: translate('auto.hooks.useSettingsNavigationMetadata.65b19f5bde', 'Floating workspace'),
+      description: translate(
+        'auto.hooks.useSettingsNavigationMetadata.2d0659f6f0',
+        'Global terminal, browser, and markdown tabs.'
+      ),
+      icon: PanelsTopLeft,
+      searchEntries: getFloatingWorkspaceSearchEntries(),
+      group: 'workspaces'
+    },
+    {
+      id: 'integrations',
+      title: translate('auto.hooks.useSettingsNavigationMetadata.2b043783ef', 'Integrations'),
+      description: translate(
+        'auto.hooks.useSettingsNavigationMetadata.33a5e1d597',
+        'Connect GitHub, GitLab, Linear, and source-hosting services.'
+      ),
+      icon: Blocks,
+      searchEntries: getIntegrationsPaneSearchEntries(),
+      group: 'integrations'
+    },
+    // Why: only surfaced once Linear is connected — a capability that needs a
+    // linked provider before the agent skill has anything to act on.
+    ...(isLinearConnected
+      ? [
+          {
+            id: 'linear',
+            title: translate('auto.hooks.useSettingsNavigationMetadata.linearTitle', 'Linear'),
+            description: translate(
+              'auto.hooks.useSettingsNavigationMetadata.linearDescription',
+              'Give agents the skill to read and update your linked Linear tickets.'
+            ),
+            icon: LinearIcon,
+            searchEntries: getLinearAgentSkillPaneSearchEntries(),
+            group: 'integrations'
+          }
+        ]
+      : []),
+    ...(showDesktopOnlySettings
+      ? [
+          {
+            id: 'mobile',
+            title: translate('auto.hooks.useSettingsNavigationMetadata.1cd25673df', 'Mobile'),
+            description: translate(
+              'auto.hooks.useSettingsNavigationMetadata.95a1886d94',
+              'Control terminals and agents from your phone.'
+            ),
+            icon: Smartphone,
+            searchEntries: getMobileSettingsPaneSearchEntries(),
+            group: 'integrations'
+          }
+        ]
+      : []),
+    {
+      id: 'tasks',
+      title: translate('auto.hooks.useSettingsNavigationMetadata.85f4fd7710', 'Task sources'),
+      description: translate(
+        'auto.hooks.useSettingsNavigationMetadata.5235c215ca',
+        'Choose which task providers appear in the Tasks page and sidebar.'
+      ),
+      icon: ListChecks,
+      searchEntries: getTasksPaneSearchEntries(),
+      group: 'integrations'
     },
     ...(showDesktopOnlySettings
       ? [
           {
             id: 'ssh',
-            title: translate('auto.hooks.useSettingsNavigationMetadata.94a5afe910', 'SSH Hosts'),
+            title: translate('auto.hooks.useSettingsNavigationMetadata.94a5afe910', 'SSH hosts'),
             description: translate(
               'auto.hooks.useSettingsNavigationMetadata.31e57d1c70',
               'Use existing machines over SSH for files, terminals, Git, and workspaces.'
             ),
             icon: Cable,
             searchEntries: getSshPaneSearchEntries(),
-            group: 'remote'
+            group: 'integrations'
           }
         ]
       : []),
@@ -506,14 +504,14 @@ export function buildSettingsNavigationMetadata({
       id: 'servers',
       title: translate(
         'auto.hooks.useSettingsNavigationMetadata.de0c2907a1',
-        'Remote Muster Servers'
+        'Remote Muster servers'
       ),
       description: isWebClient
         ? 'Connect this browser to a saved Muster server.'
         : 'Pair remote Muster runtimes for persistent sessions, richer remote state, and web or mobile handoff.',
       icon: Server,
       searchEntries: [runtimeEnvironmentsSearchEntry],
-      group: 'remote',
+      group: 'integrations',
       badge: translate('auto.hooks.useSettingsNavigationMetadata.40d80bad8a', 'Beta')
     },
     ...(showDesktopOnlySettings && isMac
@@ -522,7 +520,7 @@ export function buildSettingsNavigationMetadata({
             id: 'developer-permissions',
             title: translate(
               'auto.hooks.useSettingsNavigationMetadata.d91ae31fbd',
-              'macOS Permissions'
+              'macOS permissions'
             ),
             description: translate(
               'auto.hooks.useSettingsNavigationMetadata.65ec7d1968',
@@ -530,7 +528,7 @@ export function buildSettingsNavigationMetadata({
             ),
             icon: ShieldCheck,
             searchEntries: getDeveloperPermissionsPaneSearchEntries(),
-            group: 'security'
+            group: 'advanced'
           }
         ]
       : []),
@@ -538,7 +536,7 @@ export function buildSettingsNavigationMetadata({
       id: 'privacy',
       title: translate(
         'auto.hooks.useSettingsNavigationMetadata.3618579df6',
-        'Privacy & Telemetry'
+        'Privacy & telemetry'
       ),
       description: translate(
         'auto.hooks.useSettingsNavigationMetadata.8400cfe1c1',
@@ -546,7 +544,7 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: Lock,
       searchEntries: getPrivacyPaneSearchEntries(),
-      group: 'security'
+      group: 'advanced'
     },
     ...(showDesktopOnlySettings
       ? [
@@ -569,7 +567,7 @@ export function buildSettingsNavigationMetadata({
       ? [
           {
             id: 'dev',
-            title: translate('auto.hooks.useSettingsNavigationMetadata.dev', 'Dev Tools'),
+            title: translate('auto.hooks.useSettingsNavigationMetadata.dev', 'Dev tools'),
             description: translate(
               'auto.hooks.useSettingsNavigationMetadata.devDescription',
               'Dev-only tools for exercising UI states.'
@@ -592,7 +590,7 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: FlaskConical,
       searchEntries: getExperimentalPaneSearchEntries(),
-      group: 'experimental'
+      group: 'advanced'
     },
     // Why: one nav row per project, not per repo row — a project set up on
     // multiple hosts (local + a Remote Orca Server, or two clones) collapses to

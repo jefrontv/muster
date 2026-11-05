@@ -938,7 +938,7 @@ describe('WorktreeList lineage child card renderer', () => {
     const markup = await renderWorktreeListMarkup()
 
     expect(markup).toContain('No workspaces found')
-    expect(markup).toContain('Clear Filters')
+    expect(markup).toContain('Clear filters')
     expect(markup).not.toContain('Imported Services')
   })
 
@@ -955,7 +955,7 @@ describe('WorktreeList lineage child card renderer', () => {
     const markup = await renderWorktreeListMarkup()
 
     expect(markup).toContain('No workspaces found')
-    expect(markup).toContain('Clear Filters')
+    expect(markup).toContain('Clear filters')
     expect(markup).not.toContain('empty-project')
   })
 

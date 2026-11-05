@@ -32,7 +32,7 @@ export function SiteRunLogLines({ lines }: { lines: SiteRunLogLine[] }): React.J
               isError && 'border-l-2 border-destructive/70 bg-destructive/10'
             )}
           >
-            <span className="select-none pt-px text-[10px] tabular-nums text-muted-foreground/50">
+            <span className="select-none pt-px text-2xs tabular-nums text-muted-foreground/50">
               {timeFormatter.format(line.at)}
             </span>
             <span
@@ -40,7 +40,7 @@ export function SiteRunLogLines({ lines }: { lines: SiteRunLogLine[] }): React.J
                 'min-w-0 flex-1 whitespace-pre-wrap break-words',
                 isStatus && 'font-semibold text-foreground',
                 isError && 'text-destructive',
-                isSuccess && 'text-emerald-500/90',
+                isSuccess && 'text-status-success',
                 !isStatus && !isError && !isSuccess && 'text-muted-foreground'
               )}
             >

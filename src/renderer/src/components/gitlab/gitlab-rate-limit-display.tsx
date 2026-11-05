@@ -128,8 +128,8 @@ function GitLabRateLimitRows({
         <span
           className={cn(
             'tabular-nums text-foreground',
-            tone === 'crit' && 'text-red-600 dark:text-red-300',
-            tone === 'warn' && 'text-amber-700 dark:text-amber-300'
+            tone === 'crit' && 'text-status-danger',
+            tone === 'warn' && 'text-status-attention'
           )}
         >
           {rest.remaining}{' '}
@@ -159,7 +159,7 @@ export function GitLabRateLimitPanel({ className }: { className?: string }): Rea
             <Gauge className="size-4" />
             {translate(
               'auto.components.gitlab.gitlab.rate.limit.display.14e144f7a7',
-              'GitLab API Budget'
+              'GitLab API budget'
             )}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -204,7 +204,7 @@ export function GitLabRateLimitPanel({ className }: { className?: string }): Rea
         <div className="text-xs text-muted-foreground">
           {translate(
             'auto.components.gitlab.gitlab.rate.limit.display.ebc0e8ecf1',
-            'Loading GitLab API budget...'
+            'Loading GitLab API budget…'
           )}
         </div>
       )}

@@ -143,7 +143,7 @@ export function GeneralPane({
         <SettingsSubsectionHeader
           title={translate(
             'auto.components.settings.GeneralPane.projectRuntime',
-            'Project Runtime'
+            'Project runtime'
           )}
           description={translate(
             'auto.components.settings.GeneralPane.projectRuntimeDescription',

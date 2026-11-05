@@ -135,6 +135,19 @@
   --color-status-success-background: var(--status-success-background);
   --color-status-success-border: var(--status-success-border);
   --color-status-attention: var(--status-attention);
+  --color-status-attention-background: var(--status-attention-background);
+  --color-status-attention-border: var(--status-attention-border);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-background: var(--status-danger-background);
+  --color-status-danger-border: var(--status-danger-border);
+  --color-status-info: var(--status-info);
+  --color-status-info-background: var(--status-info-background);
+  --color-status-info-border: var(--status-info-border);
+  --color-status-success-solid: var(--status-success-solid);
+  --color-status-success-ink: var(--status-success-ink);
+  --color-switch-off: var(--switch-off);
+  --color-status-attention-ink: var(--status-attention-ink);
+  --color-status-danger-solid: var(--status-danger-solid);
   --color-tab-group-split-divider: var(--tab-group-split-divider);
   --color-tab-group-split-divider-strong: var(--tab-group-split-divider-strong);
   --color-git-graph-ref: var(--git-graph-ref);
@@ -173,10 +186,14 @@
   --radius-chat-composer: 28px;
   --radius-chat-reply: 16px;
   --text-chat: 15px;
+  /* Numeric counters and badges only; all other text is 11px or larger. */
+  --text-2xs: 10px;
+  --text-2xs--line-height: 14px;
   --text-chat--line-height: 1.75;
   --shadow-chat-hairline: var(--chat-hairline);
   --shadow-chat-soft: var(--chat-hairline), var(--chat-ambient);
   --shadow-chat-panel: var(--chat-hairline), var(--chat-panel);
+  --shadow-floating: var(--elevation-floating);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -187,6 +204,16 @@
 }
 
 /* The terminal-matched theme gives --popover and --card an alpha; floating surfaces stay opaque. */
+/* Grows a small control's pointer target to 24x24 (WCAG 2.5.8) without changing how it looks. */
+@utility hit-area {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: min(0px, calc((100% - 24px) / 2));
+  }
+}
+
 @utility bg-popover-solid {
   background-color: rgb(from var(--popover) r g b / 1);
 }
@@ -219,14 +246,16 @@
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
   --muted: #f5f5f5;
-  --muted-foreground: #737373;
+  /* #666 keeps 4.5:1 on the sidebar and on 7% tints (badges, selected rows). */
+  --muted-foreground: #666666;
   --accent: #f5f5f5;
   --accent-foreground: #171717;
   --destructive: #e40014;
   --destructive-foreground: #fcf3f3;
   --border: #e5e5e5;
   --input: #e5e5e5;
-  --ring: #a1a1a1;
+  /* Focus rings: 3:1+ against every surface at full opacity (WCAG 1.4.11). */
+  --ring: #525252;
   --terminal-pane-locate: var(--color-blue-600);
   --ai-action-accent: var(--color-violet-500);
   --status-success: #15803d;
@@ -234,6 +263,22 @@
   --status-attention: #b45309;
   --status-success-background: color-mix(in srgb, var(--status-success) 10%, transparent);
   --status-success-border: color-mix(in srgb, var(--status-success) 25%, transparent);
+  --status-danger: #b91c1c;
+  --status-info: #1d4ed8;
+  --status-attention-background: color-mix(in srgb, var(--status-attention) 10%, transparent);
+  --status-attention-border: color-mix(in srgb, var(--status-attention) 25%, transparent);
+  --status-danger-background: color-mix(in srgb, var(--status-danger) 10%, transparent);
+  --status-danger-border: color-mix(in srgb, var(--status-danger) 25%, transparent);
+  --status-info-background: color-mix(in srgb, var(--status-info) 10%, transparent);
+  --status-info-border: color-mix(in srgb, var(--status-info) 25%, transparent);
+  /* Filled buttons and chips with white text; dark enough for 4.5:1 in both themes. */
+  --status-success-solid: #15803d;
+  --status-danger-solid: #b91c1c;
+  /* Text on a 10% status tint (badges); the base hue is 4.0:1 there in light. */
+  --status-success-ink: #166534;
+  /* Switch off track: 3:1 non-text contrast on card and background (3.35:1 light; 3.3-3.5:1 dark). */
+  --switch-off: color-mix(in srgb, var(--muted-foreground) 75%, transparent);
+  --status-attention-ink: #92400e;
   --chart-1: var(--color-blue-300);
   --chart-2: var(--color-blue-500);
   --chart-3: var(--color-blue-600);
@@ -244,7 +289,7 @@
   --worktree-sidebar-accent: #eaeaea;
   --worktree-sidebar-accent-foreground: #171717;
   --worktree-sidebar-border: #e5e5e5;
-  --worktree-sidebar-ring: #a1a1a1;
+  --worktree-sidebar-ring: #525252;
   --sidebar: #fafafa;
   --sidebar-foreground: #0a0a0a;
   --sidebar-primary: #171717;
@@ -252,7 +297,7 @@
   --sidebar-accent: #f5f5f5;
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #e5e5e5;
-  --sidebar-ring: #a1a1a1;
+  --sidebar-ring: #525252;
   --terminal-pane-title-on-dark-fg: rgb(255 255 255 / 0.6);
   --terminal-pane-title-on-dark-input-fg: rgb(255 255 255 / 0.78);
   --terminal-pane-title-on-dark-placeholder: rgb(255 255 255 / 0.45);
@@ -273,7 +318,7 @@
   --git-decoration-renamed: #007acc;
   --git-decoration-untracked: #007100;
   --git-decoration-copied: #007acc;
-  --git-decoration-ignored: #8c8c8c;
+  --git-decoration-ignored: #707070;
   --git-graph-ref: #007acc;
   --git-graph-remote-ref: #b66dff;
   --git-graph-base-ref: #ea5c00;
@@ -304,6 +349,7 @@
   /* Drawn as a shadow so the outline never takes layout space. */
   --chat-hairline: 0 0 0 0.5px rgb(0 0 0 / 0.12);
   --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.03), 0 0 24px rgb(0 0 0 / 0.03);
+  --elevation-floating: 0 10px 24px rgb(0 0 0 / 0.18);
   /* Send, caret, links and the running label. */
   --chat-accent: #4176e6;
   --chat-accent-hover: #7aaaff;
@@ -361,13 +407,27 @@
   --destructive-foreground: #df2225;
   --border: rgb(255 255 255 / 0.07);
   --input: rgb(255 255 255 / 0.15);
-  --ring: #737373;
+  --ring: #a3a3a3;
   --terminal-pane-locate: var(--color-blue-400);
   --ai-action-accent: var(--color-violet-400);
   --status-success: #86efac;
   --status-attention: #fbbf24;
   --status-success-background: color-mix(in srgb, var(--status-success) 10%, transparent);
   --status-success-border: color-mix(in srgb, var(--status-success) 25%, transparent);
+  --status-danger: #fca5a5;
+  --status-info: #93c5fd;
+  --status-attention-background: color-mix(in srgb, var(--status-attention) 10%, transparent);
+  --status-attention-border: color-mix(in srgb, var(--status-attention) 25%, transparent);
+  --status-danger-background: color-mix(in srgb, var(--status-danger) 10%, transparent);
+  --status-danger-border: color-mix(in srgb, var(--status-danger) 25%, transparent);
+  --status-info-background: color-mix(in srgb, var(--status-info) 10%, transparent);
+  --status-info-border: color-mix(in srgb, var(--status-info) 25%, transparent);
+  /* Filled buttons and chips with white text; dark enough for 4.5:1 in both themes. */
+  --status-success-solid: #15803d;
+  --status-danger-solid: #b91c1c;
+  --status-success-ink: var(--status-success);
+  --switch-off: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+  --status-attention-ink: var(--status-attention);
   --chart-1: var(--color-blue-300);
   --chart-2: var(--color-blue-500);
   --chart-3: var(--color-blue-600);
@@ -382,7 +442,7 @@
   /* Match --border / --sidebar-border (7%) so the left sidebar's divider lines
      aren't brighter than the rest of the UI in dark mode (#5906). */
   --worktree-sidebar-border: rgb(255 255 255 / 0.07);
-  --worktree-sidebar-ring: #737373;
+  --worktree-sidebar-ring: #a3a3a3;
   --sidebar: #171717;
   --sidebar-foreground: #fafafa;
   --sidebar-primary: #1447e6;
@@ -390,7 +450,7 @@
   --sidebar-accent: #262626;
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: rgb(255 255 255 / 0.07);
-  --sidebar-ring: #525252;
+  --sidebar-ring: #a3a3a3;
   --terminal-pane-title-on-dark-fg: rgb(255 255 255 / 0.6);
   --terminal-pane-title-on-dark-input-fg: rgb(255 255 255 / 0.78);
   --terminal-pane-title-on-dark-placeholder: rgb(255 255 255 / 0.45);
@@ -407,11 +467,11 @@
   --terminal-pane-title-on-light-separator: rgb(24 24 27 / 0.1);
   --git-decoration-added: #81b88b;
   --git-decoration-modified: #e2c08d;
-  --git-decoration-deleted: #c74e39;
+  --git-decoration-deleted: #e57368;
   --git-decoration-renamed: #73c991;
   --git-decoration-untracked: #73c991;
   --git-decoration-copied: #73c991;
-  --git-decoration-ignored: #6e6e6e;
+  --git-decoration-ignored: #8a8a8a;
   --git-graph-ref: #3794ff;
   --git-graph-remote-ref: #b66dff;
   --git-graph-base-ref: #ea5c00;
@@ -435,6 +495,8 @@
   --chat-hairline: 0 0 0 0.5px rgb(255 255 255 / 0.14);
   /* Same faint ambient as light: in dark the hairline and raised fill do the separating. */
   --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.03), 0 0 24px rgb(0 0 0 / 0.03);
+  /* Dark surfaces swallow a light drop; floating needs more weight to read as above the page. */
+  --elevation-floating: 0 12px 32px rgb(0 0 0 / 0.42);
   --chat-accent: #7aaaff;
   --chat-accent-hover: #4176e6;
   --chat-raised: #2c2c2e;
@@ -1097,24 +1159,29 @@
   border: none;
   color: var(--muted-foreground);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 9999px;
   transition: background 150ms;
 }
 
 .sidebar-toggle:hover {
-  background: var(--accent);
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
   color: var(--foreground);
 }
 
-/* Why: tighter padding for the back/forward pair so the arrows sit
-   close together as a single navigation group, while the standard
-   .sidebar-toggle spacing stays unchanged for other titlebar icons. */
+.sidebar-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* Back/forward: same 28px button as the sidebar toggle, full foreground while enabled. */
 .sidebar-toggle-compact {
-  padding: 4px 5px;
   color: var(--foreground);
 }
 
@@ -1362,13 +1429,6 @@
 [data-worktree-card-surface][data-worktree-card-style='new'][data-worktree-card-active] {
   border-color: transparent;
   box-shadow: none;
-}
-
-/* Keyboard focus on the listbox's active descendant. --worktree-sidebar-ring fails in light mode. */
-[data-worktree-sidebar]:focus-visible
-  [data-worktree-card-surface][data-worktree-card-style='new'][data-worktree-card-active='primary'] {
-  outline: 1px solid color-mix(in srgb, var(--worktree-sidebar-foreground) 50%, transparent);
-  outline-offset: -1px;
 }
 
 /* The row never takes DOM focus (aria-activedescendant), so keyboard focus swaps time for the
@@ -4237,5 +4297,17 @@ html.onboarding-tour-start-transition::view-transition-new(root) {
     animation: none;
     background-image: none;
     -webkit-text-fill-color: currentColor;
+  }
+}
+
+/* Global reduced motion. Spinners keep turning: they are the only sign that work is in progress. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

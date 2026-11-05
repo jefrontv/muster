@@ -75,17 +75,12 @@ function SkillCard({ skill }: { skill: DiscoveredSkill }): React.JSX.Element {
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h3 className="min-w-0 truncate text-sm font-semibold">{skill.name}</h3>
-              <Badge
-                variant={skill.installed ? 'secondary' : 'outline'}
-                className="h-5 text-[10px]"
-              >
+              <Badge variant={skill.installed ? 'secondary' : 'outline'}>
                 {skill.installed
                   ? translate('auto.components.skills.SkillsPage.0c74e7ff34', 'Local')
                   : translate('auto.components.skills.SkillsPage.35b9a724a0', 'Available')}
               </Badge>
-              <Badge variant="outline" className="h-5 text-[10px]">
-                {sourceLabels[skill.sourceKind]}
-              </Badge>
+              <Badge variant="outline">{sourceLabels[skill.sourceKind]}</Badge>
             </div>
             {skill.description ? (
               <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
@@ -104,6 +99,10 @@ function SkillCard({ skill }: { skill: DiscoveredSkill }): React.JSX.Element {
                 variant="ghost"
                 size="icon-sm"
                 className="shrink-0"
+                aria-label={translate(
+                  'auto.components.skills.SkillsPage.dc4c3328ee',
+                  'Reveal file'
+                )}
                 onClick={() => {
                   void revealSkill()
                 }}
@@ -123,7 +122,7 @@ function SkillCard({ skill }: { skill: DiscoveredSkill }): React.JSX.Element {
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {skill.providers.map((provider) => (
-              <Badge key={provider} variant="outline" className="h-5 text-[10px]">
+              <Badge key={provider} variant="outline">
                 {providerLabels[provider]}
               </Badge>
             ))}
@@ -342,7 +341,7 @@ export default function SkillsPage(): React.JSX.Element {
                   {translate('auto.components.skills.SkillsPage.fb6bf60b52', 'Claude')}
                 </SelectItem>
                 <SelectItem value="agent-skills">
-                  {translate('auto.components.skills.SkillsPage.38e0951c3a', 'Agent Skills')}
+                  {translate('auto.components.skills.SkillsPage.38e0951c3a', 'Agent skills')}
                 </SelectItem>
               </SelectContent>
             </Select>

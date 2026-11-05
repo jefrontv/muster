@@ -67,7 +67,7 @@ describe('createRepoAiPersistQueue', () => {
     h.updateRepo.mockResolvedValue(false)
     const ok = await h.queue.persistTransform((base) => ({ ...base, enabled: true }))
     expect(ok).toBe(false)
-    expect(h.onError).toHaveBeenCalledWith('Failed to save Source Control AI settings.')
+    expect(h.onError).toHaveBeenCalledWith('Failed to save Source control AI settings.')
     expect(h.setPersisted).not.toHaveBeenCalled()
     expect(h.getPersisted()).toEqual({})
   })
@@ -76,7 +76,7 @@ describe('createRepoAiPersistQueue', () => {
     h.updateRepo.mockRejectedValue(new Error('ipc down'))
     const ok = await h.queue.persistTransform((base) => ({ ...base, enabled: true }))
     expect(ok).toBe(false)
-    expect(h.onError).toHaveBeenCalledWith('Failed to save Source Control AI settings.')
+    expect(h.onError).toHaveBeenCalledWith('Failed to save Source control AI settings.')
     expect(h.setPersisted).not.toHaveBeenCalled()
   })
 

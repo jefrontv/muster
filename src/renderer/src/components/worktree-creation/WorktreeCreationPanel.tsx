@@ -87,7 +87,7 @@ export default function WorktreeCreationPanel({
               'Cancel worktree creation'
             )}
             onClick={dismiss}
-            className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="hit-area flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground"
           >
             <X className="size-3" />
           </button>
@@ -109,7 +109,7 @@ export default function WorktreeCreationPanel({
                 ? (entry.error ??
                   translate(
                     'auto.components.worktree.creation.WorktreeCreationPanel.767951265d',
-                    'Something went wrong while creating the worktree.'
+                    'No reason was reported.'
                   ))
                 : null
             }
@@ -129,7 +129,7 @@ export default function WorktreeCreationPanel({
               {entry.error ??
                 translate(
                   'auto.components.worktree.creation.WorktreeCreationPanel.767951265d',
-                  'Something went wrong while creating the worktree.'
+                  'No reason was reported.'
                 )}
             </span>
             <button
@@ -143,6 +143,18 @@ export default function WorktreeCreationPanel({
                 'Retry'
               )}
             </button>
+            {entry.error ? (
+              <button
+                type="button"
+                onClick={() => void window.api.ui.writeClipboardText(entry.error ?? '')}
+                className="text-muted-foreground hover:text-foreground hover:underline"
+              >
+                {translate(
+                  'auto.components.worktree.creation.WorktreeCreationPanel.copyDetails',
+                  'Copy details'
+                )}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={dismiss}
@@ -296,7 +308,7 @@ function RecipeOutputLog({
       onScroll={handleScroll}
       className="scrollbar-sleek h-72 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 font-mono text-[11px] leading-4 text-muted-foreground"
     >
-      {log || <span className="text-muted-foreground/60">{emptyLabel}</span>}
+      {log || <span className="text-muted-foreground">{emptyLabel}</span>}
     </pre>
   )
 }

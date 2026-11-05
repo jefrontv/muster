@@ -284,7 +284,7 @@ export function launchAgentInNewTab(args: LaunchAgentInNewTabArgs): LaunchAgentI
         toast.message(
           translate(
             'auto.lib.launch.agent.in.new.tab.a5a1f7033f',
-            "Your {{value0}} wasn't sent — paste it once the agent is ready.",
+            "Your {{value0}} wasn't sent. Paste it once the agent is ready.",
             { value0: submitPastedPrompt ? 'prompt' : 'notes' }
           )
         )

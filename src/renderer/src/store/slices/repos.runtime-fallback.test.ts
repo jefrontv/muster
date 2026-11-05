@@ -321,7 +321,7 @@ describe('repo slice runtime folder fallback', () => {
     expect(store.getState().modalData).toEqual({ folderPath: '/local/non-git' })
     expect(store.getState().repos).toEqual([])
 
-    // Completing the flow via "Open as Folder" adds a kind:'folder' project whose
+    // Completing the flow via "Open as folder" adds a kind:'folder' project whose
     // workspace path IS the folder itself — proving no git worktree is created.
     const added = await store.getState().addNonGitFolder('/local/non-git')
 

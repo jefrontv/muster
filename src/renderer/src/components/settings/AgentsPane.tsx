@@ -215,7 +215,7 @@ export function AgentPermissionsSetting({
       <SettingsSubsectionHeader
         title={
           <span className="flex items-center gap-2">
-            {translate('auto.components.settings.AgentsPane.agentPermissions', 'Agent Permissions')}
+            {translate('auto.components.settings.AgentsPane.agentPermissions', 'Agent permissions')}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -224,7 +224,7 @@ export function AgentPermissionsSetting({
                     'auto.components.settings.AgentsPane.agentPermissionsInfo',
                     'Agent permissions info'
                   )}
-                  className="grid size-5 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="hit-area grid size-5 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Info className="size-3.5" />
                 </button>
@@ -252,7 +252,7 @@ export function AgentPermissionsSetting({
             }}
             ariaLabel={translate(
               'auto.components.settings.AgentsPane.agentPermissions',
-              'Agent Permissions'
+              'Agent permissions'
             )}
             size="sm"
             options={[
@@ -525,7 +525,7 @@ function AgentRow({
           <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
             {cmdOverride ? (
               <span>
-                <span className="text-muted-foreground/60 line-through">{defaultCmd}</span>
+                <span className="text-muted-foreground line-through">{defaultCmd}</span>
                 <span className="ml-1.5 text-foreground/80">{cmdOverride}</span>
               </span>
             ) : (
@@ -670,7 +670,7 @@ function DefaultAgentPill({ active, onClick, children }: DefaultAgentPillProps):
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
         active
           ? 'border-muted-foreground/40 bg-accent font-medium text-accent-foreground'
           : 'border-border bg-background/50 text-muted-foreground hover:border-muted-foreground/35 hover:text-foreground'
@@ -813,7 +813,7 @@ export function AgentsPane({
     <div className="space-y-8">
       <section className="space-y-4">
         <SettingsSubsectionHeader
-          title={translate('auto.components.settings.AgentsPane.385212c7a1', 'Default Agent')}
+          title={translate('auto.components.settings.AgentsPane.385212c7a1', 'Default agent')}
           description={agentOwnership.description}
         />
 

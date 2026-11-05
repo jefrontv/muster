@@ -85,7 +85,7 @@ function ActiveCollabSubtaskRow({
           onClick={() => setDraft(subtask.name)}
           className={cn(
             NAME_CLASS,
-            'px-1 py-0.5 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none',
+            'px-1 py-0.5 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none',
             subtask.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
           )}
         >
@@ -166,7 +166,7 @@ function ActiveCollabSubtaskComposer({
         disabled={disabled}
         placeholder={label}
         aria-label={label}
-        className="min-w-0 flex-1 border-b border-transparent bg-transparent px-1 py-0.5 text-[13px] text-foreground transition-colors outline-none placeholder:text-muted-foreground/60 focus:border-ring disabled:pointer-events-none disabled:opacity-50"
+        className="min-w-0 flex-1 border-b border-transparent bg-transparent px-1 py-0.5 text-[13px] text-foreground transition-colors outline-none placeholder:text-muted-foreground focus:border-ring disabled:pointer-events-none disabled:opacity-50"
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Escape') {

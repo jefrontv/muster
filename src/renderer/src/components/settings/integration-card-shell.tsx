@@ -1,14 +1,9 @@
 import { LoaderCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { IntegrationStatusPill, type IntegrationStatusTone } from '../integration-status-pill'
 import { useIntegrationCardShellClass } from './integration-card-presentation'
 
-export type IntegrationCardStatusTone = 'connected' | 'attention' | 'neutral'
-
-const STATUS_TONE_CLASSES: Record<IntegrationCardStatusTone, string> = {
-  connected: 'border-status-success-border bg-status-success-background text-status-success',
-  attention: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  neutral: 'border-border bg-background text-muted-foreground'
-}
+export type IntegrationCardStatusTone = IntegrationStatusTone
 
 export function IntegrationCardShell(props: {
   icon: React.ReactNode
@@ -26,14 +21,7 @@ export function IntegrationCardShell(props: {
   const status = props.checking ? (
     <LoaderCircle className="size-4 shrink-0 animate-spin text-muted-foreground" />
   ) : (
-    <span
-      className={cn(
-        'shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium',
-        STATUS_TONE_CLASSES[props.statusTone]
-      )}
-    >
-      {props.statusLabel}
-    </span>
+    <IntegrationStatusPill tone={props.statusTone}>{props.statusLabel}</IntegrationStatusPill>
   )
 
   return (

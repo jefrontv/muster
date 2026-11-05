@@ -10,7 +10,7 @@ export { getGeneralEditorSearchEntries } from './general-editor-search'
 
 export const getGeneralWorkspaceSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.general.search.4c95d08fa2', 'Workspace Directory'),
+    title: translate('auto.components.settings.general.search.4c95d08fa2', 'Workspace directory'),
     description: translate(
       'auto.components.settings.general.search.d0bc793689',
       'Root directory where workspace folders are created.'
@@ -23,7 +23,7 @@ export const getGeneralWorkspaceSearchEntries = createLocalizedCatalog(() => [
     ]
   },
   {
-    title: translate('auto.components.settings.general.search.141f71c69f', 'Nest Workspaces'),
+    title: translate('auto.components.settings.general.search.141f71c69f', 'Nest workspaces'),
     description: translate(
       'auto.components.settings.general.search.b9cffd374d',
       'Create workspaces inside a repo-named subfolder.'
@@ -37,7 +37,7 @@ export const getGeneralWorkspaceSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.general.search.913242091d',
-      'Ask Before Deleting Workspaces'
+      'Ask before deleting workspaces'
     ),
     description: translate(
       'auto.components.settings.general.search.ae98c9cf36',
@@ -55,7 +55,7 @@ export const getGeneralWorkspaceSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.general.search.d0a65b27fd',
-      'Ask Before Deleting Automations'
+      'Ask before deleting automations'
     ),
     description: translate(
       'auto.components.settings.general.search.a0c44061ee',
@@ -71,7 +71,7 @@ export const getGeneralWorkspaceSearchEntries = createLocalizedCatalog(() => [
     ]
   },
   {
-    title: translate('auto.components.settings.general.search.451d4af994', 'Open In Apps'),
+    title: translate('auto.components.settings.general.search.451d4af994', 'Open in apps'),
     description: translate(
       'auto.components.settings.general.search.a916662068',
       "Choose apps available from a workspace's Open in menu."
@@ -96,7 +96,7 @@ export const getGeneralWorkspaceSearchEntries = createLocalizedCatalog(() => [
 
 export const getGeneralNavigationSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.general.search.256d92554d', 'Tab Order'),
+    title: translate('auto.components.settings.general.search.256d92554d', 'Tab order'),
     description: translate(
       'auto.components.settings.general.search.e53d585ed6',
       'Recent or tab strip.'
@@ -119,7 +119,7 @@ export const getGeneralNavigationSearchEntries = createLocalizedCatalog(() => [
 
 export const getGeneralUpdateSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.general.search.e15af4eb64', 'Check for Updates'),
+    title: translate('auto.components.settings.general.search.e15af4eb64', 'Check for updates'),
     description: translate(
       'auto.components.settings.general.search.79ff46776e',
       'Check for app updates and install a newer Muster version.'
@@ -138,7 +138,7 @@ export const getGeneralUpdateSearchEntries = createLocalizedCatalog(() => [
 
 export const getGeneralShellCommandSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.general.search.shellCommand', 'Shell Command'),
+    title: translate('auto.components.settings.general.search.shellCommand', 'Shell command'),
     description: translate(
       'auto.components.settings.general.search.shellCommandDescription',
       'Install the muster command to open projects and control Muster from a terminal.'
@@ -157,7 +157,7 @@ export const getGeneralShellCommandSearchEntries = createLocalizedCatalog(() => 
 
 export const getGeneralAgentSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.general.search.db11502270', 'Default Agent'),
+    title: translate('auto.components.settings.general.search.db11502270', 'Default agent'),
     description: translate(
       'auto.components.settings.general.search.e2da948f59',
       'Pre-select an AI coding agent in the new-workspace composer.'

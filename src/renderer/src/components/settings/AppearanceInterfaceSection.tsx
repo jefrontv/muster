@@ -108,13 +108,13 @@ export function AppearanceInterfaceSection({
       </SearchableSetting>
 
       <SearchableSetting
-        title={translate('auto.components.settings.AppearancePane.5e6d7aba8d', 'UI Zoom')}
+        title={translate('auto.components.settings.AppearancePane.5e6d7aba8d', 'UI zoom')}
         description={zoomEntry?.description}
         keywords={zoomEntry?.keywords ?? ['zoom', 'scale', 'shortcut']}
         forceVisible={forceVisiblePrimary}
       >
         <SettingsRow
-          label={translate('auto.components.settings.AppearancePane.5e6d7aba8d', 'UI Zoom')}
+          label={translate('auto.components.settings.AppearancePane.5e6d7aba8d', 'UI zoom')}
           // Why: keep only the shortcut hint — the control itself makes "scale the
           // interface" obvious, but the keyboard gesture and its terminal-pane
           // exception are not discoverable from the buttons alone.
@@ -133,7 +133,7 @@ export function AppearanceInterfaceSection({
       </SearchableSetting>
 
       <SearchableSetting
-        title={translate('auto.components.settings.AppearancePane.terminalZoom', 'Terminal Zoom')}
+        title={translate('auto.components.settings.AppearancePane.terminalZoom', 'Terminal zoom')}
         description={translate(
           'auto.components.settings.AppearancePane.terminalZoomDesc',
           'Default zoom for terminal panes; applies to new panes and Cmd+0 reset.'
@@ -142,7 +142,7 @@ export function AppearanceInterfaceSection({
         forceVisible={forceVisiblePrimary}
       >
         <SettingsRow
-          label={translate('auto.components.settings.AppearancePane.terminalZoom', 'Terminal Zoom')}
+          label={translate('auto.components.settings.AppearancePane.terminalZoom', 'Terminal zoom')}
           // Why: the same gesture zooms only the focused pane; this row is the
           // persisted default those per-pane zooms reset back to.
           description={
@@ -160,13 +160,13 @@ export function AppearanceInterfaceSection({
       </SearchableSetting>
 
       <SearchableSetting
-        title={translate('auto.components.settings.AppearancePane.102d6b5f9b', 'IDE Font')}
+        title={translate('auto.components.settings.AppearancePane.102d6b5f9b', 'IDE font')}
         description={typographyEntry?.description}
         keywords={typographyEntry?.keywords ?? ['font', 'typeface', 'typography']}
         forceVisible={forceVisiblePrimary}
       >
         <SettingsRow
-          label={translate('auto.components.settings.AppearancePane.102d6b5f9b', 'IDE Font')}
+          label={translate('auto.components.settings.AppearancePane.102d6b5f9b', 'IDE font')}
           control={
             <FontAutocomplete
               value={settings.appFontFamily}
@@ -198,7 +198,6 @@ export function AppearanceInterfaceSection({
                       onValueChange={(value) => updateSettings({ uiLanguage: value as UiLanguage })}
                     >
                       <SelectTrigger
-                        size="sm"
                         className="min-w-[220px]"
                         aria-label={translate('settings.appearance.language.title', 'Language')}
                       >
@@ -220,7 +219,7 @@ export function AppearanceInterfaceSection({
             <SearchableSetting
               title={translate(
                 'auto.components.settings.AppearancePane.9868f39007',
-                'Titlebar App Name'
+                'Titlebar app name'
               )}
               description={titlebarEntry?.description}
               keywords={titlebarEntry?.keywords ?? ['titlebar', 'orca', 'app', 'name']}
@@ -228,7 +227,7 @@ export function AppearanceInterfaceSection({
               <SettingsSwitchRow
                 label={translate(
                   'auto.components.settings.AppearancePane.9868f39007',
-                  'Titlebar App Name'
+                  'Titlebar app name'
                 )}
                 checked={settings.showTitlebarAppName}
                 onChange={() =>
@@ -241,7 +240,7 @@ export function AppearanceInterfaceSection({
               <SearchableSetting
                 title={translate(
                   'auto.components.settings.AppearancePane.2edf606c46',
-                  'Minimize to Tray on Close'
+                  'Minimize to tray on close'
                 )}
                 description={systemTrayEntry?.description}
                 keywords={systemTrayEntry?.keywords ?? ['tray', 'minimize', 'close']}
@@ -249,7 +248,7 @@ export function AppearanceInterfaceSection({
                 <SettingsSwitchRow
                   label={translate(
                     'auto.components.settings.AppearancePane.2edf606c46',
-                    'Minimize to Tray on Close'
+                    'Minimize to tray on close'
                   )}
                   // Why: platform constraint + "close keeps Orca running" consequence are
                   // both non-obvious from the label alone.

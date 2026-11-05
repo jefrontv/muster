@@ -40,7 +40,7 @@ export function StatusBarUsageEmptyCta(): React.JSX.Element {
             'auto.components.status.bar.StatusBarUsageEmptyCta.d663430cf9',
             'Configure usage tracking'
           )}
-          className="inline-flex h-5 cursor-pointer items-center gap-1.5 rounded px-1.5 text-xs font-normal text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"
+          className="inline-flex h-5 cursor-pointer items-center gap-1.5 rounded-full px-2 text-xs font-normal text-muted-foreground outline-none transition-colors hover:bg-foreground/[0.07] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           <BarChart3 className="size-3.5" />
           <span>
@@ -71,7 +71,7 @@ export function StatusBarUsageEmptyCta(): React.JSX.Element {
                     'auto.components.status.bar.StatusBarUsageEmptyCta.9a542f46c7',
                     'Hide from status bar'
                   )}
-                  className="-mr-1 -mt-0.5 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"
+                  className="hit-area -mr-1 -mt-0.5 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground"
                 >
                   <EyeOff className="size-3.5" />
                 </button>

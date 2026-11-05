@@ -236,7 +236,7 @@ export function OrcaProfileSwitcher({
                     profile={activeProfile}
                     className={
                       sidebarPlacement
-                        ? 'size-4 border-worktree-sidebar-border bg-worktree-sidebar-accent text-[10px] text-worktree-sidebar-accent-foreground'
+                        ? 'size-4 border-worktree-sidebar-border bg-worktree-sidebar-accent text-[11px] text-worktree-sidebar-accent-foreground'
                         : undefined
                     }
                   />

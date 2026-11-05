@@ -28,6 +28,7 @@ export function UIZoomControl(): React.JSX.Element {
       <Button
         variant="outline"
         size="icon-sm"
+        aria-label={translate('auto.components.settings.UIZoomControl.zoomOut', 'Zoom out')}
         onClick={() => applyZoom(zoomLevel - ZOOM_STEP)}
         disabled={zoomLevel <= ZOOM_MIN}
       >
@@ -37,6 +38,7 @@ export function UIZoomControl(): React.JSX.Element {
       <Button
         variant="outline"
         size="icon-sm"
+        aria-label={translate('auto.components.settings.UIZoomControl.zoomIn', 'Zoom in')}
         onClick={() => applyZoom(zoomLevel + ZOOM_STEP)}
         disabled={zoomLevel >= ZOOM_MAX}
       >

@@ -177,7 +177,7 @@ export function QuickCommandsPane({
       <div className="flex items-center justify-between gap-3 py-2">
         <div className="space-y-1">
           <Label>
-            {translate('auto.components.settings.QuickCommandsPane.f91b649324', 'Saved Commands')}
+            {translate('auto.components.settings.QuickCommandsPane.f91b649324', 'Saved commands')}
           </Label>
           <p className="text-xs text-muted-foreground">{ownership.description}</p>
         </div>
@@ -188,7 +188,7 @@ export function QuickCommandsPane({
           onClick={() => setEditor({ mode: 'add', command: createDraftForCurrentFilter() })}
         >
           <Plus />
-          {translate('auto.components.settings.QuickCommandsPane.5aacc8f7dc', 'Add Command')}
+          {translate('auto.components.settings.QuickCommandsPane.5aacc8f7dc', 'Add command')}
         </Button>
       </div>
 

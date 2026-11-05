@@ -25,7 +25,6 @@ const WorktreeVisibilityDialog = lazyWithRetry(() => import('./WorktreeVisibilit
 const OrcaYamlTrustDialog = lazyWithRetry(() => import('./OrcaYamlTrustDialog'))
 const ForgetSshWorkspaceDialog = lazyWithRetry(() => import('./ForgetSshWorkspaceDialog'))
 
-const MIN_WIDTH = 220
 const MAX_WIDTH = 500
 import {
   WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
@@ -36,6 +35,7 @@ export {
   WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
   WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME
 } from './sidebar-resize-handle-style'
+import { LEFT_SIDEBAR_MIN_WIDTH, useRenderedLeftSidebarWidth } from './side-panel-room'
 
 type SidebarProps = {
   worktreeScrollOffsetRef: React.MutableRefObject<number>
@@ -47,7 +47,7 @@ function Sidebar({
   worktreeScrollAnchorRef
 }: SidebarProps): React.JSX.Element {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
-  const sidebarWidth = useAppStore((s) => s.sidebarWidth)
+  const sidebarWidth = useRenderedLeftSidebarWidth()
   const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
   const repos = useAppStore((s) => s.repos)
   const startupWorktreeRefreshCompleted = useAppStore((s) => s.startupWorktreeRefreshCompleted)
@@ -158,7 +158,7 @@ function Sidebar({
   const { containerRef, onResizeStart, isResizing } = useSidebarResize<HTMLDivElement>({
     isOpen: sidebarOpen,
     width: sidebarWidth,
-    minWidth: MIN_WIDTH,
+    minWidth: LEFT_SIDEBAR_MIN_WIDTH,
     maxWidth: MAX_WIDTH,
     deltaSign: 1,
     setWidth: setSidebarWidth,

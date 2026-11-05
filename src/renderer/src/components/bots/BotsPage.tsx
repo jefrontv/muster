@@ -2,13 +2,15 @@
 // partition, the only session that carries the server's owner token.
 import { Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from '../chat-mode/ChatModeToggle'
+import { BotsFailedActions } from './BotsFailedActions'
 import { BotsIntroDialog } from './BotsIntroDialog'
+import { BOTS_TOGGLE_CHROME_TOP, watchBotsSidebarRoom } from './bots-guest-layout'
 import { syncBotsHostTheme } from './bots-host-theme'
 import { useBotsStatus } from './use-bots-status'
 
@@ -16,9 +18,10 @@ function useBotsWebview(
   containerRef: React.RefObject<HTMLDivElement | null>,
   url: string | null,
   partition: string | null
-): void {
+): boolean {
   const webviewRef = useRef<Electron.WebviewTag | null>(null)
   const stopThemeSyncRef = useRef<(() => void) | null>(null)
+  const [sidebarRoom, setSidebarRoom] = useState(false)
   useEffect(() => {
     const container = containerRef.current
     if (!container || !url || !partition) {
@@ -37,7 +40,24 @@ function useBotsWebview(
     container.appendChild(webview)
     webviewRef.current = webview
     stopThemeSyncRef.current?.()
-    stopThemeSyncRef.current = syncBotsHostTheme(webview)
+    setSidebarRoom(false)
+    const stopTheme = syncBotsHostTheme(webview, {
+      get: () => ({
+        sidebarWidth: useAppStore.getState().sidebarWidth,
+        chromeTop: BOTS_TOGGLE_CHROME_TOP
+      }),
+      subscribe: (onChange) =>
+        useAppStore.subscribe((state, prev) => {
+          if (state.sidebarWidth !== prev.sidebarWidth) {
+            onChange()
+          }
+        })
+    })
+    const stopRoom = watchBotsSidebarRoom(webview, setSidebarRoom)
+    stopThemeSyncRef.current = () => {
+      stopTheme()
+      stopRoom()
+    }
   }, [containerRef, url, partition])
   useEffect(
     () => () => {
@@ -46,6 +66,7 @@ function useBotsWebview(
     },
     []
   )
+  return sidebarRoom
 }
 
 function BotsNotice({
@@ -68,22 +89,33 @@ function BotsNotice({
   )
 }
 
+const MUSTER_RELEASES_URL = 'https://github.com/jefrontv/muster/releases/latest'
+
 export default function BotsPage({ active = true }: { active?: boolean }): React.JSX.Element {
   const { status, restart } = useBotsStatus()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const running = status.state === 'running' ? status : null
-  useBotsWebview(containerRef, running?.url ?? null, running?.partition ?? null)
+  const sidebarRoom = useBotsWebview(containerRef, running?.url ?? null, running?.partition ?? null)
+  // Once the guest's sidebar leaves room, the toggle sits where Code mode has it and no band shifts the page.
+  const floatToggle = Boolean(running) && sidebarRoom
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col bg-background', !active && 'hidden')}>
-      <div className="flex shrink-0 items-center border-b border-border">
-        {/* Sidebar width so the toggle matches Code mode's exactly. */}
-        <div className="shrink-0 p-3" style={{ width: sidebarWidth }}>
-          <ChatModeToggle mode="bots" />
+      {floatToggle ? null : (
+        <div className="flex shrink-0 items-center border-b border-border">
+          {/* Sidebar width so the toggle matches Code mode's exactly. */}
+          <div className="shrink-0 p-3" style={{ width: sidebarWidth }}>
+            <ChatModeToggle mode="bots" />
+          </div>
         </div>
-      </div>
+      )}
       <div className="relative min-h-0 flex-1">
+        {floatToggle ? (
+          <div className="absolute top-0 left-0 z-10 p-3" style={{ width: sidebarWidth }}>
+            <ChatModeToggle mode="bots" />
+          </div>
+        ) : null}
         <div ref={containerRef} className={cn('absolute inset-0 flex', !running && 'hidden')} />
         {status.state === 'starting' || status.state === 'stopped' ? (
           <BotsNotice
@@ -95,23 +127,35 @@ export default function BotsPage({ active = true }: { active?: boolean }): React
           <BotsNotice
             title={translate(
               'auto.components.bots.BotsPage.missing',
-              'Muster Bots is not included in this build'
+              "Muster Bots isn't part of this build."
             )}
-            detail={translate(
-              'auto.components.bots.BotsPage.missingDetail',
-              'In a development checkout, run pnpm fetch:muster-bots and reopen this tab.'
-            )}
+            detail={
+              import.meta.env.DEV
+                ? translate(
+                    'auto.components.bots.BotsPage.missingDetail',
+                    'In a development checkout, run pnpm fetch:muster-bots and reopen this tab.'
+                  )
+                : translate(
+                    'auto.components.bots.BotsPage.missingReleaseDetail',
+                    'Install the latest Muster release to get it.'
+                  )
+            }
+            action={
+              import.meta.env.DEV ? null : (
+                <Button size="sm" variant="outline" asChild>
+                  <a href={MUSTER_RELEASES_URL} target="_blank" rel="noopener noreferrer">
+                    {translate('auto.components.bots.BotsPage.getLatest', 'Get the latest Muster')}
+                  </a>
+                </Button>
+              )
+            }
           />
         ) : null}
         {status.state === 'failed' ? (
           <BotsNotice
             title={translate('auto.components.bots.BotsPage.failed', 'Muster Bots stopped')}
             detail={status.error}
-            action={
-              <Button size="sm" variant="outline" onClick={restart}>
-                {translate('auto.components.bots.BotsPage.restart', 'Restart')}
-              </Button>
-            }
+            action={<BotsFailedActions error={status.error} onRestart={restart} />}
           />
         ) : null}
       </div>

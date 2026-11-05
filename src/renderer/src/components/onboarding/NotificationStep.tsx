@@ -197,7 +197,7 @@ export function NotificationStep({
             <FileAudio className="size-4" />
             {translate(
               'auto.components.onboarding.NotificationStep.53aaffe49a',
-              'Notification Sound'
+              'Notification sound'
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -237,11 +237,11 @@ export function NotificationStep({
                     {customPath
                       ? translate(
                           'auto.components.onboarding.NotificationStep.ac80d97e02',
-                          'Change Custom File'
+                          'Change custom file'
                         )
                       : translate(
                           'auto.components.onboarding.NotificationStep.c0692baa52',
-                          'Choose Custom File'
+                          'Choose custom file'
                         )}
                   </span>
                 </SelectItem>
@@ -257,7 +257,7 @@ export function NotificationStep({
               <BellRing className="size-3.5" />
               {translate(
                 'auto.components.onboarding.NotificationStep.3bede04483',
-                'Send Test Notification'
+                'Send test notification'
               )}
             </Button>
           </div>

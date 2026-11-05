@@ -234,7 +234,7 @@ describe('WorktreeOpenInMenu', () => {
         { id: 'fake', label: 'VS Code', command: 'cursor' },
         { id: 'compound', label: 'VS Code Reuse', command: 'code --reuse-window' }
       ],
-      'Finder'
+      'finder'
     )
 
     expect(getOpenInEntryAvailability(entries[0], mockState.settings, 'ssh-1')).toEqual({

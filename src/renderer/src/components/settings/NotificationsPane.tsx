@@ -113,7 +113,7 @@ export function NotificationsPane({
       <NotificationSettingToggle
         label={translate(
           'auto.components.settings.NotificationsPane.841c8c549f',
-          'Enable Notifications'
+          'Enable notifications'
         )}
         description={translate(
           'auto.components.settings.NotificationsPane.deff6d30da',
@@ -134,7 +134,7 @@ export function NotificationsPane({
         icon={<Bot className="size-4" />}
         label={translate(
           'auto.components.settings.NotificationsPane.ca76d06fd2',
-          'Agent Task Complete'
+          'Agent task complete'
         )}
         description={translate(
           'auto.components.settings.NotificationsPane.55f901a59b',
@@ -153,7 +153,7 @@ export function NotificationsPane({
         icon={<MessageCircleQuestion className="size-4" />}
         label={translate(
           'auto.components.settings.NotificationsPane.agentNeedsInputLabel',
-          'Chat Needs You'
+          'Chat needs you'
         )}
         description={translate(
           'auto.components.settings.NotificationsPane.agentNeedsInputDescription',
@@ -170,7 +170,7 @@ export function NotificationsPane({
 
       <NotificationSettingToggle
         icon={<Siren className="size-4" />}
-        label={translate('auto.components.settings.NotificationsPane.591fe605b9', 'Terminal Bell')}
+        label={translate('auto.components.settings.NotificationsPane.591fe605b9', 'Terminal bell')}
         description={translate(
           'auto.components.settings.NotificationsPane.b6fc369244',
           'A background terminal emits a bell character.'
@@ -188,7 +188,7 @@ export function NotificationsPane({
         icon={<Globe className="size-4" />}
         label={translate(
           'auto.components.settings.NotificationsPane.siteRunComplete',
-          'Site Import / Deploy'
+          'Site import / Deploy'
         )}
         description={translate(
           'auto.components.settings.NotificationsPane.siteRunCompleteDescription',
@@ -257,7 +257,7 @@ export function NotificationsPane({
       <NotificationSettingToggle
         label={translate(
           'auto.components.settings.NotificationsPane.00cd406dbb',
-          'Suppress While Focused'
+          'Suppress while focused'
         )}
         description={translate(
           'auto.components.settings.NotificationsPane.2772d2f257',
@@ -283,7 +283,7 @@ export function NotificationsPane({
           <BellRing className="size-3.5" />
           {translate(
             'auto.components.settings.NotificationsPane.906b4afebf',
-            'Send Test Notification'
+            'Send test notification'
           )}
         </Button>
       </div>

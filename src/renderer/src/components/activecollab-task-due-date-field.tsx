@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { CalendarPlus, LoaderCircle, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -93,7 +94,10 @@ export function ActiveCollabTaskDueDateField({
             {label ?? (
               <>
                 <CalendarPlus className="size-3.5" />
-                {translate('auto.components.activecollab.task_workspace.set_due_date', 'Set...')}
+                {translate(
+                  'auto.components.activecollab.task_workspace.set_due_date',
+                  'Set due date'
+                )}
               </>
             )}
           </Button>
@@ -148,9 +152,9 @@ export function ActiveCollabTaskDueDateField({
         ) : null}
       </Popover>
       {status === 'overdue' ? (
-        <span className="shrink-0 rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive">
+        <Badge variant="danger" className="shrink-0">
           {translate('auto.components.activecollab.task_workspace.overdue', 'Overdue')}
-        </span>
+        </Badge>
       ) : null}
       {busy ? (
         <LoaderCircle className="size-3 shrink-0 animate-spin text-muted-foreground" />

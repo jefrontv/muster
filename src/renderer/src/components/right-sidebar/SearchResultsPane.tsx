@@ -65,7 +65,7 @@ export function SearchResultsPane({
       {/* Why: the summary is rendered outside the virtualizer so it stays
          pinned at the top while the user scrolls through results. */}
       {results && rows.length > 0 && (
-        <div className="px-2 py-1 text-[10px] text-muted-foreground border-b border-border">
+        <div className="px-2 py-1 text-[11px] text-muted-foreground border-b border-border">
           {results.totalMatches}{' '}
           {translate('auto.components.right.sidebar.Search.6aeda362ed', 'result')}
           {results.totalMatches !== 1 ? 's' : ''}{' '}

@@ -393,7 +393,7 @@ describe('TerminalAppearanceSection ghostty import wiring', () => {
   })
 
   it('routes dark and light theme searches to the matching catalog target', () => {
-    mockSettingsSearchQuery = 'Light Divider Color'
+    mockSettingsSearchQuery = 'Light divider color'
     const lightElement = TerminalAppearanceSection({
       settings: {} as never,
       updateSettings: () => {},
@@ -405,7 +405,7 @@ describe('TerminalAppearanceSection ghostty import wiring', () => {
 
     expect(findTerminalThemeCatalogSection(lightElement)?.props.preferredTarget).toBe('light')
 
-    mockSettingsSearchQuery = 'Dark Theme'
+    mockSettingsSearchQuery = 'Dark theme'
     resetMockState()
     const darkElement = TerminalAppearanceSection({
       settings: {} as never,

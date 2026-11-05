@@ -569,10 +569,10 @@ describe('barColor', () => {
   it('maps used percent to neutral / yellow / red bands', () => {
     expect(barColor(0)).toBe('bg-muted-foreground/40')
     expect(barColor(59)).toBe('bg-muted-foreground/40')
-    expect(barColor(60)).toBe('bg-yellow-500')
-    expect(barColor(79)).toBe('bg-yellow-500')
-    expect(barColor(80)).toBe('bg-red-500')
-    expect(barColor(100)).toBe('bg-red-500')
+    expect(barColor(60)).toBe('bg-status-attention')
+    expect(barColor(79)).toBe('bg-status-attention')
+    expect(barColor(80)).toBe('bg-status-danger')
+    expect(barColor(100)).toBe('bg-status-danger')
   })
 })
 

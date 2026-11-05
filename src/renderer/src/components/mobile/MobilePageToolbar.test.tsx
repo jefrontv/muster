@@ -20,7 +20,7 @@ describe('MobilePageToolbar', () => {
 
     expect(html).toContain('Hide from sidebar')
     expect(html).toContain('mp-page-toolbar-primary')
-    expect(html).toContain('Configure in Settings')
+    expect(html).toContain('Configure in settings')
     expect(html).not.toContain('Remove Muster Mobile')
   })
 

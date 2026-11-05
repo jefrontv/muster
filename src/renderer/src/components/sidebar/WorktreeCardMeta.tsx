@@ -336,7 +336,7 @@ export function WorktreeCardDetailsHover({
                       <LinearStateBadge stateName={linearIssue.stateName} />
                     )}
                     {(linearIssue.labels ?? []).map((label) => (
-                      <Badge key={label} variant="outline" className="h-4 px-1.5 text-[9px]">
+                      <Badge key={label} variant="outline">
                         {label}
                       </Badge>
                     ))}
@@ -389,7 +389,7 @@ export function WorktreeCardDetailsHover({
               <WorktreeCardDetailSectionContent className="space-y-2">
                 <CommentMarkdown
                   content={comment ?? ''}
-                  className="text-[11.5px] text-foreground break-words leading-normal [&_.comment-md-p]:block [&_.comment-md-p+.comment-md-p]:mt-1"
+                  className="text-[11px] text-foreground break-words leading-normal [&_.comment-md-p]:block [&_.comment-md-p+.comment-md-p]:mt-1"
                 />
               </WorktreeCardDetailSectionContent>
             </WorktreeCardDetailSection>

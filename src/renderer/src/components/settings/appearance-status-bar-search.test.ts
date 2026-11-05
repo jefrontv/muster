@@ -22,7 +22,7 @@ describe('getStatusBarToggles', () => {
     const antigravityToggle = getStatusBarToggles().find((entry) => entry.id === 'antigravity')
 
     expect(antigravityToggle).toMatchObject({
-      title: 'Antigravity Usage',
+      title: 'Antigravity usage',
       description: 'Show Antigravity subscription usage in the status bar.',
       toggleDescription: 'Show Antigravity subscription usage for the active workspace.'
     })
@@ -35,7 +35,7 @@ describe('getStatusBarToggles', () => {
     const miniMaxToggle = getStatusBarToggles().find((entry) => entry.id === 'minimax')
 
     expect(miniMaxToggle).toMatchObject({
-      title: 'MiniMax Usage',
+      title: 'MiniMax usage',
       description: 'Show MiniMax subscription usage in the status bar.',
       toggleDescription: 'Show MiniMax subscription usage for the active workspace.'
     })

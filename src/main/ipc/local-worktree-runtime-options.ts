@@ -19,20 +19,21 @@ function getCandidateLocalWorktreePaths(
   return new Set([worktreePath, resolvedWorktreePath].map(comparableLocalPath))
 }
 
-function hasRegisteredWorktreeMetaForRepo(
+// Why one pass: checking meta per repo walked every meta row once per repo (repos x rows) on each git:status.
+function getRepoIdsWithRegisteredWorktreeMeta(
   store: Store,
-  repoId: string,
   candidatePaths: Set<string>
-): boolean {
+): Set<string> {
+  const repoIds = new Set<string>()
   const worktreeMeta =
     typeof store.getAllWorktreeMeta === 'function' ? store.getAllWorktreeMeta() : {}
   for (const worktreeId of Object.keys(worktreeMeta)) {
     const parsed = splitWorktreeId(worktreeId)
-    if (parsed?.repoId === repoId && candidatePaths.has(comparableLocalPath(parsed.worktreePath))) {
-      return true
+    if (parsed && candidatePaths.has(comparableLocalPath(parsed.worktreePath))) {
+      repoIds.add(parsed.repoId)
     }
   }
-  return false
+  return repoIds
 }
 
 export function getLocalRepoForRegisteredWorktree(
@@ -45,14 +46,17 @@ export function getLocalRepoForRegisteredWorktree(
   }
 
   const candidatePaths = getCandidateLocalWorktreePaths(worktreePath, resolvedWorktreePath)
-  return store
-    .getRepos()
-    .find(
-      (repo) =>
-        !repo.connectionId &&
-        (candidatePaths.has(comparableLocalPath(repo.path)) ||
-          hasRegisteredWorktreeMetaForRepo(store, repo.id, candidatePaths))
-    )
+  const localRepos = store.getRepos().filter((repo) => !repo.connectionId)
+  const byPath = localRepos.find((repo) => candidatePaths.has(comparableLocalPath(repo.path)))
+  // Why: a path match on an earlier repo used to win over a meta match on a later one; keep that order.
+  let metaRepoIds: Set<string> | null = null
+  return localRepos.find((repo) => {
+    if (repo === byPath) {
+      return true
+    }
+    metaRepoIds ??= getRepoIdsWithRegisteredWorktreeMeta(store, candidatePaths)
+    return metaRepoIds.has(repo.id)
+  })
 }
 
 /** Git options for a repo already resolved by `getLocalRepoForRegisteredWorktree`,

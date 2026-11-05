@@ -59,7 +59,7 @@ describe('open review in browser dropdown row', () => {
 
   it('is enabled with no hint when a review link exists', () => {
     const item = findItem(resolveDropdownItems(inputs()), 'open_review_in_browser')
-    expect(item.label).toBe('Open Pull Request in Browser')
+    expect(item.label).toBe('Open pull request in browser')
     expect(item.disabled).toBe(false)
     expect(item.hint).toBeUndefined()
   })
@@ -75,7 +75,7 @@ describe('open review in browser dropdown row', () => {
       'open_review_in_browser'
     )
     expect(item.disabled).toBe(true)
-    expect(item.hint).toBe('Publish Branch first')
+    expect(item.hint).toBe('Publish branch first')
   })
 
   it('is disabled when a pull request is already open', () => {

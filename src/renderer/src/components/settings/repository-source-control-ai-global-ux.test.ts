@@ -115,7 +115,7 @@ describe('useRepositorySourceControlAiGlobalUx', () => {
       result.current.commitCustomCommand('bad cmd')
     })
     expect(result.current.displayRepoAi.customAgentCommand).toBe('bad cmd')
-    expect(result.current.saveError).toBe('Failed to save Source Control AI settings.')
+    expect(result.current.saveError).toBe('Failed to save Source control AI settings.')
   })
 
   it('rolls an optimistic immediate field back to persisted when the persist fails', async () => {
@@ -126,7 +126,7 @@ describe('useRepositorySourceControlAiGlobalUx', () => {
     })
     // A failed save must not leave the toggle showing an unsaved value as if it were saved.
     expect(result.current.displayRepoAi.enabled).toBeUndefined()
-    expect(result.current.saveError).toBe('Failed to save Source Control AI settings.')
+    expect(result.current.saveError).toBe('Failed to save Source control AI settings.')
   })
 
   it('leaves an action recipe row dirty and retryable when its save fails', async () => {
@@ -140,7 +140,7 @@ describe('useRepositorySourceControlAiGlobalUx', () => {
       await result.current.saveActionRecipeText('fixCommitFailure')
     })
     expect(result.current.actionDirtyById.fixCommitFailure).toBe(true)
-    expect(result.current.saveError).toBe('Failed to save Source Control AI settings.')
+    expect(result.current.saveError).toBe('Failed to save Source control AI settings.')
   })
 
   it('preserves keystrokes typed while an action save is in flight', async () => {
@@ -231,6 +231,6 @@ describe('useRepositorySourceControlAiGlobalUx', () => {
     // Enablement rolls back; the successfully saved agent override must remain visible.
     expect(result.current.displayRepoAi.enabled).toBeUndefined()
     expect(result.current.displayRepoAi.actionOverrides?.fixCommitFailure?.agentId).toBe('codex')
-    expect(result.current.saveError).toBe('Failed to save Source Control AI settings.')
+    expect(result.current.saveError).toBe('Failed to save Source control AI settings.')
   })
 })

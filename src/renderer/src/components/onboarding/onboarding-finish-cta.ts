@@ -12,15 +12,26 @@ export function onboardingFinishCtaLabel(defaultView: OnboardingDefaultView): st
 }
 
 export function onboardingFinishBusyLabel(defaultView: OnboardingDefaultView): string {
-  return defaultView === 'chat'
-    ? 'Opening Add Workspace...'
-    : translate('auto.components.onboarding.finish.openingNewSite', 'Opening New site...')
+  if (defaultView === 'chat') {
+    return translate(
+      'auto.components.onboarding.finish.openingNewWorkspace',
+      'Opening new workspace…'
+    )
+  }
+  if (defaultView === 'bots') {
+    return translate('auto.components.onboarding.finish.openingBots', 'Opening Bots…')
+  }
+  return translate('auto.components.onboarding.finish.openingNewSite', 'Opening new site…')
 }
 
 export function openOnboardingFinishSurface(defaultView: OnboardingDefaultView): void {
   if (defaultView === 'chat') {
     applyOnboardingDefaultView('chat')
     useAppStore.getState().setChatWorkspaceCreateOpen?.(true)
+    return
+  }
+  if (defaultView === 'bots') {
+    applyOnboardingDefaultView('bots')
     return
   }
   const state = useAppStore.getState()

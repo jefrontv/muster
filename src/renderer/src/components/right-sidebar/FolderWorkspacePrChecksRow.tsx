@@ -1,4 +1,5 @@
 import { ChevronRight, ExternalLink, GitMerge } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { openHttpLink } from '@/lib/http-link-routing'
@@ -59,7 +60,7 @@ export function FolderWorkspacePrChecksRow({
       <div
         role="button"
         tabIndex={0}
-        className="flex w-full min-w-0 items-start gap-2 rounded-md px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="flex w-full min-w-0 items-start gap-2 rounded-md px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={onToggle}
         onKeyDown={(event) => {
           if (event.key !== 'Enter' && event.key !== ' ') {
@@ -106,7 +107,7 @@ export function FolderWorkspacePrChecksRow({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="rounded p-1 text-muted-foreground opacity-80 hover:bg-accent hover:text-foreground group-hover:opacity-100"
+                className="rounded-full p-1 text-muted-foreground opacity-80 hover:bg-accent hover:text-foreground group-hover:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={openExternalLabel}
                 onClick={(event) => {
                   event.stopPropagation()
@@ -144,14 +145,14 @@ function PrChecksRowHeader({ row }: { row: ParentPrChecksRow }): React.JSX.Eleme
         {row.worktree.displayName}
       </span>
       {row.reviewLabel ? (
-        <span className="inline-flex shrink-0 items-center rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+        <Badge variant="muted" className="shrink-0">
           {row.reviewLabel}
-        </span>
+        </Badge>
       ) : null}
       {row.reviewState ? (
         <span
           className={cn(
-            'shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+            'shrink-0 rounded border px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide',
             prStateColor(row.reviewState)
           )}
         >

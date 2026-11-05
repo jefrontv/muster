@@ -128,8 +128,8 @@ export function MacNotificationPermissionCard({
 
   if (state === 'enabled') {
     return (
-      <section className="flex items-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] px-5 py-4">
-        <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={3} />
+      <section className="flex items-center gap-2.5 rounded-xl border border-status-success-border bg-status-success-background px-5 py-4">
+        <Check className="size-4 shrink-0 text-status-success" strokeWidth={3} />
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">
             {translate(
@@ -177,7 +177,7 @@ export function MacNotificationPermissionCard({
             <Settings className="size-3.5" />
             {translate(
               'auto.components.onboarding.NotificationStep.4f6a1da718',
-              'Open System Settings'
+              'Open system settings'
             )}
           </Button>
         </div>
@@ -189,18 +189,18 @@ export function MacNotificationPermissionCard({
     return (
       <section
         role="alert"
-        className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-4"
+        className="rounded-xl border border-status-attention-border bg-status-attention-background px-5 py-4"
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
+            <div className="flex items-center gap-2 text-sm font-semibold text-status-attention">
               <TriangleAlert className="size-4" />
               {translate(
                 'auto.components.onboarding.NotificationStep.90b5d2e363',
                 'macOS is not delivering Muster notifications'
               )}
             </div>
-            <p className="max-w-[58ch] text-[13px] leading-relaxed text-amber-700/80 dark:text-amber-200/80">
+            <p className="max-w-[58ch] text-[13px] leading-relaxed text-status-attention">
               {translate(
                 'auto.components.onboarding.mac.notification.permission.card.721d2bedb6',
                 'Turn on Allow notifications for Muster in System Settings.'
@@ -216,7 +216,7 @@ export function MacNotificationPermissionCard({
             <Settings className="size-3.5" />
             {translate(
               'auto.components.onboarding.NotificationStep.4f6a1da718',
-              'Open System Settings'
+              'Open system settings'
             )}
           </Button>
         </div>

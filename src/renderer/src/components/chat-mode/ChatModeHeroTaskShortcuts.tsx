@@ -43,7 +43,7 @@ export function ChatModeHeroTaskShortcuts(): React.JSX.Element | null {
             <span
               className={cn(
                 'shrink-0 font-medium',
-                overdue ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground'
+                overdue ? 'text-status-attention' : 'text-muted-foreground'
               )}
             >
               {overdue

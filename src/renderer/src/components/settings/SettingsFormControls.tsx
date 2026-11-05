@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Why: these small settings form primitives and controls
 co-locate shared layout and keyboard interaction logic, which keeps the settings
 panel wiring simple even though the file exceeds the default line limit. */
+import { Badge } from '@/components/ui/badge'
 import type React from 'react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ScrollArea } from '../ui/scroll-area'
@@ -19,6 +20,9 @@ import {
 } from './settings-form-option-filter'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
+import { toggleVariants } from '@/components/ui/toggle'
+import { SEGMENTED_TRACK } from '@/components/ui/toggle-group'
 
 type SettingsSwitchProps = {
   checked: boolean
@@ -36,26 +40,14 @@ export function SettingsSwitch({
   disabled
 }: SettingsSwitchProps): React.JSX.Element {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
+    <Switch
+      checked={checked}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       disabled={disabled}
       onClick={onChange}
-      className={cn(
-        'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
-        checked ? 'bg-foreground' : 'bg-muted-foreground/30'
-      )}
-    >
-      <span
-        className={cn(
-          'pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform',
-          checked ? 'translate-x-4' : 'translate-x-0.5'
-        )}
-      />
-    </button>
+      className="shrink-0"
+    />
   )
 }
 
@@ -169,7 +161,9 @@ export function SettingsSegmentedControl<T extends string | number>({
       role="radiogroup"
       aria-label={ariaLabel}
       className={cn(
-        'inline-flex items-center rounded-md border border-border bg-background/50 p-0.5',
+        'inline-flex items-center gap-0.5 rounded-full',
+        SEGMENTED_TRACK,
+        size === 'sm' ? 'h-7' : 'h-9',
         equalWidth && 'w-full'
       )}
     >
@@ -189,14 +183,12 @@ export function SettingsSegmentedControl<T extends string | number>({
               }
             }}
             className={cn(
-              'rounded-sm text-center outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50',
-              size === 'sm' ? 'px-2.5 py-0.5 text-xs' : 'px-3 py-1 text-sm',
-              equalWidth && 'flex-1',
-              active
-                ? 'bg-accent font-medium text-accent-foreground'
-                : opt.disabled
-                  ? 'cursor-not-allowed text-muted-foreground/50'
-                  : 'text-muted-foreground hover:text-foreground'
+              toggleVariants({ variant: 'segmented' }),
+              equalWidth ? 'flex-1 basis-0' : 'flex-none basis-auto',
+              size === 'sm' ? 'px-2.5 text-xs' : 'px-3',
+              // Disabled options keep pointer events so their tooltip can explain why.
+              'disabled:pointer-events-auto disabled:cursor-not-allowed disabled:hover:bg-transparent',
+              active && 'bg-foreground text-background hover:bg-foreground hover:text-background'
             )}
           >
             {opt.label}
@@ -229,19 +221,12 @@ export function SettingsBadge({
   className
 }: SettingsBadgeProps): React.JSX.Element {
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium',
-        tone === 'accent'
-          ? 'border-foreground/20 bg-foreground/10 text-foreground'
-          : tone === 'muted'
-            ? 'border-border/40 bg-muted/30 text-muted-foreground'
-            : 'border-border/50 bg-background/50 text-foreground/80',
-        className
-      )}
+    <Badge
+      variant={tone === 'accent' ? 'secondary' : tone === 'muted' ? 'muted' : 'outline'}
+      className={className}
     >
       {children}
-    </span>
+    </Badge>
   )
 }
 
@@ -470,7 +455,7 @@ export function ThemePicker({
                         </span>
                       ) : null}
                       {selectedTheme === theme.value ? (
-                        <span className="ml-3 shrink-0 text-[11px] uppercase tracking-[0.16em]">
+                        <span className="ml-3 shrink-0 text-[11px] uppercase tracking-[0.05em]">
                           {translate(
                             'auto.components.settings.SettingsFormControls.9119fb2268',
                             'Current'
@@ -809,7 +794,7 @@ export function FontAutocomplete({
                     setOpen(true)
                     focusInput()
                   }}
-                  className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={translate(
                     'auto.components.settings.SettingsFormControls.a4ff6143f8',
                     'Clear font selection'
@@ -836,7 +821,7 @@ export function FontAutocomplete({
                     focusInput()
                   }
                 }}
-                className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label={translate(
                   'auto.components.settings.SettingsFormControls.c766f8ac75',
                   'Toggle font suggestions'

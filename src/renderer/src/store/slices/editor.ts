@@ -411,6 +411,8 @@ export type EditorSlice = {
 
   // Right sidebar
   rightSidebarOpen: boolean
+  // Set while the narrow-window fold hides the sidebar; never persisted, so the saved value stays the user's.
+  rightSidebarAutoFolded: boolean
   rightSidebarWidth: number
   rightSidebarTab: ActiveRightSidebarTab
   rightSidebarExplorerView: RightSidebarExplorerView
@@ -420,6 +422,7 @@ export type EditorSlice = {
   activityBarPosition: ActivityBarPosition
   toggleRightSidebar: () => void
   setRightSidebarOpen: (open: boolean) => void
+  setRightSidebarAutoFolded: (folded: boolean) => void
   setRightSidebarWidth: (width: number) => void
   setRightSidebarTab: (tab: ActiveRightSidebarTab) => void
   setRightSidebarExplorerView: (view: RightSidebarExplorerView) => void
@@ -430,7 +433,7 @@ export type EditorSlice = {
   }) => void
   setActivityBarPosition: (position: ActivityBarPosition) => void
 
-  // File explorer state
+  // File Explorer state
   expandedDirs: Record<string, Set<string>> // worktreeId -> set of expanded dir paths
   collapseAllDirs: (worktreeId: string) => void
   collapseDirSubtree: (worktreeId: string, dirPath: string) => void
@@ -1450,6 +1453,7 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
 
   // Right sidebar
   rightSidebarOpen: false,
+  rightSidebarAutoFolded: false,
   rightSidebarWidth: 280,
   rightSidebarTab: 'explorer',
   rightSidebarExplorerView: 'files',
@@ -1457,8 +1461,18 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
   rightSidebarTabByWorktree: {},
   rightSidebarExplorerViewByWorktree: {},
   activityBarPosition: 'top',
-  toggleRightSidebar: () => set((s) => ({ rightSidebarOpen: !s.rightSidebarOpen })),
-  setRightSidebarOpen: (open) => set({ rightSidebarOpen: open }),
+  toggleRightSidebar: () =>
+    set((s) => ({ rightSidebarOpen: !s.rightSidebarOpen, rightSidebarAutoFolded: false })),
+  setRightSidebarOpen: (open) => set({ rightSidebarOpen: open, rightSidebarAutoFolded: false }),
+  setRightSidebarAutoFolded: (folded) =>
+    set((s) => {
+      if (folded) {
+        return s.rightSidebarOpen ? { rightSidebarOpen: false, rightSidebarAutoFolded: true } : {}
+      }
+      return s.rightSidebarAutoFolded
+        ? { rightSidebarOpen: true, rightSidebarAutoFolded: false }
+        : {}
+    }),
   setRightSidebarWidth: (width) => set({ rightSidebarWidth: width }),
   setRightSidebarTab: (tab) =>
     set((s) => ({
@@ -1482,6 +1496,7 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
   showRightSidebarFiles: () =>
     set((s) => ({
       rightSidebarOpen: true,
+      rightSidebarAutoFolded: false,
       rightSidebarTab: 'explorer',
       rightSidebarExplorerView: 'files',
       rightSidebarRouteRequestId: s.rightSidebarRouteRequestId + 1,
@@ -1498,6 +1513,7 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
     set((s) => {
       const next = {
         rightSidebarOpen: true,
+        rightSidebarAutoFolded: false,
         rightSidebarTab: 'explorer' as const,
         rightSidebarExplorerView: 'search' as const,
         rightSidebarRouteRequestId: s.rightSidebarRouteRequestId + 1,
@@ -1545,7 +1561,7 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
     }),
   setActivityBarPosition: (position) => set({ activityBarPosition: position }),
 
-  // File explorer
+  // File Explorer
   expandedDirs: {},
   collapseAllDirs: (worktreeId) =>
     set((s) => {
@@ -1589,6 +1605,7 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
   revealInExplorer: (worktreeId, filePath) =>
     set((s) => ({
       rightSidebarOpen: true,
+      rightSidebarAutoFolded: false,
       rightSidebarTab: 'explorer',
       rightSidebarExplorerView: 'files',
       rightSidebarRouteRequestId: s.rightSidebarRouteRequestId + 1,
@@ -3895,7 +3912,7 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
       }
       return status
     } catch (error) {
-      // Why: keep prior status on error — a synthetic {hasUpstream:false} would flash 'Publish Branch' on a tracked branch and a click could re-publish, clobbering the upstream.
+      // Why: keep prior status on error — a synthetic {hasUpstream:false} would flash 'Publish branch' on a tracked branch and a click could re-publish, clobbering the upstream.
       if (pushTarget) {
         // Why: don't let an old automatic-poll cache entry suppress the next retry after a transient refresh failure.
         invalidateAutomaticPushTargetUpstreamStatusCache({

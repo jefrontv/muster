@@ -43,7 +43,7 @@ export function useActiveCollabStartWork(projectId: number): {
         toast.error(
           translate(
             'auto.components.activecollab.start_work.unbound',
-            'Link {{value0}} to a site first — use the link button on the project heading.',
+            'Link {{value0}} to a site first. Use the link button on the project heading.',
             { value0: task.projectName }
           )
         )

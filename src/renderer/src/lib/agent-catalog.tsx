@@ -243,7 +243,7 @@ export const getAgentCatalog = createLocalizedCatalog((): AgentCatalogEntry[] =>
   },
   {
     id: 'rovo',
-    label: translate('auto.lib.agent.catalog.4e63c7b956', 'Rovo Dev'),
+    label: translate('auto.lib.agent.catalog.4e63c7b956', 'Rovo dev'),
     cmd: 'rovo',
     faviconDomain: 'atlassian.com',
     homepageUrl:

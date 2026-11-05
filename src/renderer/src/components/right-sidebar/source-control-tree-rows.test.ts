@@ -19,7 +19,7 @@ function section(id: 'staged' | 'unstaged', items: GitStatusEntry[], collapsed =
   const area = id
   return {
     id,
-    label: id === 'staged' ? 'Staged Changes' : 'Changes',
+    label: id === 'staged' ? 'Staged changes' : 'Changes',
     count: items.length,
     collapsed,
     treeRows: flattenSourceControlTree(buildGitStatusSourceControlTree(area, items), new Set()),
@@ -43,7 +43,7 @@ describe('buildSourceControlTreeRows', () => {
       ['file', 'unstaged::a.ts', 2, undefined]
     ])
     expect(rows[1].label).toBe('b.txt, added, staged')
-    expect(rows[0].label).toBe('Staged Changes, 1 file')
+    expect(rows[0].label).toBe('Staged changes, 1 file')
   })
 
   it('includes folders in tree mode and hides collapsed content', () => {
@@ -69,7 +69,7 @@ describe('buildSourceControlTreeRows', () => {
       sections: [],
       branch: {
         id: 'branch',
-        label: 'Committed on Branch',
+        label: 'Committed on branch',
         count: 1,
         collapsed: false,
         treeRows: flattenSourceControlTree(

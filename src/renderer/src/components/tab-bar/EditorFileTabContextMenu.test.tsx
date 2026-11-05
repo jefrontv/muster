@@ -263,7 +263,7 @@ describe('EditorFileTabContextMenu close-all shortcut', () => {
     const renameItem = menuItems.find((item) => extractText(item.props.children).includes('Rename'))
     const closeItem = menuItems.find((item) => extractText(item.props.children) === 'Close⌘W')
     const closeAllItem = menuItems.find((item) =>
-      extractText(item.props.children).includes('Close All Editor Tabs')
+      extractText(item.props.children).includes('Close all editor tabs')
     )
 
     expect(renameItem).toBeTruthy()
@@ -291,7 +291,7 @@ describe('EditorFileTabContextMenu close-all shortcut', () => {
     const tree = expandNode(await renderMenu())
 
     const closeAllItem = findElementsByType(tree, 'DropdownMenuItem').find((item) =>
-      extractText(item.props.children).includes('Close All Editor Tabs')
+      extractText(item.props.children).includes('Close all editor tabs')
     )
 
     expect(closeAllItem).toBeTruthy()

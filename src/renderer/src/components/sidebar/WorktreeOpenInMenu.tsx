@@ -370,7 +370,7 @@ export function WorktreeOpenInSubMenu({
           onSelect={openOpenInAppsSettings}
           disabled={disabled}
         >
-          {translate('auto.components.sidebar.WorktreeOpenInMenu.1417fd8380', 'Customize apps...')}
+          {translate('auto.components.sidebar.WorktreeOpenInMenu.1417fd8380', 'Customize apps…')}
         </DropdownMenuItem>
       </DropdownMenuSubContent>
     </DropdownMenuSub>

@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- Why: the whole viewer is one state machine (lazy load, inline edit, restore-on-remount cache, scroll preservation); splitting it hides lifecycle edges. */
+import { Badge } from '@/components/ui/badge'
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: diff entry changes must reset virtualizer measurement and generation state in lockstep with external scroll restoration. */
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect, useMemo } from 'react'
 import { elementScroll, useVirtualizer } from '@tanstack/react-virtual'
@@ -1780,7 +1781,7 @@ export default function CombinedDiffViewer({
                           'AI notes'
                         )}
                       </span>
-                      <span className="rounded-full bg-background/80 px-1 text-[10px] tabular-nums text-muted-foreground">
+                      <span className="rounded-full bg-background/80 px-1 text-2xs tabular-nums text-muted-foreground">
                         {diffCommentCount}
                       </span>
                     </button>
@@ -1815,11 +1816,11 @@ export default function CombinedDiffViewer({
                 {file.combinedAlternate.source === 'combined-branch'
                   ? translate(
                       'auto.components.editor.CombinedDiffViewer.3d909843bb',
-                      'Open Branch Diff'
+                      'Open branch diff'
                     )
                   : translate(
                       'auto.components.editor.CombinedDiffViewer.982d14bfa5',
-                      'Open All Changes'
+                      'Open all changes'
                     )}
               </button>
             )}
@@ -1828,8 +1829,8 @@ export default function CombinedDiffViewer({
               onClick={() => setAllSectionsCollapsed(!allSectionsCollapsed)}
             >
               {allSectionsCollapsed
-                ? translate('auto.components.editor.CombinedDiffViewer.19c45cfdc0', 'Expand All')
-                : translate('auto.components.editor.CombinedDiffViewer.ea08dae15b', 'Collapse All')}
+                ? translate('auto.components.editor.CombinedDiffViewer.19c45cfdc0', 'Expand all')
+                : translate('auto.components.editor.CombinedDiffViewer.ea08dae15b', 'Collapse all')}
             </button>
             <button
               className="w-24 px-2 py-0.5 text-center text-xs rounded border border-border text-muted-foreground hover:text-foreground transition-colors"
@@ -1837,7 +1838,7 @@ export default function CombinedDiffViewer({
             >
               {sideBySide
                 ? translate('auto.components.editor.CombinedDiffViewer.f786fd54e1', 'Inline')
-                : translate('auto.components.editor.CombinedDiffViewer.ec5053c7f5', 'Side by Side')}
+                : translate('auto.components.editor.CombinedDiffViewer.ec5053c7f5', 'Side by side')}
             </button>
             <button
               className={`inline-flex h-6 items-center gap-1 rounded border border-border px-2 text-xs transition-colors hover:text-foreground ${
@@ -1851,7 +1852,7 @@ export default function CombinedDiffViewer({
               <WrapText className="size-3.5" />
               {settings?.diffWordWrap === true
                 ? translate('auto.components.editor.CombinedDiffViewer.a4420ca1f7', 'Wrap On')
-                : translate('auto.components.editor.CombinedDiffViewer.dde325ddfe', 'Wrap Off')}
+                : translate('auto.components.editor.CombinedDiffViewer.dde325ddfe', 'Wrap off')}
             </button>
           </div>
         </div>
@@ -1965,7 +1966,7 @@ export default function CombinedDiffViewer({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-sm">
-              {translate('auto.components.editor.CombinedDiffViewer.948a5fd6c8', 'Clear Notes')}
+              {translate('auto.components.editor.CombinedDiffViewer.948a5fd6c8', 'Clear notes')}
             </DialogTitle>
             <DialogDescription className="text-xs">
               {translate('auto.components.editor.CombinedDiffViewer.84898c548d', 'Clear')}{' '}
@@ -1995,7 +1996,7 @@ export default function CombinedDiffViewer({
               disabled={isClearingNotes || diffCommentCount === 0}
             >
               <Trash2 className="size-4" />
-              {translate('auto.components.editor.CombinedDiffViewer.948a5fd6c8', 'Clear Notes')}
+              {translate('auto.components.editor.CombinedDiffViewer.948a5fd6c8', 'Clear notes')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2062,9 +2063,9 @@ function DiffNotesPreviewPopover({
             <div className="flex items-center gap-1.5 text-[11px] leading-none text-muted-foreground">
               <span className="min-w-0 flex-1 truncate font-mono">{comment.filePath}</span>
               {comment.sentAt ? (
-                <span className="shrink-0 rounded bg-muted px-1 py-0.5 text-[10px] leading-none">
+                <Badge variant="muted" className="shrink-0">
                   {translate('auto.components.editor.CombinedDiffViewer.1da745c551', 'Sent')}
-                </span>
+                </Badge>
               ) : null}
               <span className="shrink-0 tabular-nums">
                 {getDiffCommentLineLabel(comment, true)}
@@ -2082,7 +2083,7 @@ function DiffNotesPreviewPopover({
             {remainingCount === 1
               ? translate('auto.components.editor.CombinedDiffViewer.8ab3248fd8', 'note')
               : translate('auto.components.editor.CombinedDiffViewer.0fb870a0fe', 'notes')}{' '}
-            {translate('auto.components.editor.CombinedDiffViewer.35cc27aeb2', 'in Source Control')}
+            {translate('auto.components.editor.CombinedDiffViewer.35cc27aeb2', 'in source control')}
           </div>
         )}
       </div>

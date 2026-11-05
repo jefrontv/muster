@@ -95,7 +95,7 @@ export function RuntimePairingGeneratorForm({
                 ),
                 description: translate(
                   'auto.components.settings.RuntimePairingUrlGenerator.custom-description',
-                  'Advertise an address another device can reach — a LAN or Tailscale host, or a full ws(s):// URL.'
+                  'Advertise an address another device can reach: a LAN or Tailscale host, or a full ws(s):// URL.'
                 ),
                 inputLabel: translate(
                   'auto.components.settings.RuntimePairingUrlGenerator.4531ea3158',
@@ -165,7 +165,7 @@ export function RuntimePairingGeneratorForm({
             {isGeneratingPairing ? <Loader2 className="animate-spin" /> : <RefreshCw />}
             {translate(
               'auto.components.settings.RuntimePairingUrlGenerator.8de0f84fff',
-              'Generate Access Link'
+              'Generate access link'
             )}
           </Button>
         </div>

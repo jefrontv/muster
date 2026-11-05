@@ -150,7 +150,7 @@ export function RepositoryHostSetupsSection({
 
   return (
     <SearchableSetting
-      title={translate('auto.components.settings.RepositoryPane.availableHosts', 'Available Hosts')}
+      title={translate('auto.components.settings.RepositoryPane.availableHosts', 'Available hosts')}
       description={translate(
         'auto.components.settings.RepositoryPane.availableHostsDescription',
         'Hosts where this project is set up.'
@@ -162,7 +162,7 @@ export function RepositoryHostSetupsSection({
       <div className="space-y-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <Label className="text-sm font-semibold">
-            {translate('auto.components.settings.RepositoryPane.availableHosts', 'Available Hosts')}
+            {translate('auto.components.settings.RepositoryPane.availableHosts', 'Available hosts')}
           </Label>
           {switchableProjectHostSetups.length > 1 ? (
             <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export function RepositoryHostSetupsSection({
                   }
                 }}
               >
-                <SelectTrigger className="h-8 w-44 min-w-0 text-xs">
+                <SelectTrigger className="w-44 min-w-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -21,7 +21,7 @@ export function nativeChatComposerPlaceholder(
   if (!hasPty) {
     return translate(
       'components.native-chat.composer.noPty',
-      'No live terminal — toggle back to reconnect.'
+      'No live terminal: toggle back to reconnect.'
     )
   }
   if (!canSend) {

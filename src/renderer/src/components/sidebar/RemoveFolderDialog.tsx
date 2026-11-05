@@ -47,7 +47,7 @@ const RemoveFolderDialog = React.memo(function RemoveFolderDialog() {
   const description = sshHostLabel
     ? translate(
         'auto.components.sidebar.RemoveFolderDialog.removeDescriptionSsh',
-        'This only removes {{name}} from Muster. Its files stay on {{host}} — re-add that SSH host to recover it.',
+        'This only removes {{name}} from Muster. Its files stay on {{host}}: re-add that SSH host to recover it.',
         { name: NAME_TOKEN, host: sshHostLabel }
       )
     : translate(
@@ -78,7 +78,7 @@ const RemoveFolderDialog = React.memo(function RemoveFolderDialog() {
       <DialogContent className="max-w-sm sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="text-sm">
-            {translate('auto.components.sidebar.RemoveFolderDialog.b79b39d865', 'Remove Project')}
+            {translate('auto.components.sidebar.RemoveFolderDialog.b79b39d865', 'Remove project')}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {descriptionBeforeName}

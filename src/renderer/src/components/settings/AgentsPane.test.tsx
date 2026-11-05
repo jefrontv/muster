@@ -120,7 +120,7 @@ function visit(node: unknown, cb: (node: ReactElementLike) => void): void {
 function findSwitch(node: unknown, ariaLabel: string): ReactElementLike {
   let found: ReactElementLike | null = null
   visit(node, (entry) => {
-    if (entry.props.role === 'switch' && entry.props['aria-label'] === ariaLabel) {
+    if (typeof entry.props.checked === 'boolean' && entry.props['aria-label'] === ariaLabel) {
       found = entry
     }
   })
@@ -333,7 +333,7 @@ describe('AgentsPane', () => {
     const keepAwakeTitle = getAgentAwakeTitle()
     const keepAwakeSwitch = findSwitch(element, keepAwakeTitle)
     expect(keepAwakeSwitch.props['aria-label']).toBe(keepAwakeTitle)
-    expect(keepAwakeSwitch.props['aria-checked']).toBe(false)
+    expect(keepAwakeSwitch.props.checked).toBe(false)
 
     const onClick = keepAwakeSwitch.props.onClick as () => void
     onClick()

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { setupContextualCopy } from './setup-contextual-copy'
 
 vi.mock('@/hooks/useShortcutLabel', () => ({
-  formatShortcutLabel: () => 'Copy Context'
+  formatShortcutLabel: () => 'Copy context'
 }))
 
 vi.mock('@/lib/monaco-setup', () => ({

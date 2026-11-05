@@ -4,6 +4,8 @@
    components would make the close/reopen/merge state coupling
    non-obvious. The GitHub-side equivalent (GitHubItemDialog) carries
    the same disable for the same reason. */
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: GitLab item dialogs reset draft/provider state and hydrate details from GitLab IPC when the selected item identity changes. */
 /* Why: GitLab counterpart to GitHubItemDialog. Side sheet with three
    tabs (Description / Conversation / Pipeline) and footer actions —
@@ -46,6 +48,7 @@ import type {
 } from '../../../shared/types'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 type Props = {
   item: GitLabWorkItem | null
@@ -70,11 +73,11 @@ type JobTraceState = {
 
 // Why: GitLab MR / issue states map onto a coarser palette than GitHub.
 const STATE_TONE: Record<GitLabWorkItem['state'], string> = {
-  opened: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-  closed: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+  opened: 'bg-status-success-background text-status-success',
+  closed: 'bg-status-danger-background text-status-danger',
   merged: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
-  locked: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
-  draft: 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+  locked: 'bg-status-danger-background text-status-danger',
+  draft: 'bg-status-attention-background text-status-attention'
 }
 
 // Why: pipeline job statuses map to one of four visual buckets — keep
@@ -83,18 +86,18 @@ const STATE_TONE: Record<GitLabWorkItem['state'], string> = {
 function jobStatusTone(status: string): string {
   switch (status) {
     case 'success':
-      return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+      return 'bg-status-success-background text-status-success'
     case 'failed':
-      return 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
+      return 'bg-status-danger-background text-status-danger'
     case 'running':
     case 'pending':
     case 'created':
     case 'preparing':
     case 'waiting_for_resource':
     case 'scheduled':
-      return 'bg-sky-500/15 text-sky-700 dark:text-sky-300'
+      return 'bg-status-info-background text-status-info'
     case 'manual':
-      return 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+      return 'bg-status-attention-background text-status-attention'
     case 'canceled':
     case 'skipped':
     default:
@@ -106,7 +109,7 @@ function StateBadge({ state }: { state: GitLabWorkItem['state'] }): React.JSX.El
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+        'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide',
         STATE_TONE[state]
       )}
     >
@@ -187,9 +190,9 @@ function CommentCard({
           ) : null}
           <span className="font-medium text-foreground">{comment.author}</span>
           {comment.isResolved ? (
-            <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
+            <Badge variant="success">
               {translate('auto.components.GitLabItemDialog.f23ea85341', 'resolved')}
-            </span>
+            </Badge>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
@@ -251,7 +254,7 @@ function PipelineJobRow({
         <span className="min-w-0 truncate text-xs text-muted-foreground">{job.stage}</span>
         <span
           className={cn(
-            'rounded-full px-2 py-0.5 text-center text-[10px] font-medium uppercase tracking-wide',
+            'rounded-full px-2 py-0.5 text-center text-[11px] font-medium uppercase tracking-wide',
             jobStatusTone(job.status)
           )}
         >
@@ -287,6 +290,10 @@ function PipelineJobRow({
               size="icon-xs"
               onClick={() => void window.api.shell.openUrl(job.webUrl)}
               title={translate('auto.components.GitLabItemDialog.032ae1312b', 'Open job in GitLab')}
+              aria-label={translate(
+                'auto.components.GitLabItemDialog.032ae1312b',
+                'Open job in GitLab'
+              )}
             >
               <ExternalLink className="size-3" />
             </Button>
@@ -1047,7 +1054,7 @@ export default function GitLabItemDialog({
                       {visibleLabels.map((label) => (
                         <span
                           key={label}
-                          className="rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                          className="rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
                         >
                           {label}
                         </span>
@@ -1080,7 +1087,7 @@ export default function GitLabItemDialog({
                 <TabsTrigger value="conversation">
                   {translate('auto.components.GitLabItemDialog.c996e2962c', 'Conversation')}
                   {details?.comments?.length ? (
-                    <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[10px] font-medium">
+                    <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[11px] font-medium">
                       {details.comments.length}
                     </span>
                   ) : null}
@@ -1089,7 +1096,7 @@ export default function GitLabItemDialog({
                   <TabsTrigger value="files">
                     {translate('auto.components.GitLabItemDialog.be3d291837', 'Files')}
                     {details?.files?.length ? (
-                      <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[10px] font-medium">
+                      <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[11px] font-medium">
                         {details.files.length}
                       </span>
                     ) : null}
@@ -1099,7 +1106,7 @@ export default function GitLabItemDialog({
                   <TabsTrigger value="pipeline">
                     {translate('auto.components.GitLabItemDialog.02cbe2de44', 'Pipeline')}
                     {details?.pipelineJobs?.length ? (
-                      <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[10px] font-medium">
+                      <span className="ml-1.5 rounded-full bg-muted px-1.5 text-[11px] font-medium">
                         {details.pipelineJobs.length}
                       </span>
                     ) : null}
@@ -1274,30 +1281,30 @@ export default function GitLabItemDialog({
                         <label className="mb-1 block text-xs font-medium text-muted-foreground">
                           {translate('auto.components.GitLabItemDialog.89f3f19368', 'Title')}
                         </label>
-                        <input
+                        <Input
                           value={titleDraft}
                           onChange={(event) => setTitleDraft(event.target.value)}
                           disabled={detailsSaving}
-                          className="h-9 w-full rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
+                          className="h-9 text-sm"
                         />
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-muted-foreground">
                           {translate('auto.components.GitLabItemDialog.908d8d2a73', 'Description')}
                         </label>
-                        <textarea
+                        <Textarea
                           value={bodyDraft}
                           onChange={(event) => setBodyDraft(event.target.value)}
                           rows={8}
                           disabled={detailsSaving}
-                          className="min-h-40 w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                          className="min-h-40 resize-y"
                         />
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-muted-foreground">
                           {translate('auto.components.GitLabItemDialog.dde24ade55', 'Labels')}
                         </label>
-                        <input
+                        <Input
                           value={labelDraft}
                           onChange={(event) => setLabelDraft(event.target.value)}
                           disabled={detailsSaving}
@@ -1305,7 +1312,7 @@ export default function GitLabItemDialog({
                             'auto.components.GitLabItemDialog.3c0b6ccca7',
                             'bug, backend'
                           )}
-                          className="h-9 w-full rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/50"
+                          className="h-9 text-sm"
                         />
                         {labelOptionsLoading || labelSuggestionOptions.length > 0 ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1463,7 +1470,7 @@ export default function GitLabItemDialog({
                                 </option>
                               ))}
                             </select>
-                            <input
+                            <Input
                               value={inlineCommentLine}
                               onChange={(event) => setInlineCommentLine(event.target.value)}
                               inputMode="numeric"
@@ -1471,10 +1478,10 @@ export default function GitLabItemDialog({
                                 'auto.components.GitLabItemDialog.7a7204417f',
                                 'Line'
                               )}
-                              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
+                              className="h-8 text-xs"
                             />
                           </div>
-                          <textarea
+                          <Textarea
                             value={inlineCommentBody}
                             onChange={(event) => setInlineCommentBody(event.target.value)}
                             rows={2}
@@ -1482,7 +1489,7 @@ export default function GitLabItemDialog({
                               'auto.components.GitLabItemDialog.21f8dde18a',
                               'Inline comment'
                             )}
-                            className="mt-2 w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                            className="mt-2 resize-none py-1.5"
                           />
                           <div className="mt-2 flex justify-end">
                             <Button
@@ -1527,8 +1534,8 @@ export default function GitLabItemDialog({
                                   ) : null}
                                 </div>
                                 <div className="shrink-0 text-[11px] text-muted-foreground">
-                                  <span className="text-emerald-600">+{file.additions}</span>{' '}
-                                  <span className="text-rose-600">-{file.deletions}</span>
+                                  <span className="text-status-success">+{file.additions}</span>{' '}
+                                  <span className="text-status-danger">-{file.deletions}</span>
                                 </div>
                               </div>
                               {file.diff ? (
@@ -1595,7 +1602,7 @@ export default function GitLabItemDialog({
               {/* Why: comment composer at the top of the footer so the
                   primary actions row stays visually grouped at the bottom. */}
               <div className="flex items-end gap-2">
-                <textarea
+                <Textarea
                   value={commentDraft}
                   onChange={(e) => updateCommentDraft(e.target.value)}
                   placeholder={translate(
@@ -1605,7 +1612,7 @@ export default function GitLabItemDialog({
                   )}
                   rows={2}
                   disabled={commentSubmitting}
-                  className="min-h-9 w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+                  className="min-h-9 resize-none py-1.5"
                   onKeyDown={(e) => {
                     // Why: this is local textarea submit behavior; Settings
                     // keybindings only cover app commands.

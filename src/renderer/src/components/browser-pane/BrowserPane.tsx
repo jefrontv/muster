@@ -118,6 +118,7 @@ import {
   type BrowserGrabScreenshot,
   type BrowserPageAnnotation
 } from '../../../../shared/browser-grab-types'
+import { Textarea } from '@/components/ui/textarea'
 import { BROWSER_ANNOTATION_VIEWPORT_MESSAGE_PREFIX } from '../../../../shared/browser-annotation-viewport-bridge'
 import { useGrabMode } from './useGrabMode'
 import { formatGrabPayloadAsText } from './GrabConfirmationSheet'
@@ -422,7 +423,7 @@ function PendingBrowserAnnotationCard({
         collisionBoundary={portalContainer ?? undefined}
         collisionPadding={12}
         portalContainer={portalContainer}
-        className="z-40 w-[22rem] max-w-[calc(var(--radix-popover-content-available-width)-1rem)] p-3 shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+        className="z-40 w-[22rem] max-w-[calc(var(--radix-popover-content-available-width)-1rem)] p-3 "
         aria-label={translate(
           'auto.components.browser.pane.BrowserPane.b472c5fe03',
           'Add browser annotation'
@@ -445,16 +446,16 @@ function PendingBrowserAnnotationCard({
         <Label htmlFor="browser-annotation-comment" className="sr-only">
           {translate('auto.components.browser.pane.BrowserPane.d2a7092e6e', 'Annotation comment')}
         </Label>
-        <textarea
+        <Textarea
           id="browser-annotation-comment"
           value={comment}
           onChange={(event) => setComment(event.target.value)}
           placeholder={translate(
             'auto.components.browser.pane.BrowserPane.532bac48c5',
-            'Describe what the agent should change here...'
+            'Describe what the agent should change here…'
           )}
           maxLength={GRAB_BUDGET.annotationCommentMaxLength}
-          className="h-24 w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-24 resize-none"
           autoFocus
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -479,14 +480,14 @@ function PendingBrowserAnnotationCard({
           <ToggleGroup
             type="single"
             size="sm"
-            variant="outline"
+            variant="segmented"
             value={intent}
             onValueChange={(value) => {
               if (value) {
                 setIntent(value as BrowserAnnotationIntent)
               }
             }}
-            className="h-8 w-full [&_[data-slot=toggle-group-item]]:h-8 [&_[data-slot=toggle-group-item]]:flex-1 [&_[data-slot=toggle-group-item]]:px-2"
+            className="h-8"
             aria-label={translate(
               'auto.components.browser.pane.BrowserPane.0cb3bd6221',
               'Annotation intent'
@@ -499,7 +500,7 @@ function PendingBrowserAnnotationCard({
                   key={option.value}
                   value={option.value}
                   aria-label={option.label}
-                  className="gap-1.5 text-xs data-[state=on]:border-foreground/20 data-[state=on]:bg-foreground/10 data-[state=on]:text-foreground data-[state=on]:shadow-xs data-[state=on]:hover:bg-foreground/15 data-[state=on]:hover:text-foreground"
+                  className="gap-1.5"
                 >
                   <Icon className="size-3.5" />
                   <span>{option.label}</span>
@@ -520,7 +521,7 @@ function PendingBrowserAnnotationCard({
           >
             <MessageSquarePlus className="size-3.5" />
             {translate('auto.components.browser.pane.BrowserPane.90d021f2ad', 'Add')}
-            <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-white/20 px-1.5 py-0.5 text-[10px] font-medium leading-none text-current/80">
+            <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-white/20 px-1.5 py-0.5 text-[11px] font-medium leading-none text-current/80">
               <span>{submitModifierLabel}</span>
               <CornerDownLeft className="size-3" />
             </span>
@@ -575,7 +576,7 @@ function getBrowserDisplayTitle(title: string | null | undefined, url: string): 
     title === ORCA_BROWSER_BLANK_URL ||
     !title
   ) {
-    return 'New Tab'
+    return 'New tab'
   }
   return title
 }
@@ -2418,7 +2419,7 @@ function RemoteBrowserPagePane({
                 role="menu"
                 data-testid="remote-browser-context-menu"
                 style={{ left: contextMenu.x, top: contextMenu.y }}
-                className="fixed z-50 min-w-[13rem] overflow-hidden rounded-[11px] border border-black/14 bg-[rgba(255,255,255,0.82)] p-1 text-black shadow-[0_16px_36px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl dark:border-white/14 dark:bg-[rgba(0,0,0,0.72)] dark:text-white dark:shadow-[0_20px_44px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.04)]"
+                className="fixed z-50 min-w-[13rem] overflow-hidden rounded-[11px] border border-black/14 bg-[rgba(255,255,255,0.82)] p-1 text-black shadow-floating backdrop-blur-2xl dark:border-white/14 dark:bg-[rgba(0,0,0,0.72)] dark:text-white dark:shadow-floating"
               >
                 {contextMenu.linkUrl ? (
                   <>
@@ -2434,7 +2435,7 @@ function RemoteBrowserPagePane({
                     >
                       {translate(
                         'auto.components.browser.pane.BrowserPane.b5b87d6cbb',
-                        'Open Link In Muster Browser'
+                        'Open link in Muster browser'
                       )}
                     </button>
                     <button
@@ -2450,7 +2451,7 @@ function RemoteBrowserPagePane({
                     >
                       {translate(
                         'auto.components.browser.pane.BrowserPane.8ce4f6b12e',
-                        'Open Link In Default Browser'
+                        'Open link in default browser'
                       )}
                     </button>
                     <button
@@ -2463,7 +2464,7 @@ function RemoteBrowserPagePane({
                     >
                       {translate(
                         'auto.components.browser.pane.BrowserPane.efb0e8f7f3',
-                        'Copy Link Address'
+                        'Copy link address'
                       )}
                     </button>
                     <div className="my-1 h-px bg-border/70" />
@@ -2528,7 +2529,7 @@ function RemoteBrowserPagePane({
                 >
                   {translate(
                     'auto.components.browser.pane.BrowserPane.f7ab83f7ed',
-                    'Open Page In Default Browser'
+                    'Open page in default browser'
                   )}
                 </button>
                 <button
@@ -2541,7 +2542,7 @@ function RemoteBrowserPagePane({
                 >
                   {translate(
                     'auto.components.browser.pane.BrowserPane.1b179ab561',
-                    'Copy Page URL'
+                    'Copy page URL'
                   )}
                 </button>
               </div>
@@ -2558,6 +2559,8 @@ function RemoteBrowserPagePane({
           variant="ghost"
           className="h-7 w-7"
           onClick={() => void runRemoteNavigation('browser.back')}
+          aria-label={translate('auto.components.browser.pane.BrowserPane.navBack', 'Back')}
+          title={translate('auto.components.browser.pane.BrowserPane.navBack', 'Back')}
         >
           <ArrowLeft className="size-4" />
         </Button>
@@ -2566,6 +2569,8 @@ function RemoteBrowserPagePane({
           variant="ghost"
           className="h-7 w-7"
           onClick={() => void runRemoteNavigation('browser.forward')}
+          aria-label={translate('auto.components.browser.pane.BrowserPane.navForward', 'Forward')}
+          title={translate('auto.components.browser.pane.BrowserPane.navForward', 'Forward')}
         >
           <ArrowRight className="size-4" />
         </Button>
@@ -2574,6 +2579,8 @@ function RemoteBrowserPagePane({
           variant="ghost"
           className="h-7 w-7"
           onClick={() => void runRemoteNavigation('browser.reload')}
+          aria-label={translate('auto.components.browser.pane.BrowserPane.navReload', 'Reload')}
+          title={translate('auto.components.browser.pane.BrowserPane.navReload', 'Reload')}
         >
           {busy || browserTab.loading ? (
             <Loader2 className="size-4 animate-spin" />
@@ -2715,7 +2722,7 @@ function RemoteBrowserPagePane({
           />
         ) : null}
         {remoteError ? (
-          <div className="absolute bottom-4 left-1/2 max-w-md -translate-x-1/2 rounded-md border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
+          <div className="absolute bottom-4 left-1/2 max-w-md -translate-x-1/2 rounded-md border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-floating">
             {remoteError}
           </div>
         ) : null}
@@ -2772,6 +2779,11 @@ function BrowserPagePane({
   const containerRef = useRef<HTMLDivElement | null>(null)
   containerRef.current = pageViewport?.container ?? null
   const chromeHeaderRef = useRef<HTMLDivElement | null>(null)
+  const reloadButtonLabel = browserTab.loading
+    ? translate('auto.components.browser.pane.BrowserPane.navStop', 'Stop loading')
+    : browserTab.loadError
+      ? translate('auto.components.browser.pane.BrowserPane.navRetry', 'Try again')
+      : translate('auto.components.browser.pane.BrowserPane.navReload', 'Reload')
   const grabToastTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const annotationCopyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const browserZoomFeedbackTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -4807,7 +4819,7 @@ function BrowserPagePane({
                 role="menu"
                 data-testid="browser-context-menu"
                 style={{ left: contextMenu.x, top: contextMenu.y }}
-                className="fixed z-50 min-w-[13rem] overflow-hidden rounded-[11px] border border-black/14 bg-[rgba(255,255,255,0.82)] p-1 text-black shadow-[0_16px_36px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl dark:border-white/14 dark:bg-[rgba(0,0,0,0.72)] dark:text-white dark:shadow-[0_20px_44px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.04)]"
+                className="fixed z-50 min-w-[13rem] overflow-hidden rounded-[11px] border border-black/14 bg-[rgba(255,255,255,0.82)] p-1 text-black shadow-floating backdrop-blur-2xl dark:border-white/14 dark:bg-[rgba(0,0,0,0.72)] dark:text-white dark:shadow-floating"
               >
                 {contextMenu.linkUrl ? (
                   <>
@@ -4823,7 +4835,7 @@ function BrowserPagePane({
                     >
                       {translate(
                         'auto.components.browser.pane.BrowserPane.b5b87d6cbb',
-                        'Open Link In Muster Browser'
+                        'Open link in Muster browser'
                       )}
                     </button>
                     <button
@@ -4839,7 +4851,7 @@ function BrowserPagePane({
                     >
                       {translate(
                         'auto.components.browser.pane.BrowserPane.8ce4f6b12e',
-                        'Open Link In Default Browser'
+                        'Open link in default browser'
                       )}
                     </button>
                     <button
@@ -4852,7 +4864,7 @@ function BrowserPagePane({
                     >
                       {translate(
                         'auto.components.browser.pane.BrowserPane.efb0e8f7f3',
-                        'Copy Link Address'
+                        'Copy link address'
                       )}
                     </button>
                     <div className="my-1 h-px bg-border/70" />
@@ -4919,7 +4931,7 @@ function BrowserPagePane({
                 >
                   {translate(
                     'auto.components.browser.pane.BrowserPane.f7ab83f7ed',
-                    'Open Page In Default Browser'
+                    'Open page in default browser'
                   )}
                 </button>
                 <button
@@ -4932,7 +4944,7 @@ function BrowserPagePane({
                 >
                   {translate(
                     'auto.components.browser.pane.BrowserPane.1b179ab561',
-                    'Copy Page URL'
+                    'Copy page URL'
                   )}
                 </button>
                 <div className="my-1 h-px bg-border/70" />
@@ -4946,7 +4958,7 @@ function BrowserPagePane({
                     setContextMenu(null)
                   }}
                 >
-                  {translate('auto.components.browser.pane.BrowserPane.a8f37f70c3', 'Inspect Page')}
+                  {translate('auto.components.browser.pane.BrowserPane.a8f37f70c3', 'Inspect page')}
                 </button>
               </div>
             </>,
@@ -4965,6 +4977,8 @@ function BrowserPagePane({
             className="h-7 w-7"
             onClick={() => webviewRef.current?.goBack()}
             disabled={!browserTab.canGoBack}
+            aria-label={translate('auto.components.browser.pane.BrowserPane.navBack', 'Back')}
+            title={translate('auto.components.browser.pane.BrowserPane.navBack', 'Back')}
           >
             <ArrowLeft className="size-4" />
           </Button>
@@ -4974,6 +4988,8 @@ function BrowserPagePane({
             className="h-7 w-7"
             onClick={() => webviewRef.current?.goForward()}
             disabled={!browserTab.canGoForward}
+            aria-label={translate('auto.components.browser.pane.BrowserPane.navForward', 'Forward')}
+            title={translate('auto.components.browser.pane.BrowserPane.navForward', 'Forward')}
           >
             <ArrowRight className="size-4" />
           </Button>
@@ -4981,6 +4997,8 @@ function BrowserPagePane({
             size="icon"
             variant="ghost"
             className="h-7 w-7"
+            aria-label={reloadButtonLabel}
+            title={reloadButtonLabel}
             onClick={() => {
               const webview = webviewRef.current
               if (!webview) {
@@ -5069,7 +5087,7 @@ function BrowserPagePane({
                 >
                   <MessageSquarePlus className="size-4" />
                   {browserAnnotations.length > 0 ? (
-                    <span className="absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-4 text-primary-foreground">
+                    <span className="absolute -top-1 -right-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] leading-4 text-primary-foreground">
                       {browserAnnotations.length}
                     </span>
                   ) : null}
@@ -5108,6 +5126,17 @@ function BrowserPagePane({
                     'Open browser devtools'
                   )
             }
+            aria-label={
+              devToolsDocked
+                ? translate(
+                    'auto.components.browser.pane.BrowserPane.b41f0c7d92',
+                    'Close browser devtools'
+                  )
+                : translate(
+                    'auto.components.browser.pane.BrowserPane.ec75d0c412',
+                    'Open browser devtools'
+                  )
+            }
           >
             <SquareCode className="size-4" />
           </Button>
@@ -5123,6 +5152,10 @@ function BrowserPagePane({
               void window.api.shell.openUrl(externalUrl)
             }}
             title={translate(
+              'auto.components.browser.pane.BrowserPane.0f41bf80c7',
+              'Open in default browser'
+            )}
+            aria-label={translate(
               'auto.components.browser.pane.BrowserPane.0f41bf80c7',
               'Open in default browser'
             )}
@@ -5275,7 +5308,7 @@ function BrowserPagePane({
             <button
               type="button"
               onClick={() => setResourceNotice(null)}
-              className="shrink-0 text-muted-foreground/60 hover:text-foreground"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
               aria-label={translate(
                 'auto.components.browser.pane.BrowserPane.2fdca7df09',
                 'Dismiss'
@@ -5330,7 +5363,7 @@ function BrowserPagePane({
                   : grab.state === 'confirming'
                     ? translate(
                         'auto.components.browser.pane.BrowserPane.e852e20cea',
-                        'Copied — press S to screenshot, or select another element'
+                        'Copied: press S to screenshot, or select another element'
                       )
                     : translate(
                         'auto.components.browser.pane.BrowserPane.168350ae6a',
@@ -5387,7 +5420,7 @@ function BrowserPagePane({
                   )}
                   {browserAnnotationsCopied
                     ? translate('auto.components.browser.pane.BrowserPane.6f4ab3592b', 'Copied')
-                    : translate('auto.components.browser.pane.BrowserPane.499b31b84e', 'Copy All')}
+                    : translate('auto.components.browser.pane.BrowserPane.499b31b84e', 'Copy all')}
                 </Button>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -5497,7 +5530,7 @@ function BrowserPagePane({
                       <p className="text-base font-semibold text-foreground/85">
                         {translate(
                           'auto.components.browser.pane.BrowserPane.366bf5d62c',
-                          'New Tab'
+                          'New tab'
                         )}
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
@@ -5525,7 +5558,7 @@ function BrowserPagePane({
                 />
               ) : null}
               {browserAnnotations.length > 0 && browserAnnotationTrayOpen ? (
-                <div className="absolute right-3 bottom-3 z-30 flex max-h-[45%] w-[min(20rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
+                <div className="absolute right-3 bottom-3 z-30 flex max-h-[45%] w-[min(20rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-floating">
                   <div className="flex items-center gap-2 border-b border-border px-3 py-2">
                     <MessageSquarePlus className="size-4 text-muted-foreground" />
                     <div className="min-w-0 flex-1 text-sm font-medium">
@@ -5623,7 +5656,7 @@ function BrowserPagePane({
                         key={annotation.id}
                         className="group flex gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent focus-within:bg-accent"
                       >
-                        <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                        <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
                           {index + 1}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -5698,7 +5731,7 @@ function BrowserPagePane({
                     <Copy className="size-3.5" />
                     {translate(
                       'auto.components.browser.pane.BrowserPane.c2ef0359b9',
-                      'Copy Contents'
+                      'Copy contents'
                     )}
                     <DropdownMenuShortcut>C</DropdownMenuShortcut>
                   </DropdownMenuItem>
@@ -5707,7 +5740,7 @@ function BrowserPagePane({
                       <Image className="size-3.5" />
                       {translate(
                         'auto.components.browser.pane.BrowserPane.1ded0d3168',
-                        'Copy Screenshot'
+                        'Copy screenshot'
                       )}
                       <DropdownMenuShortcut>S</DropdownMenuShortcut>
                     </DropdownMenuItem>
@@ -5748,16 +5781,16 @@ function BrowserPagePane({
                     }}
                   />
                   <div
-                    className={`flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 shadow-lg ${
+                    className={`flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 shadow-floating ${
                       grabToast.type === 'success'
                         ? 'bg-white text-gray-900'
-                        : 'bg-white text-red-600'
+                        : 'bg-white text-status-danger'
                     }`}
                   >
                     {grabToast.type === 'success' ? (
-                      <CircleCheck className="size-4 fill-blue-600 text-white" />
+                      <CircleCheck className="size-4 fill-status-info text-white" />
                     ) : (
-                      <OctagonX className="size-4 text-red-500" />
+                      <OctagonX className="size-4 text-status-danger" />
                     )}
                     <span className="text-sm font-semibold">{grabToast.message}</span>
                     {grabToast.payload?.screenshot?.dataUrl?.startsWith(
@@ -5774,7 +5807,7 @@ function BrowserPagePane({
                       >
                         <DropdownMenuTrigger asChild>
                           <button className="flex size-6 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-black/10 hover:text-gray-700">
-                            <span className="text-sm font-bold leading-none">···</span>
+                            <span className="text-sm font-semibold leading-none">···</span>
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" sideOffset={4}>
@@ -5800,7 +5833,7 @@ function BrowserPagePane({
                             <Image className="size-3.5" />
                             {translate(
                               'auto.components.browser.pane.BrowserPane.1ded0d3168',
-                              'Copy Screenshot'
+                              'Copy screenshot'
                             )}
                             <DropdownMenuShortcut>S</DropdownMenuShortcut>
                           </DropdownMenuItem>

@@ -87,6 +87,7 @@ import {
   selectCodexProviderAccount,
   watchProviderAccounts
 } from '@/runtime/runtime-provider-accounts-client'
+import { Switch } from '@/components/ui/switch'
 
 export { getAccountsPaneSearchEntries }
 
@@ -193,7 +194,7 @@ function getCodexSystemDefaultSubtitle(
   if (identity?.authKind === 'api-key') {
     return translate(
       'auto.components.settings.AccountsPane.codexSystemDefaultCustomProvider',
-      'Custom provider — no usage tracked.'
+      'Custom provider: no usage tracked.'
     )
   }
   return translate(
@@ -611,7 +612,7 @@ export function AccountsPane({
 
   const accountRuntimeControls = wslSupportedPlatform ? (
     <SearchableSetting
-      title={translate('auto.components.settings.AccountsPane.f54b4fbd71', 'Account Location')}
+      title={translate('auto.components.settings.AccountsPane.f54b4fbd71', 'Account location')}
       description={translate(
         'auto.components.settings.AccountsPane.2cd197025c',
         'Choose whether provider accounts are inspected and added in {{value0}} or WSL.',
@@ -667,7 +668,7 @@ export function AccountsPane({
                 }
                 disabled={wslCapabilitiesLoading || !wslAvailable}
               >
-                <SelectTrigger size="sm" className="w-full min-w-44">
+                <SelectTrigger className="w-full min-w-44">
                   <SelectValue
                     placeholder={
                       wslCapabilitiesLoading
@@ -817,7 +818,7 @@ export function AccountsPane({
         </div>
 
         <SearchableSetting
-          title={translate('auto.components.settings.AccountsPane.8bbfd74556', 'Claude Accounts')}
+          title={translate('auto.components.settings.AccountsPane.8bbfd74556', 'Claude accounts')}
           description={translate(
             'auto.components.settings.AccountsPane.79e484c3b2',
             'Optional account switcher for the shared Claude auth files.'
@@ -871,7 +872,7 @@ export function AccountsPane({
                 ) : (
                   <Plus className="size-3" />
                 )}
-                {translate('auto.components.settings.AccountsPane.b0e948a4f9', 'Add Account')}
+                {translate('auto.components.settings.AccountsPane.b0e948a4f9', 'Add account')}
               </Button>
               {claudeAction === 'adding' ? (
                 <Button
@@ -915,10 +916,7 @@ export function AccountsPane({
                     )}
                   </span>
                   {systemClaudeActive ? (
-                    <Badge
-                      variant="outline"
-                      className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none text-foreground/80"
-                    >
+                    <Badge variant="outline" className="shrink-0 text-foreground/80">
                       {translate('auto.components.settings.AccountsPane.e74831fb6b', 'Active')}
                     </Badge>
                   ) : null}
@@ -986,17 +984,11 @@ export function AccountsPane({
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate text-sm font-medium">{account.email}</span>
-                          <Badge
-                            variant="outline"
-                            className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none text-foreground/70"
-                          >
+                          <Badge variant="outline" className="shrink-0 text-foreground/70">
                             {getClaudeAccountRuntimeLabel(account, accountRuntime.label)}
                           </Badge>
                           {isActive ? (
-                            <Badge
-                              variant="outline"
-                              className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none text-foreground/80"
-                            >
+                            <Badge variant="outline" className="shrink-0 text-foreground/80">
                               {translate(
                                 'auto.components.settings.AccountsPane.e74831fb6b',
                                 'Active'
@@ -1092,7 +1084,7 @@ export function AccountsPane({
         </div>
 
         <SearchableSetting
-          title={translate('auto.components.settings.AccountsPane.3180536c7a', 'Codex Accounts')}
+          title={translate('auto.components.settings.AccountsPane.3180536c7a', 'Codex accounts')}
           description={translate(
             'auto.components.settings.AccountsPane.d0d53b7eb0',
             'Manage which Codex account Muster uses for live rate limit fetching.'
@@ -1205,7 +1197,7 @@ export function AccountsPane({
               ) : (
                 <Plus className="size-3" />
               )}
-              {translate('auto.components.settings.AccountsPane.b0e948a4f9', 'Add Account')}
+              {translate('auto.components.settings.AccountsPane.b0e948a4f9', 'Add account')}
             </Button>
           </div>
 
@@ -1239,18 +1231,12 @@ export function AccountsPane({
                     )}
                   </span>
                   {systemCodexActive ? (
-                    <Badge
-                      variant="outline"
-                      className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none text-foreground/80"
-                    >
+                    <Badge variant="outline" className="shrink-0 text-foreground/80">
                       {translate('auto.components.settings.AccountsPane.e74831fb6b', 'Active')}
                     </Badge>
                   ) : null}
                   {systemCodexNeedsSignIn ? (
-                    <Badge
-                      variant="destructive"
-                      className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none"
-                    >
+                    <Badge variant="destructive" className="shrink-0">
                       {translate(
                         'auto.components.settings.AccountsPane.93c47b333a',
                         'Needs sign-in'
@@ -1351,17 +1337,11 @@ export function AccountsPane({
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate text-sm font-medium">{account.email}</span>
-                          <Badge
-                            variant="outline"
-                            className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none text-foreground/70"
-                          >
+                          <Badge variant="outline" className="shrink-0 text-foreground/70">
                             {getCodexAccountRuntimeLabel(account, accountRuntime.label)}
                           </Badge>
                           {isActive ? (
-                            <Badge
-                              variant="outline"
-                              className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none text-foreground/80"
-                            >
+                            <Badge variant="outline" className="shrink-0 text-foreground/80">
                               {translate(
                                 'auto.components.settings.AccountsPane.e74831fb6b',
                                 'Active'
@@ -1369,10 +1349,7 @@ export function AccountsPane({
                             </Badge>
                           ) : null}
                           {needsReauthentication ? (
-                            <Badge
-                              variant="destructive"
-                              className="h-4 shrink-0 rounded px-1.5 text-[10px] font-medium leading-none"
-                            >
+                            <Badge variant="destructive" className="shrink-0">
                               {translate(
                                 'auto.components.settings.AccountsPane.589eba1eee',
                                 'Needs re-auth'
@@ -1515,25 +1492,15 @@ export function AccountsPane({
               )}
             </p>
           </div>
-          <button
-            role="switch"
-            aria-checked={settings.geminiCliOAuthEnabled}
+          <Switch
+            checked={settings.geminiCliOAuthEnabled}
             onClick={() => {
               recordFeatureInteraction('usage-tracking')
               updateSettings({
                 geminiCliOAuthEnabled: !settings.geminiCliOAuthEnabled
               })
             }}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-              settings.geminiCliOAuthEnabled ? 'bg-foreground' : 'bg-muted-foreground/30'
-            }`}
-          >
-            <span
-              className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-                settings.geminiCliOAuthEnabled ? 'translate-x-4' : 'translate-x-0.5'
-              }`}
-            />
-          </button>
+          />
         </SearchableSetting>
       </section>
     ) : null,
@@ -1555,7 +1522,7 @@ export function AccountsPane({
         <SearchableSetting
           title={translate(
             'auto.components.settings.AccountsPane.36223200ac',
-            'OpenCode Go Session Cookie'
+            'OpenCode Go Session cookie'
           )}
           description={translate(
             'auto.components.settings.AccountsPane.b2b1aa936d',
@@ -1612,7 +1579,7 @@ export function AccountsPane({
               ') or the full cookie header (e.g.'
             )}{' '}
             <code className="text-xs">
-              {translate('auto.components.settings.AccountsPane.8951c5309f', 'auth=Fe26.2**…')}
+              {translate('auto.components.settings.AccountsPane.8951c5309f', 'auth=fe26.2**…')}
             </code>
             {translate(
               'auto.components.settings.AccountsPane.7ce0e1907c',
@@ -1737,7 +1704,7 @@ export function AccountsPane({
         <SearchableSetting
           title={translate(
             'auto.components.settings.AccountsPane.21d6eb141e',
-            'MiniMax Session Cookie'
+            'MiniMax session cookie'
           )}
           description={translate(
             'auto.components.settings.AccountsPane.33bba5ad83',
@@ -1751,12 +1718,12 @@ export function AccountsPane({
               <Label>
                 {translate(
                   'auto.components.settings.AccountsPane.21d6eb141e',
-                  'MiniMax Session Cookie'
+                  'MiniMax session cookie'
                 )}
               </Label>
               <Badge
                 variant={miniMaxConfigured ? 'secondary' : 'outline'}
-                className="h-5 gap-1 rounded-full px-2 text-[10px] font-medium text-muted-foreground"
+                className="gap-1 text-muted-foreground"
               >
                 {miniMaxConfigured ? <Lock className="size-3" /> : <LockOpen className="size-3" />}
                 {miniMaxConfigured
@@ -1926,7 +1893,7 @@ export function AccountsPane({
             <DialogTitle>
               {translate(
                 'auto.components.settings.AccountsPane.0d47394635',
-                'Remove Codex Account?'
+                'Remove Codex account?'
               )}
             </DialogTitle>
             <DialogDescription>
@@ -1955,7 +1922,7 @@ export function AccountsPane({
                 )
               }}
             >
-              {translate('auto.components.settings.AccountsPane.c2d2751587', 'Remove Account')}
+              {translate('auto.components.settings.AccountsPane.c2d2751587', 'Remove account')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1969,7 +1936,7 @@ export function AccountsPane({
             <DialogTitle>
               {translate(
                 'auto.components.settings.AccountsPane.63843e37e2',
-                'Remove Claude Account?'
+                'Remove Claude account?'
               )}
             </DialogTitle>
             <DialogDescription>
@@ -1998,7 +1965,7 @@ export function AccountsPane({
                 )
               }}
             >
-              {translate('auto.components.settings.AccountsPane.c2d2751587', 'Remove Account')}
+              {translate('auto.components.settings.AccountsPane.c2d2751587', 'Remove account')}
             </Button>
           </DialogFooter>
         </DialogContent>

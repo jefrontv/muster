@@ -51,11 +51,11 @@ function overallDotColor(
 ): string {
   switch (status) {
     case 'connected':
-      return 'bg-emerald-500'
+      return 'bg-status-success'
     case 'partial':
-      return connectedCount > 0 ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+      return connectedCount > 0 ? 'bg-status-success' : 'bg-muted-foreground/40'
     case 'connecting':
-      return 'bg-yellow-500'
+      return 'bg-status-attention'
     case 'disconnected':
       return 'bg-muted-foreground/40'
   }
@@ -301,7 +301,7 @@ export function SshStatusSegment({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 cursor-pointer rounded px-1 py-0.5 hover:bg-accent/70"
+          className="inline-flex items-center gap-1.5 cursor-pointer rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={translate(
             'auto.components.status.bar.SshStatusSegment.fdc57e9970',
             'Remote host connection status'
@@ -327,9 +327,9 @@ export function SshStatusSegment({
               {syncProblem ? (
                 <AlertTriangle className="size-3 text-destructive" />
               ) : anyConnecting ? (
-                <Loader2 className="size-3 animate-spin text-yellow-500" />
+                <Loader2 className="size-3 animate-spin text-status-attention" />
               ) : overall === 'connected' ? (
-                <Server className="size-3 text-emerald-500" />
+                <Server className="size-3 text-status-success" />
               ) : overall === 'partial' ? (
                 <Server className="size-3 text-muted-foreground" />
               ) : (
@@ -358,8 +358,8 @@ export function SshStatusSegment({
         sideOffset={8}
         className="w-[min(20rem,calc(100vw-1rem))]"
       >
-        <div className="px-2 pt-1.5 pb-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-          {translate('auto.components.status.bar.SshStatusSegment.6e8a9a4242', 'Remote Hosts')}
+        <div className="px-2 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+          {translate('auto.components.status.bar.SshStatusSegment.6e8a9a4242', 'Remote hosts')}
         </div>
         {connectedRuntimeHosts.map((host) => (
           <RuntimeHostStatusRow
@@ -409,7 +409,7 @@ export function SshStatusSegment({
         >
           {translate(
             'auto.components.status.bar.SshStatusSegment.3ad70e0365',
-            'Manage Remote Hosts…'
+            'Manage remote hosts…'
           )}
         </DropdownMenuItem>
       </DropdownMenuContent>

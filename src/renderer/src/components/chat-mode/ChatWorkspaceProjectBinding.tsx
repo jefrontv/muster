@@ -65,7 +65,7 @@ export function ChatWorkspaceProjectBinding({
               <ActiveCollabIcon className="size-3.5 shrink-0 text-muted-foreground" />
               <span className="min-w-0 flex-1 truncate text-sm">{project.name}</span>
               {index === 0 ? (
-                <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   {translate('auto.components.chat.workspaceDialog.primary', 'primary')}
                 </span>
               ) : null}

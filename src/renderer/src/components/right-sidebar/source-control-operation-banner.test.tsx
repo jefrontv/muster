@@ -47,7 +47,7 @@ describe('OperationBanner', () => {
 
     expect(merge).not.toContain('Continue')
     expect(merge).toContain('Commit to finish the merge')
-    expect(rebase).toContain('Continue Rebase')
+    expect(rebase).toContain('Continue rebase')
     expect(rebase).toContain('More rebase actions')
     expect(cherryPick).toContain('Continue')
     expect(cherryPick).not.toContain('More rebase actions')
@@ -58,7 +58,7 @@ describe('OperationBanner', () => {
     const { getByText, unmount } = render(
       <OperationBanner conflictOperation="rebase" onSequencerAction={onSequencerAction} />
     )
-    fireEvent.click(getByText('Continue Rebase'))
+    fireEvent.click(getByText('Continue rebase'))
     expect(onSequencerAction).toHaveBeenCalledWith('rebase-continue')
     unmount()
 
@@ -78,7 +78,7 @@ describe('OperationBanner', () => {
         onSequencerAction={vi.fn()}
       />
     )
-    expect(buttonContaining(markup, 'Continue Rebase')).toContain('disabled')
+    expect(buttonContaining(markup, 'Continue rebase')).toContain('disabled')
     expect(buttonContaining(markup, 'Abort rebase')).toContain('disabled')
   })
 })

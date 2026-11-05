@@ -15,7 +15,7 @@ export function ChatConversationEmpty(props: {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 py-24 text-center">
       <ChatWorkspaceAvatar workspace={props.workspace} size={64} />
-      <h2 className="text-[17px] font-medium leading-6 text-foreground">
+      <h2 className="text-lg font-medium leading-6 text-foreground">
         {props.workspace?.name ?? props.fallbackName}
       </h2>
       <p className="line-clamp-3 max-w-[360px] whitespace-pre-line text-sm text-chat-ink-secondary">

@@ -1,4 +1,5 @@
 // Which local stack serves a site, whether it is up, and the controls to run it.
+import { SiteStackDetectionNotice } from './site-stack-detection-notice'
 //
 // One component for the sidebar (compact) and the Sites page, so the two never drift into separate
 // designs of the same thing. Status comes from the stacks themselves through a shared poll; the
@@ -53,13 +54,19 @@ export function SiteLocalStackCard({
   const { site } = summary
   const updateSite = useAppStore((state) => state.updateSite)
   const available = useAvailableSiteStacks()
-  const { detection, transition, refresh, setTransition } = useSiteStackStatus(site.id)
+  const { detection, transition, refresh, setTransition, slow, failure } = useSiteStackStatus(
+    site.id
+  )
   const [daemon, setDaemon] = useState<AgentLocalDaemonStatus | null>(null)
   const [domain, setDomain] = useState('')
   const [renaming, setRenaming] = useState(false)
 
   const stack = site.localStack
   const managed = stack !== 'plain'
+  const detectionStalled = managed && detection === null && (Boolean(slow) || failure != null)
+  const detectionNotice = detectionStalled ? (
+    <SiteStackDetectionNotice failure={failure ?? null} onRetry={() => void refresh()} />
+  ) : null
   const stackLabel = siteLocalStackLabel(stack)
   const confirmed = managed && detection?.stack === stack
   const needsSetup = managed && detection !== null && detection.stack !== stack
@@ -137,6 +144,7 @@ export function SiteLocalStackCard({
         site={site}
         detection={detection}
         loading={managed && detection === null}
+        detectionNotice={detectionNotice}
         pill={siteStackPill({ stack, detection, transition })}
         confirmed={confirmed}
         needsSetup={needsSetup}
@@ -168,7 +176,7 @@ export function SiteLocalStackCard({
           <SiteStackStatusPill pill={siteStackPill({ stack, detection, transition })} />
         ) : null}
         <div className="ml-auto">
-          {loading ? <SiteLocalStackActionsLoading /> : null}
+          {loading && !detectionStalled ? <SiteLocalStackActionsLoading /> : null}
           {confirmed ? (
             <SiteLocalStackActions
               sitePath={site.path}
@@ -211,7 +219,7 @@ export function SiteLocalStackCard({
             </SelectContent>
           </Select>
         </SiteLocalStackField>
-        {loading ? <SiteLocalStackDetailsLoading /> : null}
+        {loading ? (detectionNotice ?? <SiteLocalStackDetailsLoading />) : null}
         {confirmed ? (
           <SiteLocalStackDetails
             site={site}

@@ -308,7 +308,7 @@ export function GhAuthErrorHelp({
 
   if (variant === 'banner') {
     return (
-      <div className="border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+      <div className="border-b border-status-attention-border bg-status-attention-background px-3 py-2 text-xs text-status-attention">
         <div className="font-medium">{remedy.summary}</div>
         {remedy.detail ? <div className="mt-0.5 opacity-80">{remedy.detail}</div> : null}
         <div className="mt-1 flex flex-wrap gap-1">
@@ -318,7 +318,7 @@ export function GhAuthErrorHelp({
               type="button"
               onClick={() => copyToClipboard(c.command)}
               title={c.command}
-              className="inline-flex items-center gap-1 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[11px] hover:bg-amber-500/20"
+              className="inline-flex items-center gap-1 rounded border border-status-attention-border bg-status-attention-background px-1.5 py-0.5 text-[11px] hover:bg-status-attention-background"
             >
               <Copy className="size-3" /> {c.label}
             </button>
@@ -327,7 +327,7 @@ export function GhAuthErrorHelp({
             <button
               type="button"
               onClick={() => openExternal(docsUrl)}
-              className="inline-flex items-center gap-1 rounded border border-amber-500/30 px-1.5 py-0.5 text-[11px] hover:bg-amber-500/20"
+              className="inline-flex items-center gap-1 rounded border border-status-attention-border px-1.5 py-0.5 text-[11px] hover:bg-status-attention-background"
             >
               <ExternalLink className="size-3" />{' '}
               {translate('auto.components.github.project.GhAuthErrorHelp.baa006f9af', 'Docs')}
@@ -338,7 +338,7 @@ export function GhAuthErrorHelp({
           <button
             type="button"
             onClick={reloadOrcaRenderer}
-            className="inline-flex items-center gap-1 rounded border border-amber-500/30 px-1.5 py-0.5 text-[11px] hover:bg-amber-500/20"
+            className="inline-flex items-center gap-1 rounded border border-status-attention-border px-1.5 py-0.5 text-[11px] hover:bg-status-attention-background"
           >
             <RotateCw className="size-3" />{' '}
             {translate('auto.components.github.project.GhAuthErrorHelp.7e800068d8', 'Reload')}

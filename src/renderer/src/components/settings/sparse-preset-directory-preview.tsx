@@ -20,7 +20,7 @@ export function SparsePresetDirectoryPreview({
         </span>
       ))}
       {hiddenCount > 0 ? (
-        <span className="rounded-md border border-border/50 bg-muted/35 px-2 py-1 text-[11px] text-muted-foreground">
+        <span className="rounded-full border border-border/50 bg-muted/35 px-2 py-1 text-[11px] text-muted-foreground">
           {translate(
             'auto.components.settings.SparsePresetSettingsSection.8b64731aaf',
             '+{{value0}} more',

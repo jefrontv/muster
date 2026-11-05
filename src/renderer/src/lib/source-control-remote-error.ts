@@ -158,27 +158,27 @@ export function resolveRemoteOperationErrorMessage(
 
   if (FRESH_MERGE_CONFLICT_ERROR_PATTERN.test(error.message)) {
     if (options?.isRebase) {
-      return 'Rebase stopped with conflicts. Resolve them in Source Control, then continue the rebase.'
+      return 'Rebase stopped with conflicts. Resolve them in source control, then continue the rebase.'
     }
     // Why: a pull with pull.rebase=true stops mid-rebase; "commit the merge" would be the wrong next step.
     if (REBASE_CONFLICT_ERROR_PATTERN.test(error.message)) {
       return options?.isSync
         ? translate(
             'auto.lib.source.control.remote.error.372294bf82',
-            'Sync stopped with rebase conflicts. Resolve them in Source Control, then continue the rebase.'
+            'Sync stopped with rebase conflicts. Resolve them in source control, then continue the rebase.'
           )
         : translate(
             'auto.lib.source.control.remote.error.da1703f0b9',
-            'Pull stopped with rebase conflicts. Resolve them in Source Control, then continue the rebase.'
+            'Pull stopped with rebase conflicts. Resolve them in source control, then continue the rebase.'
           )
     }
     return options?.isSync
-      ? 'Sync stopped with merge conflicts. Resolve them in Source Control, then commit the merge.'
-      : 'Pull stopped with merge conflicts. Resolve them in Source Control, then commit the merge.'
+      ? 'Sync stopped with merge conflicts. Resolve them in source control, then commit the merge.'
+      : 'Pull stopped with merge conflicts. Resolve them in source control, then commit the merge.'
   }
 
   if (options?.publish) {
-    const submoduleMessage = resolveSubmodulePushFailureMessage(error.message, 'Publish Branch')
+    const submoduleMessage = resolveSubmodulePushFailureMessage(error.message, 'Publish branch')
     if (submoduleMessage) {
       return submoduleMessage
     }
@@ -192,7 +192,7 @@ export function resolveRemoteOperationErrorMessage(
   }
 
   if (options?.isForcePush) {
-    const submoduleMessage = resolveSubmodulePushFailureMessage(error.message, 'Force Push')
+    const submoduleMessage = resolveSubmodulePushFailureMessage(error.message, 'Force push')
     if (submoduleMessage) {
       return submoduleMessage
     }
@@ -210,11 +210,11 @@ export function resolveRemoteOperationErrorMessage(
   if (isPushLikeOperation && isPushHookFailure(error.message)) {
     const summary = summarizePushFailure(error.message)
     const operationLabel = options?.publish
-      ? 'Publish Branch'
+      ? 'Publish branch'
       : options?.isSyncPushStage
         ? 'Sync'
         : options?.isForcePush
-          ? 'Force Push'
+          ? 'Force push'
           : 'Push'
     return `${operationLabel} blocked — ${summary.charAt(0).toLowerCase()}${summary.slice(1)}`
   }
@@ -289,12 +289,12 @@ export function resolveRemoteOperationErrorMessage(
     // keeps the toast human-readable while preserving the actionable fatal reason.
     const detail = extractRemoteFailureDetail(error.message)
     if (detail) {
-      return `Publish Branch failed. ${detail}. Check your remote access and try again.`
+      return `Publish branch failed. ${detail}. Check your remote access and try again.`
     }
 
     return (
-      plainFailureMessage('Publish Branch', error.message) ??
-      'Publish Branch failed. Check your remote access and try again.'
+      plainFailureMessage('Publish branch', error.message) ??
+      'Publish branch failed. Check your remote access and try again.'
     )
   }
 
@@ -315,11 +315,11 @@ export function resolveRemoteOperationErrorMessage(
   if (options?.isForcePush) {
     const detail = extractRemoteFailureDetail(error.message)
     if (detail) {
-      return `Force Push failed. ${detail}. Check your remote access and try again.`
+      return `Force push failed. ${detail}. Check your remote access and try again.`
     }
     return (
-      plainFailureMessage('Force Push', error.message) ??
-      'Force Push failed. Check your connection and try again.'
+      plainFailureMessage('Force push', error.message) ??
+      'Force push failed. Check your connection and try again.'
     )
   }
 

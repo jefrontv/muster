@@ -105,7 +105,7 @@ export function AgentTerminalDialog({
             <div className="px-2.5 pb-2 text-[11px] text-muted-foreground">
               {translate(
                 'dashboardPopout.terminal.closed',
-                "No live terminal — this agent's pane has closed."
+                "No live terminal: this agent's pane has closed."
               )}
             </div>
           )}

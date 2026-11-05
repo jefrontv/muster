@@ -1077,7 +1077,9 @@
         "ec43b38ba7": "已在 GitHub 上加星标",
         "157bb5ecbb": "打开 GitHub",
         "preflightDismiss": "关闭",
-        "addNewSite": "Add new site"
+        "addNewSite": "Add new site",
+        "previousWorkspace": "Previous workspace",
+        "nextWorkspace": "Next workspace"
       },
       "LinearIssueMarkdownDescriptionEditor": {
         "d9c47069ef": "Markdown",
@@ -2320,7 +2322,8 @@
             "767951265d": "创建工作树时出现问题。",
             "vmProvisioningTitle": "正在预配虚拟机",
             "cancelProvisioning": "取消",
-            "vmProvisioningLogEmpty": "正在等待环境模板输出…"
+            "vmProvisioningLogEmpty": "正在等待环境模板输出…",
+            "copyDetails": "Copy details"
           }
         }
       },
@@ -3116,7 +3119,8 @@
             "chipWeek": "Week",
             "chipMonth": "Month",
             "resetBadgeOne": "1 次用量重置可用",
-            "resetBadgeMany": "{{value0}} 次用量重置可用"
+            "resetBadgeMany": "{{value0}} 次用量重置可用",
+            "usedSuffix": "used"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "连接账户",
@@ -4389,7 +4393,8 @@
           "hostDisconnected": "已断开连接",
           "failedNestWorkspace": "无法嵌套工作区",
           "sidebarRowMissing": "目标不再存在",
-          "failedUnnestWorkspace": "展开工作区失败"
+          "failedUnnestWorkspace": "展开工作区失败",
+          "groupDeleteRetry": "Try again"
         },
         "WorktreeMetaDialog": {
           "3db0a2a593": "取消",
@@ -5319,7 +5324,9 @@
           "b4c167764d": "已从文件将 {{value0}} 个 Cookie 导入到 {{value1}}。",
           "a3f8c2d1e0b4": "已从 {{value1}} ({{value2}}) 导入 {{value0}} 个 Cookie 到 {{value3}}。",
           "b4e9d3f2a1c5": "已从 {{value1}} 导入 {{value0}} 个 Cookie 到 {{value2}}。",
-          "c5a273a809": "从 {{value0}}"
+          "c5a273a809": "从 {{value0}}",
+          "clearCookies": "Clear default cookies",
+          "removeProfile": "Remove profile"
         },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
@@ -6472,7 +6479,11 @@
           "setupGuideTitle": "Setup guide",
           "setupGuideDescription": "Finish the setup that makes Muster useful for your day-to-day work.",
           "extensionsTitle": "Extensions",
-          "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use."
+          "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use.",
+          "navGroupApp": "App",
+          "navGroupAgents": "Agents",
+          "navGroupWorkspaces": "Workspaces",
+          "navGroupIntegrations": "Integrations"
         },
         "SettingsFormControls": {
           "42a4d15a30": "没有匹配的字体。",
@@ -6764,7 +6775,9 @@
         "TerminalFontSizeSetting": {
           "9b5252c85a": "像素",
           "0f4c92e595": "新窗格和实时更新的默认终端字体大小。",
-          "a4a352b1e9": "字体大小"
+          "a4a352b1e9": "字体大小",
+          "decrease": "Smaller font",
+          "increase": "Larger font"
         },
         "TerminalPane": {
           "4263e940e0": "按 JIS 日元 (¥) 键会发送反斜杠 (\\\\)。",
@@ -6967,7 +6980,9 @@
           "605a35d600": "Not applied by the terminal renderer yet — xterm.js has no bold color slot. A saved value is preserved."
         },
         "UIZoomControl": {
-          "c2c64b24d0": "重置"
+          "c2c64b24d0": "重置",
+          "zoomOut": "Zoom out",
+          "zoomIn": "Zoom in"
         },
         "VoicePane": {
           "68de13f72c": "删除模型失败。",
@@ -8598,7 +8613,7 @@
           "19ad21615a": "自动生成标签页标题",
           "b036c7a409": "根据第一个已知智能体提示词生成简短稳定的标签页名称。手动重命名始终优先。",
           "chat-title": "Auto-name chats",
-          "chat-description": "Name a chat thread from its first exchange instead of the raw opening message. Uses the Source Control AI agent, and manual renames always win."
+          "chat-description": "Name a chat thread from its first exchange instead of the raw opening message. Uses the Source control AI agent, and manual renames always win."
         },
         "keep": {
           "local": {
@@ -9464,7 +9479,9 @@
           "custom": "Custom icon color"
         },
         "TerminalZoomControl": {
-          "reset": "Reset"
+          "reset": "Reset",
+          "zoomOut": "Zoom out",
+          "zoomIn": "Zoom in"
         },
         "extensions": {
           "tab_tools": "Tools",
@@ -9544,6 +9561,11 @@
           "save": "Save",
           "remove": "Remove",
           "placeholder": "ak_…"
+        },
+        "SettingsProjectsNav": {
+          "filter": "Filter projects",
+          "clearFilter": "Clear filter",
+          "showAll": "Show all {{value0}}"
         }
       },
       "right": {
@@ -9551,7 +9573,8 @@
           "BulkActionBar": {
             "79a9f5f712": "取消暂存（",
             "ef5f5bd06e": "阶段 （",
-            "60ed678138": "已选择"
+            "60ed678138": "已选择",
+            "clearSelection": "Clear selection"
           },
           "ChecksPanel": {
             "2ef90c9819": "已启动 AI 智能体处理失败的检查。",
@@ -10007,7 +10030,7 @@
             "b75cb1fd0c": "正在提交更改…",
             "995c5e67ec": "评审设置需要处理。",
             "d7492cafce": "无法刷新 Source Control。请重试创建 PR。",
-            "473f18758e": "Source Control AI 设置",
+            "473f18758e": "Source control AI 设置",
             "createPrIntentConfigureAi": "请添加提交信息或配置源代码管理 AI 设置。",
             "createPrIntentGenerateFailed": "无法生成提交信息。请添加一条信息后重试。",
             "createPrIntentCommitFailed": "无法提交更改。请修复问题后重试创建 PR。",
@@ -10578,7 +10601,7 @@
               "undo": {
                 "commit": {
                   "confirm_title": "撤销已推送的提交？",
-                  "confirm_description": "此提交已在 {{value0}} 上。撤销只会更改你的本地分支，下次推送需要使用 Force Push。",
+                  "confirm_description": "此提交已在 {{value0}} 上。撤销只会更改你的本地分支，下次推送需要使用 Force push。",
                   "confirm_label": "撤销提交",
                   "remote_fallback": "远程"
                 }
@@ -10607,7 +10630,7 @@
                   "ready": "用已暂存的更改和此消息替换上一次提交",
                   "load_message": "载入上一次提交的消息进行编辑，然后修改提交",
                   "confirm_title": "修改已推送的提交？",
-                  "confirm_description": "此提交已在 {{value0}} 上。修改它只会更改你的本地分支，下次推送时需要使用 Force Push。",
+                  "confirm_description": "此提交已在 {{value0}} 上。修改它只会更改你的本地分支，下次推送时需要使用 Force push。",
                   "confirm_label": "修改提交",
                   "load_failed": "无法载入上一次提交的消息"
                 }
@@ -11225,7 +11248,8 @@
           "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
           "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.",
           "siteMcpTitle": "Tools for your agents",
-          "siteMcpSubtitle": "Let your agents deploy, import and query site databases."
+          "siteMcpSubtitle": "Let your agents deploy, import and query site databases.",
+          "defaultViewSubtitleWithBots": "Chat is a conversation desk. Code is worktrees and terminals. Bots run tasks across your apps. Switch any time from the sidebar."
         },
         "welcome": {
           "eyebrow": "Welcome to",
@@ -11238,7 +11262,10 @@
           "chatDescription": "A conversation desk. Threads, projects, and agents in one place.",
           "code": "Code Mode",
           "codeHint": "Build first",
-          "codeDescription": "Worktrees, terminals, and the classic IDE layout."
+          "codeDescription": "Worktrees, terminals, and the classic IDE layout.",
+          "bots": "Bots mode",
+          "botsHint": "Delegate first",
+          "botsDescription": "Assistants that connect to your apps and run tasks for you."
         },
         "OnboardingFooter": {
           "ba58547306": "返回",
@@ -11246,7 +11273,8 @@
           "done": "完成",
           "skipToWorkspaceSetup": "Skip to workspace setup",
           "addProject": "Add a project instead",
-          "skipToSiteSetup": "Skip to site setup"
+          "skipToSiteSetup": "Skip to site setup",
+          "skipToBots": "Skip to Bots"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "启动终端..."
@@ -11361,7 +11389,9 @@
         },
         "finish": {
           "firstSite": "Set up your first site",
-          "openingNewSite": "Opening New site..."
+          "openingNewSite": "Opening New site...",
+          "openingNewWorkspace": "Opening new workspace…",
+          "openingBots": "Opening Bots…"
         },
         "RecommendedTools": {
           "title": "Recommended tools",
@@ -13023,7 +13053,12 @@
             "756bfc25c9": "打开",
             "09a9489aa5": "显示",
             "2a4c4b8e1f": "复制",
-            "b41f0c7d92": "Close browser devtools"
+            "b41f0c7d92": "Close browser devtools",
+            "navBack": "Back",
+            "navForward": "Forward",
+            "navReload": "Reload",
+            "navStop": "Stop loading",
+            "navRetry": "Try again"
           },
           "BrowserToolbarMenu": {
             "429ef481f9": "取消",
@@ -13064,7 +13099,8 @@
             "9c6ce0632a": "所选元素屏幕截图",
             "50f7114f99": "附加前请先检查。捕获的页面上下文可以包括可见的站点内容。",
             "f3575229df": "抓住",
-            "405bb315da": "无题"
+            "405bb315da": "无题",
+            "close": "Close"
           },
           "browser": {
             "address": {
@@ -13759,7 +13795,7 @@
                 },
                 "reconnect": "请重新连接你的配置文件以管理成员。",
                 "unconfigured": "此版本不支持组织管理。",
-                "failed": "出现问题。请重试。"
+                "failed": "The members change didn't go through: {{value0}}"
               },
               "subtitle": {
                 "named": "{{orgName}} 中可以协作使用 Muster 的成员。",
@@ -13921,7 +13957,9 @@
           "emptyTitle": "No sites yet.",
           "emptyNewSite": "New site from a repository",
           "emptyFolders": "Choose site folders",
-          "emptyLink": "Or open a site link from Central."
+          "emptyLink": "Or open a site link from Central.",
+          "backToList": "All sites",
+          "escKey": "Esc"
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
@@ -14342,6 +14380,11 @@
           "configureSite": "Changing site settings",
           "importSiteConfig": "Importing site settings",
           "setUpLocalSite": "Setting up local sites"
+        },
+        "SiteStackDetectionNotice": {
+          "failed": "Couldn't check the Local site.",
+          "slow": "Still checking the Local site…",
+          "retry": "Retry"
         }
       },
       "activecollab": {
@@ -14898,7 +14941,13 @@
           "missing": "Muster Bots is not included in this build",
           "missingDetail": "In a development checkout, run pnpm fetch:muster-bots and reopen this tab.",
           "failed": "Muster Bots stopped",
-          "restart": "Restart"
+          "restart": "Restart",
+          "missingReleaseDetail": "Install the latest Muster release to get it.",
+          "getLatest": "Get the latest Muster",
+          "errorCopied": "Error copied",
+          "openLogFailed": "Couldn't open the log",
+          "copyError": "Copy error",
+          "openLog": "Open log"
         },
         "BotsIntro": {
           "jobTitle": "Give each bot a job",

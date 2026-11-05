@@ -20,7 +20,7 @@ export function BulkActionBar({
   isExecuting: boolean
 }) {
   return (
-    <div className="absolute bottom-0 left-0 right-0 p-2 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg animate-in slide-in-from-bottom-2 z-10">
+    <div className="absolute bottom-0 left-0 right-0 p-2 bg-background/95 backdrop-blur-sm border-t border-border shadow-floating animate-in slide-in-from-bottom-2 z-10">
       <div className="flex items-center gap-2 justify-between bg-accent/30 p-1.5 pr-2 rounded-md border border-border/50">
         <div className="flex items-center gap-2 text-xs font-medium text-foreground ml-1">
           {isExecuting ? (
@@ -66,6 +66,14 @@ export function BulkActionBar({
             variant="ghost"
             size="icon"
             className="h-7 w-7 ml-0.5 text-muted-foreground hover:text-foreground hover:bg-muted"
+            aria-label={translate(
+              'auto.components.right.sidebar.BulkActionBar.clearSelection',
+              'Clear selection'
+            )}
+            title={translate(
+              'auto.components.right.sidebar.BulkActionBar.clearSelection',
+              'Clear selection'
+            )}
             onClick={onClear}
             disabled={isExecuting}
           >

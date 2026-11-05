@@ -188,7 +188,7 @@ export function CloneStep({
           className="w-full"
         >
           {isCloning
-            ? translate('auto.components.sidebar.AddRepoSteps.69f5b5380d', 'Cloning...')
+            ? translate('auto.components.sidebar.AddRepoSteps.69f5b5380d', 'Cloning…')
             : translate('auto.components.sidebar.AddRepoSteps.32a7256d85', 'Clone')}
         </Button>
 

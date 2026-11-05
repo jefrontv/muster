@@ -148,7 +148,7 @@ describe('FullDiskAccessSetupPrompt state helpers', () => {
 
     const { container, root } = await renderPrompt()
 
-    expect(container.textContent).not.toContain('Full Disk Access')
+    expect(container.textContent).not.toContain('Full disk access')
     expect(getStatus).not.toHaveBeenCalled()
     expect(window.api.developerPermissions.request).not.toHaveBeenCalled()
     root.unmount()
@@ -167,7 +167,7 @@ describe('FullDiskAccessSetupPrompt state helpers', () => {
 
     const { container, root } = await renderPrompt()
     const button = container.querySelector<HTMLButtonElement>('button')
-    expect(button?.textContent).toContain('Open Full Disk Access')
+    expect(button?.textContent).toContain('Open full disk access')
 
     await act(async () => {
       button?.dispatchEvent(new MouseEvent('click', { bubbles: true }))

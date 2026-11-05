@@ -28,7 +28,7 @@ function operationLabel(conflictOperation: GitConflictOperation): string {
         'auto.components.right.sidebar.source.control.in_progress.cherryPick',
         'Cherry-pick in progress'
       )
-    default:
+    case 'unknown':
       return translate(
         'auto.components.right.sidebar.source.control.in_progress.operation',
         'Operation in progress'
@@ -47,7 +47,7 @@ function abortLabel(conflictOperation: GitConflictOperation): string | null {
         'auto.components.right.sidebar.source.control.in_progress.abortCherryPick',
         'Abort cherry-pick'
       )
-    default:
+    case 'unknown':
       return null
   }
 }
@@ -60,7 +60,7 @@ function continueAction(
       action: 'rebase-continue',
       label: translate(
         'auto.components.right.sidebar.source.control.in_progress.continueRebase',
-        'Continue Rebase'
+        'Continue rebase'
       )
     }
   }
@@ -105,7 +105,7 @@ function RebaseOverflowMenu({
           <SkipForward className="size-3.5" />
           {translate(
             'auto.components.right.sidebar.source.control.in_progress.skipCommit',
-            'Skip Commit'
+            'Skip commit'
           )}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -130,9 +130,9 @@ export function OperationBanner({
   const next = onSequencerAction ? continueAction(conflictOperation) : null
 
   return (
-    <div className="rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2">
+    <div className="rounded-md border border-status-attention-border bg-status-attention-background px-3 py-2">
       <div className="flex items-center gap-2">
-        <Icon className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <Icon className="size-4 shrink-0 text-status-attention" />
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
           {operationLabel(conflictOperation)}
         </span>

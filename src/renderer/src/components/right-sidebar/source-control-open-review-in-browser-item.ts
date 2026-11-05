@@ -35,7 +35,7 @@ function resolveBlockedHint(inputs: OpenReviewInBrowserItemInputs): string | nul
   if (!inputs.hasUpstream) {
     return translate(
       'auto.components.right.sidebar.source.control.open.review.in.browser.unpublished',
-      'Publish Branch first'
+      'Publish branch first'
     )
   }
   return translate(
@@ -53,7 +53,7 @@ export function resolveOpenReviewInBrowserItem(
     kind: 'open_review_in_browser',
     label: translate(
       'auto.components.right.sidebar.source.control.open.review.in.browser.label',
-      'Open Pull Request in Browser'
+      'Open pull request in browser'
     ),
     title:
       blockedHint ??

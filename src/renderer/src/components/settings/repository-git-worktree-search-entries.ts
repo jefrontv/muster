@@ -8,7 +8,7 @@ export function getRepositoryGitWorktreeSearchEntries(repo: Repo): SettingsSearc
     {
       title: translate(
         'auto.components.settings.repository.search.094adbe930',
-        'Default Worktree Base'
+        'Default worktree base'
       ),
       description: translate(
         'auto.components.settings.repository.search.f571081ec4',
@@ -26,7 +26,7 @@ export function getRepositoryGitWorktreeSearchEntries(repo: Repo): SettingsSearc
     {
       title: translate(
         'auto.components.settings.repository.search.443d127b5a',
-        'Worktree Location'
+        'Worktree location'
       ),
       description: translate(
         'auto.components.settings.repository.search.cd33a5525e',
@@ -59,7 +59,7 @@ export function getRepositoryGitWorktreeSearchEntries(repo: Repo): SettingsSearc
     {
       title: translate(
         'auto.components.settings.repository.search.1f0f20bbb6',
-        'Sparse Checkout Presets'
+        'Sparse checkout presets'
       ),
       description: translate(
         'auto.components.settings.repository.search.90a331fd68',
@@ -100,7 +100,7 @@ export function getRepositoryGitWorktreeSearchEntries(repo: Repo): SettingsSearc
     {
       title: translate(
         'auto.components.settings.repository.search.01b3377ebc',
-        'Worktree Shared Paths'
+        'Worktree shared paths'
       ),
       description: translate(
         'auto.components.settings.repository.search.ed885e589f',

@@ -321,6 +321,61 @@ describe('github owner/repo resolution', () => {
     }
   })
 
+  it('keeps local GitHub remotes cached beyond the short TTL while git config is unchanged', async () => {
+    const repoPath = await mkdtemp(join(tmpdir(), 'orca-gh-utils-'))
+    await mkdir(join(repoPath, '.git'))
+    await writeFile(join(repoPath, '.git', 'config'), '[core]\n\trepositoryformatversion = 0\n')
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(1_000)
+      gitExecFileAsyncMock.mockResolvedValue({ stdout: 'git@github.com:acme/widgets.git\n' })
+
+      await expect(getOwnerRepoForRemote(repoPath, 'origin')).resolves.toEqual({
+        owner: 'acme',
+        repo: 'widgets'
+      })
+      vi.setSystemTime(32_000)
+      await expect(getOwnerRepoForRemote(repoPath, 'origin')).resolves.toEqual({
+        owner: 'acme',
+        repo: 'widgets'
+      })
+      expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(1)
+
+      vi.setSystemTime(1_000 + 5 * 60_000 + 1)
+      await getOwnerRepoForRemote(repoPath, 'origin')
+      expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+      await rm(repoPath, { recursive: true, force: true })
+    }
+  })
+
+  it('re-probes a cached local GitHub remote when git config changes', async () => {
+    const repoPath = await mkdtemp(join(tmpdir(), 'orca-gh-utils-'))
+    await mkdir(join(repoPath, '.git'))
+    const configPath = join(repoPath, '.git', 'config')
+    await writeFile(configPath, '[remote "origin"]\n\turl = git@github.com:old/orca.git\n')
+    try {
+      gitExecFileAsyncMock
+        .mockResolvedValueOnce({ stdout: 'git@github.com:old/orca.git\n' })
+        .mockResolvedValueOnce({ stdout: 'git@github.com:new-owner/orca.git\n' })
+
+      await expect(getOwnerRepoForRemote(repoPath, 'origin')).resolves.toEqual({
+        owner: 'old',
+        repo: 'orca'
+      })
+      await writeFile(configPath, '[remote "origin"]\n\turl = git@github.com:new-owner/orca.git\n')
+
+      await expect(getOwnerRepoForRemote(repoPath, 'origin')).resolves.toEqual({
+        owner: 'new-owner',
+        repo: 'orca'
+      })
+      expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    } finally {
+      await rm(repoPath, { recursive: true, force: true })
+    }
+  })
+
   it('keeps local missing-remote probes cached beyond the short positive TTL', async () => {
     const repoPath = await mkdtemp(join(tmpdir(), 'orca-gh-utils-'))
     await mkdir(join(repoPath, '.git'))

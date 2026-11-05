@@ -94,7 +94,7 @@ export function CommentMarkdownCodeBlock({
   return (
     <div className="group/codeblock my-3 max-w-full overflow-hidden rounded-md bg-accent">
       <div className="flex h-7 select-none items-center justify-between gap-2 border-b border-border/50 px-3">
-        <span className="truncate font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+        <span className="truncate font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
           {language ?? ''}
         </span>
         <span

@@ -230,7 +230,7 @@ function normalizeBrowserTitle(title: string | null | undefined, url: string): s
     !title
   ) {
     // Why: don't surface the internal blank-guest URL as a title (leaks an impl detail, looks broken); show "New Tab" instead.
-    return 'New Tab'
+    return 'New tab'
   }
   return title
 }
@@ -688,7 +688,7 @@ export const createBrowserSlice: StateCreator<AppState, [], [], BrowserSlice> = 
       return
     }
     get().createBrowserTab(worktreeId, defaultUrl, {
-      title: translate('auto.store.slices.browser.d175274b6d', 'New Browser Tab'),
+      title: translate('auto.store.slices.browser.d175274b6d', 'New browser tab'),
       focusAddressBar: true,
       targetGroupId: groupId
     })

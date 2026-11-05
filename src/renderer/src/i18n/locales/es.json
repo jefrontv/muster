@@ -1077,7 +1077,9 @@
         "ec43b38ba7": "Con estrella en GitHub",
         "157bb5ecbb": "Abrir GitHub",
         "preflightDismiss": "Descartar",
-        "addNewSite": "Add new site"
+        "addNewSite": "Add new site",
+        "previousWorkspace": "Previous workspace",
+        "nextWorkspace": "Next workspace"
       },
       "LinearIssueMarkdownDescriptionEditor": {
         "d9c47069ef": "Markdown",
@@ -2320,7 +2322,8 @@
             "767951265d": "Algo salió mal al crear el worktree.",
             "vmProvisioningTitle": "Provisionando VM",
             "cancelProvisioning": "Cancelar",
-            "vmProvisioningLogEmpty": "Esperando output de la receta..."
+            "vmProvisioningLogEmpty": "Esperando output de la receta...",
+            "copyDetails": "Copy details"
           }
         }
       },
@@ -3116,7 +3119,8 @@
             "chipWeek": "Week",
             "chipMonth": "Month",
             "resetBadgeOne": "1 reset de uso disponible",
-            "resetBadgeMany": "{{value0}} resets de uso disponibles"
+            "resetBadgeMany": "{{value0}} resets de uso disponibles",
+            "usedSuffix": "used"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "Conectar una cuenta",
@@ -4408,7 +4412,8 @@
           "hostDisconnected": "Desconectado",
           "failedNestWorkspace": "No se pudo anidar el espacio de trabajo",
           "sidebarRowMissing": "El destino ya no existe",
-          "failedUnnestWorkspace": "Error al expandir el espacio de trabajo"
+          "failedUnnestWorkspace": "Error al expandir el espacio de trabajo",
+          "groupDeleteRetry": "Try again"
         },
         "WorktreeMetaDialog": {
           "3db0a2a593": "Cancelar",
@@ -5334,7 +5339,9 @@
           "b4c167764d": "Se importaron {{value0}} cookies desde un archivo a {{value1}}.",
           "a3f8c2d1e0b4": "Se importaron {{value0}} cookies de {{value1}} ({{value2}}) a {{value3}}.",
           "b4e9d3f2a1c5": "Se importaron {{value0}} cookies de {{value1}} a {{value2}}.",
-          "c5a273a809": "Desde {{value0}}"
+          "c5a273a809": "Desde {{value0}}",
+          "clearCookies": "Clear default cookies",
+          "removeProfile": "Remove profile"
         },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
@@ -6487,7 +6494,11 @@
           "setupGuideTitle": "Setup guide",
           "setupGuideDescription": "Finish the setup that makes Muster useful for your day-to-day work.",
           "extensionsTitle": "Extensions",
-          "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use."
+          "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use.",
+          "navGroupApp": "App",
+          "navGroupAgents": "Agents",
+          "navGroupWorkspaces": "Workspaces",
+          "navGroupIntegrations": "Integrations"
         },
         "SettingsFormControls": {
           "42a4d15a30": "No hay fuentes coincidentes.",
@@ -6779,7 +6790,9 @@
         "TerminalFontSizeSetting": {
           "9b5252c85a": "px",
           "0f4c92e595": "Tamaño de fuente predeterminado del terminal para paneles nuevos y actualizaciones en vivo.",
-          "a4a352b1e9": "Tamaño de fuente"
+          "a4a352b1e9": "Tamaño de fuente",
+          "decrease": "Smaller font",
+          "increase": "Larger font"
         },
         "TerminalPane": {
           "4263e940e0": "Al presionar la tecla JIS Yen (¥), se envía una barra invertida (\\\\).",
@@ -6982,7 +6995,9 @@
           "605a35d600": "Not applied by the terminal renderer yet — xterm.js has no bold color slot. A saved value is preserved."
         },
         "UIZoomControl": {
-          "c2c64b24d0": "Restablecer"
+          "c2c64b24d0": "Restablecer",
+          "zoomOut": "Zoom out",
+          "zoomIn": "Zoom in"
         },
         "VoicePane": {
           "68de13f72c": "No se pudo eliminar el modelo.",
@@ -9464,7 +9479,9 @@
           "custom": "Custom icon color"
         },
         "TerminalZoomControl": {
-          "reset": "Reset"
+          "reset": "Reset",
+          "zoomOut": "Zoom out",
+          "zoomIn": "Zoom in"
         },
         "extensions": {
           "tab_tools": "Tools",
@@ -9544,6 +9561,11 @@
           "save": "Save",
           "remove": "Remove",
           "placeholder": "ak_…"
+        },
+        "SettingsProjectsNav": {
+          "filter": "Filter projects",
+          "clearFilter": "Clear filter",
+          "showAll": "Show all {{value0}}"
         }
       },
       "right": {
@@ -9551,7 +9573,8 @@
           "BulkActionBar": {
             "79a9f5f712": "Unstage (",
             "ef5f5bd06e": "Stage (",
-            "60ed678138": "seleccionados"
+            "60ed678138": "seleccionados",
+            "clearSelection": "Clear selection"
           },
           "ChecksPanel": {
             "2ef90c9819": "Se inició un agente de IA para los checks con errores.",
@@ -10059,7 +10082,7 @@
               "description_one": "{{value0}} tiene 1 commit que no está en tu rama. Hacer force push lo elimina del remoto.",
               "description_other": "{{value0}} tiene {{value1}} commits que no están en tu rama. Hacer force push los elimina del remoto.",
               "remoteBranch": "La rama remota",
-              "confirm": "Force Push"
+              "confirm": "Force push"
             },
             "indexWriteFailed": {
               "stage": "No se pudieron agregar los cambios al stage",
@@ -10533,7 +10556,7 @@
                   "95550cff15": "Push",
                   "d64292a938": "Pull",
                   "795f1509c5": "Sincronizar",
-                  "390abeab93": "Force Push",
+                  "390abeab93": "Force push",
                   "1884cf34af": "Publicar esta rama en origin",
                   "7b4d02e6b8": "Publicar rama",
                   "3d5dccef0b": "No hay nada para hacer commit. El PR ya tiene merge.",
@@ -10549,7 +10572,7 @@
                   "484f45c439": "{{value0}} en progreso…",
                   "6f7a8b9c0d": "Operación remota en curso…",
                   "7f8a9b0c1d": "Operación remota en curso — inténtalo de nuevo cuando termine",
-                  "74fc171e99": "Force Push en curso…",
+                  "74fc171e99": "Force push en curso…",
                   "16aee3a5c1": "Commit en curso…",
                   "e61b0d7a3c": "Haz checkout de una rama antes de publicar commits.",
                   "1d47e850cf": "Haz push de actualizaciones a la rama de review vinculada",
@@ -10578,7 +10601,7 @@
               "undo": {
                 "commit": {
                   "confirm_title": "¿Deshacer un commit ya enviado?",
-                  "confirm_description": "Este commit ya está en {{value0}}. Deshacerlo solo cambia tu rama local y el próximo push necesitará Force Push.",
+                  "confirm_description": "Este commit ya está en {{value0}}. Deshacerlo solo cambia tu rama local y el próximo push necesitará Force push.",
                   "confirm_label": "Deshacer commit",
                   "remote_fallback": "el remoto"
                 }
@@ -10607,7 +10630,7 @@
                   "ready": "Reemplaza el último commit con los cambios staged y este mensaje",
                   "load_message": "Carga el mensaje del último commit para editarlo y luego enmendar",
                   "confirm_title": "¿Enmendar un commit ya enviado?",
-                  "confirm_description": "Este commit ya está en {{value0}}. Enmendarlo solo cambia tu rama local, y tu próximo push necesitará Force Push.",
+                  "confirm_description": "Este commit ya está en {{value0}}. Enmendarlo solo cambia tu rama local, y tu próximo push necesitará Force push.",
                   "confirm_label": "Enmendar commit",
                   "load_failed": "No se pudo cargar el mensaje del último commit"
                 }
@@ -11225,7 +11248,8 @@
           "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
           "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.",
           "siteMcpTitle": "Tools for your agents",
-          "siteMcpSubtitle": "Let your agents deploy, import and query site databases."
+          "siteMcpSubtitle": "Let your agents deploy, import and query site databases.",
+          "defaultViewSubtitleWithBots": "Chat is a conversation desk. Code is worktrees and terminals. Bots run tasks across your apps. Switch any time from the sidebar."
         },
         "welcome": {
           "eyebrow": "Welcome to",
@@ -11238,7 +11262,10 @@
           "chatDescription": "A conversation desk. Threads, projects, and agents in one place.",
           "code": "Code Mode",
           "codeHint": "Build first",
-          "codeDescription": "Worktrees, terminals, and the classic IDE layout."
+          "codeDescription": "Worktrees, terminals, and the classic IDE layout.",
+          "bots": "Bots mode",
+          "botsHint": "Delegate first",
+          "botsDescription": "Assistants that connect to your apps and run tasks for you."
         },
         "OnboardingFooter": {
           "ba58547306": "Atrás",
@@ -11246,7 +11273,8 @@
           "done": "Listo",
           "skipToWorkspaceSetup": "Skip to workspace setup",
           "addProject": "Add a project instead",
-          "skipToSiteSetup": "Skip to site setup"
+          "skipToSiteSetup": "Skip to site setup",
+          "skipToBots": "Skip to Bots"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "Iniciando terminal..."
@@ -11361,7 +11389,9 @@
         },
         "finish": {
           "firstSite": "Set up your first site",
-          "openingNewSite": "Opening New site..."
+          "openingNewSite": "Opening New site...",
+          "openingNewWorkspace": "Opening new workspace…",
+          "openingBots": "Opening Bots…"
         },
         "RecommendedTools": {
           "title": "Recommended tools",
@@ -13023,7 +13053,12 @@
             "756bfc25c9": "Abrir",
             "09a9489aa5": "Mostrar",
             "2a4c4b8e1f": "Copiar",
-            "b41f0c7d92": "Close browser devtools"
+            "b41f0c7d92": "Close browser devtools",
+            "navBack": "Back",
+            "navForward": "Forward",
+            "navReload": "Reload",
+            "navStop": "Stop loading",
+            "navRetry": "Try again"
           },
           "BrowserToolbarMenu": {
             "429ef481f9": "Cancelar",
@@ -13064,7 +13099,8 @@
             "9c6ce0632a": "Captura de pantalla del elemento seleccionado",
             "50f7114f99": "Revisar antes de adjuntar. El contexto de la página capturada puede incluir contenido visible del sitio.",
             "f3575229df": "Agarrar",
-            "405bb315da": "Intitulado"
+            "405bb315da": "Intitulado",
+            "close": "Close"
           },
           "browser": {
             "address": {
@@ -13759,7 +13795,7 @@
                 },
                 "reconnect": "Reconecta tu perfil para gestionar miembros.",
                 "unconfigured": "La gestión de organización no está disponible en esta compilación.",
-                "failed": "Algo salió mal. Por favor, intenta de nuevo."
+                "failed": "The members change didn't go through: {{value0}}"
               },
               "subtitle": {
                 "named": "Personas en {{orgName}} que pueden colaborar en Muster.",
@@ -13921,7 +13957,9 @@
           "emptyTitle": "No sites yet.",
           "emptyNewSite": "New site from a repository",
           "emptyFolders": "Choose site folders",
-          "emptyLink": "Or open a site link from Central."
+          "emptyLink": "Or open a site link from Central.",
+          "backToList": "All sites",
+          "escKey": "Esc"
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
@@ -14342,6 +14380,11 @@
           "configureSite": "Changing site settings",
           "importSiteConfig": "Importing site settings",
           "setUpLocalSite": "Setting up local sites"
+        },
+        "SiteStackDetectionNotice": {
+          "failed": "Couldn't check the Local site.",
+          "slow": "Still checking the Local site…",
+          "retry": "Retry"
         }
       },
       "activecollab": {
@@ -14898,7 +14941,13 @@
           "missing": "Muster Bots is not included in this build",
           "missingDetail": "In a development checkout, run pnpm fetch:muster-bots and reopen this tab.",
           "failed": "Muster Bots stopped",
-          "restart": "Restart"
+          "restart": "Restart",
+          "missingReleaseDetail": "Install the latest Muster release to get it.",
+          "getLatest": "Get the latest Muster",
+          "errorCopied": "Error copied",
+          "openLogFailed": "Couldn't open the log",
+          "copyError": "Copy error",
+          "openLog": "Open log"
         },
         "BotsIntro": {
           "jobTitle": "Give each bot a job",

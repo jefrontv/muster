@@ -200,7 +200,7 @@ export type FindKeybindingConflictOptions = {
 export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   {
     id: 'worktree.quickOpen',
-    title: 'Go to File',
+    title: 'Go to file',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'global', 'file', 'quick open'],
@@ -208,7 +208,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'app.actionPalette',
-    title: 'Command Palette',
+    title: 'Command palette',
     group: 'Global',
     scope: 'global',
     searchKeywords: [
@@ -224,7 +224,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'app.settings',
-    title: 'Open Settings',
+    title: 'Open settings',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'settings', 'preferences'],
@@ -233,7 +233,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'app.forceReload',
-    title: 'Force Reload',
+    title: 'Force reload',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'reload', 'refresh', 'force'],
@@ -242,7 +242,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'worktree.palette',
-    title: 'Switch worktree',
+    title: 'Switch workspace',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'global', 'worktree', 'switch', 'jump'],
@@ -254,7 +254,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'worktree.navigateUp',
-    title: 'Previous worktree',
+    title: 'Previous workspace',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'global', 'worktree', 'previous', 'up'],
@@ -262,7 +262,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'worktree.navigateDown',
-    title: 'Next worktree',
+    title: 'Next workspace',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'global', 'worktree', 'next', 'down'],
@@ -278,7 +278,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'workspace.rename',
-    title: 'Rename worktree',
+    title: 'Rename workspace',
     group: 'Global',
     scope: 'global',
     conflictGroup: 'workspace-shell',
@@ -292,7 +292,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'workspace.delete',
-    title: 'Delete Workspace',
+    title: 'Delete workspace',
     group: 'Global',
     scope: 'global',
     searchKeywords: [
@@ -311,7 +311,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'workspace.openBoard',
-    title: 'Open Workspace Board',
+    title: 'Open workspace board',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'global', 'workspace', 'board', 'kanban', 'worktree'],
@@ -321,7 +321,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'workspace.selectByIndex',
-    title: 'Select Workspace 1–9',
+    title: 'Select workspace 1–9',
     group: 'Global',
     scope: 'global',
     searchKeywords: [
@@ -349,7 +349,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'view.tasks',
-    title: 'Open Tasks',
+    title: 'Open tasks',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'tasks', 'github issues', 'linear'],
@@ -357,7 +357,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.left.toggle',
-    title: 'Toggle Sidebar',
+    title: 'Toggle sidebar',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'left'],
@@ -365,7 +365,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.right.toggle',
-    title: 'Toggle Right Sidebar',
+    title: 'Toggle right sidebar',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'right'],
@@ -373,7 +373,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.explorer.toggle',
-    title: 'Show Explorer',
+    title: 'Show explorer',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'explorer', 'files'],
@@ -381,7 +381,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.search.toggle',
-    title: 'Show Search',
+    title: 'Show search',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'search'],
@@ -389,7 +389,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.sourceControl.toggle',
-    title: 'Show Source Control',
+    title: 'Show source control',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'source control', 'git'],
@@ -397,7 +397,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.tasks.toggle',
-    title: 'Show Tasks',
+    title: 'Show tasks',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'tasks', 'activecollab'],
@@ -407,7 +407,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.checks.toggle',
-    title: 'Show Checks',
+    title: 'Show checks',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'checks', 'ci'],
@@ -415,7 +415,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.ports.toggle',
-    title: 'Show Ports',
+    title: 'Show ports',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'ports'],
@@ -427,7 +427,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.sleepingWorkspaces.toggle',
-    title: 'Toggle Sleeping Workspaces',
+    title: 'Toggle sleeping workspaces',
     group: 'Global',
     scope: 'global',
     searchKeywords: [
@@ -446,7 +446,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sidebar.focusWorktreeList',
-    title: 'Focus worktree list',
+    title: 'Focus workspace list',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'sidebar', 'worktree', 'focus'],
@@ -455,7 +455,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'floatingTerminal.toggle',
-    title: 'Toggle Floating Terminal',
+    title: 'Toggle floating terminal',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'floating terminal', 'terminal'],
@@ -464,7 +464,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'floatingWorkspace.maximize',
-    title: 'Maximize Floating Workspace Panel',
+    title: 'Maximize floating workspace panel',
     group: 'Global',
     scope: 'global',
     searchKeywords: [
@@ -487,7 +487,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'floatingWorkspace.minimize',
-    title: 'Minimize Floating Workspace Panel',
+    title: 'Minimize floating workspace panel',
     group: 'Global',
     scope: 'global',
     searchKeywords: [
@@ -510,7 +510,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'zoom.in',
-    title: 'Zoom In',
+    title: 'Zoom in',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'zoom', 'in', 'scale'],
@@ -518,7 +518,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'zoom.out',
-    title: 'Zoom Out',
+    title: 'Zoom out',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'zoom', 'out', 'scale'],
@@ -526,7 +526,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'zoom.reset',
-    title: 'Reset Size',
+    title: 'Reset size',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'zoom', 'reset', 'size', 'actual'],
@@ -534,7 +534,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'worktree.history.back',
-    title: 'Worktree History Back',
+    title: 'Workspace history back',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'worktree', 'history', 'back'],
@@ -543,7 +543,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'worktree.history.forward',
-    title: 'Worktree History Forward',
+    title: 'Workspace history forward',
     group: 'Global',
     scope: 'global',
     searchKeywords: ['shortcut', 'worktree', 'history', 'forward'],
@@ -589,7 +589,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'tab.openMarkdown',
-    title: 'Open markdown tab',
+    title: 'Open Markdown tab',
     group: 'Tabs',
     scope: 'tabs',
     searchKeywords: ['shortcut', 'tab', 'markdown', 'file', 'open'],
@@ -695,7 +695,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'tab.selectByIndex',
-    title: 'Select Tab 1–9',
+    title: 'Select tab 1–9',
     group: 'Tab Navigation',
     scope: 'tabs',
     // Why: no shared conflictGroup with workspace.selectByIndex so swapping their modifiers isn't a false conflict; safe because resolveWindowShortcutAction checks the workspace range first.
@@ -709,7 +709,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'tab.openQuickCommandsMenu',
-    title: 'Toggle Quick Commands menu',
+    title: 'Toggle quick commands menu',
     group: 'Quick Commands',
     scope: 'tabs',
     // Why: this tab-scoped action is also routed through the main-window allowlist, so Settings must warn when it shadows global chords.
@@ -719,7 +719,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'browser.find',
-    title: 'Find in Browser',
+    title: 'Find in browser',
     group: 'Browser',
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'find', 'search'],
@@ -727,7 +727,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'browser.back',
-    title: 'Go Back in Browser',
+    title: 'Go back in browser',
     group: 'Browser',
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'history', 'back', 'previous'],
@@ -739,7 +739,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'browser.forward',
-    title: 'Go Forward in Browser',
+    title: 'Go forward in browser',
     group: 'Browser',
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'history', 'forward', 'next'],
@@ -751,7 +751,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'browser.reload',
-    title: 'Reload Browser Page',
+    title: 'Reload browser page',
     group: 'Browser',
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'reload', 'refresh'],
@@ -759,7 +759,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'browser.hardReload',
-    title: 'Hard Reload Browser Page',
+    title: 'Hard reload browser page',
     group: 'Browser',
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'reload', 'refresh', 'cache'],
@@ -767,7 +767,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'browser.focusAddressBar',
-    title: 'Focus Browser Address Bar',
+    title: 'Focus browser address bar',
     group: 'Browser',
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'address', 'url', 'location'],
@@ -775,7 +775,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'browser.grabElement',
-    title: 'Grab Page Element',
+    title: 'Grab page element',
     group: 'Browser',
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'grab', 'copy', 'element'],
@@ -804,7 +804,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'editor.save',
-    title: 'Save File',
+    title: 'Save file',
     group: 'Editors',
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'save'],
@@ -812,7 +812,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'editor.markdownPreview',
-    title: 'Show Markdown Preview',
+    title: 'Show Markdown preview',
     group: 'Editors',
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'markdown', 'preview'],
@@ -820,7 +820,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'editor.toggleWordWrap',
-    title: 'Toggle Word Wrap',
+    title: 'Toggle word wrap',
     group: 'Editors',
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'word wrap', 'wrap', 'long lines', 'soft wrap'],
@@ -829,7 +829,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'editor.copyContext',
-    title: 'Copy Context',
+    title: 'Copy context',
     group: 'Editors',
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'copy', 'context'],
@@ -838,7 +838,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   // Why: F7 / Shift+F7 mirror VS Code / JetBrains diff-change nav; function keys are safe bare/Shift, so both opt into allowBareKeybindings.
   {
     id: 'editor.previousChange',
-    title: 'Go to Previous Change',
+    title: 'Go to previous change',
     group: 'Editors',
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'diff', 'change', 'hunk', 'previous'],
@@ -847,7 +847,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'editor.nextChange',
-    title: 'Go to Next Change',
+    title: 'Go to next change',
     group: 'Editors',
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'diff', 'change', 'hunk', 'next'],
@@ -856,7 +856,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'editor.addReviewNote',
-    title: 'Add Review Note',
+    title: 'Add review note',
     group: 'Editors',
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'markdown', 'note', 'comment', 'annotation', 'review'],
@@ -865,7 +865,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'sourceControl.sendReviewNotes',
-    title: 'Send Review Notes to Agent',
+    title: 'Send review notes to agent',
     group: 'Global',
     scope: 'global',
     // Why: fires from the global capture handler even while the editor is focused, so Settings must warn on collisions with editor chords (e.g. Add Review Note) too, not just global ones.
@@ -938,7 +938,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'settings.search',
-    title: 'Search Settings',
+    title: 'Search settings',
     group: 'Settings',
     scope: 'settings',
     searchKeywords: ['shortcut', 'settings', 'search', 'find'],
@@ -1014,7 +1014,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'terminal.setTitle',
-    title: 'Set Title…',
+    title: 'Set title…',
     group: 'Terminal Panes',
     scope: 'terminal',
     searchKeywords: ['shortcut', 'terminal', 'pane', 'set title', 'title', 'rename'],
@@ -1022,7 +1022,7 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
   },
   {
     id: 'terminal.clearPaneTitle',
-    title: 'Clear Pane Title',
+    title: 'Clear pane title',
     group: 'Terminal Panes',
     scope: 'terminal',
     searchKeywords: ['shortcut', 'terminal', 'pane', 'clear title', 'remove title', 'title'],

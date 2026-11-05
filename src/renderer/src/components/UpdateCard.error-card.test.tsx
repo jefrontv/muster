@@ -64,12 +64,12 @@ describe('UpdateCard Windows signature failures', () => {
 
     act(() => useAppStore.getState().setUpdateStatus({ state: 'error', message }))
 
-    expect(screen.getByText("Update Wasn't Installed")).toBeTruthy()
+    expect(screen.getByText("Update wasn't installed")).toBeTruthy()
     expect(screen.getByText(/Don't install this download/)).toBeTruthy()
     expect(screen.queryByText(message)).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Check official releases' }))
-    expect(openUrl).toHaveBeenCalledWith('https://github.com/stablyai/orca/releases')
+    expect(openUrl).toHaveBeenCalledWith('https://github.com/jefrontv/muster/releases')
     expect(openUrl).not.toHaveBeenCalledWith(expect.stringContaining('/tag/'))
   })
 
@@ -80,11 +80,11 @@ describe('UpdateCard Windows signature failures', () => {
 
     act(() => useAppStore.getState().setUpdateStatus({ state: 'error', message }))
 
-    expect(screen.getByText('Update Verification Blocked')).toBeTruthy()
+    expect(screen.getByText('Update verification blocked')).toBeTruthy()
     expect(screen.queryByText(message)).toBeNull()
     expect(screen.queryByText(/Windows verifies the installer/)).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry Download' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Retry download' }))
     expect(download).toHaveBeenCalledTimes(1)
 
     fireEvent.click(screen.getByRole('button', { name: 'Show details' }))

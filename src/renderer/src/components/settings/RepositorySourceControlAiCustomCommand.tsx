@@ -73,7 +73,7 @@ export function RepositorySourceControlAiCustomCommand({
             onCommit(undefined)
           }}
         >
-          <SelectTrigger size="sm" className="h-8 w-full text-xs sm:w-[150px]">
+          <SelectTrigger className="w-full sm:w-[150px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

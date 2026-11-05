@@ -240,7 +240,7 @@ export default function TaskProjectSourceCombobox({
             autoFocus
             placeholder={translate(
               'auto.components.task.project.source.combobox.searchProjects',
-              'Search projects...'
+              'Search projects…'
             )}
             value={query}
             onValueChange={setQuery}
@@ -324,7 +324,7 @@ export default function TaskProjectSourceCombobox({
                           className="max-w-full"
                         />
                       </span>
-                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{detail}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{detail}</p>
                     </div>
                   </button>
                   {hasSourceMenu ? (
@@ -387,7 +387,7 @@ export default function TaskProjectSourceCombobox({
                                   <div className="truncate text-xs">
                                     {getRepoHostLabel?.(source) ?? source.displayName}
                                   </div>
-                                  <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                                     {sourceDetail}
                                   </p>
                                 </div>

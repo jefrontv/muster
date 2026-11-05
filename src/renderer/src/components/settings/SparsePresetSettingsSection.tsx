@@ -159,7 +159,7 @@ export function SparsePresetSettingsSection({
           <h3 className="text-sm font-semibold">
             {translate(
               'auto.components.settings.SparsePresetSettingsSection.388513be2d',
-              'Sparse Checkout Presets'
+              'Sparse checkout presets'
             )}
           </h3>
           <p className="text-xs text-muted-foreground">
@@ -179,7 +179,7 @@ export function SparsePresetSettingsSection({
           <Plus className="size-3.5" />
           {translate(
             'auto.components.settings.SparsePresetSettingsSection.d7565029a9',
-            'New Preset'
+            'New preset'
           )}
         </Button>
       </div>
@@ -214,7 +214,7 @@ export function SparsePresetSettingsSection({
               )
             : translate(
                 'auto.components.settings.SparsePresetSettingsSection.8deb7024ab',
-                'Loading sparse presets...'
+                'Loading sparse presets…'
               )}
         </div>
       ) : sortedPresets.length === 0 && !draft ? (

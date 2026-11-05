@@ -21,7 +21,7 @@ export function DashboardAgentRowToolStep({
   return (
     <div
       data-agent-row-tool-slot=""
-      className="mt-0.5 min-w-0 pl-5 text-[10px] leading-snug text-muted-foreground/70"
+      className="mt-0.5 min-w-0 pl-5 text-[11px] leading-snug text-muted-foreground/70"
     >
       {toolName ? (
         <>
@@ -33,9 +33,9 @@ export function DashboardAgentRowToolStep({
             )}
           >
             <Wrench className="size-2.5 shrink-0" />
-            <code className="shrink-0 font-mono text-[10px]">{toolName}</code>
+            <code className="shrink-0 font-mono text-[11px]">{toolName}</code>
             {!expanded && toolInput ? (
-              <span className="min-w-0 truncate text-muted-foreground/60" title={toolInput}>
+              <span className="min-w-0 truncate text-muted-foreground" title={toolInput}>
                 {toolInput}
               </span>
             ) : null}
@@ -47,7 +47,7 @@ export function DashboardAgentRowToolStep({
                 expanded ? 'mt-0.5 grid-rows-[1fr]' : 'grid-rows-[0fr]'
               )}
             >
-              <pre className="min-h-0 overflow-hidden whitespace-pre-wrap break-words font-mono text-[10px] text-muted-foreground/60">
+              <pre className="min-h-0 overflow-hidden whitespace-pre-wrap break-words font-mono text-[11px] text-muted-foreground">
                 {toolInput}
               </pre>
             </div>

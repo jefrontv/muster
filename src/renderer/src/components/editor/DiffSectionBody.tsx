@@ -102,7 +102,7 @@ export function DiffSectionBody({
         <div className="flex h-full items-center gap-2 bg-muted/10 px-3 text-[11px] text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
           <span>
-            {translate('auto.components.editor.DiffSectionBody.f5cf81cec2', 'Loading diff...')}
+            {translate('auto.components.editor.DiffSectionBody.f5cf81cec2', 'Loading diff…')}
           </span>
         </div>
       ) : section.error ? (

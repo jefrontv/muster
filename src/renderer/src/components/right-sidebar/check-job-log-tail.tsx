@@ -76,7 +76,7 @@ function CopyButton({
   return (
     <button
       ref={setCopyButtonRef}
-      className="p-1 rounded hover:bg-accent text-muted-foreground/40 hover:text-foreground transition-colors shrink-0"
+      className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
       title={title}
       onClick={handleCopy}
     >
@@ -107,7 +107,7 @@ export function CheckJobLogTail({
   return (
     <div className="mt-3 min-w-0">
       <div className="mb-1.5 flex min-w-0 items-center gap-2">
-        <div className="min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {translate(
             'auto.components.right.sidebar.checks.panel.content.d713f500b2',
             'Log excerpt'

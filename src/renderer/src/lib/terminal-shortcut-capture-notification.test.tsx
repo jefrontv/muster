@@ -57,7 +57,7 @@ describe('showTerminalShortcutCaptureNotification', () => {
         }),
         duration: 20_000,
         dismissible: true,
-        action: expect.objectContaining({ label: 'Open Shortcuts' })
+        action: expect.objectContaining({ label: 'Open shortcuts' })
       })
     )
   })

@@ -83,7 +83,7 @@ export function TerminalErrorToast({
               {'\n'}
               {translate(
                 'auto.components.terminal.pane.TerminalErrorToast.5c8ce20be6',
-                'If this persists, please'
+                'If this persists,'
               )}{' '}
               <a
                 href="https://github.com/jefrontv/muster/issues"

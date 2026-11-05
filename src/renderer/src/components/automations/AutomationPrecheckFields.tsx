@@ -8,6 +8,7 @@ import {
 import { Field } from './automation-page-parts'
 import type { AutomationDraft } from './AutomationEditorDialog'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 type AutomationPrecheckFieldsProps = {
   draft: AutomationDraft
@@ -30,7 +31,7 @@ export function AutomationPrecheckFields({
           'Precheck'
         )}
       >
-        <textarea
+        <Textarea
           value={draft.precheckCommand}
           disabled={disabled}
           placeholder={translate(
@@ -43,7 +44,7 @@ export function AutomationPrecheckFields({
               precheckCommand: event.target.value
             }))
           }
-          className="min-h-[68px] w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="min-h-[68px] resize-none font-mono"
         />
       </Field>
       <Field

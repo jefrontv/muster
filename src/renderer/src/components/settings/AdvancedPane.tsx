@@ -68,7 +68,7 @@ export function AdvancedPane({ settings, updateSettings }: AdvancedPaneProps): R
                 <Label id="advanced-http1-compatibility-label">
                   {translate(
                     'auto.components.settings.AdvancedPane.e9506d3377',
-                    'HTTP/1.1 Compatibility'
+                    'HTTP/1.1 compatibility'
                   )}
                 </Label>
                 <TooltipProvider delayDuration={250}>
@@ -80,7 +80,7 @@ export function AdvancedPane({ settings, updateSettings }: AdvancedPaneProps): R
                           'auto.components.settings.AdvancedPane.6627e75c92',
                           'Explain HTTP/1.1 compatibility'
                         )}
-                        className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <Info className="size-3.5" />
                       </button>

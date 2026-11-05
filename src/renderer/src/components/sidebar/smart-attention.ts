@@ -49,6 +49,9 @@ export type WorktreeAttention = {
 
 export const IDLE: WorktreeAttention = { cls: 4, attentionTimestamp: 0 }
 
+// A finished agent outranks working ones only while its result is fresh; after that it sorts as idle.
+export const DONE_ATTENTION_MS = 30 * 60 * 1000
+
 export function hasFreshAttributedAgentStatus(
   agentStatusByPaneKey: Record<string, AgentStatusEntry> | undefined,
   now: number,
@@ -138,7 +141,7 @@ export function resolveAttention(panes: PaneInput[], now: number): WorktreeAtten
         cause = entry.state
       } else if (entry.state === 'done') {
         // Why: interrupted `done` (Ctrl+C) means the user is done with the turn; treat as idle, not Class 2.
-        if (entry.interrupted) {
+        if (entry.interrupted || now - entry.stateStartedAt > DONE_ATTENTION_MS) {
           continue
         }
         cls = 2

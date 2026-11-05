@@ -130,7 +130,7 @@ describe('LinearIntegrationCard account scope', () => {
     expect(rendered.textContent).toContain(
       'Credentials and account checks for this provider are owned by this desktop client. Use Settings > Remote Muster Servers > Advanced to edit server-owned credentials.'
     )
-    expect(rendered.textContent).toContain('Open Remote Servers')
+    expect(rendered.textContent).toContain('Open remote servers')
     expect(rendered.textContent).toContain('Add access with a Personal API key')
 
     await act(async () => {
@@ -153,7 +153,7 @@ describe('LinearIntegrationCard account scope', () => {
     )
     await act(async () => {
       Array.from(rendered.querySelectorAll('button'))
-        .find((button) => button.textContent === 'Open Remote Servers')
+        .find((button) => button.textContent === 'Open remote servers')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
     expect(state.openSettingsPage).toHaveBeenCalledTimes(1)

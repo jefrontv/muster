@@ -27,10 +27,10 @@ function runtimeStatusLabel(state: RuntimeHostConnectionState): string {
 function runtimeDotColor(state: RuntimeHostConnectionState): string {
   switch (state) {
     case 'connected':
-      return 'bg-emerald-500'
+      return 'bg-status-success'
     case 'checking':
     case 'reconnecting':
-      return 'bg-yellow-500'
+      return 'bg-status-attention'
     case 'disconnected':
       return 'bg-muted-foreground/40'
   }
@@ -38,7 +38,7 @@ function runtimeDotColor(state: RuntimeHostConnectionState): string {
 
 function runtimeStatusTone(state: RuntimeHostConnectionState): string {
   if (state === 'checking' || state === 'reconnecting') {
-    return 'text-yellow-500'
+    return 'text-status-attention'
   }
   return 'text-muted-foreground'
 }
@@ -92,11 +92,11 @@ export function RuntimeHostStatusRow({
       <span className={`size-1.5 shrink-0 rounded-full ${runtimeDotColor(state)}`} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[12px] font-medium">{label}</div>
-        <div className="flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
           <span>
             {translate(
               'auto.components.status.bar.SshStatusSegment.remote_server',
-              'Remote Server'
+              'Remote server'
             )}
           </span>
           <span aria-hidden="true">·</span>
@@ -120,7 +120,7 @@ export function RuntimeHostStatusRow({
         <button
           type="button"
           onClick={() => void handleAction()}
-          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {actionLabel}
         </button>

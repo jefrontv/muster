@@ -1205,7 +1205,9 @@ export function registerRepoHandlers(mainWindow: BrowserWindow, store: Store): v
       onChanged: () => notifyReposChanged(mainWindow)
     })
     // Why: username resolution spawns git/gh, so keep it off this sync handler (issue #7225); it re-lists when values land.
+    // First repo only: it feeds the branch-prefix preview; worktree creation resolves its own on demand.
     enrichRepoGitUsernames(store, {
+      maxRepos: 1,
       onChanged: () => notifyReposChanged(mainWindow)
     })
     return withPathMissing(store.getRepos())

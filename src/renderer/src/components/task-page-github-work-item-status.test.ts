@@ -28,7 +28,7 @@ describe('task-page-github-work-item-status', () => {
     expect(draftTone).toContain('muted')
     expect(draftTone).not.toContain('amber')
     expect(getTaskPageGitHubPRIconTone({ type: 'pr', state: 'draft' })).toContain('muted')
-    expect(getTaskPageGitHubPRIconTone({ type: 'pr', state: 'open' })).toContain('emerald')
+    expect(getTaskPageGitHubPRIconTone({ type: 'pr', state: 'open' })).toContain('status-success')
     expect(isTaskPageGitHubDraftPR({ type: 'pr', state: 'draft' })).toBe(true)
     expect(isTaskPageGitHubDraftPR({ type: 'pr', state: 'open' })).toBe(false)
   })
@@ -40,9 +40,9 @@ describe('task-page-github-work-item-status', () => {
     expect(mergedTone).not.toContain('bg-purple-600')
 
     const openTone = getTaskPageGitHubWorkItemStateTone({ type: 'pr', state: 'open' })
-    expect(openTone).toContain('emerald')
-    expect(openTone).toContain('text-emerald-700')
-    expect(openTone).not.toContain('bg-emerald-600')
+    expect(openTone).toContain('status-success')
+    expect(openTone).toContain('text-status-success')
+    expect(openTone).not.toMatch(/\bbg-status-success(?!-)/)
   })
 
   it('handles edge cases gracefully', () => {

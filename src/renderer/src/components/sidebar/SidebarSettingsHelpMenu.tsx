@@ -9,9 +9,7 @@ import {
   MessageSquareText,
   RefreshCw,
   RotateCw,
-  School,
-  Settings,
-  Sparkles
+  Settings
 } from 'lucide-react'
 import { toast } from 'sonner'
 import logo from '../../../../../resources/logo.svg'
@@ -28,7 +26,6 @@ import {
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useShortcutKeyDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
-import { showOnboardingFromRenderer } from '../onboarding/show-onboarding-event'
 import { SetupGuideProgressRing } from '../setup-guide/SetupGuideProgressRing'
 import { useSetupGuideProgress } from '../setup-guide/use-setup-guide-progress'
 import { SidebarFeedbackDialog } from './SidebarFeedbackDialog'
@@ -73,7 +70,6 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [showAdminOptions, setShowAdminOptions] = useState(false)
   const [isRestartingOrca, setIsRestartingOrca] = useState(false)
-  const lastShowOnboardingAtRef = React.useRef(0)
   const updateCheckModifiersRef = React.useRef(NO_UPDATE_CHECK_MODIFIERS)
   const mountedRef = useMountedRef()
   const updateCheckHint = getUpdateCheckHint()
@@ -93,15 +89,6 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
     // Why: restart stays off the default Help menu; holding Option/Alt before
     // opening is an intentional power-user affordance.
     setShowAdminOptions(altKey)
-  }
-
-  const handleShowOnboarding = (): void => {
-    const now = Date.now()
-    if (now - lastShowOnboardingAtRef.current < 500) {
-      return
-    }
-    lastShowOnboardingAtRef.current = now
-    void showOnboardingFromRenderer()
   }
 
   const handleRestartOrca = (): void => {
@@ -156,11 +143,6 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
     openModal('setup-guide', { telemetrySource: 'help_menu' })
   }
 
-  const openFeatureWall = (): void => {
-    // Same surface the OS Help > Explore Muster menu item opens.
-    openModal('feature-wall', { source: 'help_menu' })
-  }
-
   return (
     <>
       <div className="flex items-center gap-1">
@@ -187,8 +169,8 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
                 keys={settingsShortcut.keys}
                 doubleTap={settingsShortcut.doubleTap}
                 className="gap-0.5"
-                keyCapClassName="min-w-0 border-background/20 bg-background/10 px-1 py-0 text-[10px] text-background shadow-none"
-                separatorClassName="text-[10px] text-background/70"
+                keyCapClassName="min-w-0 border-background/20 bg-background/10 px-1 py-0 text-[11px] text-background shadow-none"
+                separatorClassName="text-[11px] text-background/70"
               />
             ) : null}
           </TooltipContent>
@@ -247,7 +229,7 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
               <Keyboard className="size-3.5" />
               {translate(
                 'auto.components.sidebar.SidebarSettingsHelpMenu.e565171a7c',
-                'Keyboard Shortcuts'
+                'Keyboard shortcuts'
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -255,46 +237,28 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
               <MessageSquareText className="size-3.5" />
               {translate(
                 'auto.components.sidebar.SidebarSettingsHelpMenu.4cf5b868d7',
-                'Send Feedback'
+                'Send feedback'
               )}
             </DropdownMenuItem>
-            {showMilestones ? (
-              <DropdownMenuItem onSelect={openMilestones}>
-                <img
-                  src={logo}
-                  alt=""
-                  aria-hidden="true"
-                  className="size-3.5 object-contain invert opacity-55 dark:invert-0"
-                />
-                {translate(
-                  'auto.components.sidebar.SidebarSettingsHelpMenu.setupGuide',
-                  'Setup guide'
-                )}
+            <DropdownMenuItem onSelect={openMilestones}>
+              <img
+                src={logo}
+                alt=""
+                aria-hidden="true"
+                className="size-3.5 object-contain invert opacity-55 dark:invert-0"
+              />
+              {translate(
+                'auto.components.sidebar.SidebarSettingsHelpMenu.setupGuide',
+                'Setup guide'
+              )}
+              {showMilestones ? (
                 <SetupGuideProgressRing
                   done={setupProgress.coreDoneCount}
                   total={setupProgress.coreTotal}
                   sizeClassName="size-4"
                   className="ml-auto"
                 />
-              </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem onSelect={openFeatureWall}>
-              <Sparkles className="size-3.5" />
-              {translate(
-                'auto.components.sidebar.SidebarSettingsHelpMenu.exploreMuster',
-                'Explore Muster'
-              )}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="whitespace-nowrap"
-              onClick={handleShowOnboarding}
-              onSelect={handleShowOnboarding}
-            >
-              <School className="size-3.5" />
-              {translate(
-                'auto.components.sidebar.SidebarSettingsHelpMenu.replayOnboarding',
-                'Replay Onboarding'
-              )}
+              ) : null}
             </DropdownMenuItem>
             <ExternalMenuItem
               label={translate(
@@ -318,7 +282,7 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
               )}
               {translate(
                 'auto.components.sidebar.SidebarSettingsHelpMenu.29c56f30ee',
-                'Check for Updates'
+                'Check for updates'
               )}
             </DropdownMenuItem>
             {showAdminOptions ? (

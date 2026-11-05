@@ -36,11 +36,11 @@ export function getEntryContextMenuIndexLabel(action: EntryContextMenuIndexActio
   return action === 'stage'
     ? translate(
         'auto.components.right.sidebar.SourceControlEntryContextMenu.stageChanges',
-        'Stage Changes'
+        'Stage changes'
       )
     : translate(
         'auto.components.right.sidebar.SourceControlEntryContextMenu.unstageChanges',
-        'Unstage Changes'
+        'Unstage changes'
       )
 }
 
@@ -49,17 +49,17 @@ export function getEntryContextMenuDiscardLabel(action: EntryContextMenuDiscardA
     case 'delete':
       return translate(
         'auto.components.right.sidebar.SourceControlEntryContextMenu.deleteFile',
-        'Delete File'
+        'Delete file'
       )
     case 'restore':
       return translate(
         'auto.components.right.sidebar.SourceControlEntryContextMenu.restoreFile',
-        'Restore File'
+        'Restore file'
       )
     case 'discard':
       return translate(
         'auto.components.right.sidebar.SourceControlEntryContextMenu.discardChanges',
-        'Discard Changes'
+        'Discard changes'
       )
   }
 }

@@ -48,7 +48,7 @@ function AgentCoverageChip({
       <span className="font-medium text-foreground">{status.label}</span>
       <span
         className={cn(
-          'text-[10px] font-medium',
+          'text-[11px] font-medium',
           status.installed ? 'text-status-success' : 'text-muted-foreground'
         )}
       >

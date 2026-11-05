@@ -1223,7 +1223,7 @@ export function resolveSourceControlAiForOperation(
   if (!agentChoice) {
     return {
       ok: false,
-      error: `Choose a supported Source Control AI agent for this action in Settings -> Git -> Source Control AI. ${supportedSourceControlAiAgentSummary()}`
+      error: `Choose a supported Source Control AI agent for this action in Settings -> Git -> Source control AI. ${supportedSourceControlAiAgentSummary()}`
     }
   }
 
@@ -1233,7 +1233,7 @@ export function resolveSourceControlAiForOperation(
     if (!customAgentCommand) {
       return {
         ok: false,
-        error: 'Custom command is empty. Add one in Settings -> Git -> Source Control AI.'
+        error: 'Custom command is empty. Add one in Settings -> Git -> Source control AI.'
       }
     }
     return {

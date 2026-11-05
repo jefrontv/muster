@@ -245,7 +245,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
     expect(markup).toContain('right-sidebar-header-drag')
 
     expectNoDrag(buttonOpeningTag(markup, 'Explorer'))
-    expectNoDrag(buttonOpeningTag(markup, 'Source Control'))
+    expectNoDrag(buttonOpeningTag(markup, 'Source control'))
     expectNoDrag(buttonOpeningTag(markup, 'Checks'))
     expect(buttonOpeningTag(markup, 'Toggle right sidebar')).toContain('sidebar-toggle')
     expect(markup).toContain(RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME)
@@ -306,7 +306,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
     expect(sideStrip).toContain('data-context-menu-trigger="true"')
 
     expectNoDrag(buttonOpeningTag(markup, 'Explorer'))
-    expectNoDrag(buttonOpeningTag(markup, 'Source Control'))
+    expectNoDrag(buttonOpeningTag(markup, 'Source control'))
     expectNoDrag(buttonOpeningTag(markup, 'Checks'))
     expect(buttonOpeningTag(markup, 'Toggle right sidebar')).toContain('sidebar-toggle')
   })
@@ -321,7 +321,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
     expect(markup).toContain('aria-label="Agents')
     expect(markup).not.toContain('aria-label="Search')
     expect(markup).toContain('aria-label="Attached worktrees')
-    expect(markup).toContain('aria-label="PR Checks')
+    expect(markup).toContain('aria-label="PR checks')
     expect(markup).not.toContain('aria-label="Source Control')
     expect(markup).not.toContain('aria-label="Checks')
   })
@@ -338,7 +338,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
     expect(mockAppState.setRightSidebarTab).not.toHaveBeenCalled()
   })
 
-  it('renders a visible fallback without overwriting a hidden PR Checks tab', () => {
+  it('renders a visible fallback without overwriting a hidden PR checks tab', () => {
     mockAppState.rightSidebarTab = 'pr-checks'
     mockAppState.activeWorktreeId = 'worktree-1'
     mockAppState.activeRepo = { id: 'repo-1', kind: 'git', connectionId: null }
@@ -350,7 +350,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
     expect(mockAppState.setRightSidebarTab).not.toHaveBeenCalled()
   })
 
-  it('keeps remembered folder PR Checks visible when the global route falls back to Explorer', async () => {
+  it('keeps remembered folder PR checks visible when the global route falls back to Explorer', async () => {
     mockAppState.activeWorktreeId = 'folder:folder-1'
     mockAppState.activeRepo = null
     const container = document.createElement('div')
@@ -362,7 +362,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
 
     await act(async () => {
       container
-        .querySelector<HTMLButtonElement>('[aria-label^="PR Checks"]')
+        .querySelector<HTMLButtonElement>('[aria-label^="PR checks"]')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 

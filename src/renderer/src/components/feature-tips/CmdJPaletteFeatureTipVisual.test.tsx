@@ -125,7 +125,7 @@ describe('CmdJPaletteFeatureTipVisual', () => {
     prefersReducedMotionMock.mockReturnValue(true)
     const html = renderToStaticMarkup(<CmdJPaletteFeatureTipVisual />)
 
-    expect(html).toContain('Create worktree')
+    expect(html).toContain('Create workspace')
     expect(html).toContain('auth')
   })
 

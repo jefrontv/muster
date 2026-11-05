@@ -248,13 +248,13 @@ export function TasksAnimatedVisual(props: { reducedMotion: boolean }): JSX.Elem
                 <span>#{issue.number}</span>
               </span>
               <div className="min-w-0">
-                <div className="truncate text-[12.5px] font-semibold leading-[1.2] text-foreground">
+                <div className="truncate text-[12px] font-semibold leading-[1.2] text-foreground">
                   {issue.title}
                 </div>
               </div>
               <div className="relative flex items-center justify-end">
                 {!isActive ? (
-                  <span className="inline-flex items-center justify-center rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-px text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                  <span className="inline-flex items-center justify-center rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-px text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
                     {translate(
                       'auto.components.feature.wall.TasksAnimatedVisual.4331c4d0f8',
                       'Open'
@@ -292,7 +292,7 @@ export function TasksAnimatedVisual(props: { reducedMotion: boolean }): JSX.Elem
             : 'mt-0 max-h-0 border-t border-transparent pt-0 opacity-0'
         }`}
       >
-        <div className="flex items-center gap-1.5 px-1 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+        <div className="flex items-center gap-1.5 px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
           {workspaceCreating ? (
             <span className="inline-block size-[9px] animate-spin rounded-full border-[1.5px] border-yellow-500 border-t-transparent" />
           ) : (

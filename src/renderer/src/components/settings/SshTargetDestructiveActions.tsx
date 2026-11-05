@@ -161,7 +161,7 @@ export function SshTargetDestructiveActions({
         open={!!pendingRemove}
         title={translate(
           'auto.components.settings.SshTargetDestructiveActions.4808966c41',
-          'Remove SSH Target'
+          'Remove SSH target'
         )}
         description={translate(
           'auto.components.settings.SshTargetDestructiveActions.3bb0cf0ee4',
@@ -188,7 +188,7 @@ export function SshTargetDestructiveActions({
         open={!!dialogPendingReset && (!pendingResetBlockedByConnection || pendingResetIsBusy)}
         title={translate(
           'auto.components.settings.SshTargetDestructiveActions.570a7a0574',
-          'Reset Remote Relay?'
+          'Reset remote relay?'
         )}
         description={translate(
           'auto.components.settings.SshTargetDestructiveActions.26be00392d',
@@ -213,7 +213,7 @@ export function SshTargetDestructiveActions({
         open={!!pendingTerminate}
         title={translate(
           'auto.components.settings.SshTargetDestructiveActions.accf177a03',
-          'End Remote Terminals?'
+          'End remote terminals?'
         )}
         description={translate(
           'auto.components.settings.SshTargetDestructiveActions.7e66942808',

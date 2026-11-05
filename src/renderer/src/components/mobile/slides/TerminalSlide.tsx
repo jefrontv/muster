@@ -239,7 +239,7 @@ export function TerminalSlide(): React.JSX.Element {
           <div className="mp-accessory-key">←</div>
           <div className="mp-accessory-key">→</div>
           <div className="mp-accessory-key">
-            {translate('auto.components.mobile.slides.TerminalSlide.817090af40', 'Ctrl+C')}
+            {translate('auto.components.mobile.slides.TerminalSlide.817090af40', 'Ctrl+c')}
           </div>
         </div>
       </div>

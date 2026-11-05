@@ -75,10 +75,10 @@ describe('rankActionPaletteEntries', () => {
   })
 
   it('matches initials through the subsequence scorer', () => {
-    const entries = [makeEntry({ title: 'Go to File' }), makeEntry({ title: 'Grab Page Element' })]
+    const entries = [makeEntry({ title: 'Go to file' }), makeEntry({ title: 'Grab page element' })]
 
     expect(rankActionPaletteEntries('gtf', entries).map((entry) => entry.title)).toEqual([
-      'Go to File'
+      'Go to file'
     ])
   })
 
@@ -106,7 +106,7 @@ describe('rankActionPaletteEntries', () => {
   })
 
   it('refuses to score a pasted buffer', () => {
-    const entries = [makeEntry({ title: 'Open Settings' })]
+    const entries = [makeEntry({ title: 'Open settings' })]
     const oversized = 'open settings '.repeat(CMD_J_PALETTE_QUERY_MAX_BYTES)
 
     expect(rankActionPaletteEntries(oversized, entries)).toEqual([])

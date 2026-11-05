@@ -147,7 +147,7 @@ export function LinearApiKeyDialog({
               type="password"
               placeholder={translate(
                 'auto.components.linear.api.key.dialog.edec49dfae',
-                'lin_api_...'
+                'lin_api_…'
               )}
               value={apiKeyDraft}
               onChange={(event) => {
@@ -236,7 +236,7 @@ export function LinearApiKeyDialog({
             {connectState === 'connecting' ? (
               <>
                 <LoaderCircle className="size-4 animate-spin" />
-                {translate('auto.components.linear.api.key.dialog.834a52c084', 'Verifying...')}
+                {translate('auto.components.linear.api.key.dialog.834a52c084', 'Verifying…')}
               </>
             ) : (
               submitLabel

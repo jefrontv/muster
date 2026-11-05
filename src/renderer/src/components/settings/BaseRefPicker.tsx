@@ -215,7 +215,7 @@ export function BaseRefPicker({
         </div>
         {onUsePrimary && (
           <Button variant="outline" size="sm" onClick={onUsePrimary} disabled={!currentBaseRef}>
-            {translate('auto.components.settings.BaseRefPicker.773a5687a3', 'Use Primary')}
+            {translate('auto.components.settings.BaseRefPicker.773a5687a3', 'Use primary')}
           </Button>
         )}
       </div>
@@ -225,14 +225,14 @@ export function BaseRefPicker({
         onChange={(e) => setBaseRefQuery(e.target.value)}
         placeholder={translate(
           'auto.components.settings.BaseRefPicker.7db7fb87e5',
-          'Search branches by name...'
+          'Search branches by name…'
         )}
         className="max-w-md"
       />
 
       {isSearchingBaseRefs ? (
         <p className="text-xs text-muted-foreground">
-          {translate('auto.components.settings.BaseRefPicker.a4a9372eb2', 'Searching branches...')}
+          {translate('auto.components.settings.BaseRefPicker.a4a9372eb2', 'Searching branches…')}
         </p>
       ) : null}
 
@@ -264,7 +264,7 @@ export function BaseRefPicker({
                 >
                   <span className="truncate">{ref}</span>
                   {effectiveBaseRef === ref ? (
-                    <span className="text-[10px] uppercase tracking-[0.18em]">
+                    <span className="text-[11px] uppercase tracking-[0.05em]">
                       {translate('auto.components.settings.BaseRefPicker.d166ff883d', 'Current')}
                     </span>
                   ) : null}

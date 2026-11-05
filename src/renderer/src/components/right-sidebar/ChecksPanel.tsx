@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- Why: the checks panel co-locates PR header, checks, comments,
 merge actions, and conflict state in one component to keep the data flow straightforward. */
+import { Input } from '@/components/ui/input'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   LoaderCircle,
@@ -285,7 +286,7 @@ export function ChecksPanelReviewHeader({
       <ReviewIcon className="size-4 text-muted-foreground shrink-0" />
       <button
         type="button"
-        className="rounded px-0.5 text-[12px] font-semibold text-foreground underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="rounded px-0.5 text-[12px] font-semibold text-foreground underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         title={title}
         onClick={onOpenReview}
       >
@@ -293,7 +294,7 @@ export function ChecksPanelReviewHeader({
       </button>
       <span
         className={cn(
-          'text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border',
+          'text-[11px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border',
           prStateColor(review.state)
         )}
       >
@@ -301,7 +302,7 @@ export function ChecksPanelReviewHeader({
       </span>
       <div className="flex-1" />
       <button
-        className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-50"
+        className="cursor-pointer rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         title={translate('auto.components.right.sidebar.ChecksPanel.7f4489f370', 'Refresh')}
         onClick={onRefresh}
         disabled={isRefreshing}
@@ -2908,7 +2909,7 @@ export default function ChecksPanel(): React.JSX.Element {
       actionId: 'resolveConflicts',
       title: translate(
         'auto.components.right.sidebar.ChecksPanel.4ede779461',
-        'Resolve Review Conflicts With AI'
+        'Resolve review conflicts with AI'
       ),
       description: translate(
         'auto.components.right.sidebar.ChecksPanel.abf59262fb',
@@ -2951,7 +2952,7 @@ export default function ChecksPanel(): React.JSX.Element {
         actionId: 'resolveComments',
         title: translate(
           'auto.components.right.sidebar.ChecksPanel.d00ebdc402',
-          'Resolve {{value0}} Comments With AI',
+          'Resolve {{value0}} comments with AI',
           { value0: activeReview.provider === 'gitlab' ? 'MR' : 'PR' }
         ),
         description: translate(
@@ -3896,7 +3897,7 @@ export default function ChecksPanel(): React.JSX.Element {
                 title: shouldPushBeforeCreateReview
                   ? translate(
                       'auto.components.right.sidebar.ChecksPanel.98f4c37b33',
-                      'Push & Create {{value0}}',
+                      'Push & create {{value0}}',
                       { value0: emptyReviewShortLabel }
                     )
                   : translate(
@@ -3923,7 +3924,7 @@ export default function ChecksPanel(): React.JSX.Element {
                   ? translate('auto.components.right.sidebar.ChecksPanel.fdb27637f2', 'Publishing…')
                   : translate(
                       'auto.components.right.sidebar.ChecksPanel.6633c7a1fb',
-                      'Publish Branch'
+                      'Publish branch'
                     )}
               </Button>
             )}
@@ -3937,7 +3938,7 @@ export default function ChecksPanel(): React.JSX.Element {
                   ? translate('auto.components.right.sidebar.ChecksPanel.sync.pending', 'Syncing…')
                   : translate(
                       'auto.components.right.sidebar.ChecksPanel.sync.branch',
-                      'Sync Branch'
+                      'Sync branch'
                     )}
               </Button>
             )}
@@ -3957,7 +3958,7 @@ export default function ChecksPanel(): React.JSX.Element {
               >
                 {translate(
                   'auto.components.right.sidebar.ChecksPanel.review.open_review',
-                  'Open Review'
+                  'Open review'
                 )}
               </Button>
             ) : null}
@@ -4032,16 +4033,16 @@ export default function ChecksPanel(): React.JSX.Element {
         {/* Review title */}
         {editingTitle ? (
           <div className="flex items-center gap-1">
-            <input
+            <Input
               ref={titleInputRef}
-              className="flex-1 text-[12px] bg-background border border-border rounded px-2 py-1 text-foreground outline-none focus:ring-1 focus:ring-ring"
+              className="flex-1 text-[12px]"
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
               onKeyDown={handleTitleKeyDown}
               disabled={titleSaving}
             />
             <button
-              className="cursor-pointer rounded p-1 text-emerald-500 transition-colors hover:bg-accent hover:text-emerald-400 disabled:cursor-default disabled:opacity-50"
+              className="cursor-pointer rounded-full p-1 text-status-success transition-colors hover:bg-accent hover:text-status-success disabled:cursor-default disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={translate('auto.components.right.sidebar.ChecksPanel.2ab7fd4b6d', 'Save')}
               onClick={() => void handleSaveTitle()}
               disabled={titleSaving}
@@ -4053,7 +4054,7 @@ export default function ChecksPanel(): React.JSX.Element {
               )}
             </button>
             <button
-              className="cursor-pointer rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-50"
+              className="cursor-pointer rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title={translate('auto.components.right.sidebar.ChecksPanel.058039787c', 'Cancel')}
               onClick={handleCancelEdit}
               disabled={titleSaving}
@@ -4069,7 +4070,7 @@ export default function ChecksPanel(): React.JSX.Element {
             <span className="text-[12px] text-foreground leading-snug flex-1">
               {activeReview.title}
             </span>
-            <Pencil className="size-3 text-muted-foreground/40 can-hover:opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0 mt-0.5" />
+            <Pencil className="size-3 text-muted-foreground can-hover:opacity-0 group-hover/title:opacity-100 transition-opacity shrink-0 mt-0.5" />
           </div>
         )}
 
@@ -4155,7 +4156,7 @@ export default function ChecksPanel(): React.JSX.Element {
         actionId={agentComposerState?.actionId ?? 'fixChecks'}
         title={
           agentComposerState?.title ??
-          translate('auto.components.right.sidebar.ChecksPanel.7fad8509fe', 'Fix With AI')
+          translate('auto.components.right.sidebar.ChecksPanel.7fad8509fe', 'Fix with AI')
         }
         description={agentComposerState?.description ?? ''}
         baseCommandInput={agentComposerState?.prompt ?? ''}

@@ -117,7 +117,7 @@ function TargetOption({
         <span className="flex items-center gap-2">
           <span className="truncate text-sm">{name}</span>
           {badge ? (
-            <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px] font-normal">
+            <Badge variant="secondary" className="shrink-0">
               {badge}
             </Badge>
           ) : null}
@@ -203,7 +203,7 @@ export function SiteSetupLinkTargetRows({
         <div
           role="radiogroup"
           aria-label={strings.folderTitle}
-          className="divide-y divide-border overflow-hidden rounded-md border border-border"
+          className="divide-y divide-border overflow-hidden rounded-xl border border-border"
         >
           {candidates.map((candidate) => (
             <TargetOption

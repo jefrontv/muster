@@ -41,7 +41,7 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
   ),
   openIntegrations: translate(
     'auto.components.sites.SiteBindDialog.openIntegrations',
-    'Open Integrations'
+    'Open integrations'
   ),
   allFields: translate(
     'auto.components.sites.SiteBindDialog.allFields',

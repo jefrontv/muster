@@ -2368,6 +2368,15 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
           ? ui.customSidekicks
           : []
       const petId = ui.petId ?? ui.sidekickId
+      const persistedRightSidebarOpen =
+        typeof ui.rightSidebarOpen === 'boolean' ? ui.rightSidebarOpen : true
+      // Why: while the narrow fold owns visibility, a hydrated "open" (startup, or our own save echoed back)
+      // must not unfold it; a hydrated "closed" is a real choice, so it ends the fold.
+      const rightSidebarState = s.rightSidebarAutoFolded
+        ? persistedRightSidebarOpen
+          ? {}
+          : { rightSidebarAutoFolded: false }
+        : { rightSidebarOpen: persistedRightSidebarOpen }
       // Migration: one-shot old-'recent'→'smart' runs in main (_sortBySmartMigrated), not here, so a deliberate 'recent' choice survives restart.
       const sortBy = ui.sortBy
       const migratedStatusBarItems = migrateStatusBarItems(ui.statusBarItems)
@@ -2436,7 +2445,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
           undefined,
           s.activeCollabTaskPaneWidth
         ),
-        rightSidebarOpen: typeof ui.rightSidebarOpen === 'boolean' ? ui.rightSidebarOpen : true,
+        ...rightSidebarState,
         rightSidebarTab: rightSidebarRoute.rightSidebarTab,
         rightSidebarExplorerView: rightSidebarRoute.rightSidebarExplorerView,
         groupBy: (ui.groupBy as UISlice['groupBy'] | 'parent') === 'parent' ? 'repo' : ui.groupBy,

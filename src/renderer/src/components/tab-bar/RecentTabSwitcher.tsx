@@ -153,7 +153,7 @@ export default function RecentTabSwitcher(): React.JSX.Element | null {
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[100] flex items-start justify-center pt-[12vh]">
       <div
-        className="w-[min(520px,calc(100vw-48px))] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+        className="w-[min(520px,calc(100vw-48px))] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-floating"
         role="listbox"
         aria-label={translate(
           'auto.components.tab.bar.RecentTabSwitcher.07ad4cd0b7',
@@ -161,7 +161,7 @@ export default function RecentTabSwitcher(): React.JSX.Element | null {
         )}
       >
         <div className="border-b border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
-          {translate('auto.components.tab.bar.RecentTabSwitcher.329638ff6f', 'Switch Tab')}
+          {translate('auto.components.tab.bar.RecentTabSwitcher.329638ff6f', 'Switch tab')}
         </div>
         <div className="max-h-[min(360px,60vh)] overflow-hidden py-1">
           {switcher.items.map((item, index) => {

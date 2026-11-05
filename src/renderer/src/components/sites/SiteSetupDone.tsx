@@ -86,7 +86,7 @@ export function SiteSetupDone({
   return (
     <div className="space-y-4" aria-label={siteLabel}>
       {url.length > 0 ? (
-        <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-3 py-2.5">
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5">
           <Globe className="size-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground">{strings.localAddress}</p>
@@ -111,7 +111,7 @@ export function SiteSetupDone({
                 skipped ? (
                   <Minus className="size-4 text-muted-foreground" />
                 ) : (
-                  <Check className="size-4 text-green-600 dark:text-green-500" />
+                  <Check className="size-4 text-status-success" />
                 )
               }
               title={title}
@@ -129,7 +129,7 @@ export function SiteSetupDone({
       </SiteSetupRowList>
 
       {showAdminCredentials ? (
-        <div className="space-y-2 rounded-md border border-border px-3 py-2.5">
+        <div className="space-y-2 rounded-xl border border-border px-3 py-2.5">
           <p className="text-xs font-medium">{strings.adminAccountLabel}</p>
           <dl className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-xs">
             <dt className="text-muted-foreground">{strings.adminEmail}</dt>
@@ -148,7 +148,7 @@ export function SiteSetupDone({
       ) : null}
 
       {onAddEnvironment !== null ? (
-        <div className="flex items-center gap-3 rounded-md border border-border px-3 py-2.5">
+        <div className="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5">
           <p className="min-w-0 flex-1 text-xs text-muted-foreground">
             {strings.addEnvironmentHint}
           </p>

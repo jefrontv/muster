@@ -1,4 +1,5 @@
 import React from 'react'
+import { Badge } from '@/components/ui/badge'
 import { ChevronDown } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -14,16 +15,18 @@ function GitHistoryRefBadge({ itemRef }: { itemRef: GitHistoryItemRef }): React.
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span
-          className="max-w-[8rem] truncate rounded-full border bg-sidebar px-1.5 py-0.5 text-[10px] leading-none"
+        <Badge
+          variant="outline"
+          className="max-w-[8rem] truncate bg-sidebar"
           style={{
             borderColor: itemRef.color ? graphColor(itemRef.color) : 'var(--border)',
-            color: itemRef.color ? graphColor(itemRef.color) : 'var(--muted-foreground)'
+            // Lane colour on the border only; as 11px text it fell under 4.5:1 in light.
+            color: 'var(--foreground)'
           }}
           title={itemRef.name}
         >
           {itemRef.name}
-        </span>
+        </Badge>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={6} className="max-w-72">
         {refLabel}
@@ -114,7 +117,7 @@ export const GitHistoryRow = React.forwardRef<HTMLElement, GitHistoryRowProps>(
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span
-                    className="shrink-0 text-[10px] leading-none text-muted-foreground"
+                    className="shrink-0 text-[11px] leading-none text-muted-foreground"
                     title={hiddenRefs.map((ref) => ref.name).join(', ')}
                   >
                     +{hiddenRefs.length}

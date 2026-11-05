@@ -95,7 +95,7 @@ export function ProjectGroupNameDialog({
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1">
             <Label htmlFor={inputId} className="text-[11px] text-muted-foreground">
-              {translate('auto.components.sidebar.ProjectGroupNameDialog.83dfbc5313', 'Group Name')}
+              {translate('auto.components.sidebar.ProjectGroupNameDialog.83dfbc5313', 'Group name')}
             </Label>
             <Input
               id={inputId}
@@ -122,10 +122,7 @@ export function ProjectGroupNameDialog({
               disabled={!trimmedName || submitting}
             >
               {submitting
-                ? translate(
-                    'auto.components.sidebar.ProjectGroupNameDialog.4a64e78822',
-                    'Saving...'
-                  )
+                ? translate('auto.components.sidebar.ProjectGroupNameDialog.4a64e78822', 'Saving…')
                 : confirmLabel}
             </Button>
           </DialogFooter>

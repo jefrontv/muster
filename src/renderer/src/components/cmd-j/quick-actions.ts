@@ -80,7 +80,7 @@ export const getCmdJQuickActions = createLocalizedCatalog((): CmdJQuickAction[] 
   {
     id: 'new-browser-tab',
     kind: 'action',
-    title: translate('auto.components.cmd.j.quick.actions.892bfa9339', 'New Browser Tab'),
+    title: translate('auto.components.cmd.j.quick.actions.892bfa9339', 'New browser tab'),
     description: translate(
       'auto.components.cmd.j.quick.actions.784812ca24',
       'Open a browser tab in the active workspace.'
@@ -98,7 +98,7 @@ export const getCmdJQuickActions = createLocalizedCatalog((): CmdJQuickAction[] 
   {
     id: 'new-markdown-file',
     kind: 'action',
-    title: translate('auto.components.cmd.j.quick.actions.25349b66fc', 'New Markdown File'),
+    title: translate('auto.components.cmd.j.quick.actions.25349b66fc', 'New Markdown file'),
     description: translate(
       'auto.components.cmd.j.quick.actions.f2a1b33f8d',
       'Create an untitled markdown file in the active workspace.'
@@ -117,7 +117,7 @@ export const getCmdJQuickActions = createLocalizedCatalog((): CmdJQuickAction[] 
   {
     id: 'new-terminal-tab',
     kind: 'action',
-    title: translate('auto.components.cmd.j.quick.actions.34980395d4', 'New Terminal Tab'),
+    title: translate('auto.components.cmd.j.quick.actions.34980395d4', 'New terminal tab'),
     description: translate(
       'auto.components.cmd.j.quick.actions.f70812764a',
       'Open a terminal tab in the active workspace.'
@@ -135,10 +135,10 @@ export const getCmdJQuickActions = createLocalizedCatalog((): CmdJQuickAction[] 
   {
     id: CREATE_WORKSPACE_QUICK_ACTION_ID,
     kind: 'action',
-    title: translate('auto.components.cmd.j.quick.actions.52ac9da671', 'Create Worktree'),
+    title: translate('auto.components.cmd.j.quick.actions.52ac9da671', 'Create workspace'),
     description: translate(
       'auto.components.cmd.j.quick.actions.0b1f25f796',
-      'Start a new worktree.'
+      'Start a new workspace.'
     ),
     icon: FolderPlus,
     verbKeywords: [
@@ -155,10 +155,10 @@ export const getCmdJQuickActions = createLocalizedCatalog((): CmdJQuickAction[] 
   {
     id: 'delete-workspace',
     kind: 'action',
-    title: translate('auto.components.cmd.j.quick.actions.9537b910fe', 'Delete Worktree'),
+    title: translate('auto.components.cmd.j.quick.actions.9537b910fe', 'Delete workspace'),
     description: translate(
       'auto.components.cmd.j.quick.actions.54853d52a2',
-      'Delete the current worktree.'
+      'Delete the current workspace.'
     ),
     icon: Trash2,
     verbKeywords: [
@@ -183,7 +183,7 @@ export const getCmdJQuickActions = createLocalizedCatalog((): CmdJQuickAction[] 
   {
     id: 'add-quick-command',
     kind: 'action',
-    title: translate('auto.components.cmd.j.quick.actions.a43ab56fc1', 'Add Quick Command'),
+    title: translate('auto.components.cmd.j.quick.actions.a43ab56fc1', 'Add quick command'),
     description: translate(
       'auto.components.cmd.j.quick.actions.c884a6398e',
       'Create a saved terminal command.'

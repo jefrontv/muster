@@ -339,8 +339,8 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
     const nameSection = current.container.querySelector(
       '[data-contextual-tour-target="workspace-creation-name"]'
     )
-    expect(projectSection?.textContent).not.toContain('Task Source')
-    expect(nameSection?.textContent).toContain("Name or 'Create From'")
+    expect(projectSection?.textContent).not.toContain('Task source')
+    expect(nameSection?.textContent).toContain("Name or 'create from'")
     expect(
       current.container
         .querySelector('[aria-label="workspace name"]')
@@ -731,7 +731,7 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
     })
 
     expect(findRunTargetItem('Add SSH host')).toBeTruthy()
-    expect(findRunTargetItem('Add Remote Muster Server')).toBeTruthy()
+    expect(findRunTargetItem('Add remote Muster server')).toBeTruthy()
   })
 
   it('opens the remote Muster server add dialog over the composer without leaving for Settings', () => {
@@ -742,7 +742,7 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
 
     openRunTargetPicker(current.container)
     act(() => findRunTargetItem('Add host')?.click())
-    act(() => findRunTargetItem('Add Remote Muster Server')?.click())
+    act(() => findRunTargetItem('Add remote Muster server')?.click())
 
     const dialog = document.body.querySelector('[data-testid="add-remote-host-dialog"]')
     expect(dialog?.getAttribute('data-mode')).toBe('server')
@@ -791,10 +791,10 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
     expect(runTargetButton).toBeTruthy()
     act(() => runTargetButton?.click())
 
-    expect(document.body.textContent).toContain('Per-Workspace Environment')
+    expect(document.body.textContent).toContain('Per-workspace environment')
     const ephemeralVmItem = [
       ...document.body.querySelectorAll<HTMLElement>('[role="option"]')
-    ].find((item) => item.textContent?.includes('Per-Workspace Environment'))
+    ].find((item) => item.textContent?.includes('Per-workspace environment'))
     expect(ephemeralVmItem).toBeTruthy()
     act(() => ephemeralVmItem?.click())
 
@@ -842,7 +842,7 @@ describe('NewWorkspaceComposerCard folder task source mode', () => {
 
     const runTargetButton =
       current.container.querySelector<HTMLButtonElement>('button[role="combobox"]')
-    expect(runTargetButton?.textContent).toContain('Per-Workspace Environment')
+    expect(runTargetButton?.textContent).toContain('Per-workspace environment')
     act(() => runTargetButton?.click())
 
     const builderItem = [...document.body.querySelectorAll<HTMLElement>('[cmdk-item]')].find(

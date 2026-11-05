@@ -33,7 +33,7 @@ describe('resolveEntryContextMenuActions', () => {
     )
     expect(actions.indexAction).toBe('stage')
     expect(actions.discardAction).toBe('delete')
-    expect(getEntryContextMenuDiscardLabel('delete')).toBe('Delete File')
+    expect(getEntryContextMenuDiscardLabel('delete')).toBe('Delete file')
   })
 
   it('restores a deleted file and cannot open its missing working copy', () => {
@@ -57,9 +57,9 @@ describe('resolveEntryContextMenuActions', () => {
   })
 
   it('uses menu-style labels', () => {
-    expect(getEntryContextMenuIndexLabel('stage')).toBe('Stage Changes')
-    expect(getEntryContextMenuIndexLabel('unstage')).toBe('Unstage Changes')
-    expect(getEntryContextMenuDiscardLabel('discard')).toBe('Discard Changes')
-    expect(getEntryContextMenuDiscardLabel('restore')).toBe('Restore File')
+    expect(getEntryContextMenuIndexLabel('stage')).toBe('Stage changes')
+    expect(getEntryContextMenuIndexLabel('unstage')).toBe('Unstage changes')
+    expect(getEntryContextMenuDiscardLabel('discard')).toBe('Discard changes')
+    expect(getEntryContextMenuDiscardLabel('restore')).toBe('Restore file')
   })
 })

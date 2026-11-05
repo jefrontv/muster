@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import type { McpConfigInspection } from '../../../../shared/mcp-config'
 import { Button } from '../ui/button'
 import { translate } from '@/i18n/i18n'
@@ -29,14 +30,14 @@ function statusLabel(config: LoadedMcpConfigInspection): string {
   return `${config.servers.length} server${config.servers.length === 1 ? '' : 's'}`
 }
 
-function statusClassName(config: LoadedMcpConfigInspection): string {
+function statusVariant(config: LoadedMcpConfigInspection): 'danger' | 'outline' | 'muted' {
   if (config.readError || config.status === 'invalid') {
-    return 'border-destructive/30 bg-destructive/10 text-destructive'
+    return 'danger'
   }
   if (config.status === 'valid' && config.servers.length > 0) {
-    return 'border-border/60 bg-background text-foreground'
+    return 'outline'
   }
-  return 'border-border/60 bg-muted/60 text-muted-foreground'
+  return 'muted'
 }
 
 function serverDetailLabel(server: LoadedMcpConfigInspection['servers'][number]): string {
@@ -66,11 +67,7 @@ export function McpConfigFileRow({ config, onOpen }: McpConfigFileRowProps): Rea
             </p>
           </div>
         </div>
-        <span
-          className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${statusClassName(config)}`}
-        >
-          {statusLabel(config)}
-        </span>
+        <Badge variant={statusVariant(config)}>{statusLabel(config)}</Badge>
         {config.exists ? (
           <Button variant="outline" size="xs" onClick={() => onOpen(config)}>
             {translate('auto.components.settings.McpConfigFileRow.e720c139cd', 'Open')}
@@ -92,9 +89,7 @@ export function McpConfigFileRow({ config, onOpen }: McpConfigFileRowProps): Rea
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="truncate text-xs font-medium">{server.name}</span>
-                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {server.transport}
-                  </span>
+                  <Badge variant="muted">{server.transport}</Badge>
                 </div>
                 <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
                   {serverDetailLabel(server)}

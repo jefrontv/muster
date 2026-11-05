@@ -52,18 +52,18 @@ export function shouldShowAutomationsButton(
 }
 
 const DASHBOARD_BUCKET_DOT_CLASS: Record<'working' | 'idle', string> = {
-  working: 'bg-yellow-500',
+  working: 'bg-status-attention',
   idle: 'bg-neutral-500/50'
 }
 
 // Shared chrome for Tasks / Automations / Agents / Sites so one row can't drift in height or type.
 const SIDEBAR_NAV_ITEM_CLASS =
-  'flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors'
+  'flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 function dashboardBucketLabel(bucket: DashboardBucket): string {
   switch (bucket) {
     case 'attention':
-      return translate('dashboardPopout.bucket.attention', 'Needs You')
+      return translate('dashboardPopout.bucket.attention', 'Needs you')
     case 'working':
       return translate('dashboardPopout.bucket.working', 'Working')
     case 'idle':
@@ -86,10 +86,10 @@ function DashboardBucketCounts({
         <span
           key={bucket}
           aria-label={`${dashboardBucketLabel(bucket)}: ${counts[bucket]}`}
-          className="inline-flex items-center gap-1 text-[10px] tabular-nums text-worktree-sidebar-foreground/55"
+          className="inline-flex items-center gap-1 text-2xs tabular-nums text-worktree-sidebar-foreground/55"
         >
           {bucket === 'attention' ? (
-            <MessageCircleQuestion className="size-2.5 text-amber-500" aria-hidden />
+            <MessageCircleQuestion className="size-2.5 text-status-attention" aria-hidden />
           ) : (
             <span className={cn('size-1.5 rounded-full', DASHBOARD_BUCKET_DOT_CLASS[bucket])} />
           )}
@@ -125,11 +125,8 @@ function AgentDashboardSidebarEntry(): React.JSX.Element {
         'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
       )}
     >
-      <LayoutDashboard
-        className="size-4 shrink-0 text-worktree-sidebar-foreground/30"
-        strokeWidth={1.75}
-      />
-      <span className="flex-1">{translate('dashboard.sidebar.label', 'Agent Dashboard')}</span>
+      <LayoutDashboard className="size-4 shrink-0 text-worktree-sidebar-foreground/55" />
+      <span className="flex-1">{translate('dashboard.sidebar.label', 'Agent dashboard')}</span>
       <DashboardBucketCounts counts={dashboardBucketCounts} />
     </button>
   )
@@ -180,8 +177,7 @@ const SidebarNav = React.memo(function SidebarNav() {
         )}
       >
         <Globe
-          className={cn('size-4 shrink-0', !sitesActive && 'text-worktree-sidebar-foreground/30')}
-          strokeWidth={sitesActive ? 2.25 : 1.75}
+          className={cn('size-4 shrink-0', !sitesActive && 'text-worktree-sidebar-foreground/55')}
         />
         <span className="flex-1">
           {translate('auto.components.sidebar.SidebarNav.sites', 'Sites')}
@@ -205,9 +201,8 @@ const SidebarNav = React.memo(function SidebarNav() {
               <CalendarClock
                 className={cn(
                   'size-4 shrink-0',
-                  !automationsActive && 'text-worktree-sidebar-foreground/30'
+                  !automationsActive && 'text-worktree-sidebar-foreground/55'
                 )}
-                strokeWidth={automationsActive ? 2.25 : 1.75}
               />
               <span className="flex-1">
                 {translate('auto.components.sidebar.SidebarNav.f323383e9a', 'Automations')}
@@ -233,15 +228,14 @@ const SidebarNav = React.memo(function SidebarNav() {
           <Bell
             className={cn(
               'size-4 shrink-0',
-              !activityActive && 'text-worktree-sidebar-foreground/30'
+              !activityActive && 'text-worktree-sidebar-foreground/55'
             )}
-            strokeWidth={activityActive ? 2.25 : 1.75}
           />
           <span className="flex-1">
             {translate('auto.components.sidebar.SidebarNav.9c95e1ce91', 'Agents')}
           </span>
           {activityUnreadCount > 0 ? (
-            <span className="rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
+            <span className="rounded-full bg-primary px-1.5 py-px text-2xs font-semibold text-primary-foreground">
               {activityUnreadCount}
             </span>
           ) : null}
@@ -258,7 +252,7 @@ const SidebarNav = React.memo(function SidebarNav() {
         onClick={() => openModal('worktree-palette')}
         aria-label={translate(
           'auto.components.sidebar.SidebarNav.0c3395fd32',
-          'Search worktrees and browser tabs'
+          'Search workspaces and browser tabs'
         )}
         // Same pill as the Bots and chat sidebar search.
         className="group flex h-8 w-full items-center gap-2 rounded-full bg-card px-3 text-left text-[13px] text-muted-foreground ring-1 ring-inset ring-foreground/[0.07] transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-ring"
@@ -274,8 +268,8 @@ const SidebarNav = React.memo(function SidebarNav() {
               keys={combo.keys}
               doubleTap={combo.doubleTap}
               className="inline-flex gap-0.5"
-              keyCapClassName="min-w-4 border-worktree-sidebar-border/80 bg-worktree-sidebar-foreground/8 px-1 py-px text-[9px] text-worktree-sidebar-foreground/55 shadow-none"
-              separatorClassName="text-[9px] text-worktree-sidebar-foreground/45"
+              keyCapClassName="min-w-4 border-worktree-sidebar-border/80 bg-worktree-sidebar-foreground/8 px-1 py-px text-[11px] text-worktree-sidebar-foreground/55 shadow-none"
+              separatorClassName="text-[11px] text-worktree-sidebar-foreground/45"
             />
           ))}
         </span>

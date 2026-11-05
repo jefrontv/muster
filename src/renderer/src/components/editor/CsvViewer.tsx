@@ -121,7 +121,7 @@ export default function CsvViewer({ content, filePath }: CsvViewerProps): React.
           >
             <div
               role="columnheader"
-              className="sticky left-0 z-20 flex items-center justify-end border-b border-r border-border/60 bg-muted/90 px-2 text-[10px] font-normal text-muted-foreground"
+              className="sticky left-0 z-20 flex items-center justify-end border-b border-r border-border/60 bg-muted/90 px-2 text-[11px] font-normal text-muted-foreground"
             >
               #
             </div>
@@ -158,7 +158,7 @@ export default function CsvViewer({ content, filePath }: CsvViewerProps): React.
                 >
                   <div
                     role="rowheader"
-                    className="sticky left-0 z-[5] flex items-center justify-end border-b border-r border-border/40 bg-background/95 px-2 text-[10px] text-muted-foreground group-hover:bg-accent/40"
+                    className="sticky left-0 z-[5] flex items-center justify-end border-b border-r border-border/40 bg-background/95 px-2 text-[11px] text-muted-foreground group-hover:bg-accent/40"
                   >
                     {vr.index + 1}
                   </div>

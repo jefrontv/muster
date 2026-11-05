@@ -152,7 +152,7 @@ export function ProjectWindowsRuntimeSetting({
                 onValueChange={handleDistroChange}
                 disabled={wslCapabilitiesLoading || !wslAvailable}
               >
-                <SelectTrigger size="sm" className="w-full min-w-52">
+                <SelectTrigger className="w-full min-w-52">
                   <SelectValue
                     placeholder={translate(
                       'auto.components.settings.ProjectWindowsRuntimeSetting.selectDistro',

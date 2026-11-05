@@ -22,7 +22,7 @@ const actions: CmdJQuickAction[] = [
   {
     id: 'new-browser-tab',
     kind: 'action',
-    title: 'New Browser Tab',
+    title: 'New browser tab',
     description: 'Open a browser tab.',
     icon: Globe,
     verbKeywords: ['new browser', 'new browser tab'],
@@ -32,7 +32,7 @@ const actions: CmdJQuickAction[] = [
   {
     id: 'new-terminal-tab',
     kind: 'action',
-    title: 'New Terminal Tab',
+    title: 'New terminal tab',
     description: 'Open a terminal tab.',
     icon: Globe,
     verbKeywords: ['new terminal', 'new terminal tab'],
@@ -42,7 +42,7 @@ const actions: CmdJQuickAction[] = [
   {
     id: 'new-markdown-file',
     kind: 'action',
-    title: 'New Markdown File',
+    title: 'New Markdown file',
     description: 'Create markdown.',
     icon: Globe,
     verbKeywords: ['new markdown', 'new mark'],
@@ -52,7 +52,7 @@ const actions: CmdJQuickAction[] = [
   {
     id: 'create-workspace',
     kind: 'action',
-    title: 'Create Worktree',
+    title: 'Create worktree',
     description: 'Create worktree.',
     icon: Globe,
     verbKeywords: ['create worktree', 'add worktree', 'new worktree'],
@@ -62,7 +62,7 @@ const actions: CmdJQuickAction[] = [
   {
     id: 'delete-workspace',
     kind: 'action',
-    title: 'Delete Worktree',
+    title: 'Delete worktree',
     description: 'Delete the current worktree.',
     icon: Globe,
     verbKeywords: ['delete worktree', 'delete current worktree', 'remove worktree'],
@@ -72,7 +72,7 @@ const actions: CmdJQuickAction[] = [
   {
     id: 'add-quick-command',
     kind: 'action',
-    title: 'Add Quick Command',
+    title: 'Add quick command',
     description: 'Create a saved terminal command.',
     icon: Globe,
     verbKeywords: ['add quick command', 'new quick command'],
@@ -116,18 +116,18 @@ const sections: SettingsNavSection[] = [
   },
   {
     id: 'servers',
-    title: 'Remote Muster Servers',
+    title: 'Remote Muster servers',
     description: 'Pair remote Muster runtimes.',
     icon: Settings,
-    searchEntries: [{ title: 'Remote Muster Servers' }],
+    searchEntries: [{ title: 'Remote Muster servers' }],
     group: 'remote'
   },
   {
     id: 'ssh',
-    title: 'SSH Hosts',
+    title: 'SSH hosts',
     description: 'Remote hosts over SSH.',
     icon: Settings,
-    searchEntries: [{ title: 'SSH Connections' }],
+    searchEntries: [{ title: 'SSH connections' }],
     group: 'remote'
   },
   {
@@ -143,12 +143,12 @@ const sections: SettingsNavSection[] = [
     title: 'Agents',
     description: 'Manage AI agents.',
     icon: Settings,
-    searchEntries: [{ title: 'Default Agent' }],
+    searchEntries: [{ title: 'Default agent' }],
     group: 'setup'
   },
   {
     id: 'quick-commands',
-    title: 'Quick Commands',
+    title: 'Quick commands',
     description: 'Saved commands.',
     icon: Settings,
     searchEntries: [{ title: 'Command Scope' }],

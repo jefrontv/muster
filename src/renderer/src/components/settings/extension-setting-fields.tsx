@@ -52,12 +52,14 @@ export function ExtensionSettingFields({
             value={draft[spec.key] ?? ''}
             autoComplete="off"
             spellCheck={false}
-            className="h-8 font-mono text-xs"
+            className="font-mono "
             onChange={(event) =>
               setDraft((previous) => ({ ...previous, [spec.key]: event.target.value }))
             }
           />
-          {spec.help ? <span className="block text-xs text-muted-foreground">{spec.help}</span> : null}
+          {spec.help ? (
+            <span className="block text-xs text-muted-foreground">{spec.help}</span>
+          ) : null}
         </label>
       ))}
       <div className="flex items-center justify-between gap-3">

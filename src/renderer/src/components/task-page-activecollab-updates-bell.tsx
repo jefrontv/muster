@@ -159,7 +159,7 @@ export function ActiveCollabUpdatesBell({
         { value0: String(unread) }
       )
     : translate('auto.components.activecollab.updates.bell', 'My updates')
-  const title = translate('auto.components.activecollab.updates.title', 'My Updates')
+  const title = translate('auto.components.activecollab.updates.title', 'My updates')
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -176,7 +176,7 @@ export function ActiveCollabUpdatesBell({
                 <span
                   data-testid="activecollab-updates-badge"
                   aria-hidden="true"
-                  className="rounded-full bg-primary/15 px-1 text-[10px] font-medium tabular-nums text-primary"
+                  className="rounded-full bg-primary/15 px-1 text-2xs font-medium tabular-nums text-primary"
                 >
                   {unread > 9 ? '9+' : unread}
                 </span>
@@ -193,7 +193,7 @@ export function ActiveCollabUpdatesBell({
       <PopoverContent
         align="end"
         sideOffset={4}
-        className="w-80 rounded-[12px] border-border/50 p-1.5"
+        className="w-80 p-1.5"
         aria-label={title}
         onCloseAutoFocus={(event) => {
           if (!restoreFocusOnClose.current) {

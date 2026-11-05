@@ -113,7 +113,7 @@ export function HostSetupExistingFolderStep({
           value={setupKind}
           onValueChange={(value) => onKindChange(value as 'git' | 'folder')}
         >
-          <SelectTrigger className="h-9 text-xs">
+          <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -195,7 +195,7 @@ export function HostSetupCloneStep({
           onClick={onSubmit}
         >
           {isCloning
-            ? translate('auto.components.settings.RepositoryPane.cloningHost', 'Cloning...')
+            ? translate('auto.components.settings.RepositoryPane.cloningHost', 'Cloning…')
             : translate('auto.components.settings.RepositoryPane.cloneHost', 'Clone')}
         </Button>
       </div>
@@ -294,7 +294,7 @@ function HostSetupActionButton({
         'flex min-h-[3.25rem] w-full items-center gap-3 border border-transparent px-3 py-2.5 text-left transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:cursor-default disabled:opacity-40',
         selected
           ? 'rounded-md border-ring bg-foreground/10 text-foreground focus-visible:ring-0 dark:bg-accent dark:text-accent-foreground'
-          : 'hover:bg-accent focus-visible:bg-accent focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/50',
+          : 'hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
         className
       )}
     >

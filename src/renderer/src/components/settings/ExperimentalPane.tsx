@@ -19,6 +19,7 @@ import {
   MIN_AGENT_HIBERNATION_IDLE_MS,
   getEffectiveAgentHibernationIdleMs
 } from '@/lib/agent-hibernation-planner'
+import { Switch } from '@/components/ui/switch'
 
 export { getExperimentalPaneSearchEntries }
 
@@ -95,30 +96,19 @@ export function ExperimentalPane({
                 )}
               </p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={settings.experimentalPet}
+            <Switch
+              checked={settings.experimentalPet}
               onClick={() => {
                 updateSettings({ experimentalPet: !settings.experimentalPet })
               }}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-                settings.experimentalPet ? 'bg-foreground' : 'bg-muted-foreground/30'
-              }`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background shadow-sm transition-transform ${
-                  settings.experimentalPet ? 'translate-x-4' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            />
           </div>
         </SearchableSetting>
       ) : null}
 
       {showAgentsView ? (
         <SearchableSetting
-          title={translate('auto.components.settings.ExperimentalPane.a05bcdaf57', 'Agents View')}
+          title={translate('auto.components.settings.ExperimentalPane.a05bcdaf57', 'Agents view')}
           description={translate(
             'auto.components.settings.ExperimentalPane.f63ea281e3',
             'Threaded left-sidebar feed for agent completions and blocking states.'
@@ -129,34 +119,23 @@ export function ExperimentalPane({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 shrink space-y-0.5">
               <Label>
-                {translate('auto.components.settings.ExperimentalPane.a05bcdaf57', 'Agents View')}
+                {translate('auto.components.settings.ExperimentalPane.a05bcdaf57', 'Agents view')}
               </Label>
               <p className="text-xs text-muted-foreground">
                 {translate(
                   'auto.components.settings.ExperimentalPane.0277901cf7',
-                  'Adds an Agents entry to the left sidebar with a threaded worktree feed for completed agents, blocking questions, unread state, and worktree creation events. Experimental — the event model and UI may change.'
+                  'Adds an Agents entry to the left sidebar with a threaded worktree feed for completed agents, blocking questions, unread state, and worktree creation events. Experimental: the event model and UI may change.'
                 )}
               </p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={settings.experimentalActivity}
+            <Switch
+              checked={settings.experimentalActivity}
               onClick={() =>
                 updateSettings({
                   experimentalActivity: !settings.experimentalActivity
                 })
               }
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-                settings.experimentalActivity ? 'bg-foreground' : 'bg-muted-foreground/30'
-              }`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background shadow-sm transition-transform ${
-                  settings.experimentalActivity ? 'translate-x-4' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            />
           </div>
         </SearchableSetting>
       ) : null}
@@ -205,25 +184,14 @@ export function ExperimentalPane({
                 )}
               </p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={settings.experimentalTerminalAttention}
+            <Switch
+              checked={settings.experimentalTerminalAttention}
               onClick={() =>
                 updateSettings({
                   experimentalTerminalAttention: !settings.experimentalTerminalAttention
                 })
               }
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-                settings.experimentalTerminalAttention ? 'bg-foreground' : 'bg-muted-foreground/30'
-              }`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background shadow-sm transition-transform ${
-                  settings.experimentalTerminalAttention ? 'translate-x-4' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
+            />
           </div>
         </SearchableSetting>
       ) : null}

@@ -74,7 +74,7 @@ export default function WorkspaceStatusAppearancePopover({
                 <button
                   type="button"
                   className={cn(
-                    'flex size-8 items-center justify-center rounded-md border border-transparent outline-none transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring',
+                    'flex size-8 items-center justify-center rounded-md border border-transparent outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
                     status.color === color.id && 'border-ring bg-accent'
                   )}
                   onClick={() => onChangeColor(status.id, color.id)}

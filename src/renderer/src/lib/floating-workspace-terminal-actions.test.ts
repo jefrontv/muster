@@ -409,7 +409,7 @@ describe('createFloatingWorkspaceBrowserTab', () => {
       FLOATING_TERMINAL_WORKTREE_ID,
       'about:blank',
       {
-        title: 'New Browser Tab',
+        title: 'New browser tab',
         focusAddressBar: true,
         targetGroupId: 'floating-group',
         browserRuntimeEnvironmentId: null

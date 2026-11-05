@@ -88,7 +88,7 @@ export function TaskPageActiveCollabSetup({
   const intro = reconnecting
     ? translate(
         'auto.components.activecollab.setup.intro_reconnect',
-        'Your ActiveCollab token is still stored on this machine, but the instance refused it. A changed password, a revoked token, or a moved instance all look like this. Sign in once more to replace it — nothing else about your setup changes.'
+        'Your ActiveCollab token is still stored on this machine, but the instance refused it. A changed password, a revoked token, or a moved instance all look like this. Sign in once more to replace it. Nothing else about your setup changes.'
       )
     : translate(
         'auto.components.activecollab.setup.intro_connect',
@@ -111,7 +111,7 @@ export function TaskPageActiveCollabSetup({
 
       <div className="mx-auto grid w-full max-w-3xl gap-4 sm:grid-cols-2">
         <div className="rounded-md border border-border/50 bg-background/60 p-4">
-          <h3 className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
             {translate(
               'auto.components.activecollab.setup.benefits_title',
               'What connecting gives you'
@@ -128,7 +128,7 @@ export function TaskPageActiveCollabSetup({
         </div>
 
         <div className="rounded-md border border-border/50 bg-background/60 p-4">
-          <h3 className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
             {translate(
               'auto.components.activecollab.setup.requirements_title',
               'What it asks you for'
@@ -138,7 +138,7 @@ export function TaskPageActiveCollabSetup({
             <li>
               {translate(
                 'auto.components.activecollab.setup.requirement_url',
-                'Your ActiveCollab instance URL — the address you sign in at.'
+                'Your ActiveCollab instance URL. The address you sign in at.'
               )}
             </li>
             <li>
@@ -151,7 +151,7 @@ export function TaskPageActiveCollabSetup({
           <p className="mt-3 text-xs text-muted-foreground/80">
             {translate(
               'auto.components.activecollab.setup.credential_handling',
-              'They are sent once, straight to your own instance, and exchanged for a long-lived API token. The password is never stored — only the token is kept, encrypted where the runtime supports it.'
+              'They are sent once, straight to your own instance, and exchanged for a long-lived API token. The password is never stored. Only the token is kept, encrypted where the runtime supports it.'
             )}
           </p>
         </div>

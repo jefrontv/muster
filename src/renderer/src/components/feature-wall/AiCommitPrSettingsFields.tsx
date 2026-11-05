@@ -52,7 +52,7 @@ export function AiCommitPrSettingsFields({
           {translate('auto.components.feature.wall.AiCommitPrSettingsCard.29d119fe95', 'Agent')}
         </Label>
         <Select value={agentSelectValue} onValueChange={onAgentChange}>
-          <SelectTrigger size="sm" className="h-8 w-full text-xs">
+          <SelectTrigger className="w-full">
             <span
               className={cn(
                 'flex min-w-0 items-center gap-2',
@@ -131,7 +131,7 @@ export function AiCommitPrSettingsFields({
             {translate('auto.components.feature.wall.AiCommitPrSettingsCard.be8917699e', 'Model')}
           </Label>
           <Select value={activeModel.id} onValueChange={onModelChange}>
-            <SelectTrigger size="sm" className="h-8 w-full text-xs">
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent portalContainer={selectPortalRoot} position="popper" align="start">
@@ -154,7 +154,7 @@ export function AiCommitPrSettingsFields({
             )}
           </Label>
           <Select value={activeThinking} onValueChange={onThinkingChange}>
-            <SelectTrigger size="sm" className="h-8 w-full text-xs">
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent portalContainer={selectPortalRoot} position="popper" align="start">

@@ -9,7 +9,7 @@ const getSystemTrayEntryCatalog = createLocalizedCatalog((): SettingsSearchEntry
   {
     title: translate(
       'auto.components.settings.appearance.search.9a115966d3',
-      'Minimize to Tray on Close'
+      'Minimize to tray on close'
     ),
     description: translate(
       'auto.components.settings.appearance.search.4d5b9427b5',

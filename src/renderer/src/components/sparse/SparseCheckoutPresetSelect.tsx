@@ -226,7 +226,7 @@ export default function SparseCheckoutPresetSelect({
           aria-expanded={open}
           aria-busy={isLoadingPresets}
           disabled={disabled || isLoadingPresets}
-          className="h-9 w-full justify-between border-input px-3 text-sm font-normal text-foreground focus:border-ring focus:ring-[3px] focus:ring-ring/50"
+          className="h-9 w-full justify-between border-input px-3 text-sm font-normal text-foreground focus:border-ring focus:ring-2 focus:ring-ring"
         >
           <span className="truncate">{triggerLabel}</span>
           {isLoadingPresets ? (

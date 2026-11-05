@@ -49,7 +49,7 @@ export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
       ]
     },
     {
-      title: translate('auto.components.settings.experimental.search.ccc5548ac5', 'Agents View'),
+      title: translate('auto.components.settings.experimental.search.ccc5548ac5', 'Agents view'),
       description: translate(
         'auto.components.settings.experimental.search.4d63251595',
         'Threaded left-sidebar feed for agent completions and blocking states.'
@@ -100,7 +100,7 @@ export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
     {
       title: translate(
         'auto.components.settings.experimental.search.agentDashboard.title',
-        'Agent Dashboard'
+        'Agent dashboard'
       ),
       description: translate(
         'auto.components.settings.experimental.search.agentDashboard.description',
@@ -252,12 +252,12 @@ export function getExperimentalSearchEntry() {
   return {
     pet: findEntry(translate('auto.components.settings.experimental.search.87d99e634b', 'Pet')),
     agentsView: findEntry(
-      translate('auto.components.settings.experimental.search.ccc5548ac5', 'Agents View')
+      translate('auto.components.settings.experimental.search.ccc5548ac5', 'Agents view')
     ),
     agentDashboard: findEntry(
       translate(
         'auto.components.settings.experimental.search.agentDashboard.title',
-        'Agent Dashboard'
+        'Agent dashboard'
       )
     ),
     nativeChat: findEntry(
@@ -285,7 +285,7 @@ export function getExperimentalSearchEntry() {
       )
     ),
     ephemeralVms: findEntry(
-      translate('auto.components.settings.ephemeralVms.search.title', 'Per-Workspace Environments')
+      translate('auto.components.settings.ephemeralVms.search.title', 'Per-workspace environments')
     )
   } as const
 }

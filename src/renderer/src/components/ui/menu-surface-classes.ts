@@ -1,8 +1,11 @@
 // Menu look shared by ContextMenu and DropdownMenu, ported from the Bots tab's menus: a solid
 // popover sheet, 14px rows and thin icons. Ported from the muster-bots fork (menu-recipe.ts), Apache-2.0.
 
-export const MENU_SHEET =
-  'flex flex-col gap-1 rounded-[12px] border border-border/50 bg-popover-solid p-1.5 text-popover-foreground shadow-[0_10px_24px_rgb(0_0_0/0.18)] [&_svg.lucide]:stroke-[1.5]'
+// The one floating surface: menus, popovers and palettes share it.
+export const FLOATING_SURFACE =
+  'rounded-[12px] border border-border/50 bg-popover-solid text-popover-foreground shadow-floating'
+
+export const MENU_SHEET = `flex flex-col gap-1 p-1.5 ${FLOATING_SURFACE} [&_svg.lucide]:stroke-[1.5]`
 
 export const MENU_MOTION =
   'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95'

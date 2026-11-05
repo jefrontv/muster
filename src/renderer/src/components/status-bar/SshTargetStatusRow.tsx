@@ -39,9 +39,9 @@ function syncStatusTone(status: RemoteWorkspaceSyncStatus | undefined): string {
       return 'text-muted-foreground'
     case 'pulling':
     case 'pushing':
-      return 'text-yellow-500'
+      return 'text-status-attention'
     case 'synced':
-      return 'text-emerald-500'
+      return 'text-status-success'
     case 'idle':
     case undefined:
       return 'text-muted-foreground'
@@ -105,9 +105,9 @@ export function SshTargetStatusRow({
       <span className={`size-1.5 shrink-0 rounded-full ${statusColor(status)}`} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[12px] font-medium">{label}</div>
-        <div className="flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
           <span>
-            {translate('auto.components.status.bar.SshTargetStatusRow.sshHost', 'SSH Host')}
+            {translate('auto.components.status.bar.SshTargetStatusRow.sshHost', 'SSH host')}
           </span>
           <span aria-hidden="true">·</span>
           <span>{STATUS_LABELS[status]}</span>
@@ -136,7 +136,7 @@ export function SshTargetStatusRow({
         <button
           type="button"
           onClick={() => void handleConnect()}
-          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-foreground hover:bg-accent/70"
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {translate('auto.components.status.bar.SshStatusSegment.63f36455cc', 'Connect')}
         </button>
@@ -144,7 +144,7 @@ export function SshTargetStatusRow({
         <button
           type="button"
           onClick={() => void handleDisconnect()}
-          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-accent/70 hover:text-foreground"
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {translate('auto.components.status.bar.SshStatusSegment.59b553e2aa', 'Disconnect')}
         </button>

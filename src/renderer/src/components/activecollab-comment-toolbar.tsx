@@ -91,7 +91,7 @@ function ActiveCollabCommentToolbarButton({
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
       className={cn(
-        'flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
+        'flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/[0.07] hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
         active && 'bg-accent text-accent-foreground'
       )}
     >

@@ -89,7 +89,7 @@ export function ConflictBanner({
         'border-b px-4 py-2 text-xs',
         isUnresolved
           ? 'border-destructive/20 bg-destructive/5'
-          : 'border-emerald-500/20 bg-emerald-500/5'
+          : 'border-status-success-border bg-status-success-background'
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -97,7 +97,7 @@ export function ConflictBanner({
           {isUnresolved ? (
             <TriangleAlert className="size-3.5 shrink-0 text-destructive" />
           ) : (
-            <CircleCheck className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <CircleCheck className="size-3.5 shrink-0 text-status-success" />
           )}
           <span className="min-w-0 truncate font-medium text-foreground">
             {label}{' '}
@@ -272,7 +272,7 @@ export function ConflictReviewPanel({
           <div className="flex items-center justify-center gap-2">
             <Button type="button" size="sm" variant="outline" onClick={onReturnToSourceControl}>
               <GitMerge className="size-3.5" />
-              {translate('auto.components.editor.ConflictComponents.28e7db4a90', 'Source Control')}
+              {translate('auto.components.editor.ConflictComponents.28e7db4a90', 'Source control')}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={onDismiss}>
               <X className="size-3.5" />
@@ -349,7 +349,7 @@ export function ConflictReviewPanel({
             <div className="flex h-full min-h-0 items-center justify-center px-6 text-center text-sm text-muted-foreground">
               {translate(
                 'auto.components.editor.ConflictComponents.f338288514',
-                'Loading conflict contents...'
+                'Loading conflict contents…'
               )}
             </div>
           )}

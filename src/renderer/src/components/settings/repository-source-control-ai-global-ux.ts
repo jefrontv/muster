@@ -45,7 +45,7 @@ type UseRepositorySourceControlAiGlobalUxArgs = {
 }
 
 /**
- * Match global Source Control AI save UX for per-repo overrides:
+ * Match global Source control AI save UX for per-repo overrides:
  * - Selects / simple controls persist immediately (optimistic UI)
  * - Action CLI args + command template draft until the per-action Save
  */

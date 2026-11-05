@@ -11,7 +11,7 @@ export function AgentWorkingSpinner({ className }: { className?: string }): Reac
     <span
       ref={agentSpinnerRef}
       data-agent-spinner=""
-      className={cn('agent-working-spinner block text-yellow-600 dark:text-yellow-400', className)}
+      className={cn('agent-working-spinner block text-status-attention', className)}
     >
       {/* A faint full track under a rounded quarter arc. Under reduced motion the clock never
           ticks, so the track fills in: a frozen arc reads as broken, a full ring as a marker (#9515). */}

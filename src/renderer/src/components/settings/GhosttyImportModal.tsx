@@ -80,7 +80,7 @@ export function GhosttyImportModal({
             )}
             {applied ? (
               <div>
-                <p className="text-xs font-medium text-green-600 mb-1">
+                <p className="text-xs font-medium text-status-success mb-1">
                   {translate(
                     'auto.components.settings.GhosttyImportModal.4466f4cdaa',
                     'Import complete'
@@ -116,12 +116,12 @@ export function GhosttyImportModal({
               <p className="text-xs text-muted-foreground">
                 {translate(
                   'auto.components.settings.GhosttyImportModal.674b5ccd6b',
-                  'No new settings to import — your current settings already match.'
+                  'No new settings to import. Your current settings already match.'
                 )}
               </p>
             )}
 
-            {!applied && applyError && <p className="text-xs text-red-500">{applyError}</p>}
+            {!applied && applyError && <p className="text-xs text-status-danger">{applyError}</p>}
 
             {!applied && preview.unsupportedKeys.length > 0 && (
               <div>
@@ -142,7 +142,7 @@ export function GhosttyImportModal({
             )}
           </div>
         ) : preview.error ? (
-          <p className="text-xs text-red-500">{preview.error}</p>
+          <p className="text-xs text-status-danger">{preview.error}</p>
         ) : (
           <p className="text-xs text-muted-foreground">
             {translate(
@@ -166,7 +166,7 @@ export function GhosttyImportModal({
                 <Button onClick={() => void onApply()}>
                   {translate(
                     'auto.components.settings.GhosttyImportModal.9d3e56ca36',
-                    'Apply Changes'
+                    'Apply changes'
                   )}
                 </Button>
               )}

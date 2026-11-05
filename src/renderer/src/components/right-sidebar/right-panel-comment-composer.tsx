@@ -292,7 +292,7 @@ export function RightPanelCommentComposer({
               {submitting
                 ? translate(
                     'auto.components.right.sidebar.right.panel.comment.composer.87aff03d63',
-                    'Sending...'
+                    'Sending…'
                   )
                 : submitLabel}
             </Button>
@@ -305,8 +305,8 @@ export function RightPanelCommentComposer({
                 <span>{submitLabel}</span>
                 <ShortcutKeyCombo
                   keys={[isMac ? '⌘' : 'Ctrl', 'Enter']}
-                  className="shrink text-[10px] [&_span]:min-w-0 [&_span]:px-1"
-                  separatorClassName="mx-0 text-[10px] text-muted-foreground"
+                  className="shrink text-[11px] [&_span]:min-w-0 [&_span]:px-1"
+                  separatorClassName="mx-0 text-[11px] text-muted-foreground"
                 />
               </span>
             )}

@@ -113,8 +113,8 @@ describe('PortsPanel runtime routing', () => {
   it('formats platform-specific system-browser hints for port open tooltips', () => {
     expect(getPortSystemBrowserHint(true)).toBe('⇧⌘+click for system browser')
     expect(getPortSystemBrowserHint(false)).toBe('Shift+Ctrl+click for system browser')
-    expect(getPortOpenBrowserTooltipLabel('Open in Browser', false)).toBe(
-      'Open in Browser. Shift+Ctrl+click for system browser'
+    expect(getPortOpenBrowserTooltipLabel('Open in browser', false)).toBe(
+      'Open in browser. Shift+Ctrl+click for system browser'
     )
   })
 

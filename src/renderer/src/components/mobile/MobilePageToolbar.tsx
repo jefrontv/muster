@@ -20,7 +20,7 @@ export function MobilePageToolbar({
   const sidebarToggleTooltip = showMobileButton
     ? translate(
         'auto.components.mobile.MobilePageToolbar.e1c7b4a92d',
-        'Configure in Settings > Mobile.'
+        'Configure in settings > Mobile.'
       )
     : translate(
         'auto.components.mobile.MobilePageToolbar.f3d8e5b71a',

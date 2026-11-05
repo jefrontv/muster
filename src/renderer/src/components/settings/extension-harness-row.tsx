@@ -20,8 +20,8 @@ import { describeExtensionHarness } from '../extensions/extension-status-present
 import { shortenExtensionConfigPath } from '../extensions/extension-config-path'
 
 const DOT_TONE = {
-  connected: 'bg-emerald-500',
-  attention: 'bg-amber-500',
+  connected: 'bg-status-success',
+  attention: 'bg-status-attention',
   neutral: 'bg-muted-foreground/50'
 } as const
 

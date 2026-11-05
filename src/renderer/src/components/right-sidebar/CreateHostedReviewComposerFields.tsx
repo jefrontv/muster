@@ -1,8 +1,10 @@
 import { ArrowDownUp, Check, ChevronDown, Sparkles, TriangleAlert } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type { LocalizedHostedReviewCopy } from '@/i18n/hosted-review-localized-copy'
 import { stripBaseRef } from './useCreatePullRequestDialogFields'
+import { Textarea } from '@/components/ui/textarea'
 
 type CreateHostedReviewComposerFieldsProps = {
   copy: LocalizedHostedReviewCopy
@@ -76,7 +78,7 @@ export function CreateHostedReviewComposerFields({
       </div>
 
       <div className="relative space-y-2">
-        <input
+        <Input
           aria-label={translate(
             'auto.components.right.sidebar.SourceControl.a6eda33521',
             '{{value0}} title',
@@ -86,10 +88,10 @@ export function CreateHostedReviewComposerFields({
           disabled={fieldsLocked}
           onChange={(event) => setTitle(event.target.value)}
           placeholder={translate('auto.components.right.sidebar.SourceControl.7d6a8f0082', 'Title')}
-          className="h-8 w-full min-w-0 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-8 text-xs font-medium"
         />
 
-        <textarea
+        <Textarea
           aria-label={translate(
             'auto.components.right.sidebar.SourceControl.a8873e1d62',
             '{{value0}} description',
@@ -103,7 +105,7 @@ export function CreateHostedReviewComposerFields({
             'auto.components.right.sidebar.SourceControl.a0dc20fc93',
             'Description (optional)'
           )}
-          className="min-h-[7.5rem] w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/70 disabled:cursor-not-allowed disabled:opacity-60 scrollbar-sleek outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="min-h-[7.5rem] resize-y py-1.5 text-xs scrollbar-sleek"
         />
 
         {generating ? (
@@ -114,7 +116,7 @@ export function CreateHostedReviewComposerFields({
             aria-hidden="true"
           >
             <div className="pointer-events-auto flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground shadow-sm">
-              <Sparkles className="size-3 animate-pulse text-foreground" />
+              <Sparkles className="size-3 animate-pulse text-foreground rounded-full" />
               <span>
                 {translate(
                   'auto.components.right.sidebar.SourceControl.9484270f45',
@@ -134,7 +136,7 @@ export function CreateHostedReviewComposerFields({
           {translate('auto.components.right.sidebar.SourceControl.1f7119f604', 'Base')}
         </span>
         <div className="relative min-w-0 flex-1">
-          <input
+          <Input
             aria-label={translate(
               'auto.components.right.sidebar.SourceControl.6055949c50',
               '{{value0}} base branch',
@@ -150,7 +152,7 @@ export function CreateHostedReviewComposerFields({
               'auto.components.right.sidebar.SourceControl.e64a632456',
               'main'
             )}
-            className="h-7 w-full min-w-0 rounded-md border border-border bg-background px-2 pr-6 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-7 pr-6 font-mono text-xs"
           />
           <ChevronDown
             className="pointer-events-none absolute right-1.5 top-1.5 size-3.5 text-muted-foreground"
@@ -187,7 +189,7 @@ export function CreateHostedReviewComposerFields({
               type="button"
               disabled={fieldsLocked}
               className={cn(
-                'flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left font-mono text-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent',
+                'flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left font-mono text-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent',
                 stripBaseRef(base) === ref && 'bg-accent text-accent-foreground'
               )}
               onClick={() => {

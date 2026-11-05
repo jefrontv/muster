@@ -161,8 +161,8 @@ export function ActiveCollabTaskList({
         <div className="divide-y divide-border/50" data-testid="activecollab-task-list-skeleton">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="px-3 py-3">
-              <div className="h-4 w-4/5 animate-pulse rounded bg-muted/70" />
-              <div className="mt-2 h-3 w-3/5 animate-pulse rounded bg-muted/60" />
+              <div className="h-4 w-4/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+              <div className="mt-2 h-3 w-3/5 animate-pulse rounded-full bg-foreground/[0.07]" />
             </div>
           ))}
         </div>

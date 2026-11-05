@@ -81,7 +81,7 @@ export function AutomationSetupDecisionField({
                 className={cn(
                   'flex size-4 items-center justify-center rounded-[3px] border shadow-sm transition',
                   checked
-                    ? 'border-emerald-500/60 bg-emerald-500 text-white'
+                    ? 'border-status-success/60 bg-status-success-solid text-white'
                     : 'border-foreground/20 bg-background dark:border-white/20 dark:bg-muted/10'
                 )}
               >
@@ -106,7 +106,7 @@ export function AutomationSetupDecisionField({
             <p className="pl-6 text-xs text-muted-foreground">
               {translate(
                 'auto.components.automations.AutomationSetupDecisionField.874b72195b',
-                "When this automation creates a workspace, prepare it the same way creating a worktree by hand does — run the project's setup and open its terminal tabs."
+                "When this automation creates a workspace, prepare it the same way creating a worktree by hand does. Run the project's setup and open its terminal tabs."
               )}
             </p>
           </div>

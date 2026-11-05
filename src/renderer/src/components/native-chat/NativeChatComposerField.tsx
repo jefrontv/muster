@@ -220,7 +220,7 @@ export function NativeChatComposerField({
                         'components.native-chat.composer.removeAttachment',
                         'Remove attachment'
                       )}
-                      className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="hit-area flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <X className="size-3" />
                     </button>
@@ -241,7 +241,7 @@ export function NativeChatComposerField({
                         'components.native-chat.composer.removeAttachment',
                         'Remove attachment'
                       )}
-                      className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="hit-area flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <X className="size-3" />
                     </button>
@@ -310,7 +310,7 @@ export function NativeChatComposerField({
               className={cn(
                 seat
                   ? CHAT_SEAT_EDITOR_CLASS
-                  : 'scrollbar-sleek field-sizing-content max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed disabled:opacity-50',
+                  : 'scrollbar-sleek field-sizing-content max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
                 seat ? 'min-h-12' : 'min-h-12 pointer-coarse:min-h-14'
               )}
             />

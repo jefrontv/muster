@@ -103,9 +103,9 @@ export function CompactAgentSummaryButton({
       type="button"
       draggable={false}
       className={cn(
-        'compact-agent-summary-button group/agent-summary flex h-6 w-full min-w-0 items-center gap-1 rounded-sm',
+        'compact-agent-summary-button group/agent-summary flex h-6 w-full min-w-0 items-center gap-1 rounded-md',
         'text-left text-[11px] leading-none text-worktree-sidebar-muted-foreground',
-        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring',
         // Same hover as each agent row, so the summary and the rows it expands read as one list.
         'worktree-agent-row-hover',
         // Why: expanded is a tree header inside the card, so only the
@@ -162,7 +162,7 @@ export function CompactAgentSummaryButton({
                     ))}
                   </span>
                   {hiddenIconCount > 0 && (
-                    <span className="shrink-0 text-[10px] tabular-nums text-worktree-sidebar-muted-foreground">
+                    <span className="shrink-0 text-2xs tabular-nums text-worktree-sidebar-muted-foreground">
                       +{hiddenIconCount}
                     </span>
                   )}
@@ -171,7 +171,7 @@ export function CompactAgentSummaryButton({
             })}
           </span>
           {hiddenGroupAgentCount > 0 && (
-            <span className="shrink-0 text-[10px] tabular-nums text-worktree-sidebar-muted-foreground">
+            <span className="shrink-0 text-2xs tabular-nums text-worktree-sidebar-muted-foreground">
               +{hiddenGroupAgentCount}
             </span>
           )}

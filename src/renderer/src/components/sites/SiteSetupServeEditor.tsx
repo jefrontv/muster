@@ -90,7 +90,7 @@ export function SiteSetupServeEditor({
             value={value.stack ?? undefined}
             onValueChange={(next) => onChange({ ...value, stack: next as SiteLocalStack })}
           >
-            <SelectTrigger size="sm" className="h-8 w-[160px] text-xs">
+            <SelectTrigger size="sm" className="w-[160px] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -116,9 +116,9 @@ export function SiteSetupServeEditor({
           // DDEV serves <project>.ddev.site: only the project name is the user's to choose.
           <div
             className={cn(
-              'flex h-8 items-center rounded-md border border-input bg-transparent font-mono text-xs shadow-xs transition-[color,box-shadow] dark:bg-input/30',
-              'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
-              error && 'border-destructive ring-destructive/20 dark:ring-destructive/40'
+              'flex h-8 items-center rounded-full bg-foreground/[0.05] px-0.5 font-mono text-xs transition-[color,box-shadow]',
+              'focus-within:ring-2 focus-within:ring-ring',
+              error && 'ring-2 ring-destructive'
             )}
           >
             <input

@@ -50,8 +50,8 @@ export function ghRepoExecOptions(context: GitHubRepoContext): {
       }
 }
 
-const OWNER_REPO_POSITIVE_CACHE_TTL_MS = 30_000
-const OWNER_REPO_NEGATIVE_CACHE_TTL_MS = 5 * 60_000
+const OWNER_REPO_UNSIGNED_CACHE_TTL_MS = 30_000
+const OWNER_REPO_SIGNED_CACHE_TTL_MS = 5 * 60_000
 const OWNER_REPO_CACHE_MAX_ENTRIES = 512
 
 type OwnerRepoCacheEntry = {
@@ -108,11 +108,10 @@ export async function getRemoteUrlForRepo(
   return stdout
 }
 
-function getOwnerRepoCacheTtl(value: OwnerRepo | null, configSignature?: string): number {
-  if (value) {
-    return OWNER_REPO_POSITIVE_CACHE_TTL_MS
-  }
-  return configSignature ? OWNER_REPO_NEGATIVE_CACHE_TTL_MS : OWNER_REPO_POSITIVE_CACHE_TTL_MS
+function getOwnerRepoCacheTtl(configSignature?: string): number {
+  // Why: a local .git/config signature catches remote edits, so either verdict
+  // can be held longer; SSH/WSL have no signature and keep the short TTL.
+  return configSignature ? OWNER_REPO_SIGNED_CACHE_TTL_MS : OWNER_REPO_UNSIGNED_CACHE_TTL_MS
 }
 
 export async function getOwnerRepoForRemote(
@@ -128,7 +127,7 @@ export async function getOwnerRepoForRemote(
   pruneOwnerRepoCache(now)
   const cached = ownerRepoCache.get(cacheKey)
   if (cached && cached.expiresAt > now) {
-    if (cached.value === null && cached.configSignature !== undefined) {
+    if (cached.configSignature !== undefined) {
       const currentSignature = await readLocalGitConfigSignature(context)
       if (currentSignature !== cached.configSignature) {
         ownerRepoCache.delete(cacheKey)
@@ -181,7 +180,8 @@ async function resolveOwnerRepoForRemote(
     if (result) {
       ownerRepoCache.set(cacheKey, {
         value: result,
-        expiresAt: now + getOwnerRepoCacheTtl(result, configSignature)
+        expiresAt: now + getOwnerRepoCacheTtl(configSignature),
+        ...(configSignature ? { configSignature } : {})
       })
       pruneOwnerRepoCache(now)
       return result
@@ -197,7 +197,7 @@ async function resolveOwnerRepoForRemote(
   // Holding that negative longer avoids Git process churn across PR polling.
   ownerRepoCache.set(cacheKey, {
     value: null,
-    expiresAt: now + getOwnerRepoCacheTtl(null, configSignature),
+    expiresAt: now + getOwnerRepoCacheTtl(configSignature),
     ...(configSignature ? { configSignature } : {})
   })
   pruneOwnerRepoCache(now)

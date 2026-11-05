@@ -39,7 +39,7 @@ export function ChangesModeView({
   if (!dc) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-        {translate('auto.components.editor.ChangesModeView.54e0035b15', 'Loading diff...')}
+        {translate('auto.components.editor.ChangesModeView.54e0035b15', 'Loading diff…')}
       </div>
     )
   }

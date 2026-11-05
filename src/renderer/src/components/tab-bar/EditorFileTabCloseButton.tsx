@@ -22,7 +22,7 @@ export function EditorFileTabCloseButton({
     <Tooltip>
       <TooltipTrigger asChild>
         <button
-          className={`flex items-center justify-center w-4 h-4 rounded-sm ${
+          className={`hit-area flex items-center justify-center w-4 h-4 rounded-full ${
             fileIsDirty
               ? 'hidden group-hover:flex text-muted-foreground hover:text-foreground hover:bg-muted'
               : showsSelectionChrome

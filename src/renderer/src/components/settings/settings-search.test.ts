@@ -32,7 +32,7 @@ describe('settings-search', () => {
   })
 
   it('scores pane title matches above entry, description, and keyword matches', () => {
-    const paneTitleMatch = [{ title: 'Keyboard Shortcuts' }]
+    const paneTitleMatch = [{ title: 'Keyboard shortcuts' }]
     const entryTitleMatch = [{ title: 'Interface' }, { title: 'Shortcuts' }]
     const descriptionMatch = [{ title: 'Interface', description: 'Shortcuts' }]
     const keywordMatch = [{ title: 'Interface', keywords: ['shortcuts'] }]
@@ -53,9 +53,9 @@ describe('settings-search', () => {
       {
         id: 'tasks',
         entries: [
-          { title: 'Task Sources', description: 'Choose task providers.' },
+          { title: 'Task sources', description: 'Choose task providers.' },
           {
-            title: 'Task Providers',
+            title: 'Task providers',
             description:
               'Choose which task providers appear in the Tasks page and sidebar shortcuts.'
           }
@@ -65,7 +65,7 @@ describe('settings-search', () => {
         id: 'shortcuts',
         entries: [
           { title: 'Shortcuts', description: 'Keyboard shortcuts for common actions.' },
-          { title: 'Shortcuts in Terminal', description: 'Choose terminal shortcut behavior.' }
+          { title: 'Shortcuts in terminal', description: 'Choose terminal shortcut behavior.' }
         ]
       }
     ]
@@ -79,7 +79,7 @@ describe('settings-search', () => {
 
   it('includes pane title entries for SettingsSection content filtering', () => {
     const section = {
-      title: 'AI Provider Accounts',
+      title: 'AI provider accounts',
       description: 'Optional account switching.',
       searchEntries: [{ title: 'Claude', description: 'Use the signed-in Claude account.' }]
     }

@@ -108,7 +108,7 @@ export function UsageOverviewPane(): React.JSX.Element {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-foreground">
-              {translate('auto.components.stats.UsageOverviewPane.c760c481c5', 'Usage Overview')}
+              {translate('auto.components.stats.UsageOverviewPane.c760c481c5', 'Usage overview')}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {formatUpdatedAt(overview.lastUpdatedAt)}

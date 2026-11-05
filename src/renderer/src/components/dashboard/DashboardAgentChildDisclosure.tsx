@@ -51,7 +51,7 @@ export function DashboardAgentChildDisclosure({
       onClick={handleToggleChildren}
       onMouseDown={stopMouseDown}
       onKeyDown={stopKeyDown}
-      className="-ml-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-sm border border-sidebar-border/80 bg-sidebar text-foreground/80 shadow-xs hover:bg-sidebar-accent hover:text-foreground"
+      className="hit-area -ml-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-sidebar-border/80 bg-sidebar text-foreground/80 shadow-xs hover:bg-sidebar-accent hover:text-foreground"
       aria-label={translate(
         'auto.components.dashboard.DashboardAgentChildDisclosure.1b57ce9fa4',
         '{{value0}} {{value1}} child {{value2}}',

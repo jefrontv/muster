@@ -56,13 +56,9 @@ function CommandDialog({
           )}
         />
         <DialogPrimitive.Content
-          // Why: matches the DialogContent recipe — translucent surface, solid
-          // 14% border, dual shadow, and 2xl backdrop blur. bg-popover equals
-          // the canvas in dark mode (#171717 vs #0a0a0a) and the previous
-          // border-border + shadow-lg was barely visible against the dark
-          // canvas.
+          // One palette recipe (the Jump palette's): opaque floating sheet at 16px.
           className={cn(
-            'fixed top-[20%] left-[50%] z-50 w-[660px] max-w-[90vw] translate-x-[-50%] rounded-lg border border-black/14 bg-background/96 text-foreground shadow-[0_20px_60px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl outline-none dark:border-white/14 dark:bg-[rgba(23,23,23,0.96)] dark:shadow-[0_24px_72px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+            'fixed top-[13%] left-[50%] z-50 w-[660px] max-w-[94vw] translate-x-[-50%] overflow-hidden rounded-[16px] border border-foreground/10 bg-popover-solid text-foreground shadow-floating outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             contentClassName
           )}
           onOpenAutoFocus={onOpenAutoFocus}
@@ -75,7 +71,12 @@ function CommandDialog({
           <Command
             shouldFilter={shouldFilter}
             className={cn(
-              '[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3',
+              'bg-transparent [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0',
+              // Larger search and inset rows for the full-width palette.
+              '[&_[data-cmdk-input-wrapper]]:mx-3 [&_[data-cmdk-input-wrapper]]:mt-3 [&_[data-cmdk-input-wrapper]]:mb-0 [&_[data-cmdk-input-wrapper]]:h-11 [&_[data-cmdk-input-wrapper]]:px-4 [&_[cmdk-input]]:text-[14px]',
+              '[&_[cmdk-list]]:px-2.5 [&_[cmdk-list]]:pt-2 [&_[cmdk-list]]:pb-2.5 [&_[cmdk-item]]:rounded-xl [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item][data-selected=true]]:bg-foreground/[0.07]',
+              // Group labels match MENU_LABEL: 12px sentence case.
+              '[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:leading-4 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground',
               commandClassName
             )}
             {...commandRootProps}
@@ -99,17 +100,18 @@ function CommandInput({
 }) {
   return (
     <div
+      // Pill search inset in its picker, like the palettes; no focus ring since it always holds focus.
       className={cn(
-        'flex items-center border-b border-border bg-muted/30 px-3 py-1',
+        'm-1.5 flex h-8 items-center gap-2 rounded-full bg-foreground/[0.05] px-3',
         wrapperClassName
       )}
       data-cmdk-input-wrapper=""
     >
-      <SearchIcon className={cn('mr-2 h-4 w-4 shrink-0 opacity-50', iconClassName)} />
+      <SearchIcon className={cn('size-3.5 shrink-0 text-muted-foreground', iconClassName)} />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          'flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-full w-full min-w-0 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
         {...props}
@@ -164,7 +166,7 @@ function CommandList({
       ref={mergedRef}
       data-slot="command-list"
       className={cn(
-        'max-h-[min(400px,60vh)] overflow-y-auto overflow-x-hidden scrollbar-sleek scroll-pb-4 scroll-pt-4',
+        'max-h-[min(400px,60vh)] overflow-y-auto overflow-x-hidden scrollbar-sleek scroll-pb-4 scroll-pt-4 [&>[cmdk-list-sizer]:has(>[cmdk-item])]:p-1',
         className
       )}
       {...props}

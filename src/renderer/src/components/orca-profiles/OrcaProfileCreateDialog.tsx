@@ -56,7 +56,7 @@ export function OrcaProfileCreateDialog({
           <DialogFooter>
             <Button type="submit" size="sm" disabled={creating || switching}>
               {creating || switching ? <Loader2 className="size-4 animate-spin" /> : null}
-              {translate('auto.components.orca.profiles.switcher.cfa59f8ad1', 'Create and Switch')}
+              {translate('auto.components.orca.profiles.switcher.cfa59f8ad1', 'Create and switch')}
             </Button>
           </DialogFooter>
         </form>

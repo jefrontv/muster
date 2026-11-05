@@ -22,7 +22,7 @@ import {
 
 function FooterKey({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-medium text-foreground/85">
+    <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[11px] font-medium text-foreground/85">
       {children}
     </span>
   )
@@ -115,14 +115,14 @@ export default function QuickOpen(): React.JSX.Element | null {
       description={translate('auto.components.QuickOpen.9e97f08d0f', 'Search for a file to open')}
     >
       <CommandInput
-        placeholder={translate('auto.components.QuickOpen.1cb6ef47b7', 'Go to file...')}
+        placeholder={translate('auto.components.QuickOpen.1cb6ef47b7', 'Go to file…')}
         value={query}
         onValueChange={setQuery}
       />
       <CommandList className="p-2">
         {loading ? (
           <div className="py-6 text-center text-sm text-muted-foreground">
-            {translate('auto.components.QuickOpen.722a21e1a8', 'Loading files...')}
+            {translate('auto.components.QuickOpen.722a21e1a8', 'Loading files…')}
           </div>
         ) : loadError ? (
           (() => {

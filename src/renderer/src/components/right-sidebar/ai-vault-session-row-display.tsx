@@ -78,7 +78,7 @@ export function SessionMetadata({
         {isAiVaultSessionRecoverableEmpty(session) ? (
           <>
             <span className="shrink-0 text-muted-foreground/55">·</span>
-            <span className="shrink-0 rounded-sm border border-dashed border-border/70 px-1 py-0 text-[10px] font-medium leading-4 text-muted-foreground">
+            <span className="shrink-0 rounded-full border border-dashed border-border/70 px-1 py-0 text-[11px] font-medium leading-4 text-muted-foreground">
               {translate(
                 'auto.components.right.sidebar.AiVaultSessionRow.recoverableBadge',
                 'Not saved'
@@ -121,13 +121,13 @@ export function SessionWorktreeLine({
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5 pl-5">
       {shouldShowAiVaultWorktreeStatusBadge(worktreeInfo.status, { vaultScope }) ? (
-        <span className="shrink-0 rounded-sm border border-sidebar-border bg-sidebar-accent/45 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">
+        <Badge variant="muted" className="shrink-0">
           {worktreeStatusLabel(worktreeInfo.status)}
-        </span>
+        </Badge>
       ) : null}
       <Badge
         variant="outline"
-        className="h-5 max-w-full gap-1 border-border/70 bg-background px-1.5 py-0 text-[11px] font-medium"
+        className="max-w-full gap-1 border-border/70 bg-background"
         title={worktreeInfo.label}
       >
         <RepoBadgeLabel

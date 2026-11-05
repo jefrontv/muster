@@ -1,4 +1,5 @@
 // The project drill-in: every open task in ONE project, sectioned by the project's own task lists
+import { Badge } from '@/components/ui/badge'
 // the way the source instance shows them. Reached from a project heading in the assigned list;
 // the back control returns there with the assigned list's state untouched (it stays mounted).
 
@@ -58,7 +59,7 @@ function ActiveCollabTaskAddRow({ onOpen }: { onOpen: () => void }): React.JSX.E
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+        className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       >
         <Plus className="size-3 shrink-0" />
         {translate('auto.components.activecollab.project_view.add_task', 'Add task')}
@@ -100,16 +101,13 @@ function ActiveCollabTaskListSection({
           aria-controls={listId}
           aria-expanded={!collapsed}
           onClick={() => toggleCollapsedGroup(collapseKey)}
-          className="flex w-full min-w-0 items-center justify-between gap-2 px-3 py-2 text-left uppercase tracking-[inherit] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+          className="flex w-full min-w-0 items-center justify-between gap-2 px-3 py-2 text-left uppercase tracking-[inherit] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
           <span className="min-w-0 truncate">{taskListGroupLabel(group)}</span>
           <span className="flex shrink-0 items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] tabular-nums"
-            >
+            <Badge variant="muted" aria-hidden="true" className="text-2xs tabular-nums">
               {group.tasks.length}
-            </span>
+            </Badge>
             <ChevronDown
               aria-hidden="true"
               className={cn('size-3.5 transition-transform', collapsed && '-rotate-90')}
@@ -241,9 +239,9 @@ export function ActiveCollabProjectView({
         </Button>
         <span className="min-w-0 truncate text-sm font-semibold">{projectName}</span>
         {result ? (
-          <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+          <Badge variant="muted" className="shrink-0 text-2xs tabular-nums">
             {result.tasks.length}
-          </span>
+          </Badge>
         ) : null}
       </div>
 
@@ -262,8 +260,8 @@ export function ActiveCollabProjectView({
         <div className="divide-y divide-border/50" data-testid="activecollab-project-view-skeleton">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="px-3 py-3">
-              <div className="h-4 w-4/5 animate-pulse rounded bg-muted/70" />
-              <div className="mt-2 h-3 w-3/5 animate-pulse rounded bg-muted/60" />
+              <div className="h-4 w-4/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+              <div className="mt-2 h-3 w-3/5 animate-pulse rounded-full bg-foreground/[0.07]" />
             </div>
           ))}
         </div>

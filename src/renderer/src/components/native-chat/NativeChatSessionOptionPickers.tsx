@@ -79,7 +79,7 @@ function PickerTooltipContent(props: {
         <div>
           {translate(
             'components.native-chat.composer.sentNotConfirmed',
-            'Sent to the agent — not confirmed'
+            'Sent to the agent, not confirmed'
           )}
         </div>
       ) : null}
@@ -113,7 +113,7 @@ function PickerTrigger(props: {
               <span className="min-w-0 truncate">{props.modelLabel}</span>
               {props.effortLabel ? (
                 // Shrinks first, so the effort ellipsizes away before the model name loses a pixel.
-                <span className="min-w-0 shrink-[1000] truncate text-chat-ink-caption">
+                <span className="min-w-0 shrink-[1000] truncate text-chat-ink-tertiary">
                   {props.effortLabel}
                 </span>
               ) : null}
@@ -203,7 +203,7 @@ function DescriptorMenuRows(props: {
           <DropdownMenuLabel className="font-normal text-muted-foreground">
             {translate(
               'components.native-chat.composer.valueUnknown',
-              'Current value unknown — pick On or Off'
+              'Current value unknown: pick On or Off'
             )}
           </DropdownMenuLabel>
         ) : null}

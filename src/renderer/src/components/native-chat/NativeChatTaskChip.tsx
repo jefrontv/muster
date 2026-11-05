@@ -70,7 +70,7 @@ export function NativeChatTaskChip({ taskId }: { taskId: number }): React.JSX.El
       type="button"
       onClick={open}
       title={
-        task?.name ?? translate('auto.components.native-chat.taskChip.unknown', 'Open in Tasks')
+        task?.name ?? translate('auto.components.native-chat.taskChip.unknown', 'Open in tasks')
       }
       className="flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >

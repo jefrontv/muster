@@ -30,6 +30,7 @@ import { OpenCodeUsageDetails } from './OpenCodeUsageDetails'
 import { StatCard } from './StatCard'
 import { formatCost, formatTokens, formatUpdatedAt } from './usage-formatters'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
 
 const RANGE_OPTIONS: OpenCodeUsageRange[] = ['7d', '30d', '90d', 'all']
 const SCOPE_OPTIONS: { value: OpenCodeUsageScope; label: string }[] = [
@@ -100,7 +101,7 @@ export function OpenCodeUsagePane(): React.JSX.Element {
             <h3 className="text-sm font-semibold text-foreground">
               {translate(
                 'auto.components.stats.OpenCodeUsagePane.bea80ceae0',
-                'OpenCode Usage Tracking'
+                'OpenCode usage tracking'
               )}
             </h3>
             <p className="text-sm text-muted-foreground">
@@ -110,19 +111,15 @@ export function OpenCodeUsagePane(): React.JSX.Element {
               )}
             </p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={false}
+          <Switch
+            checked={false}
             aria-label={translate(
               'auto.components.stats.OpenCodeUsagePane.f04131b3be',
               'Enable OpenCode usage analytics'
             )}
             onClick={() => handleSetEnabled(true)}
-            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-muted-foreground/30 transition-colors"
-          >
-            <span className="pointer-events-none block size-3.5 translate-x-0.5 rounded-full bg-background shadow-sm transition-transform" />
-          </button>
+            className="shrink-0"
+          />
         </div>
       </div>
     )
@@ -133,7 +130,7 @@ export function OpenCodeUsagePane(): React.JSX.Element {
       <ClaudeUsageLoadingState
         title={translate(
           'auto.components.stats.OpenCodeUsagePane.bea80ceae0',
-          'OpenCode Usage Tracking'
+          'OpenCode usage tracking'
         )}
         summaryCardCount={6}
         summaryGridClassName="md:grid-cols-3"
@@ -150,7 +147,7 @@ export function OpenCodeUsagePane(): React.JSX.Element {
           <h3 className="text-sm font-semibold text-foreground">
             {translate(
               'auto.components.stats.OpenCodeUsagePane.bea80ceae0',
-              'OpenCode Usage Tracking'
+              'OpenCode usage tracking'
             )}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -238,19 +235,15 @@ export function OpenCodeUsagePane(): React.JSX.Element {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={true}
+          <Switch
+            checked={true}
             aria-label={translate(
               'auto.components.stats.OpenCodeUsagePane.f04131b3be',
               'Enable OpenCode usage analytics'
             )}
             onClick={() => handleSetEnabled(false)}
-            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-foreground transition-colors"
-          >
-            <span className="pointer-events-none block size-3.5 translate-x-4 rounded-full bg-background shadow-sm transition-transform" />
-          </button>
+            className="shrink-0"
+          />
         </div>
       </div>
 

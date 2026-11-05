@@ -1,4 +1,5 @@
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
 type TerminalQuickCommandAppendEnterSwitchProps = {
   appendEnter: boolean
   onToggle: () => void
@@ -14,7 +15,7 @@ export function TerminalQuickCommandAppendEnterSwitch({
         <div className="text-sm font-medium">
           {translate(
             'auto.components.terminal.quick.commands.TerminalQuickCommandAppendEnterSwitch.5fa607d807',
-            'Append Enter'
+            'Send Enter'
           )}
         </div>
         <div className="text-xs text-muted-foreground">
@@ -24,25 +25,14 @@ export function TerminalQuickCommandAppendEnterSwitch({
           )}
         </div>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={appendEnter}
+      <Switch
+        checked={appendEnter}
         aria-label={translate(
           'auto.components.terminal.quick.commands.TerminalQuickCommandAppendEnterSwitch.e4e5fed3b3',
           'Toggle append Enter'
         )}
         onClick={onToggle}
-        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-          appendEnter ? 'bg-foreground' : 'bg-muted-foreground/30'
-        }`}
-      >
-        <span
-          className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-            appendEnter ? 'translate-x-4' : 'translate-x-0.5'
-          }`}
-        />
-      </button>
+      />
     </div>
   )
 }

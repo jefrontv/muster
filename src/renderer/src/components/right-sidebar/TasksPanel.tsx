@@ -95,7 +95,7 @@ export default function TasksPanel(): React.JSX.Element {
         <p className="text-xs text-muted-foreground">
           {translate(
             'auto.components.right.sidebar.tasks.unbound',
-            'Pick the ActiveCollab project this project’s work lives in. Every workspace under it shares the choice.'
+            'Choose the ActiveCollab project for this repo. Every workspace in it uses the same one.'
           )}
         </p>
         <TasksPanelProjectPicker onSelect={(picked) => void bind(picked.id)} />

@@ -1,4 +1,5 @@
 // One task in the sidebar list: a checkbox, the display number, the name, a label and a due date.
+import { Badge } from '@/components/ui/badge'
 //
 // Same fixed row height as the Tasks page list (h-12), so moving between the two surfaces does not
 // feel like moving between two products. Fixed rather than minimum for the same reason it is fixed
@@ -28,16 +29,9 @@ import type { ActiveCollabLabel, ActiveCollabTask } from '../../../../shared/act
 function FirstLabelChip({ label }: { label: ActiveCollabLabel }): React.JSX.Element {
   const style = activeCollabLabelChipStyle(label.color)
   return (
-    <span
-      title={label.name}
-      className={cn(
-        'shrink-0 whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[10px] font-medium',
-        !style && 'border-border/50 bg-muted/35 text-muted-foreground'
-      )}
-      style={style ?? undefined}
-    >
+    <Badge title={label.name} variant={style ? 'outline' : 'muted'} style={style ?? undefined}>
       {label.name}
-    </span>
+    </Badge>
   )
 }
 
@@ -51,7 +45,7 @@ function dueTone(dueOn: number | null): string | null {
   if (dueOn < Date.now()) {
     return 'text-destructive'
   }
-  return dueOn <= endOfToday.getTime() ? 'text-amber-600 dark:text-amber-400' : null
+  return dueOn <= endOfToday.getTime() ? 'text-status-attention' : null
 }
 
 function dueLabel(dueOn: number): string {

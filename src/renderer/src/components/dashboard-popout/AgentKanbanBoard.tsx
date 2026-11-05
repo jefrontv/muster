@@ -30,7 +30,7 @@ function revealAgentViaPopoutRelay(args: AgentRevealArgs): void {
 function bucketLabel(bucket: DashboardBucket): string {
   switch (bucket) {
     case 'attention':
-      return translate('dashboardPopout.bucket.attention', 'Needs You')
+      return translate('dashboardPopout.bucket.attention', 'Needs you')
     case 'working':
       return translate('dashboardPopout.bucket.working', 'Working')
     case 'idle':
@@ -71,7 +71,7 @@ function KanbanColumn({
     <section
       className={cn(
         'flex min-w-[264px] flex-1 flex-col rounded-xl border bg-muted/30',
-        highlight ? 'border-amber-500/40' : 'border-border/60'
+        highlight ? 'border-status-attention-border' : 'border-border/60'
       )}
     >
       <header className="flex items-center gap-2 px-3 py-2">
@@ -210,7 +210,7 @@ export function AgentKanbanBoard({
                 type="button"
                 onClick={onClose}
                 aria-label={translate('dashboardPopout.close', 'Close dashboard')}
-                className="rounded-sm p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="rounded-full p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <XIcon className="size-4" />
               </button>

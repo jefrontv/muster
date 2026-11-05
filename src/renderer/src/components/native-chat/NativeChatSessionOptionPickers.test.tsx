@@ -259,7 +259,7 @@ describe('NativeChatSessionOptionPickers', () => {
         isWorking={false}
       />
     )
-    expect(screen.getByText('Sent to the agent — not confirmed')).not.toBeNull()
+    expect(screen.getByText('Sent to the agent, not confirmed')).not.toBeNull()
   })
 
   it('renders agent-picker routes as one action instead of radio choices', async () => {
@@ -365,7 +365,7 @@ describe('NativeChatSessionOptionPickers', () => {
       />
     )
     // Unknown composed boolean: hint + radios present, nothing pre-selected.
-    expect(screen.getByText('Current value unknown — pick On or Off')).not.toBeNull()
+    expect(screen.getByText('Current value unknown: pick On or Off')).not.toBeNull()
     const thinkingGroup = screen.getByRole('radio', { name: 'On' }).parentElement
     expect(thinkingGroup?.getAttribute('data-radio-value')).toBe('')
     screen.getByRole('radio', { name: 'Off' }).click()
@@ -388,7 +388,7 @@ describe('NativeChatSessionOptionPickers', () => {
         isWorking={false}
       />
     )
-    expect(screen.queryByText('Sent to the agent — not confirmed')).toBeNull()
+    expect(screen.queryByText('Sent to the agent, not confirmed')).toBeNull()
   })
 
   it('shows unconfirmed for confirmable dispatched booleans', () => {
@@ -409,6 +409,6 @@ describe('NativeChatSessionOptionPickers', () => {
         isWorking={false}
       />
     )
-    expect(screen.getByText('Sent to the agent — not confirmed')).not.toBeNull()
+    expect(screen.getByText('Sent to the agent, not confirmed')).not.toBeNull()
   })
 })

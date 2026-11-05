@@ -27,6 +27,13 @@ import { getLocalGitCapabilityCache } from './git-capability-state'
 import { gitExecFileAsync, translateWslOutputPaths } from './runner'
 import { resolveGitDir, runWithGitReadCacheInvalidation } from './status'
 import { hasWorktreeBaseCommitRef } from './worktree-base-ref-probe'
+import {
+  getRecentWorktreeScanEpoch,
+  invalidateRecentWorktreeScans,
+  readRecentWorktreeScan,
+  recentWorktreeScanKey,
+  rememberRecentWorktreeScan
+} from './worktree-scan-reuse'
 
 export type AddWorktreeResult = {
   localBaseRefRefresh?: LocalBaseRefRefreshResult
@@ -41,6 +48,8 @@ export type GitWorktreeExecOptions = {
   wslDistro?: string
   signal?: AbortSignal
   timeout?: number
+  /** Bulk readers only: reuse a completed listing of the same repo this recent (ms). */
+  reuseRecentScanMs?: number
 }
 
 type WorktreeRemovalPreflightOptions = GitWorktreeExecOptions & {
@@ -741,6 +750,7 @@ function hasInFlightWorktreeScanForRepo(repoPath: string): boolean {
 }
 
 function bumpWorktreeScanGeneration(repoPath: string): void {
+  invalidateRecentWorktreeScans(repoPath)
   // Why: generations only prevent joining a pre-mutation scan; with no active scan, keeping the repo path just leaks completed mutation keys.
   if (!hasInFlightWorktreeScanForRepo(repoPath)) {
     return
@@ -768,34 +778,50 @@ export function _getWorktreeScanCacheSizesForTests(): { inFlight: number; genera
 export function _resetWorktreeScanCacheForTests(): void {
   inFlightWorktreeScans.clear()
   worktreeScanGenerations.clear()
+  invalidateRecentWorktreeScans()
 }
 
 /**
  * List all worktrees for a git repo at the given path. Concurrent calls for
  * the same repo share one scan (unless the caller passes an AbortSignal,
- * which must only cancel its own scan).
+ * which must only cancel its own scan). Callers passing `reuseRecentScanMs`
+ * may also get a completed listing that young.
  */
 export function listWorktrees(
   repoPath: string,
   options: GitWorktreeExecOptions = {}
 ): Promise<GitWorktreeInfo[]> {
-  if (options.signal) {
-    return listWorktreesUnshared(repoPath, options)
+  const { reuseRecentScanMs, ...execOptions } = options
+  if (execOptions.signal) {
+    return listWorktreesUnshared(repoPath, execOptions)
+  }
+  const recentKey = recentWorktreeScanKey(repoPath, execOptions.wslDistro)
+  if (reuseRecentScanMs !== undefined && reuseRecentScanMs > 0) {
+    const recent = readRecentWorktreeScan(recentKey, reuseRecentScanMs)
+    if (recent) {
+      return Promise.resolve(recent)
+    }
   }
   const generation = worktreeScanGenerations.get(repoPath) ?? 0
-  const timeout = options.timeout ?? WORKTREE_LIST_TIMEOUT_MS
+  const timeout = execOptions.timeout ?? WORKTREE_LIST_TIMEOUT_MS
   // Why: callers with different deadlines cannot safely share which timeout wins the scan.
-  const key = `${repoPath}\0${options.wslDistro ?? ''}\0${timeout}\0${generation}`
+  const key = `${repoPath}\0${execOptions.wslDistro ?? ''}\0${timeout}\0${generation}`
   const inFlight = inFlightWorktreeScans.get(key)
   if (inFlight) {
     return inFlight
   }
-  const scan = listWorktreesUnshared(repoPath, options).finally(() => {
-    if (inFlightWorktreeScans.get(key) === scan) {
-      inFlightWorktreeScans.delete(key)
-    }
-    pruneWorktreeScanGeneration(repoPath)
-  })
+  const epochAtStart = getRecentWorktreeScanEpoch()
+  const scan: Promise<GitWorktreeInfo[]> = listWorktreesUnshared(repoPath, execOptions)
+    .then((worktrees) => {
+      rememberRecentWorktreeScan(recentKey, worktrees, epochAtStart)
+      return worktrees
+    })
+    .finally(() => {
+      if (inFlightWorktreeScans.get(key) === scan) {
+        inFlightWorktreeScans.delete(key)
+      }
+      pruneWorktreeScanGeneration(repoPath)
+    })
   inFlightWorktreeScans.set(key, scan)
   return scan
 }

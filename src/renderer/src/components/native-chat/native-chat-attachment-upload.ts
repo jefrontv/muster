@@ -83,7 +83,7 @@ export function resolveNativeChatAttachmentOwner(
 export function nativeChatWorktreeNotReadyNotice(): string {
   return translate(
     'components.native-chat.composer.worktreeNotReady',
-    'Worktree not ready — try again in a moment.'
+    'Worktree not ready: try again in a moment.'
   )
 }
 

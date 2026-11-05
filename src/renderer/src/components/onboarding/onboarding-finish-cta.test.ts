@@ -36,8 +36,8 @@ describe('onboarding finish CTA', () => {
   it('asks Chat Mode users to add a workspace and Code Mode users to set up a site', () => {
     expect(onboardingFinishCtaLabel('chat')).toBe('Add first workspace')
     expect(onboardingFinishCtaLabel('code')).toBe('Set up your first site')
-    expect(onboardingFinishBusyLabel('chat')).toBe('Opening Add Workspace...')
-    expect(onboardingFinishBusyLabel('code')).toBe('Opening New site...')
+    expect(onboardingFinishBusyLabel('chat')).toBe('Opening new workspace…')
+    expect(onboardingFinishBusyLabel('code')).toBe('Opening new site…')
   })
 
   it('opens the Chat workspace dialog for Chat Mode and New site for Code Mode', () => {

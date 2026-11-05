@@ -194,7 +194,7 @@ export async function refreshGitStatusForWorktree({
       ) {
         // Why: porcelain status has counts but cannot tell stale post-rebase
         // upstream commits from real remote work. Writing it first makes the
-        // primary action flicker between Sync and Force Push on every poll.
+        // primary action flicker between Sync and Force push on every poll.
         await fetchAndApplyAutomaticUpstreamStatus({
           settings,
           worktreeId,
@@ -287,7 +287,7 @@ export async function refreshGitStatusForWorktreeStrict({
     ) {
       // Why: porcelain status has counts but cannot tell stale post-rebase
       // upstream commits from real remote work. Writing it first makes the
-      // primary action flicker between Sync and Force Push on every poll.
+      // primary action flicker between Sync and Force push on every poll.
       const upstreamStatus = await getRuntimeGitUpstreamStatus(
         { settings, worktreeId, worktreePath, connectionId },
         undefined

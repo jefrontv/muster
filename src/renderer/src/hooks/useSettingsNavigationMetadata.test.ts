@@ -34,17 +34,37 @@ function ids(
 }
 
 describe('settings navigation metadata', () => {
-  it('puts AI capability panes at the top on desktop', () => {
+  it('puts agent panes at the top on desktop, then the app panes', () => {
     expect(ids().slice(0, 9)).toEqual([
       'agents',
       'accounts',
       'agent-capabilities',
       'extensions',
-      'voice',
       'setup-guide',
       'general',
+      'appearance',
+      'input',
+      'notifications'
+    ])
+  })
+
+  it('keeps each nav group contiguous so the sidebar and palette read in one order', () => {
+    const groups = buildSettingsNavigationMetadata({
+      isMac: false,
+      isWindows: false,
+      isWebClient: false,
+      isLinearConnected: true,
+      showHiddenSections: true,
+      repos: [repo]
+    }).map((section) => section.group)
+    const runs = groups.filter((group, index) => group !== groups[index - 1])
+    expect(runs).toEqual([
+      'agents',
+      'app',
+      'workspaces',
       'integrations',
-      'git'
+      'advanced',
+      'repositories'
     ])
   })
 
@@ -72,7 +92,7 @@ describe('settings navigation metadata', () => {
     expect(shown).not.toContain('mobile')
   })
 
-  it('lists Agent Capabilities beside the other AI capability panes', () => {
+  it('lists Agent capabilities beside the other agent panes', () => {
     const sections = buildSettingsNavigationMetadata({
       isMac: false,
       isWindows: false,
@@ -80,7 +100,7 @@ describe('settings navigation metadata', () => {
       repos: [repo]
     })
     const section = sections.find((entry) => entry.id === 'agent-capabilities')
-    expect(section?.group).toBe('capabilities')
+    expect(section?.group).toBe('agents')
     expect(section?.searchEntries.length).toBeGreaterThan(0)
   })
 
@@ -89,14 +109,12 @@ describe('settings navigation metadata', () => {
     expect(ids({ isWebClient: true, showHiddenSections: true })).not.toContain('agent-capabilities')
   })
 
-  it('adds the Linear capability section only when connected', () => {
+  it('adds the Linear section under Integrations only when connected', () => {
     expect(ids()).not.toContain('linear')
 
     const connectedIds = ids({ isLinearConnected: true })
     expect(connectedIds).toContain('linear')
-    // Orchestration used to anchor its position; with that pane hidden, Linear follows the
-    // Extensions pane that now sits after Agent Capabilities.
-    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('extensions') + 1)
+    expect(connectedIds.indexOf('linear')).toBe(connectedIds.indexOf('integrations') + 1)
 
     const linearSection = buildSettingsNavigationMetadata({
       isMac: false,
@@ -105,21 +123,21 @@ describe('settings navigation metadata', () => {
       isLinearConnected: true,
       repos: [repo]
     }).find((section) => section.id === 'linear')
-    expect(linearSection?.group).toBe('capabilities')
+    expect(linearSection?.group).toBe('integrations')
   })
 
   it('keeps the Linear capability section available on web clients when connected', () => {
     expect(ids({ isWebClient: true, isLinearConnected: true })).toContain('linear')
   })
 
-  it('puts web-safe AI capability panes at the top while hiding desktop-only panes', () => {
+  it('puts web-safe agent panes at the top while hiding desktop-only panes', () => {
     expect(ids({ isWebClient: true }).slice(0, 6)).toEqual([
       'agents',
       'accounts',
       'setup-guide',
       'general',
-      'integrations',
-      'git'
+      'appearance',
+      'input'
     ])
   })
 
@@ -155,11 +173,11 @@ describe('settings navigation metadata', () => {
     })
     const experimental = sections.find((section) => section.id === 'experimental')
     const entry = experimental?.searchEntries.find(
-      (searchEntry) => searchEntry.title === 'Per-Workspace Environments'
+      (searchEntry) => searchEntry.title === 'Per-workspace environments'
     )
 
     expect(sections.map((section) => section.id)).not.toContain('ephemeral-vms')
-    expect(experimental?.group).toBe('experimental')
+    expect(experimental?.group).toBe('advanced')
     expect(entry?.targetSectionId).toBe('ephemeral-vms')
   })
 
@@ -175,10 +193,10 @@ describe('settings navigation metadata', () => {
     const general = sections.find((section) => section.id === 'general')
     const repoSection = sections.find((section) => section.id === 'repo-repo-1')
 
-    expect(general?.searchEntries.some((entry) => entry.title === 'Default Project Runtime')).toBe(
+    expect(general?.searchEntries.some((entry) => entry.title === 'Default project runtime')).toBe(
       false
     )
-    expect(repoSection?.searchEntries.some((entry) => entry.title === 'Project Runtime')).toBe(
+    expect(repoSection?.searchEntries.some((entry) => entry.title === 'Project runtime')).toBe(
       false
     )
   })
@@ -194,10 +212,10 @@ describe('settings navigation metadata', () => {
     const general = sections.find((section) => section.id === 'general')
     const repoSection = sections.find((section) => section.id === 'repo-repo-1')
 
-    expect(general?.searchEntries.some((entry) => entry.title === 'Default Project Runtime')).toBe(
+    expect(general?.searchEntries.some((entry) => entry.title === 'Default project runtime')).toBe(
       true
     )
-    expect(repoSection?.searchEntries.some((entry) => entry.title === 'Project Runtime')).toBe(true)
+    expect(repoSection?.searchEntries.some((entry) => entry.title === 'Project runtime')).toBe(true)
   })
 
   it('surfaces Windows-host and universal terminal settings in Windows-host metadata', () => {
@@ -211,8 +229,8 @@ describe('settings navigation metadata', () => {
 
     const terminal = sections.find((section) => section.id === 'terminal')
 
-    expect(terminal?.searchEntries.some((entry) => entry.title === 'Default Shell')).toBe(true)
-    expect(terminal?.searchEntries.some((entry) => entry.title === 'PowerShell Version')).toBe(true)
+    expect(terminal?.searchEntries.some((entry) => entry.title === 'Default shell')).toBe(true)
+    expect(terminal?.searchEntries.some((entry) => entry.title === 'PowerShell version')).toBe(true)
     // Right-click to paste is now exposed on every platform (#8322), so it is
     // indexed even when only the terminal host — not the client — is Windows.
     expect(terminal?.searchEntries.some((entry) => entry.title === 'Right-click to paste')).toBe(

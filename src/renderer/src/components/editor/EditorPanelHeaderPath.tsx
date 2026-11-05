@@ -89,7 +89,7 @@ export function EditorPanelHeaderPath({
             defaultValue={currentFileName}
             // Why: the header is narrow in floating mode; this keeps the
             // edit field aligned with the path label without growing chrome.
-            className="h-6 w-[16ch] min-w-[104px] max-w-full rounded-sm bg-input/40 px-1.5 py-0 font-mono text-xs text-foreground md:text-xs focus-visible:ring-[1px]"
+            className="h-6 w-[16ch] min-w-[104px] max-w-full rounded-sm bg-input/40 px-1.5 py-0 font-mono text-xs text-foreground md:text-xs focus-visible:ring-2"
             spellCheck={false}
             onPointerDown={(event) => event.stopPropagation()}
             onMouseDown={(event) => event.stopPropagation()}
@@ -166,7 +166,7 @@ export function EditorPanelHeaderPath({
                 }}
               >
                 <Copy className="w-3.5 h-3.5 mr-1.5" />
-                {translate('auto.components.editor.EditorPanelHeader.7c08a1f990', 'Copy Path')}
+                {translate('auto.components.editor.EditorPanelHeader.7c08a1f990', 'Copy path')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {
@@ -176,7 +176,7 @@ export function EditorPanelHeaderPath({
                 <Copy className="w-3.5 h-3.5 mr-1.5" />
                 {translate(
                   'auto.components.editor.EditorPanelHeader.269ce4842b',
-                  'Copy Relative Path'
+                  'Copy relative path'
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -187,7 +187,7 @@ export function EditorPanelHeaderPath({
               <Eye className="w-3.5 h-3.5 mr-1.5" />
               {translate(
                 'auto.components.editor.EditorPanelHeader.4157f3cbf3',
-                'Open Markdown Preview'
+                'Open Markdown preview'
               )}
               <DropdownMenuShortcut>{markdownPreviewShortcutLabel}</DropdownMenuShortcut>
             </DropdownMenuItem>

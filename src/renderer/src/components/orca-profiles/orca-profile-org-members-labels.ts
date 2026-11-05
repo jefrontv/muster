@@ -73,7 +73,8 @@ export function describeOrgMutationError(
     case 'failed':
       return translate(
         'auto.components.orca.profiles.org.members.error.failed',
-        'Something went wrong. Please try again.'
+        "The members change didn't go through: {{value0}}",
+        { value0: result.error.trim() || 'no reason was reported' }
       )
   }
 }

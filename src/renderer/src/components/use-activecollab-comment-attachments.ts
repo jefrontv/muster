@@ -163,7 +163,7 @@ export function useActiveCollabCommentAttachments(options?: {
       orphanMessage ??
         translate(
           'auto.components.activecollab.comment_attachments.orphaned_upload',
-          'The files uploaded but the comment did not post, so nothing was attached. Your comment is still here — try again.'
+          'The files uploaded but the comment did not post, so nothing was attached. Your comment is still here. Try again.'
         )
     )
   }, [orphanMessage])

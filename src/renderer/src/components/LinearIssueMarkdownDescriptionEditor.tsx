@@ -155,7 +155,7 @@ export function LinearIssueMarkdownDescriptionEditor({
       <div className="linear-issue-markdown-scroll scrollbar-sleek">
         <EditorContent editor={editor} />
       </div>
-      <div className="linear-issue-markdown-save-hint pointer-events-none absolute bottom-1.5 right-2 z-10 flex items-center gap-1.5 text-[10px] text-muted-foreground/75">
+      <div className="linear-issue-markdown-save-hint pointer-events-none absolute bottom-1.5 right-2 z-10 flex items-center gap-1.5 text-[11px] text-muted-foreground/75">
         <span className="flex items-center gap-1">
           <span>{submitShortcutLabel}</span>
           <span>

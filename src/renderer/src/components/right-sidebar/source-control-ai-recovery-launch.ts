@@ -44,11 +44,11 @@ export function getDefaultSourceControlRecoveryLaunchCopy(
       recoveryKind === 'push'
         ? translate(
             'auto.components.right.sidebar.source.control.ai.recovery.launch.push.empty',
-            'Push failure prompt is empty. Update Source Control AI settings.'
+            'Push failure prompt is empty. Update Source control AI settings.'
           )
         : translate(
             'auto.components.right.sidebar.source.control.ai.recovery.launch.commit.empty',
-            'Commit failure prompt is empty. Update Source Control AI settings.'
+            'Commit failure prompt is empty. Update Source control AI settings.'
           ),
     savedAgentUnavailable: translate(
       'auto.components.right.sidebar.source.control.ai.recovery.launch.d481ab22f9',

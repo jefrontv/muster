@@ -92,7 +92,7 @@ export const AgentKanbanCard = memo(
             // bold+bright until acked, normal+muted after — so both surfaces
             // read identically (the ack map is shared).
             className={cn(
-              'truncate text-[12.5px]',
+              'truncate text-[12px]',
               card.unseen ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground'
             )}
           >
@@ -126,7 +126,7 @@ export const AgentKanbanCard = memo(
         ) : null}
 
         {card.askSummary ? (
-          <div className="flex items-start gap-1 rounded-md bg-amber-500/10 px-1.5 py-1 text-[11px] text-amber-600 dark:text-amber-400">
+          <div className="flex items-start gap-1 rounded-md bg-status-attention-background px-1.5 py-1 text-[11px] text-status-attention">
             <MessageCircleQuestion className="mt-px size-3 shrink-0" aria-hidden />
             <span className="line-clamp-2">{card.askSummary}</span>
           </div>

@@ -266,7 +266,7 @@ export function SiteEditableField({
           // Why the solid underlay: Match Terminal remaps --popover onto a translucent
           // --background (left-sidebar-appearance.ts), so bg-popover alone lets the form
           // labels behind this list show through.
-          <div className="absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-md border border-border bg-[var(--background-solid)] shadow-md">
+          <div className="absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-md border border-border bg-[var(--background-solid)] shadow-floating">
             <ul
               id={listId}
               role="listbox"

@@ -242,7 +242,7 @@ export default function AutomationProjectCombobox({
             ref={setInputNode}
             placeholder={translate(
               'auto.components.automations.AutomationProjectCombobox.search',
-              'Search projects/folders...'
+              'Search projects/folders…'
             )}
             value={query}
             onValueChange={setQuery}
@@ -301,7 +301,7 @@ export default function AutomationProjectCombobox({
                         color={group.repo.badgeColor}
                         className="max-w-full"
                       />
-                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{detail}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{detail}</p>
                     </div>
                   </button>
                   {hasHostMenu ? (
@@ -360,7 +360,7 @@ export default function AutomationProjectCombobox({
                                   <div className="truncate text-xs">
                                     {sourceHostLabel ?? getRepoExecutionHostId(source)}
                                   </div>
-                                  <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                                     {source.path}
                                   </p>
                                 </div>

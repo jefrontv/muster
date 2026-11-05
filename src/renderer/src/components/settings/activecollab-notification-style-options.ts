@@ -19,7 +19,7 @@ export const getActiveCollabNotificationStyleOptions = createLocalizedCatalog(
       ),
       example: translate(
         'auto.components.settings.activeCollabNotificationStyle.detailedExample',
-        '2 new comments: Fix the header — Website Redesign'
+        '2 new comments: Fix the header. Website Redesign'
       )
     },
     {
@@ -27,7 +27,7 @@ export const getActiveCollabNotificationStyleOptions = createLocalizedCatalog(
       title: translate('auto.components.settings.activeCollabNotificationStyle.minimal', 'Minimal'),
       example: translate(
         'auto.components.settings.activeCollabNotificationStyle.minimalExample',
-        'Fix the header — 2 new comments'
+        'Fix the header: 2 new comments'
       )
     }
   ]

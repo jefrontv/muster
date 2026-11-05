@@ -28,6 +28,7 @@ import {
   getCrashReportSubmitWarningNotice
 } from './crash-report-submit-notice'
 import { useCrashReportCopy } from './use-crash-report-copy'
+import { Textarea } from '@/components/ui/textarea'
 
 function formatSummary(report: CrashReportRecord): string {
   if (isReactErrorBoundaryReport(report)) {
@@ -269,7 +270,7 @@ export function CrashReportDialogSurface({
               {loading
                 ? translate(
                     'auto.components.crash.report.CrashReportDialog.765591798d',
-                    'Checking for crash reports...'
+                    'Checking for crash reports…'
                   )
                 : translate(
                     'auto.components.crash.report.CrashReportDialog.ead6fc0510',
@@ -277,12 +278,12 @@ export function CrashReportDialogSurface({
                   )}
             </div>
           )}
-          <textarea
+          <Textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             rows={4}
             placeholder={getNotesPlaceholder(report)}
-            className="min-h-24 w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="min-h-24"
           />
           <div className="flex items-start gap-2 rounded-md border border-border/70 bg-muted/20 p-3">
             <Checkbox
@@ -318,7 +319,7 @@ export function CrashReportDialogSurface({
             disabled={loading}
           >
             <Clipboard className="size-3.5" />
-            {translate('auto.components.crash.report.CrashReportDialog.50b00dc327', 'Copy Details')}
+            {translate('auto.components.crash.report.CrashReportDialog.50b00dc327', 'Copy details')}
           </Button>
           <Button
             type="button"
@@ -327,11 +328,11 @@ export function CrashReportDialogSurface({
             onClick={handleDismiss}
             disabled={submitting}
           >
-            {translate('auto.components.crash.report.CrashReportDialog.88fea8e84e', "Don't Send")}
+            {translate('auto.components.crash.report.CrashReportDialog.88fea8e84e', "Don't send")}
           </Button>
           <Button type="button" size="sm" onClick={handleSubmit} disabled={loading || submitting}>
             <Send className="size-3.5" />
-            {translate('auto.components.crash.report.CrashReportDialog.b4951cd27c', 'Send Report')}
+            {translate('auto.components.crash.report.CrashReportDialog.b4951cd27c', 'Send report')}
           </Button>
         </DialogFooter>
       </DialogContent>

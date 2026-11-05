@@ -27,7 +27,7 @@ export function getChatGeneratedTitlesTitle(): string {
 export function getChatGeneratedTitlesDescription(): string {
   return translate(
     'auto.components.settings.agent-generated-tab-title-copy.chat-description',
-    'Name a chat thread from its first exchange instead of the raw opening message. Uses the Source Control AI agent, and manual renames always win.'
+    'Name a chat thread from its first exchange instead of the raw opening message. Uses the Source control AI agent, and manual renames always win.'
   )
 }
 

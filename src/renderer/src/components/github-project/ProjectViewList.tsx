@@ -368,13 +368,13 @@ function ProjectHeaderRow({
                 'auto.components.github.project.ProjectViewList.f949f5b2b7',
                 'Configure columns'
               )}
-              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Columns3 className="size-3.5" />
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-56 p-1">
-            <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
               {translate('auto.components.github.project.ProjectViewList.989f81dc2a', 'Columns')}
             </div>
             {availableFields.map((f) => {

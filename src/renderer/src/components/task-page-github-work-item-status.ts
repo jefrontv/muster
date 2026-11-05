@@ -34,15 +34,15 @@ export function getTaskPageGitHubWorkItemStateTone(item: GitHubWorkItemStatusIte
       return 'border-border/60 bg-muted-foreground/70 text-background dark:bg-muted-foreground/60 dark:text-foreground'
     }
     if (item.state === 'closed') {
-      return 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-200'
+      return 'border-status-danger-border bg-status-danger-background text-status-danger'
     }
-    return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
+    return 'border-status-success-border bg-status-success-background text-status-success'
   }
 
   if (item.state === 'closed') {
-    return 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300'
+    return 'border-status-danger-border bg-status-danger-background text-status-danger'
   }
-  return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+  return 'border-status-success-border bg-status-success-background text-status-success'
 }
 
 export function isTaskPageGitHubDraftPR(item: GitHubWorkItemStatusItem): boolean {
@@ -58,10 +58,10 @@ export function getTaskPageGitHubPRIconTone(item: GitHubWorkItemStatusItem): str
     case 'draft':
       return 'text-muted-foreground'
     case 'open':
-      return 'text-emerald-600 dark:text-emerald-400'
+      return 'text-status-success'
     case 'merged':
       return 'text-purple-600 dark:text-purple-300'
     case 'closed':
-      return 'text-rose-600 dark:text-rose-300'
+      return 'text-status-danger'
   }
 }

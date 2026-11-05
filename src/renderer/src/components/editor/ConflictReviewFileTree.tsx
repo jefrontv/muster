@@ -1,4 +1,5 @@
 import React from 'react'
+import { Badge } from '@/components/ui/badge'
 import { ChevronDown, Folder, FolderOpen, PanelLeftClose } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getFileTypeIcon } from '@/lib/file-type-icons'
@@ -149,7 +150,7 @@ function ConflictReviewFileTreeRow({
           <FolderOpen className="size-3 shrink-0" />
         )}
         <span className="min-w-0 flex-1 truncate">{node.name}</span>
-        <span className="w-4 shrink-0 text-center text-[10px] font-bold tabular-nums text-muted-foreground/80">
+        <span className="w-4 shrink-0 text-center text-2xs font-semibold tabular-nums text-muted-foreground/80">
           {node.fileCount}
         </span>
       </button>
@@ -182,20 +183,13 @@ function ConflictReviewFileTreeRow({
       <span className="min-w-0 flex-1 truncate">
         <span className="text-foreground">{node.name}</span>
       </span>
-      <span
-        className={cn(
-          'ml-1 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
-          isStillUnresolved
-            ? 'bg-destructive/12 text-destructive'
-            : 'bg-muted text-muted-foreground'
-        )}
-      >
+      <Badge variant={isStillUnresolved ? 'danger' : 'muted'} className="ml-1">
         {isStillUnresolved
           ? translate('auto.components.editor.ConflictReviewFileTree.69d4e210bb', 'Unresolved')
           : liveEntry
             ? translate('auto.components.editor.ConflictReviewFileTree.8528a5eaf5', 'Resolved')
             : translate('auto.components.editor.ConflictReviewFileTree.496e28a932', 'Gone')}
-      </span>
+      </Badge>
     </button>
   )
 }

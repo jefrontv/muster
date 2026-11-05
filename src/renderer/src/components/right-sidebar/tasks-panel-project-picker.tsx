@@ -22,7 +22,6 @@ export function TasksPanelProjectPicker({
     <Command className="overflow-hidden rounded-md border border-border bg-background">
       <CommandInput
         autoFocus
-        className="h-8 text-xs"
         placeholder={translate(
           'auto.components.right.sidebar.tasks.search_projects',
           'Search projects…'

@@ -1377,7 +1377,7 @@ export default function SmartWorkspaceNameField({
                     event.preventDefault()
                     onPlainEnter?.()
                   }}
-                  className="flex h-9 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-2.5 text-sm shadow-xs outline-none focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30"
+                  className="flex h-9 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-background px-2.5 text-sm shadow-xs outline-none focus-within:border-ring focus-within:ring-2 focus-within:ring-ring dark:bg-input/30"
                 >
                   <SelectionIcon kind={selectedSource.kind} />
                   <span className="min-w-0 flex-1 truncate font-medium leading-none text-foreground">
@@ -1583,7 +1583,10 @@ export default function SmartWorkspaceNameField({
               {loading && searchResultRows.length === 0 ? (
                 <div className="space-y-1 p-1">
                   {[0, 1, 2].map((index) => (
-                    <div key={index} className="h-8 animate-pulse rounded bg-muted/40" />
+                    <div
+                      key={index}
+                      className="h-8 animate-pulse rounded-full bg-foreground/[0.07]"
+                    />
                   ))}
                 </div>
               ) : searchResultRows.length === 0 && !typedTextActionRow ? (
@@ -1656,7 +1659,7 @@ export default function SmartWorkspaceNameField({
               <Button onClick={() => void handleAddMatchingRepo()}>
                 {translate(
                   'auto.components.new.workspace.SmartWorkspaceNameField.e57c53727c',
-                  'Add project...'
+                  'Add project…'
                 )}
               </Button>
             ) : null}

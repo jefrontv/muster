@@ -6,7 +6,7 @@ export const getTerminalClipboardSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.terminal.clipboard.search.3bdc84f059',
-      'Copy on Select'
+      'Copy on select'
     ),
     description: translate(
       'auto.components.settings.terminal.clipboard.search.603818e8d8',
@@ -58,7 +58,7 @@ export const getTerminalClipboardSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.terminal.clipboard.search.74db8721e4',
-      'Allow TUI Clipboard Writes (OSC 52)'
+      'Allow TUI clipboard writes (OSC 52)'
     ),
     description: translate(
       'auto.components.settings.terminal.clipboard.search.459fea094a',

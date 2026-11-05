@@ -80,7 +80,7 @@ export function ActiveCollabBindSiteButton({
     : binding.kind === 'missing-site'
       ? translate(
           'auto.components.activecollab.bind_site.missing',
-          'Linked site is missing — pick another'
+          'Linked site is missing. Pick another'
         )
       : translate('auto.components.activecollab.bind_site.link', 'Link this project to a site')
 

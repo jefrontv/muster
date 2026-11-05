@@ -11,7 +11,7 @@ export function ChecksPanelUpdatedAtMetadata({
   updatedAt
 }: ChecksPanelUpdatedAtMetadataProps): React.JSX.Element {
   return (
-    <div className="text-[10px] text-muted-foreground/60">
+    <div className="text-[11px] text-muted-foreground">
       {reviewShortLabel}{' '}
       {translate('auto.components.right.sidebar.ChecksPanel.34464d00b9', 'updated')}{' '}
       {new Date(updatedAt).toLocaleString()}

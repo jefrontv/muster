@@ -38,15 +38,15 @@ export const STATUS_LABELS: Record<SshConnectionStatus, string> = {
 export function statusColor(status: SshConnectionStatus): string {
   switch (status) {
     case 'connected':
-      return 'bg-emerald-500'
+      return 'bg-status-success'
     case 'connecting':
     case 'deploying-relay':
     case 'reconnecting':
-      return 'bg-yellow-500'
+      return 'bg-status-attention'
     case 'auth-failed':
     case 'reconnection-failed':
     case 'error':
-      return 'bg-red-500'
+      return 'bg-status-danger'
     case 'disconnected':
       return 'bg-muted-foreground/40'
   }
@@ -171,7 +171,7 @@ export function SshTargetCard({
           variant="ghost"
           size="icon"
           onClick={handleTerminateSessions}
-          className="size-7 text-muted-foreground hover:text-red-400"
+          className="size-7 text-muted-foreground hover:text-status-danger"
           disabled={hasActionInFlight}
           aria-label={
             terminateInFlight
@@ -205,7 +205,7 @@ export function SshTargetCard({
           variant="ghost"
           size="icon"
           onClick={handleResetRelay}
-          className="size-7 text-muted-foreground hover:text-red-400"
+          className="size-7 text-muted-foreground hover:text-status-danger"
           disabled={hasActionInFlight}
           aria-label={
             resetInFlight
@@ -259,7 +259,7 @@ export function SshTargetCard({
             variant="ghost"
             size="icon"
             onClick={() => onRemove(target.id)}
-            className="size-7 text-muted-foreground hover:text-red-400"
+            className="size-7 text-muted-foreground hover:text-status-danger"
             disabled={hasActionInFlight}
             aria-label={
               removeInFlight
@@ -300,7 +300,7 @@ export function SshTargetCard({
           {` \u2022 ${terminalPersistence}`}
         </p>
         {state?.error ? (
-          <p className="mt-0.5 truncate text-xs text-red-400">{state.error}</p>
+          <p className="mt-0.5 truncate text-xs text-status-danger">{state.error}</p>
         ) : null}
       </div>
 
@@ -312,7 +312,7 @@ export function SshTargetCard({
               variant="ghost"
               size="xs"
               onClick={handleDisconnect}
-              className="gap-1.5"
+              className="h-7 gap-1.5"
               disabled={hasActionInFlight}
             >
               <ServerOff className="size-3" />
@@ -322,7 +322,7 @@ export function SshTargetCard({
         ) : isSshTargetConnecting(status) ? (
           <>
             {renderSecondaryIconActions(false)}
-            <Button variant="ghost" size="xs" disabled className="gap-1.5">
+            <Button variant="ghost" size="xs" disabled className="h-7 gap-1.5">
               <Loader2 className="size-3 animate-spin" />
               {translate('auto.components.settings.SshTargetCard.1810b51482', 'Connecting')}
             </Button>
@@ -335,7 +335,7 @@ export function SshTargetCard({
               size="xs"
               onClick={() => onTest(target.id)}
               disabled={testing || hasActionInFlight}
-              className="gap-1.5"
+              className="h-7 gap-1.5"
             >
               {testing ? (
                 <Loader2 className="size-3 animate-spin" />
@@ -348,7 +348,7 @@ export function SshTargetCard({
               variant="ghost"
               size="xs"
               onClick={handleConnect}
-              className="gap-1.5"
+              className="h-7 gap-1.5"
               disabled={hasActionInFlight}
             >
               {actionInFlight === 'connect' ? (

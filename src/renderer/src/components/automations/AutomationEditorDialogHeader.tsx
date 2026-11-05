@@ -17,7 +17,6 @@ type AutomationEditorDialogHeaderProps = {
   draftName: string
   templateOpen: boolean
   templates: AutomationTemplate[]
-  modeToggleItemClassName: string
   pickerTriggerClassName: string
   onCreateTargetChange: (target: AutomationCreateTarget) => void
   onDraftNameChange: (name: string) => void
@@ -36,7 +35,7 @@ function AutomationTemplateCard({
     <button
       type="button"
       onClick={onSelect}
-      className="rounded-md border border-border/70 bg-background px-3 py-2 text-left shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="rounded-md border border-border/70 bg-background px-3 py-2 text-left shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="text-[11px] font-medium uppercase text-muted-foreground">
         {template.category}
@@ -56,7 +55,6 @@ export function AutomationEditorDialogHeader({
   draftName,
   templateOpen,
   templates,
-  modeToggleItemClassName,
   pickerTriggerClassName,
   onCreateTargetChange,
   onDraftNameChange,
@@ -110,17 +108,17 @@ export function AutomationEditorDialogHeader({
               onValueChange={(value) =>
                 value && onCreateTargetChange(value as AutomationCreateTarget)
               }
-              variant="outline"
+              variant="segmented"
               size="sm"
-              className="grid grid-cols-2"
+              className="h-8 w-48"
             >
-              <ToggleGroupItem value="orca" className={modeToggleItemClassName}>
+              <ToggleGroupItem value="orca">
                 {translate(
                   'auto.components.automations.AutomationEditorDialogHeader.6f309eef8d',
                   'Muster'
                 )}
               </ToggleGroupItem>
-              <ToggleGroupItem value="hermes" className={modeToggleItemClassName}>
+              <ToggleGroupItem value="hermes">
                 {translate(
                   'auto.components.automations.AutomationEditorDialogHeader.7e35393632',
                   'Hermes'

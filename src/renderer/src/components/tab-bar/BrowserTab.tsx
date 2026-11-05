@@ -30,7 +30,7 @@ import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 
 function formatBrowserTabUrlLabel(url: string): string {
   if (url === ORCA_BROWSER_BLANK_URL || url === 'about:blank') {
-    return 'New Tab'
+    return 'New tab'
   }
   try {
     const parsed = new URL(url)
@@ -98,7 +98,7 @@ function BrowserTabFavicon({
     )
   }
 
-  return <Globe className="size-3 mr-1 shrink-0 text-blue-500" />
+  return <Globe className="size-3 mr-1 shrink-0 text-status-info" />
 }
 
 export default function BrowserTab({
@@ -217,11 +217,11 @@ export default function BrowserTab({
       {isPinned && <Pin className="mr-1 size-3 shrink-0 text-muted-foreground" aria-hidden />}
       <span className={`${TAB_LABEL_WIDTH_CLASSES} mr-1`}>{tabLabel}</span>
       {tab.loading && !tab.loadError && !isBlankBrowserTab(tab) && (
-        <span className="mr-1 size-1.5 rounded-full bg-sky-500/80 shrink-0" />
+        <span className="mr-1 size-1.5 rounded-full bg-status-info/80 shrink-0" />
       )}
       {!isPinned && (
         <button
-          className={`flex items-center justify-center w-4 h-4 rounded-sm shrink-0 ${
+          className={`hit-area flex items-center justify-center w-4 h-4 rounded-full shrink-0 ${
             isActive
               ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
               : 'text-transparent group-hover:text-muted-foreground hover:!text-foreground hover:!bg-muted'
@@ -274,11 +274,7 @@ export default function BrowserTab({
             style={{ left: menuPoint.x, top: menuPoint.y }}
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="min-w-[11rem] rounded-[11px] border-border/80 p-1 shadow-[0_16px_36px_rgba(0,0,0,0.24)]"
-          sideOffset={0}
-          align="start"
-        >
+        <DropdownMenuContent className="min-w-[11rem]" sideOffset={0} align="start">
           <TabWorkspaceLayoutMenuSection
             unifiedTabId={dragData.unifiedTabId}
             groupId={dragData.groupId}
@@ -286,14 +282,14 @@ export default function BrowserTab({
           />
           <DropdownMenuItem onSelect={onDuplicate}>
             <Copy className="size-3.5" />
-            {translate('auto.components.tab.bar.BrowserTab.5d6e89891f', 'Duplicate Tab')}
+            {translate('auto.components.tab.bar.BrowserTab.5d6e89891f', 'Duplicate tab')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={onTogglePin}>
             {isPinned ? <PinOff className="size-3.5" /> : <Pin className="size-3.5" />}
             {isPinned
-              ? translate('auto.components.tab.bar.BrowserTab.c5aaee8c39', 'Unpin Tab')
-              : translate('auto.components.tab.bar.BrowserTab.911542656f', 'Pin Tab')}
+              ? translate('auto.components.tab.bar.BrowserTab.c5aaee8c39', 'Unpin tab')
+              : translate('auto.components.tab.bar.BrowserTab.911542656f', 'Pin tab')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => !isPinned && onClose()} disabled={isPinned}>
@@ -302,14 +298,14 @@ export default function BrowserTab({
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={onCloseToRight} disabled={!hasTabsToRight}>
             <PanelRightClose className="size-3.5" />
-            {translate('auto.components.tab.bar.BrowserTab.9dd880bd56', 'Close Tabs To The Right')}
+            {translate('auto.components.tab.bar.BrowserTab.9dd880bd56', 'Close tabs to the right')}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => void window.api.shell.openUrl(openInBrowserUrl)}
             disabled={!isHttpUrl}
           >
             <ExternalLink className="size-3.5" />
-            {translate('auto.components.tab.bar.BrowserTab.6e0bc8f3a8', 'Open In Browser')}
+            {translate('auto.components.tab.bar.BrowserTab.6e0bc8f3a8', 'Open in browser')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

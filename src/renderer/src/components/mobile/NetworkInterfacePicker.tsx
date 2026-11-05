@@ -77,7 +77,7 @@ export function NetworkInterfacePicker({
         ),
         description: translate(
           'auto.components.mobile.CustomNetworkAddressDialog.description',
-          'Advertise an address your phone can reach when it is not on the same Wi-Fi — for example a Tailscale hostname or a static IP.'
+          'Advertise an address your phone can reach when it is not on the same Wi-fi. For example a Tailscale hostname or a static IP.'
         ),
         inputLabel: translate('auto.components.mobile.CustomNetworkAddressDialog.label', 'Address'),
         placeholder: translate(
@@ -86,7 +86,7 @@ export function NetworkInterfacePicker({
         ),
         hint: translate(
           'auto.components.mobile.CustomNetworkAddressDialog.hint',
-          'Enter an IP address or a hostname — a Tailscale MagicDNS name, a DDNS domain, or a LAN hostname — optionally with :port.'
+          'Enter an IP address or a hostname, a Tailscale MagicDNS name, a DDNS domain, or a LAN hostname, optionally with :port.'
         ),
         cancel: translate('auto.components.mobile.CustomNetworkAddressDialog.cancel', 'Cancel'),
         confirm: translate('auto.components.mobile.CustomNetworkAddressDialog.use', 'Use address')

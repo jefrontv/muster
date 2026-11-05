@@ -1,6 +1,7 @@
 import React from 'react'
 import { ListFilter, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SEARCH_FIELD_INPUT, SEARCH_FIELD_SHELL } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 
 type FileExplorerNameFilterProps = {
@@ -17,14 +18,11 @@ export function FileExplorerNameFilter({
   onClear
 }: FileExplorerNameFilterProps): React.JSX.Element {
   return (
-    <div
-      className="flex h-7 items-center gap-1 rounded-sm border border-border bg-input/50 px-1.5 focus-within:border-ring"
-      data-ignore-file-explorer-keys="true"
-    >
+    <div className={SEARCH_FIELD_SHELL} data-ignore-file-explorer-keys="true">
       <ListFilter className="size-3.5 shrink-0 text-muted-foreground" />
       <input
         type="text"
-        className="min-w-0 flex-1 bg-transparent py-1 text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
+        className={SEARCH_FIELD_INPUT}
         aria-label={translate(
           'auto.components.right.sidebar.FileExplorerNameFilter.26fb73c6e3',
           'Find files'
@@ -43,7 +41,7 @@ export function FileExplorerNameFilter({
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="h-auto w-auto p-0.5 text-muted-foreground hover:text-foreground"
+          className="hit-area -mr-1.5 size-5 text-muted-foreground hover:text-foreground"
           aria-label={translate(
             'auto.components.right.sidebar.FileExplorerNameFilter.4d5a6b2a49',
             'Clear file filter'

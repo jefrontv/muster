@@ -158,7 +158,7 @@ function ActiveCollabCommentCard({
             ariaLabel={editLabel}
             placeholder={translate(
               'auto.components.activecollab.task_workspace.comment_placeholder',
-              'Add an ActiveCollab comment...'
+              'Add an ActiveCollab comment…'
             )}
             onSave={(bodyHtml) => onEdit(comment.id, bodyHtml)}
             onClose={() => setEditing(false)}

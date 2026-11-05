@@ -17,7 +17,7 @@ export function BrowserFloatingLinkSetting({
 }: BrowserFloatingLinkSettingProps): React.JSX.Element {
   const title = translate(
     'auto.components.settings.BrowserFloatingLinkSetting.a1c4f0b2e7',
-    'Open Links in Floating Browser'
+    'Open links in floating browser'
   )
   const description = translate(
     'auto.components.settings.BrowserFloatingLinkSetting.b3d7e9a145',

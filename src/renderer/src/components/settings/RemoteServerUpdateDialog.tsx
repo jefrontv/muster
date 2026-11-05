@@ -152,7 +152,7 @@ export function RemoteServerUpdateDialog(): React.JSX.Element {
           <DialogTitle>
             {translate(
               'auto.components.settings.RemoteServerUpdateDialog.title',
-              'Update Remote Muster Servers'
+              'Update remote Muster servers'
             )}
           </DialogTitle>
           <DialogDescription>

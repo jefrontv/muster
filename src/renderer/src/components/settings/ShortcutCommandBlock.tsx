@@ -131,12 +131,12 @@ export function ShortcutCommandBlock({
             {item.title}
           </span>
           {modified ? (
-            <Badge variant="outline" className="shrink-0 text-[11px]">
+            <Badge variant="outline" className="shrink-0">
               {translate('auto.components.settings.ShortcutCommandBlock.287e07ddde', 'Modified')}
             </Badge>
           ) : null}
           {isDisabled ? (
-            <Badge variant="outline" className="shrink-0 text-[11px] text-muted-foreground">
+            <Badge variant="outline" className="shrink-0 text-muted-foreground">
               {translate('auto.components.settings.ShortcutCommandBlock.3c83cd7d1c', 'Disabled')}
             </Badge>
           ) : null}
@@ -145,7 +145,7 @@ export function ShortcutCommandBlock({
               <TooltipTrigger asChild>
                 <Badge
                   variant="outline"
-                  className="shrink-0 gap-1 border-border/70 text-[11px] text-muted-foreground"
+                  className="shrink-0 gap-1 border-border/70 text-muted-foreground"
                 >
                   <Terminal className="size-3" />
                   {terminalStatus.label}

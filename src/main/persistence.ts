@@ -81,6 +81,7 @@ import {
   normalizeProjectRuntimePreference
 } from '../shared/project-execution-runtime'
 import { projectHostSetupProjectionFromRepos } from '../shared/project-host-setup-projection'
+import { omitProjectedProjectIcons } from './project-icon-persistence'
 import { carryProjectUserOwnedFields } from '../shared/project-user-owned-fields'
 import type { GitRemoteIdentity } from '../shared/git-remote-identity'
 import {
@@ -3548,7 +3549,13 @@ export class Store {
 
     const repos = clearMissingProjectGroupMemberships(result.repos, result.projectGroups ?? [])
     const projectHostSetupCompatibility = mergeProjectHostSetupCompatibilityState(result, repos)
-    if (!projectHostSetupCompatibilityStateEqual(result, projectHostSetupCompatibility)) {
+    // Why: saves omit projected project icons, so compare in that on-disk shape.
+    if (
+      !projectHostSetupCompatibilityStateEqual(result, {
+        ...projectHostSetupCompatibility,
+        projects: omitProjectedProjectIcons(projectHostSetupCompatibility.projects, repos)
+      })
+    ) {
       this.loadNeedsSave = true
     }
 
@@ -3736,6 +3743,7 @@ export class Store {
     // Why: clone before encrypting secrets so in-memory this.state stays plaintext.
     const stateToSave = {
       ...this.getDurableState(),
+      projects: omitProjectedProjectIcons(this.state.projects, this.state.repos),
       settings: {
         ...this.state.settings,
         opencodeSessionCookie: encryptToSentinel(this.state.settings.opencodeSessionCookie),

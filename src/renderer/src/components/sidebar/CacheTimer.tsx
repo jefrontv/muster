@@ -94,8 +94,12 @@ export default function CacheTimer({
       <TooltipTrigger asChild>
         <div
           className={cn(
-            'inline-flex items-center gap-1 text-[10px] font-mono tabular-nums select-none leading-none',
-            expired ? 'text-red-400' : warning ? 'text-yellow-400' : 'text-muted-foreground'
+            'inline-flex items-center gap-1 text-2xs font-mono tabular-nums select-none leading-none',
+            expired
+              ? 'text-status-danger'
+              : warning
+                ? 'text-status-attention'
+                : 'text-muted-foreground'
           )}
         >
           <Timer className="size-2.5" />

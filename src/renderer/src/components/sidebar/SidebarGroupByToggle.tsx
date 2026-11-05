@@ -17,9 +17,8 @@ export function SidebarGroupByToggle({ groupBy, setGroupBy }: SidebarGroupByTogg
           setGroupBy(value as WorktreeGroupBy)
         }
       }}
-      variant="outline"
+      variant="segmented"
       size="sm"
-      className="h-6 w-full justify-stretch"
     >
       {GROUP_BY_OPTIONS.map((option) => (
         <ToggleGroupItem
@@ -29,7 +28,6 @@ export function SidebarGroupByToggle({ groupBy, setGroupBy }: SidebarGroupByTogg
           // committing ToggleGroup's value change; capture the pointer intent
           // before the menu's roving-focus handling turns it into a no-op.
           onPointerDownCapture={() => setGroupBy(option.id)}
-          className="h-6 grow basis-0 px-1 text-[10px] data-[state=on]:bg-foreground/10 data-[state=on]:font-semibold data-[state=on]:text-foreground"
         >
           {option.label}
         </ToggleGroupItem>

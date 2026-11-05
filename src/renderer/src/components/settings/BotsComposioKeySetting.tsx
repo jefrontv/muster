@@ -15,7 +15,7 @@ export function BotsComposioKeySetting(): React.JSX.Element {
   const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
-    void window.api.bots.composioKeyStatus().then(setStatus)
+    void window.api?.bots?.composioKeyStatus().then(setStatus)
   }, [])
 
   const save = useCallback(async (value: string) => {
@@ -68,17 +68,17 @@ export function BotsComposioKeySetting(): React.JSX.Element {
           }
           autoComplete="off"
           spellCheck={false}
-          className="h-8 flex-1"
+          className="flex-1"
         />
         <Button
-          size="sm"
+          size="default"
           disabled={busy || draft.trim().length === 0}
           onClick={() => void save(draft)}
         >
           {translate('auto.components.settings.BotsComposioKeySetting.save', 'Save')}
         </Button>
         {status?.saved ? (
-          <Button size="sm" variant="outline" disabled={busy} onClick={() => void save('')}>
+          <Button size="default" variant="outline" disabled={busy} onClick={() => void save('')}>
             {translate('auto.components.settings.BotsComposioKeySetting.remove', 'Remove')}
           </Button>
         ) : null}

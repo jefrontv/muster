@@ -19,7 +19,7 @@ export function McpMissingConfigList({
         {missingConfigs.map((config) => (
           <span
             key={config.candidate.relativePath}
-            className="rounded-md border border-border/50 bg-background/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+            className="rounded-md border border-border/50 bg-background/40 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
           >
             {config.candidate.relativePath}
           </span>

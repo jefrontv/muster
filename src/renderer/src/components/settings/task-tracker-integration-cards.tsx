@@ -154,7 +154,7 @@ export function LinearIntegrationCard(): React.JSX.Element {
                         <LoaderCircle className="size-3.5 mr-1.5 animate-spin" />
                         {translate(
                           'auto.components.settings.task.tracker.integration.cards.3e7c10d286',
-                          'Testing...'
+                          'Testing…'
                         )}
                       </>
                     ) : (
@@ -171,7 +171,7 @@ export function LinearIntegrationCard(): React.JSX.Element {
                       'Disconnect {{value0}}',
                       { value0: workspace.organizationName }
                     )}
-                    className="rounded-md p-1 text-muted-foreground/50 transition-colors hover:text-destructive"
+                    className="rounded-full p-1 text-muted-foreground transition-colors hover:text-destructive outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Unlink className="size-3.5" />
                   </button>

@@ -57,7 +57,7 @@ export function GitHistoryPipelineStatus({
           aria-label={commitPipelineOpenLabel(run)}
           className={cn(
             cellClassName,
-            'rounded-sm outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring'
+            'rounded-md outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring'
           )}
           onClick={() => void openHttpLink(url)}
         >

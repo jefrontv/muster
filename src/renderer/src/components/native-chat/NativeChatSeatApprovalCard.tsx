@@ -184,7 +184,7 @@ export function NativeChatSeatApprovalCard({
             type="button"
             disabled={answered}
             onClick={cancelTurn}
-            className="mr-auto rounded-sm text-[13px] leading-5 text-chat-ink-tertiary transition-colors duration-100 ease-chat enabled:hover:text-chat-ink-secondary disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
+            className="mr-auto rounded-md text-[13px] leading-5 text-chat-ink-tertiary transition-colors duration-100 ease-chat enabled:hover:text-chat-ink-secondary disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
           >
             {translate('auto.components.native-chat.approval.cancelTurn', 'Cancel turn')}
           </button>

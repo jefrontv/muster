@@ -463,7 +463,7 @@ function TabBarInner({
           shell: 'powershell.exe'
         },
         {
-          label: translate('auto.components.tab.bar.TabBar.1a8af49530', 'CMD Prompt'),
+          label: translate('auto.components.tab.bar.TabBar.1a8af49530', 'CMD prompt'),
           shell: 'cmd.exe'
         }
       )
@@ -609,11 +609,10 @@ function TabBarInner({
                 )
               )
             }}
-            className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium"
           >
             <ShellIcon shell={entry.shell} size={14} />
             <span className="flex-1">
-              {translate('auto.components.tab.bar.TabBar.7c1313d237', 'New Terminal:')}{' '}
+              {translate('auto.components.tab.bar.TabBar.7c1313d237', 'New terminal:')}{' '}
               {entry.label}
             </span>
             {isDefault ? <DropdownMenuShortcut>{newTerminalShortcut}</DropdownMenuShortcut> : null}
@@ -626,29 +625,22 @@ function TabBarInner({
           queueNewActiveTerminalFocusAfterNewTabMenuClose()
           onNewTerminalTab()
         }}
-        className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium"
       >
         <TerminalSquare className="size-4 text-muted-foreground" />
-        {translate('auto.components.tab.bar.TabBar.d364f3c8d4', 'New Terminal')}
+        {translate('auto.components.tab.bar.TabBar.d364f3c8d4', 'New terminal')}
         <DropdownMenuShortcut>{newTerminalShortcut}</DropdownMenuShortcut>
       </DropdownMenuItem>
     )
   const newBrowserMenuItem = !terminalOnly ? (
-    <DropdownMenuItem
-      onSelect={onNewBrowserTab}
-      className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium"
-    >
+    <DropdownMenuItem onSelect={onNewBrowserTab}>
       <Globe className="size-4 text-muted-foreground" />
-      {translate('auto.components.tab.bar.TabBar.4833fb2cbe', 'New Browser Tab')}
+      {translate('auto.components.tab.bar.TabBar.4833fb2cbe', 'New browser tab')}
       <DropdownMenuShortcut>{newBrowserShortcut}</DropdownMenuShortcut>
     </DropdownMenuItem>
   ) : null
   const newMarkdownMenuItem =
     !terminalOnly && onNewFileTab ? (
-      <DropdownMenuItem
-        onSelect={onNewFileTab}
-        className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium"
-      >
+      <DropdownMenuItem onSelect={onNewFileTab}>
         <FilePlus className="size-4 text-muted-foreground" />
         {translate('auto.components.tab.bar.TabBar.3d5d6c960d', 'New Markdown')}
         <DropdownMenuShortcut>{newFileShortcut}</DropdownMenuShortcut>
@@ -656,12 +648,9 @@ function TabBarInner({
     ) : null
   const openMarkdownMenuItem =
     !terminalOnly && onOpenFileTab ? (
-      <DropdownMenuItem
-        onSelect={onOpenFileTab}
-        className="gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 font-medium"
-      >
+      <DropdownMenuItem onSelect={onOpenFileTab}>
         <FileText className="size-4 text-muted-foreground" />
-        {translate('auto.components.tab.bar.TabBar.4f327c8b3d', 'Open Markdown...')}
+        {translate('auto.components.tab.bar.TabBar.4f327c8b3d', 'Open Markdown…')}
         {openMarkdownShortcut ? (
           <DropdownMenuShortcut>{openMarkdownShortcut}</DropdownMenuShortcut>
         ) : null}
@@ -1041,7 +1030,7 @@ function TabBarInner({
       >
         <DropdownMenuTrigger asChild>
           <button
-            className="ml-2 my-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            className="ml-2 my-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent/50 hover:text-foreground"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             title={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
             // Why: aria-label matches the tooltip so E2E can locate the "+" via getByRole('button', { name: 'New tab' }).
@@ -1053,7 +1042,7 @@ function TabBarInner({
         <DropdownMenuContent
           align="start"
           sideOffset={6}
-          className="w-72 max-w-[calc(100vw-1rem)] rounded-[11px] border-border/80 p-1 shadow-[0_16px_36px_rgba(0,0,0,0.24)]"
+          className="w-72 max-w-[calc(100vw-1rem)]"
           onCloseAutoFocus={(e) => {
             // Why: Radix restores focus to the "+" trigger on close, stealing it from the freshly-mounted terminal.
             e.preventDefault()

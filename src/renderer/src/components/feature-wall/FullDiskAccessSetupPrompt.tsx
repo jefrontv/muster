@@ -60,7 +60,7 @@ function getFullDiskAccessButtonLabel(args: FullDiskAccessButtonState): string {
   if (args.requesting) {
     return translate(
       'auto.components.feature.wall.FullDiskAccessSetupPrompt.dac08ec03e',
-      'Opening...'
+      'Opening…'
     )
   }
   if (args.ready) {
@@ -68,7 +68,7 @@ function getFullDiskAccessButtonLabel(args: FullDiskAccessButtonState): string {
   }
   return translate(
     'auto.components.feature.wall.FullDiskAccessSetupPrompt.6e3d62b816',
-    'Open Full Disk Access'
+    'Open full disk access'
   )
 }
 
@@ -205,10 +205,10 @@ export function FullDiskAccessSetupPrompt(): React.JSX.Element | null {
             <span className="text-sm font-medium text-foreground">
               {translate(
                 'auto.components.feature.wall.FullDiskAccessSetupPrompt.c566bca278',
-                'Full Disk Access'
+                'Full disk access'
               )}
             </span>
-            <Badge variant={ready ? 'secondary' : 'outline'} className="uppercase tracking-wider">
+            <Badge variant={ready ? 'secondary' : 'outline'}>
               {getFullDiskAccessStatusLabel({ checking, status })}
             </Badge>
           </div>

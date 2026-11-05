@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- Why: duplicated from GitHubItemDialog so the dedicated PR full-page surface can evolve its Primer-styled header without destabilizing the issue dialog; planned to refactor shared parts out later. */
+import { Badge } from '@/components/ui/badge'
 import React, {
   Suspense,
   useCallback,
@@ -441,14 +442,14 @@ function getStateTone(item: GitHubWorkItem): string {
       return 'border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300'
     }
     if (item.state === 'closed') {
-      return 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300'
+      return 'border-status-danger-border bg-status-danger-background text-status-danger'
     }
-    return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+    return 'border-status-success-border bg-status-success-background text-status-success'
   }
   if (item.state === 'closed') {
-    return 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300'
+    return 'border-status-danger-border bg-status-danger-background text-status-danger'
   }
-  return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+  return 'border-status-success-border bg-status-success-background text-status-success'
 }
 
 function WorkItemStateBadge({
@@ -1230,7 +1231,7 @@ function PRReviewersPanel({
         {reviewer.avatarUrl ? (
           <img src={reviewer.avatarUrl} alt="" className="size-5 shrink-0 rounded-full" />
         ) : (
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground">
             {reviewer.login.slice(0, 1).toUpperCase()}
           </span>
         )}
@@ -1274,7 +1275,7 @@ function PRReviewersPanel({
             </button>
           </PopoverTrigger>
           <PopoverContent
-            className="flex max-h-[420px] w-[330px] flex-col overflow-hidden rounded-md border-border/70 p-0"
+            className="flex max-h-[420px] w-[330px] flex-col overflow-hidden p-0"
             align="end"
             side="bottom"
             sideOffset={6}
@@ -1333,7 +1334,7 @@ function PRReviewersPanel({
             <div className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek">
               {reviewerMetadata.loading ? (
                 <div className="px-3 py-2 text-[13px] text-muted-foreground">
-                  {translate('auto.components.PullRequestPage.57750f4a8c', 'Loading...')}
+                  {translate('auto.components.PullRequestPage.57750f4a8c', 'Loading…')}
                 </div>
               ) : filteredReviewerCandidates.length > 0 ? (
                 <>
@@ -2815,8 +2816,8 @@ function PRFilesCombinedDiffViewer({
             onClick={() => setAllSectionsCollapsed(!allSectionsCollapsed)}
           >
             {allSectionsCollapsed
-              ? translate('auto.components.PullRequestPage.eb722a5a8c', 'Expand All')
-              : translate('auto.components.PullRequestPage.dd94111c18', 'Collapse All')}
+              ? translate('auto.components.PullRequestPage.eb722a5a8c', 'Expand all')
+              : translate('auto.components.PullRequestPage.dd94111c18', 'Collapse all')}
           </button>
           <button
             type="button"
@@ -2825,7 +2826,7 @@ function PRFilesCombinedDiffViewer({
           >
             {sideBySide
               ? translate('auto.components.PullRequestPage.e5f4a24f78', 'Inline')
-              : translate('auto.components.PullRequestPage.1378d79e83', 'Side by Side')}
+              : translate('auto.components.PullRequestPage.1378d79e83', 'Side by side')}
           </button>
         </div>
       </div>
@@ -3052,7 +3053,7 @@ function CommentCodeContext({
           </span>
           {(from !== commentFrom || to !== commentTo) && (
             <span className="shrink-0 font-mono text-muted-foreground/70">
-              {translate('auto.components.PullRequestPage.791ddede19', 'comment L')}
+              {translate('auto.components.PullRequestPage.791ddede19', 'comment l')}
               {commentFrom}
               {commentTo !== commentFrom
                 ? translate('auto.components.PullRequestPage.84fc40769a', '-L{{value0}}', {
@@ -3180,7 +3181,10 @@ function CommentCodeContext({
               return (
                 <div
                   key={lineNumber}
-                  className={cn('flex font-mono', isCommentedLine && 'bg-emerald-500/10')}
+                  className={cn(
+                    'flex font-mono',
+                    isCommentedLine && 'bg-status-success-background'
+                  )}
                 >
                   <span className="w-12 shrink-0 select-none border-r border-border/40 px-2 text-right text-muted-foreground">
                     {lineNumber}
@@ -3522,9 +3526,9 @@ function ConversationTab({
           </span>
         )}
         {comment.isResolved && (
-          <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground">
+          <Badge variant="muted">
             {translate('auto.components.PullRequestPage.76b2a0ac5b', 'resolved')}
-          </span>
+          </Badge>
         )}
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <Tooltip>
@@ -3757,7 +3761,7 @@ function ConversationTab({
                 rows={12}
                 mentionOptions={mentionOptions}
                 wrapperClassName="flex min-h-64 w-full items-stretch"
-                className="scrollbar-sleek block min-h-64 w-full resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-[13px] leading-5 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="scrollbar-sleek block min-h-64 w-full resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-[13px] leading-5 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             ) : body.trim() ? (
               <CommentMarkdown
@@ -3785,9 +3789,9 @@ function ConversationTab({
                 {translate('auto.components.PullRequestPage.3463d10a63', 'Comments')}
               </span>
               {comments.length > 0 && (
-                <span className="rounded-full border border-border/50 bg-muted/30 px-1.5 py-0.5 text-[11px] tabular-nums text-muted-foreground">
+                <Badge variant="muted" className="tabular-nums">
                   {comments.length}
-                </span>
+                </Badge>
               )}
             </div>
 
@@ -4124,7 +4128,7 @@ function PRActionsPanel({
                   type="button"
                   size="sm"
                   className={cn(
-                    'w-full justify-center gap-2 bg-green-600 text-white hover:bg-green-700',
+                    'w-full justify-center gap-2 bg-status-success-solid text-white hover:bg-status-success-solid/90',
                     'disabled:cursor-not-allowed disabled:opacity-50'
                   )}
                 >
@@ -4313,7 +4317,7 @@ function CommentReplyForm({
         placeholder={placeholder}
         rows={3}
         mentionOptions={mentionOptions}
-        className="scrollbar-sleek min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-[13px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="scrollbar-sleek min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-[13px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
       <div className="mt-2 flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -5247,7 +5251,7 @@ function ChecksTab({
         }
       }}
       actionId="fixChecks"
-      title={translate('auto.components.PullRequestPage.a053bdd082', 'Fix Broken Checks With AI')}
+      title={translate('auto.components.PullRequestPage.a053bdd082', 'Fix broken checks with AI')}
       description={translate(
         'auto.components.PullRequestPage.ddfd42f460',
         'Review the prompt before starting an agent.'
@@ -5310,7 +5314,7 @@ function ChecksTab({
       <>
         {compactHeader}
         <div className="flex flex-col items-center justify-center gap-1 px-4 py-6 text-center">
-          <CircleDashed className="size-4 text-muted-foreground/60" />
+          <CircleDashed className="size-4 text-muted-foreground" />
           <div className="text-[12px] text-muted-foreground">
             {translate('auto.components.PullRequestPage.a18d01cda3', 'No checks reported yet')}
           </div>
@@ -5478,7 +5482,7 @@ function MentionTextarea({
   return (
     <div className={cn('relative min-w-0 flex-1', wrapperClassName)}>
       {showSuggestions && (
-        <div className="absolute right-0 bottom-[calc(100%+6px)] left-0 z-50 max-h-64 overflow-y-auto rounded-md border border-border/70 bg-popover p-1 text-popover-foreground shadow-lg scrollbar-sleek">
+        <div className="absolute right-0 bottom-[calc(100%+6px)] left-0 z-50 max-h-64 overflow-y-auto rounded-md border border-border/70 bg-popover p-1 text-popover-foreground shadow-floating scrollbar-sleek">
           {suggestions.map((option, index) => (
             <button
               key={option.login}
@@ -5495,7 +5499,7 @@ function MentionTextarea({
               {option.avatarUrl ? (
                 <img src={option.avatarUrl} alt="" className="size-5 shrink-0 rounded-full" />
               ) : (
-                <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+                <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground">
                   {option.login.slice(0, 1).toUpperCase()}
                 </div>
               )}
@@ -6159,7 +6163,7 @@ function GHEditSection({
               localState === 'open' && 'bg-accent/50'
             )}
           >
-            <CircleDot className="size-3 text-emerald-500" />
+            <CircleDot className="size-3 text-status-success" />
             {translate('auto.components.PullRequestPage.7b8f6bf6d8', 'Open')}
           </button>
           <button
@@ -6170,7 +6174,7 @@ function GHEditSection({
               localState === 'closed' && 'bg-accent/50'
             )}
           >
-            <CircleDashed className="size-3 text-rose-500" />
+            <CircleDashed className="size-3 text-status-danger" />
             {translate('auto.components.PullRequestPage.b936cc51a4', 'Closed')}
           </button>
         </PopoverContent>
@@ -6190,7 +6194,7 @@ function GHEditSection({
               </span>
             ) : (
               localLabels.map((name) => (
-                <span key={name} className="text-[10px] text-muted-foreground">
+                <span key={name} className="text-[11px] text-muted-foreground">
                   {name}
                 </span>
               ))
@@ -6248,7 +6252,7 @@ function GHEditSection({
               </span>
             ) : (
               localAssignees.map((login) => (
-                <span key={login} className="text-[10px] text-muted-foreground">
+                <span key={login} className="text-[11px] text-muted-foreground">
                   {login}
                 </span>
               ))
@@ -6440,7 +6444,7 @@ function GHCommentComposer({
         rows={4}
         mentionOptions={mentionOptions}
         wrapperClassName="flex min-h-20 w-full items-stretch"
-        className="scrollbar-sleek block h-20 max-h-[240px] min-h-20 w-full resize-none overflow-y-auto rounded-md border border-input bg-card px-3 py-2 pb-12 pr-12 text-[13px] leading-5 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="scrollbar-sleek block h-20 max-h-[240px] min-h-20 w-full resize-none overflow-y-auto rounded-md border border-input bg-card px-3 py-2 pb-12 pr-12 text-[13px] leading-5 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
       <Tooltip>
         <TooltipTrigger asChild>
@@ -6974,8 +6978,8 @@ export default function PullRequestPage({
       : localState === 'draft'
         ? 'bg-slate-500 text-white'
         : localState === 'closed'
-          ? 'bg-rose-600 text-white'
-          : 'bg-emerald-600 text-white'
+          ? 'bg-status-danger-solid text-white'
+          : 'bg-status-success-solid text-white'
   const stateBadgeLabel = workItem ? getStateLabel({ ...workItem, state: localState }) : 'Open'
 
   const content = workItem ? (
@@ -7021,7 +7025,7 @@ export default function PullRequestPage({
                   )}
                 >
                   {linkCopied ? (
-                    <Check className="size-4 text-emerald-500" />
+                    <Check className="size-4 text-status-success" />
                   ) : (
                     <Copy className="size-4" />
                   )}
@@ -7058,7 +7062,7 @@ export default function PullRequestPage({
       {/* Row 2: PR title block — large weight-400 title + state row, mirrors Primer pr-title-block */}
       <div className="flex-none border-b border-border/60 px-6 py-5">
         <div className="flex items-start gap-4">
-          <h1 className="min-w-0 flex-1 text-[26px] font-medium leading-snug text-foreground">
+          <h1 className="min-w-0 flex-1 text-2xl font-medium leading-snug text-foreground">
             <span className="break-words">{workItem.title}</span>
             <span className="ml-2 align-baseline text-[20px] font-normal text-muted-foreground/70">
               #{workItem.number}
@@ -7219,7 +7223,7 @@ export default function PullRequestPage({
                 <ListChecks className="size-3.5" />
                 {translate('auto.components.PullRequestPage.94d95cf1f7', 'Checks')}
                 {checks.length > 0 && (
-                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground">
+                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[11px] text-muted-foreground">
                     {checks.length}
                   </span>
                 )}
@@ -7228,7 +7232,7 @@ export default function PullRequestPage({
                 <FileText className="size-3.5" />
                 {translate('auto.components.PullRequestPage.4d18310d55', 'Files changed')}
                 {files.length > 0 && (
-                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground">
+                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[11px] text-muted-foreground">
                     {files.length}
                   </span>
                 )}

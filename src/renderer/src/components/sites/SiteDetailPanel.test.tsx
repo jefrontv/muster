@@ -162,7 +162,7 @@ describe('SiteDetailPanel environment chips', () => {
 
     expect(hostnameValue()).toBe('dev.example.com')
     expect(selected('dev')).toBe('true')
-    expect(document.body.textContent).toContain('Editing dev — runs target production.')
+    expect(document.body.textContent).toContain('Editing dev: runs target production.')
     // Selection is view state only — nothing may write site.activeEnvironment.
     expect(storeMocks.updateSite).not.toHaveBeenCalled()
   })
@@ -230,6 +230,6 @@ describe('SiteDetailPanel environment chips', () => {
     )
     expect(selected('staging')).toBe('true')
     expect(hostnameValue()).toBe('staging.example.com')
-    expect(document.body.textContent).toContain('Editing staging — runs target production.')
+    expect(document.body.textContent).toContain('Editing staging: runs target production.')
   })
 })

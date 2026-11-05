@@ -209,7 +209,7 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
           data-contextual-tour-target="sidebar-tasks"
           className={cn(
             // Why: h-8 matches Automations / Agents / Sites so the nav column doesn't jitter by row.
-            'group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors',
+            'group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
             tasksActive
               ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
               : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8',
@@ -217,8 +217,7 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
           )}
         >
           <List
-            className={cn('size-4 shrink-0', !tasksActive && 'text-worktree-sidebar-foreground/30')}
-            strokeWidth={tasksActive ? 2.25 : 1.75}
+            className={cn('size-4 shrink-0', !tasksActive && 'text-worktree-sidebar-foreground/55')}
           />
           <span className="flex-1">
             {translate('auto.components.sidebar.SidebarNav.fee535205b', 'Tasks')}

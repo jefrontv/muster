@@ -16,7 +16,7 @@ export function NativeChatSeatSendButton(props: {
       disabled={props.disabled}
       onClick={props.onClick}
       // Lifted 2px like DSH: the toolbar's top pad lowers the chips, not the send circle.
-      className="flex size-[34px] shrink-0 -translate-y-0.5 items-center justify-center rounded-full bg-chat-accent text-white transition-colors duration-100 ease-chat enabled:hover:bg-chat-accent-hover disabled:cursor-default disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent focus-visible:ring-offset-2 focus-visible:ring-offset-chat-raised"
+      className="flex size-[34px] shrink-0 -translate-y-0.5 items-center justify-center rounded-full bg-foreground text-background transition-colors duration-100 ease-chat enabled:hover:bg-foreground/85 disabled:cursor-default disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent focus-visible:ring-offset-2 focus-visible:ring-offset-chat-raised"
     >
       {props.stop ? (
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>

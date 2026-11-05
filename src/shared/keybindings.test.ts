@@ -673,7 +673,7 @@ describe('keybindings', () => {
     const setTitle = getKeybindingDefinition('terminal.setTitle')
     const clearTitle = getKeybindingDefinition('terminal.clearPaneTitle')
 
-    expect(setTitle?.title).toBe('Set Title…')
+    expect(setTitle?.title).toBe('Set title…')
     expect(setTitle?.group).toBe('Terminal Panes')
     expect(setTitle?.scope).toBe('terminal')
     expect(setTitle?.searchKeywords).toContain('set title')
@@ -681,7 +681,7 @@ describe('keybindings', () => {
     expect(getEffectiveKeybindingsForAction('terminal.setTitle', 'linux')).toEqual([])
     expect(getEffectiveKeybindingsForAction('terminal.setTitle', 'win32')).toEqual([])
 
-    expect(clearTitle?.title).toBe('Clear Pane Title')
+    expect(clearTitle?.title).toBe('Clear pane title')
     expect(clearTitle?.group).toBe('Terminal Panes')
     expect(clearTitle?.scope).toBe('terminal')
     expect(clearTitle?.searchKeywords).toContain('remove title')
@@ -736,7 +736,7 @@ describe('keybindings', () => {
     ).toBe(true)
 
     const definition = getKeybindingDefinition('workspace.openBoard')
-    expect(definition?.title).toBe('Open Workspace Board')
+    expect(definition?.title).toBe('Open workspace board')
     expect(definition?.searchKeywords).toEqual(
       expect.arrayContaining(['workspace', 'board', 'kanban'])
     )
@@ -766,7 +766,7 @@ describe('keybindings', () => {
     ).toBe(true)
 
     const definition = getKeybindingDefinition('tab.openQuickCommandsMenu')
-    expect(definition?.title).toBe('Toggle Quick Commands menu')
+    expect(definition?.title).toBe('Toggle quick commands menu')
     expect(definition?.group).toBe('Quick Commands')
     expect(definition?.scope).toBe('tabs')
     expect(definition?.searchKeywords).toEqual(
@@ -804,7 +804,7 @@ describe('keybindings', () => {
     ).toBe(true)
 
     const definition = getKeybindingDefinition('sidebar.sleepingWorkspaces.toggle')
-    expect(definition?.title).toBe('Toggle Sleeping Workspaces')
+    expect(definition?.title).toBe('Toggle sleeping workspaces')
     expect(definition?.searchKeywords).toEqual(
       expect.arrayContaining(['sleeping', 'workspaces', 'filter'])
     )

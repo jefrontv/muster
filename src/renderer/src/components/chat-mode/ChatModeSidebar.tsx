@@ -81,7 +81,7 @@ export function ChatModeSidebar(): React.JSX.Element {
           onClick={() => openTaskPage()}
         >
           <List
-            className={cn('size-4 shrink-0', !tasksOpen && 'text-muted-foreground/50')}
+            className={cn('size-4 shrink-0', !tasksOpen && 'text-muted-foreground')}
             strokeWidth={tasksOpen ? 2.25 : 1.75}
           />
           <span className="flex-1">{translate('auto.components.chat.sidebar.tasks', 'Tasks')}</span>

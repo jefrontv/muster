@@ -48,7 +48,7 @@ export function createRepoAiPersistQueue(options: PersistQueueOptions) {
             return true
           }
           if (result === false) {
-            options.onError('Failed to save Source Control AI settings.')
+            options.onError('Failed to save Source control AI settings.')
             return false
           }
           const savedValue =
@@ -59,7 +59,7 @@ export function createRepoAiPersistQueue(options: PersistQueueOptions) {
           return true
         } catch {
           if (options.isMounted() && options.getRepoId() === repoIdForWrite) {
-            options.onError('Failed to save Source Control AI settings.')
+            options.onError('Failed to save Source control AI settings.')
           }
           return false
         }

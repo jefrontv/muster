@@ -31,7 +31,7 @@ function databaseLabel(
   return [name, port].filter(Boolean).join(' ')
 }
 
-const SKELETON = 'animate-pulse rounded bg-muted/60'
+const SKELETON = 'animate-pulse rounded-full bg-foreground/[0.07]'
 
 /** Rows a served site shows, held at their final height until detection answers. */
 function LoadingRows(): React.JSX.Element {
@@ -49,8 +49,8 @@ function LoadingRows(): React.JSX.Element {
         </div>
       ))}
       <div className="grid grid-cols-2 gap-4 pt-2.5">
-        <span className={cn('h-8 rounded-md', SKELETON)} />
-        <span className={cn('h-8 rounded-md', SKELETON)} />
+        <span className={cn('h-8', SKELETON)} />
+        <span className={cn('h-8', SKELETON)} />
       </div>
     </div>
   )
@@ -60,6 +60,7 @@ export function SiteLocalStackCompact({
   site,
   detection,
   loading,
+  detectionNotice,
   pill,
   confirmed,
   needsSetup,
@@ -73,6 +74,8 @@ export function SiteLocalStackCompact({
   detection: LocalWpStackDetection | null
   /** A managed stack whose first detection has not answered yet. */
   loading: boolean
+  /** Shown in place of the loading rows once detection is slow or failed. */
+  detectionNotice?: React.ReactNode
   pill: SiteStackPill
   confirmed: boolean
   needsSetup: boolean
@@ -106,7 +109,7 @@ export function SiteLocalStackCompact({
       />
 
       {loading ? (
-        <LoadingRows />
+        (detectionNotice ?? <LoadingRows />)
       ) : confirmed ? (
         <>
           <div className="flex items-baseline justify-between gap-3 text-xs">

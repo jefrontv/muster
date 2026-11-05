@@ -30,7 +30,13 @@ vi.mock('electron', () => ({
   app: { getPath: () => '/user-data', getVersion: () => '1.2.3' },
   utilityProcess: { fork: mocks.fork }
 }))
-vi.mock('node:fs', () => ({ mkdirSync: vi.fn() }))
+vi.mock('node:fs', () => ({
+  mkdirSync: vi.fn(),
+  statSync: () => {
+    throw new Error('ENOENT')
+  },
+  createWriteStream: () => ({ write: vi.fn(), end: vi.fn(), on: vi.fn() })
+}))
 vi.mock('./bots-resources', () => ({ resolveBotsResources: () => mocks.resources }))
 vi.mock('./bots-sidecar-port', () => ({
   pickBotsPort: async () => 18899,

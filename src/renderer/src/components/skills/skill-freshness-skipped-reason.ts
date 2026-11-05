@@ -36,7 +36,7 @@ export function skippedReason(locations: readonly SkillLocationRow[]): string {
     case 'unrecognized':
       return translate(
         'auto.components.skills.SkillFreshnessRow.skippedReasonUnrecognized',
-        'The copy here doesn’t match the official version — it may be modified, or a different skill with the same name. Muster left it out of the update so it won’t overwrite it. Remove it if you want Muster to update this skill.'
+        'The copy here doesn’t match the official version. It may be modified, or a different skill with the same name. Muster left it out of the update so it won’t overwrite it. Remove it if you want Muster to update this skill.'
       )
     case 'read-only':
       return translate(
@@ -51,12 +51,12 @@ export function skippedReason(locations: readonly SkillLocationRow[]): string {
     case 'in-a-repo':
       return translate(
         'auto.components.skills.SkillFreshnessRow.skippedReasonInRepo',
-        'This is a project skill, not a global one — Muster only updates your global skills, so it left this out of the update.'
+        'This is a project skill, not a global one. Muster only updates your global skills, so it left this out of the update.'
       )
     case 'plugin-cache':
       return translate(
         'auto.components.skills.SkillFreshnessRow.skippedReasonPluginCache',
-        'A plugin manages this skill, so Muster left it out of the update — update the plugin instead.'
+        'A plugin manages this skill, so Muster left it out of the update. Update the plugin instead.'
       )
     case 'external-link':
       return translate(
@@ -66,12 +66,12 @@ export function skippedReason(locations: readonly SkillLocationRow[]): string {
     case 'broken-link':
       return translate(
         'auto.components.skills.SkillFreshnessRow.skippedReasonBrokenLink',
-        'This copy is a shortcut to something that no longer exists, so Muster left it out — you can safely delete it.'
+        'This copy is a shortcut to something that no longer exists, so Muster left it out. You can safely delete it.'
       )
     case 'duplicate':
       return translate(
         'auto.components.skills.SkillFreshnessRow.skippedReasonDuplicate',
-        'This is a separate copy, so the update won’t reach it — the command only refreshes the main copy. Remove this copy, then reinstall the skill so this location follows the main one.'
+        'This is a separate copy, so the update won’t reach it. The command only refreshes the main copy. Remove this copy, then reinstall the skill so this location follows the main one.'
       )
     // Why: 'current' is non-blocking and an empty priority list is possible;
     // both fall through to the generic skipped message.

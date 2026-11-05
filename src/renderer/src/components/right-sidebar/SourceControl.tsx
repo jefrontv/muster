@@ -1,4 +1,6 @@
 /* eslint-disable max-lines */
+import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import React, { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import {
   ArrowDownUp,
@@ -878,7 +880,7 @@ function SourceControlInner(): React.JSX.Element {
     activeWorktreeId ? (s.gitConflictOperationByWorktree[activeWorktreeId] ?? 'unknown') : 'unknown'
   )
   const conflictOperationsByWorktree = useAppStore((s) => s.gitConflictOperationByWorktree)
-  // Why: leave undefined until fetchUpstreamStatus resolves; a synthetic "no upstream" flashes "Publish Branch" on worktree switch.
+  // Why: leave undefined until fetchUpstreamStatus resolves; a synthetic "no upstream" flashes "Publish branch" on worktree switch.
   const remoteStatus = useAppStore((s) =>
     activeWorktreeId ? s.remoteStatusesByWorktree[activeWorktreeId] : undefined
   )
@@ -1689,7 +1691,7 @@ function SourceControlInner(): React.JSX.Element {
     linkedAzureDevOpsPR,
     linkedGiteaPR
   })
-  // Why: SSH-backed (connectionId) repos never fetch hostedReview, so skip the loading state or it would permanently block Publish Branch.
+  // Why: SSH-backed (connectionId) repos never fetch hostedReview, so skip the loading state or it would permanently block Publish branch.
   const isHostedReviewStateLoading =
     !activeRepo?.connectionId && hasHostedReviewLink && hostedReviewEntry === undefined
   const hasResolvableReviewPushTargetLink = hasResolvableHostedReviewPushTargetLink({
@@ -2250,7 +2252,7 @@ function SourceControlInner(): React.JSX.Element {
           setGenerateErrors((prev) => ({
             ...prev,
             [activeWorktreeId]:
-              'Custom command is empty. Add one in Settings -> Git -> Source Control AI.'
+              'Custom command is empty. Add one in Settings -> Git -> Source control AI.'
           }))
           return
         }
@@ -2936,7 +2938,7 @@ function SourceControlInner(): React.JSX.Element {
   // Why: commit first and run the follow-up remote op only if handleCommit succeeded, so we never push a commit the user didn't land.
   const runCompoundCommitAction = useCallback(
     async (remoteKind: 'push' | 'sync'): Promise<void> => {
-      // Why: "Commit & Force Push" maps to remoteKind 'push', so route to force_push when the upstream shape requires lease force (kind 'push' no longer auto-upgrades).
+      // Why: "Commit & Force push" maps to remoteKind 'push', so route to force_push when the upstream shape requires lease force (kind 'push' no longer auto-upgrades).
       const forcePush =
         remoteKind === 'push' &&
         shouldForcePushWithLeaseForUpstream(remoteStatusForActions ?? remoteStatus)
@@ -4122,7 +4124,7 @@ function SourceControlInner(): React.JSX.Element {
                   ? 'auto.components.right.sidebar.SourceControl.createPrIntentConfigureAi'
                   : 'auto.components.right.sidebar.SourceControl.createPrIntentGenerateFailed',
                 generated.reason === 'settings'
-                  ? 'Add a commit message or configure Source Control AI settings.'
+                  ? 'Add a commit message or configure Source control AI settings.'
                   : 'Could not generate a commit message. Add one and retry.'
               ),
               action: generated.reason === 'settings' ? 'settings' : undefined
@@ -4479,7 +4481,7 @@ function SourceControlInner(): React.JSX.Element {
             )
           : translate(
               'auto.components.right.sidebar.SourceControl.fe5bd1a610',
-              'Creating {{value0}}...',
+              'Creating {{value0}}…',
               { value0: hostedReviewCreateCopy.reviewLabel }
             ),
         disabled: true
@@ -5022,7 +5024,7 @@ function SourceControlInner(): React.JSX.Element {
         void handleStageAllPrimary()
         return
       case 'push':
-        // Why: primary labels "Force Push" but keeps kind 'push', so invoke the explicit force path when lease force is required.
+        // Why: primary labels "Force push" but keeps kind 'push', so invoke the explicit force path when lease force is required.
         handleActionInvoke(
           shouldForcePushWithLeaseForUpstream(remoteStatusForActions ?? remoteStatus)
             ? 'force_push'
@@ -5748,7 +5750,7 @@ function SourceControlInner(): React.JSX.Element {
           toast.error(
             translate(
               'auto.components.right.sidebar.SourceControl.a5e5a11090',
-              'Discard all failed — unable to unstage files before discard'
+              'Discard all failed: unable to unstage files before discard'
             ),
             {
               description: errors[0] instanceof Error ? errors[0].message : undefined
@@ -5879,7 +5881,7 @@ function SourceControlInner(): React.JSX.Element {
                 id: 'branch',
                 label: translate(
                   'auto.components.right.sidebar.SourceControl.d7ae61269b',
-                  'Committed on Branch'
+                  'Committed on branch'
                 ),
                 count: filteredBranchEntries.length,
                 collapsed: collapsedSections.has('branch'),
@@ -6043,7 +6045,7 @@ function SourceControlInner(): React.JSX.Element {
                       <TooltipTrigger asChild>
                         <button
                           type="button"
-                          className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground"
                           onClick={() => void handleCopyDiffComments()}
                           aria-label={translate(
                             'auto.components.right.sidebar.SourceControl.3baf6c77b4',
@@ -6073,7 +6075,7 @@ function SourceControlInner(): React.JSX.Element {
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground"
                             aria-label={translate(
                               'auto.components.right.sidebar.SourceControl.2fe2a67580',
                               'More note actions'
@@ -6105,7 +6107,7 @@ function SourceControlInner(): React.JSX.Element {
                       <Trash2 className="size-3.5" />
                       {translate(
                         'auto.components.right.sidebar.SourceControl.1406954883',
-                        'Clear all notes...'
+                        'Clear all notes…'
                       )}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -6419,7 +6421,7 @@ function SourceControlInner(): React.JSX.Element {
                                 tabIndex={-1}
                                 className={
                                   items.some((entry) => entry.conflictStatus === 'unresolved')
-                                    ? 'h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground'
+                                    ? 'h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground'
                                     : 'h-auto px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground'
                                 }
                                 onClick={(e) => {
@@ -6614,7 +6616,7 @@ function SourceControlInner(): React.JSX.Element {
                 <SectionHeader
                   label={translate(
                     'auto.components.right.sidebar.SourceControl.d7ae61269b',
-                    'Committed on Branch'
+                    'Committed on branch'
                   )}
                   count={filteredBranchEntries.length}
                   isCollapsed={collapsedSections.has('branch')}
@@ -6747,7 +6749,7 @@ function SourceControlInner(): React.JSX.Element {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-sm">
-              {translate('auto.components.right.sidebar.SourceControl.574d2f4413', 'Clear Notes')}
+              {translate('auto.components.right.sidebar.SourceControl.574d2f4413', 'Clear notes')}
             </DialogTitle>
             <DialogDescription className="text-xs">
               {pendingDiffCommentsClearDescription}
@@ -6769,7 +6771,7 @@ function SourceControlInner(): React.JSX.Element {
               disabled={isClearingDiffComments || pendingDiffCommentsClearCount === 0}
             >
               <Trash2 className="size-4" />
-              {translate('auto.components.right.sidebar.SourceControl.574d2f4413', 'Clear Notes')}
+              {translate('auto.components.right.sidebar.SourceControl.574d2f4413', 'Clear notes')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -6788,7 +6790,7 @@ function SourceControlInner(): React.JSX.Element {
             <DialogTitle className="text-sm">
               {translate(
                 'auto.components.right.sidebar.SourceControl.476b77745b',
-                'Change Base Ref'
+                'Change base ref'
               )}
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -6830,7 +6832,7 @@ function SourceControlInner(): React.JSX.Element {
         actionId="resolveConflicts"
         title={translate(
           'auto.components.right.sidebar.SourceControl.19652ddd76',
-          'Resolve Conflicts With AI'
+          'Resolve conflicts with AI'
         )}
         description={translate(
           'auto.components.right.sidebar.SourceControl.901140f47d',
@@ -6868,7 +6870,7 @@ function SourceControlInner(): React.JSX.Element {
         actionId="commitMessage"
         title={translate(
           'auto.components.right.sidebar.SourceControl.6b122529d4',
-          'Generate Commit Message'
+          'Generate commit message'
         )}
         description={translate(
           'auto.components.right.sidebar.SourceControl.f4c766f1ca',
@@ -6890,7 +6892,7 @@ function SourceControlInner(): React.JSX.Element {
         actionId="pullRequest"
         title={translate(
           'auto.components.right.sidebar.SourceControl.1a6a6e0bc5',
-          'Generate Hosted Review Details'
+          'Generate hosted review details'
         )}
         description={translate(
           'auto.components.right.sidebar.SourceControl.f4c766f1ca',
@@ -7085,7 +7087,7 @@ export function CommitArea({
   } else if (hasMessage) {
     generateTooltip = 'Clear the message to regenerate.'
   } else if (!aiAgentConfigured) {
-    generateTooltip = 'Pick an agent in Settings > Git > Source Control AI.'
+    generateTooltip = 'Pick an agent in Settings > Git > Source control AI.'
   }
   const isGenerateDisabled =
     isGenerating || isCommitting || stagedCount === 0 || hasMessage || hasUnresolvedConflicts
@@ -7116,7 +7118,7 @@ export function CommitArea({
     <div className="px-3 pb-2">
       {showComposer ? (
         <div className="relative">
-          <textarea
+          <Textarea
             ref={commitMessageRef}
             rows={rows}
             value={commitMessage}
@@ -7128,11 +7130,11 @@ export function CommitArea({
               'Commit message'
             )}
             aria-describedby={describedBy || undefined}
-            // Why: reserve right padding so text doesn't slide under the absolute-positioned Generate icon.
-            // Why: pin disabled:border-input so Chromium's UA disabled styles don't wash out the field outline.
-            className={`mt-0.5 min-h-14 w-full resize-none appearance-none rounded-md border border-input bg-background shadow-xs px-2 py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:border-input disabled:bg-background disabled:text-foreground disabled:shadow-xs dark:bg-input/30 dark:disabled:bg-input/30 ${
-              showGenerate ? 'pr-8' : ''
-            }`}
+            // Why: pr-8 keeps text clear of the Generate icon; opacity stays full so generated text stays readable while locked.
+            className={cn(
+              'mt-0.5 min-h-14 resize-none px-2.5 py-1.5 text-xs disabled:opacity-100',
+              showGenerate && 'pr-8'
+            )}
           />
           {showGenerate &&
             (isGenerating ? (
@@ -7146,7 +7148,7 @@ export function CommitArea({
                       'auto.components.right.sidebar.SourceControl.ddc1fbd690',
                       'Stop generating commit message'
                     )}
-                    className="group absolute right-1.5 top-1.5 inline-flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive/40"
+                    className="group absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
                   >
                     <RefreshCw className="size-3.5 animate-spin group-hover:hidden group-focus-visible:hidden" />
                     <Square className="hidden size-3.5 fill-current group-hover:block group-focus-visible:block" />
@@ -7177,7 +7179,7 @@ export function CommitArea({
                       'Generate commit message with AI'
                     )}
                     className={cn(
-                      'absolute right-1.5 top-1.5 inline-flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                      'absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       isGenerateDisabled &&
                         'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-muted-foreground'
                     )}
@@ -7207,7 +7209,7 @@ export function CommitArea({
                   size="xs"
                   disabled={primaryAction.disabled}
                   onClick={() => onPrimaryAction()}
-                  className="w-full rounded-r-none px-3 text-[11px]"
+                  className="w-full rounded-r-none px-3 text-xs"
                 >
                   {showSpinner ? (
                     <Loader2 className="size-3.5 animate-spin" />
@@ -7268,7 +7270,7 @@ export function CommitArea({
           )}
           detailsTitle={translate(
             'auto.components.right.sidebar.SourceControl.a9bf7c171a',
-            'Commit Failed'
+            'Commit failed'
           )}
           summary={commitFailureSummary}
           detailText={commitError}
@@ -7298,7 +7300,7 @@ export function CommitArea({
           )}
           detailsTitle={translate(
             'auto.components.right.sidebar.SourceControl.pushRecovery.a9bf7c171a',
-            'Push Failed'
+            'Push failed'
           )}
           summary={pushRecovery.summary}
           detailText={pushRecovery.detailText}
@@ -7354,7 +7356,7 @@ export function CommitArea({
             >
               {translate(
                 'auto.components.right.sidebar.SourceControl.473f18758e',
-                'Source Control AI settings'
+                'Source control AI settings'
               )}
             </button>
           ) : null}
@@ -7613,7 +7615,7 @@ function CompareUnavailable({
             onClick={onChangeBaseRef}
           >
             <Settings2 className="size-3.5" />
-            {translate('auto.components.right.sidebar.SourceControl.476b77745b', 'Change Base Ref')}
+            {translate('auto.components.right.sidebar.SourceControl.476b77745b', 'Change base ref')}
           </Button>
         )}
         <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onRetry}>
@@ -7770,7 +7772,7 @@ function DiffCommentsInlineList({
           <div className="group/file flex items-center gap-1">
             <button
               type="button"
-              className="block min-w-0 flex-1 truncate text-left text-[10px] font-medium text-muted-foreground hover:text-foreground"
+              className="block min-w-0 flex-1 truncate text-left text-[11px] font-medium text-muted-foreground hover:text-foreground"
               onClick={() => {
                 const first = list[0]
                 if (first) {
@@ -7825,18 +7827,18 @@ function DiffCommentsInlineList({
                     { value0: getLocalizedDiffCommentLineLabel(c) }
                   )}
                 >
-                  <span className="shrink-0 rounded bg-muted px-1 py-0.5 text-[10px] leading-none tabular-nums text-muted-foreground">
+                  <Badge variant="muted" className="shrink-0 text-2xs tabular-nums">
                     {getDiffCommentLineLabel(c, true)}
-                  </span>
-                  <span className="shrink-0 rounded bg-muted/70 px-1 py-0.5 text-[10px] leading-none text-muted-foreground">
+                  </Badge>
+                  <Badge variant="muted" className="shrink-0">
                     {getDiffCommentSource(c) === 'markdown'
                       ? translate('auto.components.right.sidebar.SourceControl.94c42b252e', 'MD')
                       : translate('auto.components.right.sidebar.SourceControl.c56ba7fa06', 'Diff')}
-                  </span>
+                  </Badge>
                   {c.sentAt ? (
-                    <span className="shrink-0 rounded bg-muted/70 px-1 py-0.5 text-[10px] leading-none text-muted-foreground">
+                    <Badge variant="muted" className="shrink-0">
                       {translate('auto.components.right.sidebar.SourceControl.655633c08a', 'Sent')}
-                    </span>
+                    </Badge>
                   ) : null}
                   <span className="block min-w-0 flex-1 whitespace-pre-wrap break-words text-[11px] leading-snug text-foreground">
                     {c.body}
@@ -7912,9 +7914,9 @@ export function ConflictSummaryCard({
           : 'Conflicts'
 
   return (
-    <div className="rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2">
+    <div className="rounded-md border border-status-attention-border bg-status-attention-background px-3 py-2">
       <div className="flex items-start gap-2">
-        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-status-attention" />
         <div className="min-w-0 flex-1">
           <div className="text-xs font-medium text-foreground" aria-live="polite">
             {translate(
@@ -8050,9 +8052,9 @@ export function TooManyChangesBanner({
   }
 
   return (
-    <div className="rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2">
+    <div className="rounded-md border border-status-attention-border bg-status-attention-background px-3 py-2">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <AlertTriangle className="size-4 shrink-0 text-status-attention" />
         <span className="min-w-0 flex-1 text-xs text-foreground">
           {translate(
             'auto.components.right.sidebar.SourceControl.tooManyChanges',
@@ -8129,7 +8131,7 @@ function SourceControlTreeDirectoryRow({
         )}
         <span className="min-w-0 flex-1 truncate">{node.name}</span>
       </button>
-      <span className="w-4 shrink-0 text-center text-[10px] font-bold tabular-nums text-muted-foreground/80">
+      <span className="w-4 shrink-0 text-center text-2xs font-semibold tabular-nums text-muted-foreground">
         {node.fileCount}
       </span>
       {(canDiscard || canStage || canUnstage) && (
@@ -8228,7 +8230,7 @@ function SourceControlBranchTreeDirectoryRow({
         )}
         <span className="min-w-0 flex-1 truncate">{node.name}</span>
       </button>
-      <span className="w-4 shrink-0 text-center text-[10px] font-bold tabular-nums text-muted-foreground/80">
+      <span className="w-4 shrink-0 text-center text-2xs font-semibold tabular-nums text-muted-foreground">
         {node.fileCount}
       </span>
     </div>
@@ -8249,7 +8251,7 @@ function DiffLineCounts({
     return null
   }
   return (
-    <span className="shrink-0 tabular-nums text-[10px]">
+    <span className="shrink-0 tabular-nums text-2xs">
       {hasAdded && <span style={{ color: 'var(--git-decoration-added)' }}>+{added}</span>}
       {hasAdded && hasRemoved && <span> </span>}
       {hasRemoved && <span style={{ color: 'var(--git-decoration-deleted)' }}>-{removed}</span>}
@@ -8476,7 +8478,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
         {commentCount > 0 && (
           // Why: surface a per-row marker so files with review notes are visible without opening the Notes tab.
           <span
-            className="flex shrink-0 items-center gap-0.5 text-[10px] text-muted-foreground"
+            className="flex shrink-0 items-center gap-0.5 text-[11px] text-muted-foreground"
             title={translate(
               'auto.components.right.sidebar.SourceControl.657e0c90ad',
               '{{value0}} note{{value1}}',
@@ -8493,7 +8495,7 @@ const UncommittedEntryRow = React.memo(function UncommittedEntryRow({
           <>
             <DiffLineCounts added={entry.added} removed={entry.removed} />
             <span
-              className="w-4 shrink-0 text-center text-[11px] font-bold"
+              className="w-4 shrink-0 text-center text-[11px] font-semibold"
               style={{ color: STATUS_COLORS[entry.status] }}
             >
               {STATUS_LABELS[entry.status]}
@@ -8581,10 +8583,10 @@ function ConflictBadge({ entry }: { entry: GitStatusEntry }): React.JSX.Element 
             )
       }
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold',
         isUnresolvedConflict
           ? 'bg-destructive/12 text-destructive'
-          : 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+          : 'bg-status-success-background text-status-success'
       )}
     >
       <Icon className="size-3" />
@@ -8675,7 +8677,7 @@ function BranchEntryRow({
         </span>
         {commentCount > 0 && (
           <span
-            className="flex shrink-0 items-center gap-0.5 text-[10px] text-muted-foreground"
+            className="flex shrink-0 items-center gap-0.5 text-[11px] text-muted-foreground"
             title={translate(
               'auto.components.right.sidebar.SourceControl.657e0c90ad',
               '{{value0}} note{{value1}}',
@@ -8688,7 +8690,7 @@ function BranchEntryRow({
         )}
         <DiffLineCounts added={entry.added} removed={entry.removed} />
         <span
-          className="w-4 shrink-0 text-center text-[11px] font-bold"
+          className="w-4 shrink-0 text-center text-[11px] font-semibold"
           style={{ color: STATUS_COLORS[entry.status] }}
         >
           {STATUS_LABELS[entry.status]}

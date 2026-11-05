@@ -40,7 +40,7 @@ const SIDEBAR_TABS: readonly {
     get label() {
       return translate(
         'auto.components.feature.wall.ReviewPRViewAnimatedVisual.d7f80060ca',
-        'Source Control'
+        'Source control'
       )
     }
   },

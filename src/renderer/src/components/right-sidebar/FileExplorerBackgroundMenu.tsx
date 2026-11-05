@@ -59,14 +59,14 @@ export function FileExplorerBackgroundMenu({
           <FilePlus />
           {translate(
             'auto.components.right.sidebar.FileExplorerBackgroundMenu.21fe46ed36',
-            'New File'
+            'New file'
           )}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onStartNew('folder', worktreePath, 0)}>
           <FolderPlus />
           {translate(
             'auto.components.right.sidebar.FileExplorerBackgroundMenu.3b5e2dcb8d',
-            'New Folder'
+            'New folder'
           )}
         </DropdownMenuItem>
       </DropdownMenuContent>

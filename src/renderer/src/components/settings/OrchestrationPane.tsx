@@ -80,7 +80,7 @@ export function OrchestrationPane(): React.JSX.Element {
     <SearchableSetting
       title={translate(
         'auto.components.settings.OrchestrationPane.191ac34567',
-        'Agent Orchestration'
+        'Agent orchestration'
       )}
       description={translate(
         'auto.components.settings.OrchestrationPane.2aacdb0517',

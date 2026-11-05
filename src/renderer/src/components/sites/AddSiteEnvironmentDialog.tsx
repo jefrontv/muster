@@ -173,7 +173,7 @@ export function AddSiteEnvironmentDialog({
             <button
               type="button"
               onClick={() => pickMode('create')}
-              className="flex w-full items-center gap-3 rounded-md border border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="flex w-full items-center gap-3 rounded-xl border border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <Plus className="size-4 shrink-0 text-muted-foreground" />
               {translate(
@@ -185,7 +185,7 @@ export function AddSiteEnvironmentDialog({
               type="button"
               disabled={environmentNames.length === 0}
               onClick={() => pickMode('copy')}
-              className="flex w-full items-center gap-3 rounded-md border border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+              className="flex w-full items-center gap-3 rounded-xl border border-border px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
             >
               <Copy className="size-4 shrink-0 text-muted-foreground" />
               {translate(
@@ -267,7 +267,7 @@ export function AddSiteEnvironmentDialog({
                 <div
                   id={listboxId}
                   role="listbox"
-                  className="scrollbar-sleek max-h-40 overflow-y-auto rounded-md border border-border p-1"
+                  className="scrollbar-sleek max-h-40 overflow-y-auto rounded-xl border border-border p-1"
                 >
                   {suggestions.map((branch, index) => (
                     <button

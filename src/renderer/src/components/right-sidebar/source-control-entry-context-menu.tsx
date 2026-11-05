@@ -116,14 +116,14 @@ export function SourceControlEntryContextMenu({
           <FileDiff className="size-3.5" />
           {translate(
             'auto.components.right.sidebar.SourceControlEntryContextMenu.openChanges',
-            'Open Changes'
+            'Open changes'
           )}
         </ContextMenuItem>
         <ContextMenuItem onSelect={onOpenFile} disabled={!onOpenFile}>
           <FileText className="size-3.5" />
           {translate(
             'auto.components.right.sidebar.SourceControlEntryContextMenu.openFile',
-            'Open File'
+            'Open file'
           )}
         </ContextMenuItem>
         {indexAction || discardAction ? (
@@ -154,13 +154,13 @@ export function SourceControlEntryContextMenu({
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={handleCopyPath} disabled={!absolutePath}>
           <Copy className="size-3.5" />
-          {translate('auto.components.right.sidebar.FileExplorerRow.b5d436aa30', 'Copy Path')}
+          {translate('auto.components.right.sidebar.FileExplorerRow.b5d436aa30', 'Copy path')}
         </ContextMenuItem>
         <ContextMenuItem onSelect={handleCopyRelativePath} disabled={!relativePath}>
           <Copy className="size-3.5" />
           {translate(
             'auto.components.right.sidebar.FileExplorerRow.66a29dde82',
-            'Copy Relative Path'
+            'Copy relative path'
           )}
         </ContextMenuItem>
         <ContextMenuSeparator />
@@ -198,7 +198,7 @@ export function SourceControlEntryContextMenu({
             <ContextMenuItem onSelect={openOpenInAppsSettings}>
               {translate(
                 'auto.components.sidebar.WorktreeOpenInMenu.1417fd8380',
-                'Customize apps...'
+                'Customize apps…'
               )}
             </ContextMenuItem>
           </ContextMenuSubContent>
@@ -208,7 +208,7 @@ export function SourceControlEntryContextMenu({
           <FolderOpen className="size-3.5" />
           {translate(
             'auto.components.right.sidebar.SourceControl.cc05b2d088',
-            'Open in File Explorer'
+            'Open in file explorer'
           )}
         </ContextMenuItem>
       </ContextMenuContent>

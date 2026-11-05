@@ -20,7 +20,7 @@ function MetadataStatusBadge({
     <Badge
       variant="outline"
       className={cn(
-        'h-4 gap-1 rounded px-1.5 text-[9px] font-medium leading-none [&>svg]:size-2.5',
+        'h-4 gap-1 rounded-full px-1.5 text-[11px] font-medium leading-none [&>svg]:size-2.5',
         className
       )}
     >
@@ -51,7 +51,7 @@ export function IssueStateBadge({ state }: { state: IssueInfo['state'] }): React
         'auto.components.sidebar.WorktreeCardMetadataStatusBadges.fe188062a1',
         'State: Open'
       )}
-      className="border-emerald-500/25 bg-emerald-500/5 text-emerald-600 dark:text-emerald-300"
+      className="border-status-success-border bg-status-success-background text-status-success"
     >
       <CircleDot />
     </MetadataStatusBadge>
@@ -67,9 +67,9 @@ export function LinearStateBadge({ stateName }: { stateName: string }): React.JS
   const tone = done
     ? 'border-purple-500/25 bg-purple-500/5 text-purple-600 dark:text-purple-300'
     : cancelled
-      ? 'border-rose-500/25 bg-rose-500/5 text-rose-600 dark:text-rose-300'
+      ? 'border-status-danger-border bg-status-danger-background text-status-danger'
       : active
-        ? 'border-amber-500/25 bg-amber-500/5 text-amber-600 dark:text-amber-300'
+        ? 'border-status-attention-border bg-status-attention-background text-status-attention'
         : 'border-border bg-muted/30 text-muted-foreground'
 
   return (
@@ -118,7 +118,7 @@ export function ReviewStateBadge({
           'auto.components.sidebar.WorktreeCardMetadataStatusBadges.e888362def',
           'State: Closed'
         )}
-        className="border-rose-500/25 bg-rose-500/5 text-rose-600 dark:text-rose-300"
+        className="border-status-danger-border bg-status-danger-background text-status-danger"
       >
         <CircleX />
       </MetadataStatusBadge>
@@ -146,7 +146,7 @@ export function ReviewStateBadge({
         'auto.components.sidebar.WorktreeCardMetadataStatusBadges.fe188062a1',
         'State: Open'
       )}
-      className="border-emerald-500/25 bg-emerald-500/5 text-emerald-600 dark:text-emerald-300"
+      className="border-status-success-border bg-status-success-background text-status-success"
     >
       {label === 'MR' ? <GitMerge /> : <PullRequestIcon />}
     </MetadataStatusBadge>
@@ -168,7 +168,7 @@ export function ReviewChecksBadge({
     return (
       <MetadataStatusBadge
         label={label}
-        className="border-emerald-500/25 bg-emerald-500/5 text-emerald-600 dark:text-emerald-300"
+        className="border-status-success-border bg-status-success-background text-status-success"
       >
         <CircleCheck />
       </MetadataStatusBadge>
@@ -179,7 +179,7 @@ export function ReviewChecksBadge({
     return (
       <MetadataStatusBadge
         label={label}
-        className="border-rose-500/25 bg-rose-500/5 text-rose-600 dark:text-rose-300"
+        className="border-status-danger-border bg-status-danger-background text-status-danger"
       >
         <CircleX />
       </MetadataStatusBadge>
@@ -189,7 +189,7 @@ export function ReviewChecksBadge({
   return (
     <MetadataStatusBadge
       label={label}
-      className="border-amber-500/25 bg-amber-500/5 text-amber-600 dark:text-amber-300"
+      className="border-status-attention-border bg-status-attention-background text-status-attention"
     >
       <Clock />
     </MetadataStatusBadge>

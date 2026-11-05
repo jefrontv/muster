@@ -62,7 +62,7 @@ function harnessStateCopy(kind: SiteMcpHarnessStateKind): HarnessStateCopy {
         tone: 'attention',
         detail: translate(
           'auto.components.settings.siteMcp.harness_unconfigured_detail',
-          'Muster has not written its "muster-sites" entry here. If you already added a site MCP server under a different key, Muster cannot see it — open the config below before installing so you do not end up with two.'
+          'Muster has not written its "muster-sites" entry here. If you already added a site MCP server under a different key, Muster cannot see it. Open the config below before installing so you do not end up with two.'
         ),
         actionLabel: translate(
           'auto.components.settings.siteMcp.harness_unconfigured_action',
@@ -80,7 +80,7 @@ function harnessStateCopy(kind: SiteMcpHarnessStateKind): HarnessStateCopy {
         tone: 'attention',
         detail: translate(
           'auto.components.settings.siteMcp.harness_stale_detail',
-          'A "muster-sites" entry is already here, but it points at a different command than this build would write now — usually a moved or upgraded app.'
+          'A "muster-sites" entry is already here, but it points at a different command than this build would write now, usually because the app moved or was upgraded.'
         ),
         actionLabel: translate(
           'auto.components.settings.siteMcp.harness_stale_action',

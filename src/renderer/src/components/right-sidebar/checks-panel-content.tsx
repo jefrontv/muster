@@ -99,6 +99,7 @@ import {
 import { translate } from '@/i18n/i18n'
 import { useActiveWorktree } from '@/store/selectors'
 import { useAppStore } from '@/store'
+import { Textarea } from '@/components/ui/textarea'
 
 export const PullRequestIcon = GitPullRequest
 
@@ -124,14 +125,14 @@ export const CHECK_ICON: Record<string, React.ComponentType<{ className?: string
 }
 
 export const CHECK_COLOR: Record<string, string> = {
-  success: 'text-emerald-500',
-  failure: 'text-rose-500',
-  pending: 'text-amber-500',
+  success: 'text-status-success',
+  failure: 'text-status-danger',
+  pending: 'text-status-attention',
   neutral: 'text-muted-foreground',
-  skipped: 'text-muted-foreground/60',
-  cancelled: 'text-muted-foreground/60',
-  timed_out: 'text-rose-500',
-  action_required: 'text-amber-500'
+  skipped: 'text-muted-foreground',
+  cancelled: 'text-muted-foreground',
+  timed_out: 'text-status-danger',
+  action_required: 'text-status-attention'
 }
 
 type ConflictReview = {
@@ -165,7 +166,7 @@ export function ConflictingFilesSection({ pr }: { pr: ConflictReview }): React.J
           'auto.components.right.sidebar.checks.panel.content.3916814392',
           'behind (base commit:'
         )}{' '}
-        <span className="font-mono text-[10px]">{pr.conflictSummary!.baseCommit}</span>)
+        <span className="font-mono text-[11px]">{pr.conflictSummary!.baseCommit}</span>)
       </div>
       <div className="mt-2 flex items-center gap-2">
         <Files className="size-3.5 shrink-0 text-muted-foreground" />
@@ -283,7 +284,7 @@ function MergeabilityRecalculationCommandBox({
   return (
     <div className="mt-3 rounded-md border border-border bg-accent/20 p-2.5">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] font-medium text-muted-foreground">
+        <div className="text-[11px] font-medium text-muted-foreground">
           {translate(
             'auto.components.right.sidebar.checks.panel.content.5bc9bda2af',
             'Run from this worktree'
@@ -309,7 +310,7 @@ function MergeabilityRecalculationCommandBox({
               )}
         </Button>
       </div>
-      <pre className="scrollbar-sleek mt-2 max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background px-2 py-1.5 font-mono text-[10px] leading-4 text-foreground">
+      <pre className="scrollbar-sleek mt-2 max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-md border border-border bg-background px-2 py-1.5 font-mono text-[11px] leading-4 text-foreground">
         {commands}
       </pre>
     </div>
@@ -365,7 +366,7 @@ export function PRTriageStrip({
     return (
       <div className="border-b border-border px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <CircleX className="size-3.5 shrink-0 text-rose-500" />
+          <CircleX className="size-3.5 shrink-0 text-status-danger" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[11px] font-medium text-foreground">
               {failingCount}{' '}
@@ -375,7 +376,7 @@ export function PRTriageStrip({
               )}
               {failingCount === 1 ? '' : 's'}
             </div>
-            <div className="truncate text-[10px] text-muted-foreground">
+            <div className="truncate text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.right.sidebar.checks.panel.content.5d4ebf9391',
                 'Inspect details or start an AI fix pass.'
@@ -406,7 +407,7 @@ export function PRTriageStrip({
     return (
       <div className="border-b border-border px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <LoaderCircle className="size-3.5 shrink-0 animate-spin text-amber-500" />
+          <LoaderCircle className="size-3.5 shrink-0 animate-spin text-status-attention" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[11px] font-medium text-foreground">
               {pendingCount}{' '}
@@ -417,7 +418,7 @@ export function PRTriageStrip({
                 'pending'
               )}
             </div>
-            <div className="truncate text-[10px] text-muted-foreground">
+            <div className="truncate text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.right.sidebar.checks.panel.content.5856874b59',
                 'Muster will refresh checks while this panel stays open.'
@@ -432,7 +433,7 @@ export function PRTriageStrip({
   return (
     <div className="border-b border-border px-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
-        <CircleCheck className="size-3.5 shrink-0 text-emerald-500" />
+        <CircleCheck className="size-3.5 shrink-0 text-status-success" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[11px] font-medium text-foreground">
             {translate(
@@ -440,7 +441,7 @@ export function PRTriageStrip({
               'No blocking PR action'
             )}
           </div>
-          <div className="truncate text-[10px] text-muted-foreground">
+          <div className="truncate text-[11px] text-muted-foreground">
             {translate(
               'auto.components.right.sidebar.checks.panel.content.c16762ac8c',
               'Checks and comments below show the current fetched context.'
@@ -468,7 +469,7 @@ export function ConflictTriageStrip({
   return (
     <div className="border-b border-border px-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
-        <AlertTriangle className="size-3.5 shrink-0 text-amber-500" />
+        <AlertTriangle className="size-3.5 shrink-0 text-status-attention" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[11px] font-medium text-foreground">
             {translate(
@@ -477,7 +478,7 @@ export function ConflictTriageStrip({
             )}{' '}
             {reviewKind}
           </div>
-          <div className="truncate text-[10px] text-muted-foreground">
+          <div className="truncate text-[11px] text-muted-foreground">
             {translate(
               'auto.components.right.sidebar.checks.panel.content.3a71a6ed0b',
               'Resolve conflicts before checks and merge can complete.'
@@ -794,7 +795,7 @@ function CheckRunDetails({
 
           {hasAnnotations && (
             <div className="min-w-0 border-t border-border/60 pt-2">
-              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {translate(
                   'auto.components.right.sidebar.checks.panel.content.f2fe8a4e8f',
                   'Annotations'
@@ -835,7 +836,7 @@ function CheckRunDetails({
                 ))}
               </div>
               {details!.annotations.length >= 20 && (
-                <div className="mt-1.5 text-[10px] text-muted-foreground">
+                <div className="mt-1.5 text-[11px] text-muted-foreground">
                   {translate(
                     'auto.components.right.sidebar.checks.panel.content.df137989b3',
                     'Showing first 20 annotations'
@@ -847,7 +848,7 @@ function CheckRunDetails({
 
           {hasJobs && (
             <div className="min-w-0 border-t border-border/60 pt-2">
-              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {failedJobs.length > 0
                   ? translate(
                       'auto.components.right.sidebar.checks.panel.content.066fedd446',
@@ -896,7 +897,7 @@ function CheckRunDetails({
                 ))}
               </div>
               {(details?.jobs.length ?? 0) >= 100 && (
-                <div className="mt-1.5 text-[10px] text-muted-foreground">
+                <div className="mt-1.5 text-[11px] text-muted-foreground">
                   {translate(
                     'auto.components.right.sidebar.checks.panel.content.a2fb3f4408',
                     'Showing first 100 jobs'
@@ -1166,7 +1167,7 @@ export function ChecksList({
       {checks.length > 0 && (
         <button
           type="button"
-          className="flex w-full items-center gap-3 border-b border-border px-3 py-2 text-left text-[10px] text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+          className="flex w-full items-center gap-3 border-b border-border px-3 py-2 text-left text-[11px] text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
           onClick={() => setChecksExpanded((expanded) => !expanded)}
           aria-expanded={checksExpanded}
         >
@@ -1175,7 +1176,7 @@ export function ChecksList({
           />
           {passingCount > 0 && (
             <span className="flex items-center gap-1">
-              <CircleCheck className="size-3 text-emerald-500" />
+              <CircleCheck className="size-3 text-status-success" />
               {passingCount}{' '}
               {translate(
                 'auto.components.right.sidebar.checks.panel.content.02ca4f9074',
@@ -1185,7 +1186,7 @@ export function ChecksList({
           )}
           {failingCount > 0 && (
             <span className="flex items-center gap-1">
-              <CircleX className="size-3 text-rose-500" />
+              <CircleX className="size-3 text-status-danger" />
               {failingCount}{' '}
               {translate(
                 'auto.components.right.sidebar.checks.panel.content.5e52f4ef7f',
@@ -1195,7 +1196,7 @@ export function ChecksList({
           )}
           {pendingCount > 0 && (
             <span className="flex items-center gap-1">
-              <LoaderCircle className="size-3 text-amber-500" />
+              <LoaderCircle className="size-3 text-status-attention" />
               {pendingCount}{' '}
               {translate(
                 'auto.components.right.sidebar.checks.panel.content.9ad98f2a17',
@@ -1320,7 +1321,7 @@ export function ChecksList({
             </div>
           )}
           {checks.length >= 100 && (
-            <div className="border-b border-border px-3 py-1.5 text-[10px] text-muted-foreground">
+            <div className="border-b border-border px-3 py-1.5 text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.right.sidebar.checks.panel.content.cbcc4ab3db',
                 'Showing first 100 checks'
@@ -1384,7 +1385,7 @@ function CopyButton({
   return (
     <button
       ref={setCopyButtonRef}
-      className="p-1 rounded hover:bg-accent text-muted-foreground/40 hover:text-foreground transition-colors shrink-0"
+      className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
       title={title}
       onClick={handleCopy}
     >
@@ -1437,7 +1438,7 @@ function ResolveButton({
         <LoaderCircle className="size-3 animate-spin text-muted-foreground shrink-0" />
       ) : (
         <button
-          className="text-[10px] px-1.5 py-0.5 rounded transition-colors shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
+          className="text-[11px] px-1.5 py-0.5 rounded transition-colors shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
           onClick={handleClick}
         >
           {isResolved
@@ -1505,7 +1506,7 @@ function CommentMoreMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="shrink-0 rounded p-1 text-muted-foreground/40 transition-colors hover:bg-accent hover:text-foreground"
+          className="shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={translate(
             'auto.components.right.sidebar.checks.panel.content.74c6885b8a',
             'More comment actions'
@@ -1604,7 +1605,7 @@ function QueueForAgentButton({
     <button
       type="button"
       className={cn(
-        'inline-flex shrink-0 items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-[background-color,color,opacity] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+        'inline-flex shrink-0 items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground transition-[background-color,color,opacity] hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className
       )}
       aria-label={label}
@@ -1769,7 +1770,7 @@ function CommentRow({
         )}
       {showReply && onReply && (
         <button
-          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           title={
             replyDisabled
               ? replyDisabledReason
@@ -1907,12 +1908,12 @@ function CommentRow({
               presentation.useCardLayout ? 'px-3 pb-3' : isReply ? 'pl-5' : 'pl-[22px]'
             )}
           >
-            <textarea
+            <Textarea
               autoFocus
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onClick={(event) => event.stopPropagation()}
-              className="min-h-[60px] w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-[11px] leading-snug text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="min-h-[60px] resize-y py-1.5 text-[11px] leading-snug"
             />
             <div className="flex justify-end gap-1">
               <Button
@@ -2372,7 +2373,7 @@ export function PRCommentsList({
           empty
             ? translate(
                 'auto.components.right.sidebar.checks.panel.content.ea9fd5ed6a',
-                'Start conversation...'
+                'Start conversation…'
               )
             : translate(
                 'auto.components.right.sidebar.checks.panel.content.3fff651d32',
@@ -2480,7 +2481,7 @@ export function PRCommentsList({
                           onClick={() => onResolveSelectedCommentsWithAI?.(selectedGroups)}
                         >
                           <SendHorizontal className="size-3" />
-                          <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border border-border bg-background px-0.5 text-[9px] leading-none text-foreground tabular-nums">
+                          <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border border-border bg-background px-0.5 text-2xs leading-none text-foreground tabular-nums">
                             {selectedCommentQueueCount}
                           </span>
                         </Button>
@@ -2624,7 +2625,7 @@ export function PRCommentsList({
           </div>
         )}
         {comments.length >= 100 && (
-          <div className="mt-1.5 text-[10px] text-muted-foreground">
+          <div className="mt-1.5 text-[11px] text-muted-foreground">
             {translate(
               'auto.components.right.sidebar.checks.panel.content.751f7c6e5c',
               'Showing first 100 comments per source'
@@ -2702,7 +2703,7 @@ export function prStateColor(state: PRInfo['state']): string {
     case 'merged':
       return 'bg-purple-500/15 text-purple-500 border-purple-500/20'
     case 'open':
-      return 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20'
+      return 'bg-status-success-background text-status-success border-status-success-border'
     case 'closed':
       return 'bg-destructive/10 text-destructive border-destructive/20'
     case 'draft':

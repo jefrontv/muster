@@ -94,7 +94,7 @@ function SubagentRow({
           >
             {name}
             {agent.description && agent.agentType ? (
-              <span className="ml-2 text-chat-ink-caption">{agent.agentType}</span>
+              <span className="ml-2 text-chat-ink-tertiary">{agent.agentType}</span>
             ) : null}
           </span>
           <span
@@ -102,7 +102,7 @@ function SubagentRow({
             className={cn(
               'shrink-0 text-xs tabular-nums',
               STATE_SWAP_CLASS,
-              attention ? 'text-chat-warn' : 'text-chat-ink-caption'
+              attention ? 'text-chat-warn' : 'text-chat-ink-tertiary'
             )}
           >
             {working

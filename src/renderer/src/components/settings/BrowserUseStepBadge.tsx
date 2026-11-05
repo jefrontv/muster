@@ -11,7 +11,7 @@ export function StepBadge({
 }): React.JSX.Element {
   if (state === 'done') {
     return (
-      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-status-success-background text-status-success">
         <Check className="size-3.5" />
       </div>
     )

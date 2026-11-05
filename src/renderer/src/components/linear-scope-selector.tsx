@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Check, ChevronDown, KeyRound } from 'lucide-react'
 import type { LinearTeam, LinearWorkspace, LinearWorkspaceSelection } from '../../../shared/types'
 import { isClipboardTextByteLengthOverLimit } from '../../../shared/clipboard-text'
@@ -241,7 +242,7 @@ export function LinearScopeSelector({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'h-8 w-[220px] max-w-[calc(100vw-5rem)] justify-between rounded-md border-border/50 bg-muted/50 px-2 text-xs font-medium shadow-sm transition hover:bg-muted/50 focus:ring-2 focus:ring-ring/20 focus:outline-none',
+            'h-8 w-[220px] max-w-[calc(100vw-5rem)] justify-between rounded-md border-border/50 bg-muted/50 px-2 text-xs font-medium shadow-sm transition hover:bg-muted/50 focus:ring-2 focus:ring-ring focus:outline-none',
             className
           )}
         >
@@ -255,7 +256,7 @@ export function LinearScopeSelector({
             autoFocus
             placeholder={translate(
               'auto.components.linear.scope.selector.89f6580dbf',
-              'Search teams...'
+              'Search teams…'
             )}
             value={query}
             onValueChange={setQuery}
@@ -351,9 +352,9 @@ export function LinearScopeSelector({
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-1.5">
                         <span className="min-w-0 truncate">{team.name}</span>
-                        <span className="shrink-0 rounded bg-muted px-1 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
+                        <Badge variant="muted" className="shrink-0">
                           {team.key}
-                        </span>
+                        </Badge>
                       </div>
                       {showWorkspaceNames && workspaceName ? (
                         <div className="truncate text-[11px] text-muted-foreground">

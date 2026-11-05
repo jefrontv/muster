@@ -16,7 +16,7 @@ export function SiteSetupMinimizeButton({
 }): React.JSX.Element {
   const label = translate(
     'auto.components.sites.SiteSetupMinimizeButton.minimize',
-    'Minimize — keep this running in the status bar'
+    'Minimize: keep this running in the status bar'
   )
   return (
     <Tooltip>
@@ -25,7 +25,7 @@ export function SiteSetupMinimizeButton({
           type="button"
           onClick={onMinimize}
           // Same box as the dialog's close button (size-7 at right-4), one slot to its left.
-          className="absolute top-4 right-12 inline-flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden"
+          className="absolute top-4 right-12 inline-flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
           aria-label={label}
         >
           <Minus className="size-4" />

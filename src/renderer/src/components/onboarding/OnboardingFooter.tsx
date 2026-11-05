@@ -51,10 +51,12 @@ export function OnboardingFooter({
                 'auto.components.onboarding.OnboardingFooter.skipToWorkspaceSetup',
                 'Skip to workspace setup'
               )
-            : translate(
-                'auto.components.onboarding.OnboardingFooter.skipToSiteSetup',
-                'Skip to site setup'
-              )}
+            : defaultView === 'bots'
+              ? translate('auto.components.onboarding.OnboardingFooter.skipToBots', 'Skip to Bots')
+              : translate(
+                  'auto.components.onboarding.OnboardingFooter.skipToSiteSetup',
+                  'Skip to site setup'
+                )}
         </button>
       ) : tertiaryLabel && onTertiary ? (
         <button
@@ -98,7 +100,7 @@ export function OnboardingFooter({
           >
             {primaryBusy ? <Loader2 className="size-4 animate-spin" /> : null}
             {primaryLabel}
-            <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-medium leading-none text-current/80">
+            <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-primary-foreground/20 px-1.5 py-0.5 text-[11px] font-medium leading-none text-current/80">
               <span>{shortcutModifierLabel}</span>
               <CornerDownLeft className="size-3" />
             </span>

@@ -185,7 +185,7 @@ export default function PRFilterDropdowns({
             <ListFilter className="size-3.5" />
             {translate('auto.components.github.PRFilterDropdowns.79c54552f7', 'Filters')}
             {activeCount > 0 ? (
-              <span className="ml-0.5 rounded-full bg-muted px-1.5 text-[10px] font-medium text-foreground">
+              <span className="ml-0.5 rounded-full bg-muted px-1.5 text-2xs font-medium text-foreground">
                 {activeCount}
               </span>
             ) : null}

@@ -142,7 +142,7 @@ export function LinearAgentSkillSetupDialog({
               error={error}
               installLabel={translate(
                 'auto.components.sidebar.LinearAgentSkillSetupPrompt.install',
-                'Install CLI & Skill'
+                'Install CLI & skill'
               )}
               // Why: Install is this modal's sole CTA, so make it the filled primary —
               // matching the other setup surfaces (filled primary + muted dismiss).

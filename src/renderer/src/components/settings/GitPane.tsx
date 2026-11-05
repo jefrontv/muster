@@ -21,6 +21,7 @@ import {
 } from './keep-local-main-up-to-date-setting'
 import { translate } from '@/i18n/i18n'
 import { SettingsRow, SettingsSegmentedControl } from './SettingsFormControls'
+import { Switch } from '@/components/ui/switch'
 
 export { getGitPaneSearchEntries }
 
@@ -80,11 +81,11 @@ export function SourceControlGroupOrderSetting({
   const value = settings.sourceControlGroupOrder ?? DEFAULT_SOURCE_CONTROL_GROUP_ORDER
   const title = translate(
     'auto.components.settings.GitPane.sourceControlGroupOrderTitle',
-    'Source Control Group Order'
+    'Source control group order'
   )
   const description = translate(
     'auto.components.settings.GitPane.sourceControlGroupOrderDescription',
-    'Choose whether Changes, Staged Changes, or Untracked Files appear first in Source Control.'
+    'Choose whether Changes, Staged Changes, or Untracked Files appear first in source control.'
   )
 
   return (
@@ -166,7 +167,7 @@ export function GitPane({
 
   const visibleSections = [
     matchesSettingsSearch(searchQuery, {
-      title: translate('auto.components.settings.GitPane.330f584b50', 'Branch Prefix'),
+      title: translate('auto.components.settings.GitPane.330f584b50', 'Branch prefix'),
       description: translate(
         'auto.components.settings.GitPane.1ffaadf0a0',
         'Prefix added to branch names when creating worktrees.'
@@ -179,7 +180,7 @@ export function GitPane({
     }) ? (
       <SearchableSetting
         key="branch-prefix"
-        title={translate('auto.components.settings.GitPane.330f584b50', 'Branch Prefix')}
+        title={translate('auto.components.settings.GitPane.330f584b50', 'Branch prefix')}
         description={translate(
           'auto.components.settings.GitPane.1ffaadf0a0',
           'Prefix added to branch names when creating worktrees.'
@@ -188,7 +189,7 @@ export function GitPane({
         className="space-y-3"
       >
         <div className="space-y-0.5">
-          <Label>{translate('auto.components.settings.GitPane.330f584b50', 'Branch Prefix')}</Label>
+          <Label>{translate('auto.components.settings.GitPane.330f584b50', 'Branch prefix')}</Label>
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.GitPane.1ec5c91e1d',
@@ -208,7 +209,7 @@ export function GitPane({
               }`}
             >
               {option === 'git-username'
-                ? translate('auto.components.settings.GitPane.a182c5125e', 'Git Username')
+                ? translate('auto.components.settings.GitPane.a182c5125e', 'Git username')
                 : option === 'custom'
                   ? translate('auto.components.settings.GitPane.1f32ba27a6', 'Custom')
                   : translate('auto.components.settings.GitPane.3d172725cc', 'None')}
@@ -275,36 +276,24 @@ export function GitPane({
             )}
           </p>
         </div>
-        <button
-          role="switch"
-          aria-checked={settings.refreshLocalBaseRefOnWorktreeCreate}
+        <Switch
+          checked={settings.refreshLocalBaseRefOnWorktreeCreate}
           onClick={() =>
             updateSettings({
               refreshLocalBaseRefOnWorktreeCreate: !settings.refreshLocalBaseRefOnWorktreeCreate
             })
           }
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-            settings.refreshLocalBaseRefOnWorktreeCreate
-              ? 'bg-foreground'
-              : 'bg-muted-foreground/30'
-          }`}
-        >
-          <span
-            className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-              settings.refreshLocalBaseRefOnWorktreeCreate ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        />
       </SearchableSetting>
     ) : null,
     matchesSettingsSearch(searchQuery, {
       title: translate(
         'auto.components.settings.GitPane.sourceControlGroupOrderTitle',
-        'Source Control Group Order'
+        'Source control group order'
       ),
       description: translate(
         'auto.components.settings.GitPane.sourceControlGroupOrderDescription',
-        'Choose whether Changes, Staged Changes, or Untracked Files appear first in Source Control.'
+        'Choose whether Changes, Staged Changes, or Untracked Files appear first in source control.'
       ),
       keywords: SOURCE_CONTROL_GROUP_ORDER_KEYWORDS
     }) ? (
@@ -334,7 +323,7 @@ export function GitPane({
       />
     ) : null,
     matchesSettingsSearch(searchQuery, {
-      title: translate('auto.components.settings.GitPane.e02ea23a32', 'Muster Attribution'),
+      title: translate('auto.components.settings.GitPane.e02ea23a32', 'Muster attribution'),
       description: translate(
         'auto.components.settings.GitPane.d2eede4c54',
         'Add Muster attribution to commits, PRs, and issues.'
@@ -352,7 +341,7 @@ export function GitPane({
     }) ? (
       <SearchableSetting
         key="github-attribution"
-        title={translate('auto.components.settings.GitPane.e02ea23a32', 'Muster Attribution')}
+        title={translate('auto.components.settings.GitPane.e02ea23a32', 'Muster attribution')}
         description={translate(
           'auto.components.settings.GitPane.d2eede4c54',
           'Add Muster attribution to commits, PRs, and issues.'
@@ -362,7 +351,7 @@ export function GitPane({
       >
         <div className="space-y-0.5">
           <Label>
-            {translate('auto.components.settings.GitPane.e02ea23a32', 'Muster Attribution')}
+            {translate('auto.components.settings.GitPane.e02ea23a32', 'Muster attribution')}
           </Label>
           <p className="text-xs text-muted-foreground">
             {translate(
@@ -371,24 +360,14 @@ export function GitPane({
             )}
           </p>
         </div>
-        <button
-          role="switch"
-          aria-checked={settings.enableGitHubAttribution}
+        <Switch
+          checked={settings.enableGitHubAttribution}
           onClick={() =>
             updateSettings({
               enableGitHubAttribution: !settings.enableGitHubAttribution
             })
           }
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-            settings.enableGitHubAttribution ? 'bg-foreground' : 'bg-muted-foreground/30'
-          }`}
-        >
-          <span
-            className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-              settings.enableGitHubAttribution ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        />
       </SearchableSetting>
     ) : null
   ].filter(Boolean)

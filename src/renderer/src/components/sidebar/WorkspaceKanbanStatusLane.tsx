@@ -1,4 +1,5 @@
 import React from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Plus } from 'lucide-react'
 import type {
   Repo,
@@ -118,7 +119,7 @@ export default function WorkspaceKanbanStatusLane({
         tabIndex={0}
         className={cn(
           'group absolute right-0 top-0 z-20 h-9 w-2 cursor-col-resize outline-none',
-          'focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring',
+          'focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring',
           isResizingColumn && 'cursor-col-resize'
         )}
         onPointerDown={onColumnResizeStart}
@@ -139,9 +140,9 @@ export default function WorkspaceKanbanStatusLane({
           <div className="min-w-0 truncate text-[12px] font-semibold text-foreground">
             {status.label}
           </div>
-          <div className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
+          <Badge variant="muted" className="shrink-0">
             {items.length}
-          </div>
+          </Badge>
         </div>
         <Tooltip>
           <TooltipTrigger asChild>{createButton}</TooltipTrigger>

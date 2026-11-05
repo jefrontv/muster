@@ -77,7 +77,7 @@ describe('SiteSetupLinkTargetRows', () => {
     )
     expect(screen.getByText('Connect Bitbucket to clone this repository.')).toBeInTheDocument()
     expect(screen.queryByRole('radio', { name: /Clone into a folder/ })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Open Integrations' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open integrations' }))
     expect(onOpenIntegrations).toHaveBeenCalledTimes(1)
   })
 

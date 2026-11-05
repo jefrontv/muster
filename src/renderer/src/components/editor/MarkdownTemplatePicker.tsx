@@ -63,7 +63,7 @@ export function MarkdownTemplatePicker(): JSX.Element {
       <CommandInput
         placeholder={translate(
           'auto.components.editor.MarkdownTemplatePicker.22fd4890ad',
-          'Search templates...'
+          'Search templates…'
         )}
       />
       <CommandList>

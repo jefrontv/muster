@@ -3,7 +3,7 @@
 // until the owner token arrives over parentPort, and only the Bots partition carries that token.
 import { app, utilityProcess, type UtilityProcess } from 'electron'
 import { randomBytes } from 'node:crypto'
-import { mkdirSync } from 'node:fs'
+import { createWriteStream, mkdirSync, statSync, type WriteStream } from 'node:fs'
 import path from 'node:path'
 import { BOTS_PARTITION, type BotsSidecarStatus } from '../../shared/bots-types'
 import { buildBotsAgentEnv } from './bots-agent-env'
@@ -30,6 +30,8 @@ let restarts: number[] = []
 let agentResolvers: CommitMessageAgentEnvironmentResolvers | undefined
 const listeners = new Set<(next: BotsSidecarStatus) => void>()
 const logTail: string[] = []
+const LOG_FILE_MAX_BYTES = 1024 * 1024
+let logFile: WriteStream | null = null
 
 function setStatus(next: BotsSidecarStatus): void {
   status = next
@@ -39,6 +41,7 @@ function setStatus(next: BotsSidecarStatus): void {
 }
 
 function captureLog(chunk: Buffer): void {
+  logFile?.write(chunk)
   for (const line of chunk.toString('utf8').split('\n')) {
     if (line.trim()) {
       logTail.push(line)
@@ -49,6 +52,30 @@ function captureLog(chunk: Buffer): void {
 
 export function botsDataDir(): string {
   return path.join(app.getPath('userData'), 'bots')
+}
+
+export function botsLogPath(): string {
+  return path.join(botsDataDir(), 'server.log')
+}
+
+// Appends across restarts so a crash log survives the automatic retry; starts over past 1 MB.
+function openLogFile(): void {
+  logFile?.end()
+  let size = 0
+  try {
+    size = statSync(botsLogPath()).size
+  } catch {
+    // No log yet.
+  }
+  try {
+    logFile = createWriteStream(botsLogPath(), { flags: size > LOG_FILE_MAX_BYTES ? 'w' : 'a' })
+    logFile.on('error', () => {
+      logFile = null
+    })
+    logFile.write(`--- Muster Bots started ${new Date().toISOString()} ---\n`)
+  } catch {
+    logFile = null
+  }
 }
 
 export function setBotsAgentResolvers(resolvers: CommitMessageAgentEnvironmentResolvers): void {
@@ -89,6 +116,7 @@ async function launch(): Promise<BotsSidecarStatus> {
   try {
     const dataDir = botsDataDir()
     mkdirSync(dataDir, { recursive: true })
+    openLogFile()
     const port = await pickBotsPort()
     // 32 bytes as base64url is the 43-character capability the server accepts.
     const token = randomBytes(32).toString('base64url')

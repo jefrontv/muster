@@ -82,7 +82,7 @@ export function RemoteServerUpdateStatusSegment({
         <button
           type="button"
           onClick={() => setDialogOpen(true)}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-accent/70"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={segment.tooltip}
         >
           {segment.icon}

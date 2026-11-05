@@ -130,7 +130,7 @@ export function UsageRow({
             const shown = getDisplayedUsagePercentage(s.window.usedPercent, display)
             return (
               <span key={s.label} className="flex items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground">{shortLabel(p, s)}</span>
+                <span className="text-[11px] text-muted-foreground">{shortLabel(p, s)}</span>
                 <span className="h-[5px] w-7 overflow-hidden rounded-full bg-muted">
                   <span
                     className={`block h-full rounded-full ${barColor(used)}`}
@@ -305,7 +305,7 @@ export function UsageRosterPanel({
         onSelect={onManageAccounts}
         className="w-full cursor-pointer justify-between rounded-none px-3.5 py-2.5 text-[13px] text-foreground"
       >
-        {translate('auto.components.status.bar.StatusBar.75ded02687', 'Manage Accounts…')}
+        {translate('auto.components.status.bar.StatusBar.75ded02687', 'Manage accounts…')}
         <ChevronRight size={14} className="text-muted-foreground" />
       </DropdownMenuItem>
     </div>

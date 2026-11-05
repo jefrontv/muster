@@ -146,7 +146,7 @@ export function AddRepoServerPathStartStep({
             type="button"
             onClick={() => setPathEntryOpen(true)}
             disabled={disabled}
-            className="mx-auto block rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-40"
+            className="mx-auto block rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
           >
             {translate(
               'auto.components.sidebar.AddRepoServerStartStep.438493f214',
@@ -232,7 +232,7 @@ export function AddRepoServerPathStartStep({
           >
             {translate(
               'auto.components.sidebar.AddRepoServerStartStep.8da4d1a5be',
-              'Add Git Project'
+              'Add Git project'
             )}
           </Button>
           <Button
@@ -243,7 +243,7 @@ export function AddRepoServerPathStartStep({
           >
             {translate(
               'auto.components.sidebar.AddRepoServerStartStep.e1710bf831',
-              'Open as Folder'
+              'Open as folder'
             )}
           </Button>
         </div>
@@ -257,7 +257,7 @@ export function AddRepoServerPathStartStep({
           type="button"
           onClick={() => setPathEntryOpen(false)}
           disabled={isAddingServerPath}
-          className="mx-auto block rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-40"
+          className="mx-auto block rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
         >
           {translate(
             'auto.components.sidebar.AddRepoServerStartStep.ae990c86a0',

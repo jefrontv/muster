@@ -31,6 +31,7 @@ import {
   type CommitMessageGenerationAgentChoice
 } from './SourceControlTextGenerationParams'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 const UNCONFIGURED_AGENT_SELECT_VALUE = ''
 
@@ -228,7 +229,7 @@ export function SourceControlTextGenerationDialogForm({
               setGenerationError(null)
             }}
           >
-            <SelectTrigger size="sm" className="h-8 text-xs">
+            <SelectTrigger>
               <SelectValue
                 placeholder={translate(
                   'auto.components.right.sidebar.SourceControlTextGenerationDialogForm.cce2cbd01d',
@@ -290,7 +291,7 @@ export function SourceControlTextGenerationDialogForm({
               'Command template'
             )}
           </Label>
-          <textarea
+          <Textarea
             id={commandTemplateId}
             rows={8}
             value={commandTemplate}
@@ -299,7 +300,7 @@ export function SourceControlTextGenerationDialogForm({
               setCommandTemplate(event.target.value)
               setGenerationError(null)
             }}
-            className="box-border min-w-0 w-full max-w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/70 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="box-border max-w-full resize-y font-mono text-xs"
           />
           <SourceControlActionVariableChips
             actionId={actionId}
@@ -322,7 +323,7 @@ export function SourceControlTextGenerationDialogForm({
               )}
             </Label>
             <Select value={saveTargetKey} onValueChange={setSaveTargetKey}>
-              <SelectTrigger size="sm" className="h-8 w-full text-xs">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

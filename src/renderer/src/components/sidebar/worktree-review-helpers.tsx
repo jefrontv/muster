@@ -35,11 +35,11 @@ export function ReviewIcon({
   const Icon = variant === 'provider' && review.provider === 'gitlab' ? GitMerge : PullRequestIcon
   const checkTone =
     review.state !== 'merged' && review.status === 'failure'
-      ? 'text-rose-500/85'
+      ? 'text-status-danger'
       : review.state !== 'merged' && review.status === 'pending'
-        ? 'text-amber-500/85'
+        ? 'text-status-attention'
         : review.state === 'open' && review.status === 'success'
-          ? 'text-emerald-500/80'
+          ? 'text-status-success'
           : null
   return (
     <Icon
@@ -47,9 +47,9 @@ export function ReviewIcon({
         className,
         checkTone,
         review.state === 'merged' && 'text-purple-600/70 dark:text-purple-400/70',
-        !checkTone && review.state === 'open' && 'text-emerald-500/80',
-        !checkTone && review.state === 'closed' && 'text-muted-foreground/60',
-        !checkTone && review.state === 'draft' && 'text-muted-foreground/50',
+        !checkTone && review.state === 'open' && 'text-status-success',
+        !checkTone && review.state === 'closed' && 'text-muted-foreground',
+        !checkTone && review.state === 'draft' && 'text-muted-foreground',
         !checkTone &&
           (!review.state || !['merged', 'open', 'closed', 'draft'].includes(review.state)) &&
           'text-muted-foreground opacity-70'

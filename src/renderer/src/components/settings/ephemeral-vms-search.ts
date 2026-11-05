@@ -7,7 +7,7 @@ export const getEphemeralVmsSearchEntry = createLocalizedCatalog(
   (): SettingsSearchEntry => ({
     title: translate(
       'auto.components.settings.ephemeralVms.search.title',
-      'Per-Workspace Environments'
+      'Per-workspace environments'
     ),
     description: translate(
       'auto.components.settings.ephemeralVms.search.description',

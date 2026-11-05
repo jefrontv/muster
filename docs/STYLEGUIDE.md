@@ -61,6 +61,19 @@ For diff status, file-tree decorations, and the changes view, use the git decora
 
 Use these _only_ for git status. Don't reuse them for unrelated state colors — that breaks the convention.
 
+### State colours
+
+Success, attention, danger and info use the `--status-*` tokens, which already switch with the theme. Never write raw `emerald`, `green`, `amber`, `yellow`, `rose`, `red`, `sky` or `blue` classes for a state; `pnpm lint` runs a ratchet (`check:raw-status-palette`) that blocks new ones.
+
+| Use                           | Classes                                                |
+| ----------------------------- | ------------------------------------------------------ |
+| Text, icons, dots             | `text-status-*`, `fill-status-*`, `bg-status-*`        |
+| Tinted banners and chips      | `bg-status-*-background` with `border-status-*-border` |
+| Filled button with white text | `bg-status-success-solid`, `bg-status-danger-solid`    |
+
+- Agent "working" shares the attention colour. Tell them apart with the spinner, not a second hue.
+- Categorical colour (chart series, kanban lanes, feature-wall visuals) is not state and may use the raw palette. Those files sit on the ratchet's baseline.
+
 ### List rows: hover, selected, current
 
 A common point of drift. Use these conventions for any list-style row (worktrees, command palette items, settings nav):
@@ -85,8 +98,9 @@ This keeps light/dark parity automatic.
 
 - **Family:** `Geist` is loaded as a single variable woff2 (weight range 100–900). Always reach for `Geist` for sans, never `Inter` or system sans.
 - **Mono:** `var(--font-mono)` — used for paths, terminal-adjacent UI, code, and anywhere monospace conveys "this is literal."
+- **Weight:** `font-semibold` is the heaviest UI weight. `font-bold` belongs to rendered Markdown headings only.
 - **Body letter-spacing:** `0.01em` (set globally on `body`). Don't override per component.
-- **Sizes:** Tailwind's default scale. Common sizes in this repo:
+- **Sizes:** Tailwind's default scale, whole pixels only. Nothing below 11px except numeric counters (badge counts, timers, tabular figures), which use `text-2xs` (10px). `pnpm lint` runs `check:text-size-floor`. Common sizes in this repo:
   - 11px (uppercase meta, sidebar headers, captions) — pair with `font-weight: 600` and `text-transform: uppercase` and `letter-spacing: 0.05em` for category labels.
   - 12px (sub-text, paths, secondary content)
   - 13px (sidebar items, dense list rows)
@@ -95,7 +109,7 @@ This keeps light/dark parity automatic.
 
 ## Radius
 
-`--radius: 0.625rem` (10px) is the base; the rest are computed (`--radius-sm` = 0.6×, `--radius-md` = 0.8×, `--radius-lg` = 1×, `--radius-xl` = 1.4×, etc.). Buttons, single-line inputs, select triggers, badges and chips are pills (`rounded-full`); textareas and the `Card` primitive use `rounded-xl`; menus use 12px and modals 16px (see _Bots look_ below). Match the existing primitive's radius rather than introducing a new one.
+`--radius: 0.625rem` (10px) is the base; the rest are computed (`--radius-sm` = 0.6×, `--radius-md` = 0.8×, `--radius-lg` = 1×, `--radius-xl` = 1.4×, etc.). Buttons, single-line inputs, select triggers, badges and chips are pills (`rounded-full`); textareas and the `Card` primitive use `rounded-xl`; menus use 12px and modals 16px (see _Bots look_ below). Full-width list rows (sidebar nav, site rows, settings nav, worktree cards) use `rounded-md`. Keyboard hints (`kbd`) keep `rounded`; they are keycaps, not chips. Match the existing primitive's radius rather than introducing a new one.
 
 ## Elevation & shadows
 
@@ -103,7 +117,7 @@ Muster uses shadows sparingly. Three levels in practice:
 
 1. **Inset hairline** — `border` + `border` token. The default. Almost everything sits at this level.
 2. **Subtle lift** — `shadow-xs` + a single-token border. Embedded cards.
-3. **Floating** — `0 10px 24px rgba(0, 0, 0, 0.18)`. Popovers, menus, modals, popups that escape the editor surface. Reserved.
+3. **Floating** — `shadow-floating` (`--elevation-floating`: `0 10px 24px` at 18% black in light, `0 12px 32px` at 42% in dark). Popovers, menus, modals, palettes, popups that escape the editor surface. Reserved. Never write a bespoke `shadow-[…]` drop shadow; `shadow-md`, `-lg` and `-2xl` are not used.
 
 Don't add a fourth level. If something needs more emphasis than "floating," you're probably reaching for the focus `ring` instead.
 
@@ -228,20 +242,25 @@ Browse `src/renderer/src/components/ui/` for the full list. Most wrap a Radix UI
 
 When a control has multiple plausible primitives, use this fork:
 
-| You want…                                                    | Reach for                                                            | Don't use                             |
-| ------------------------------------------------------------ | -------------------------------------------------------------------- | ------------------------------------- |
-| Hover-only label on an icon-only button                      | `Tooltip`                                                            | `HoverCard` (too heavy), title attr   |
-| Hover preview of richer content (avatar + summary)           | `HoverCard`                                                          | `Tooltip` (no rich content)           |
-| Click-revealed menu with actions                             | `DropdownMenu`                                                       | `Popover` with hand-rolled list       |
-| Right-click contextual actions                               | `ContextMenu`                                                        | `DropdownMenu` (different invocation) |
-| Click-revealed surface with arbitrary content (form, picker) | `Popover`                                                            | `Dialog` (it traps focus and dims)    |
-| Modal that demands a decision before you continue            | `Dialog`                                                             | `Popover`, inline overlay             |
-| Drawer / panel sliding in from an edge                       | `Sheet`                                                              | `Dialog` centered                     |
-| Single choice from a known list                              | `Select`                                                             | Custom listbox                        |
-| Single choice with search / fuzzy filtering                  | `Command` inside `Popover`                                           | `Select` (no search)                  |
-| Multi-select with search                                     | `repo-multi-combobox` / `team-multi-combobox` (mirror their pattern) | Roll a new one                        |
-| Transient confirmation ("Saved", "Copied")                   | `sonner` toast                                                       | `Dialog`, inline banner               |
-| Persistent inline status ("3 errors")                        | inline text + `Badge`                                                | toast (toasts disappear)              |
+| You want…                                                     | Reach for                                                            | Don't use                             |
+| ------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------- |
+| Hover-only label on an icon-only button                       | `Tooltip`                                                            | `HoverCard` (too heavy), title attr   |
+| Hover preview of richer content (avatar + summary)            | `HoverCard`                                                          | `Tooltip` (no rich content)           |
+| Click-revealed menu with actions                              | `DropdownMenu`                                                       | `Popover` with hand-rolled list       |
+| Right-click contextual actions                                | `ContextMenu`                                                        | `DropdownMenu` (different invocation) |
+| Click-revealed surface with arbitrary content (form, picker)  | `Popover`                                                            | `Dialog` (it traps focus and dims)    |
+| Modal that demands a decision before you continue             | `Dialog`                                                             | `Popover`, inline overlay             |
+| Drawer / panel sliding in from an edge                        | `Sheet`                                                              | `Dialog` centered                     |
+| Single choice from a known list                               | `Select`                                                             | Custom listbox                        |
+| Single choice with search / fuzzy filtering                   | `Command` inside `Popover`                                           | `Select` (no search)                  |
+| Two to four mutually exclusive views or filters, side by side | `ToggleGroup variant="segmented"` (`size="sm"` in panels)            | Restyled `outline` toggles, own track |
+| Multi-select with search                                      | `repo-multi-combobox` / `team-multi-combobox` (mirror their pattern) | Roll a new one                        |
+| Transient confirmation ("Saved", "Copied")                    | `sonner` toast                                                       | `Dialog`, inline banner               |
+| Persistent inline status ("3 errors")                         | inline text + `Badge`                                                | toast (toasts disappear)              |
+
+Segmented controls share one look: a pill track at `bg-foreground/[0.05]` with pill segments, and the selected segment inverted (`bg-foreground text-background`), the same as the app mode switch. Don't override the track radius or the selected colours per screen. A search field that sits beside one is the `Input` surface: pill, `bg-foreground/[0.05]`, no border, 1px ring on focus, and the same height as the track.
+
+Rows inside a container never touch its edge. Menus pad their sheet, `CommandGroup` pads its rows, and `CommandList` pads rows rendered without a group, so a hover highlight always sits inset with its own radius. A selection indicator (radio dot, check) gets its own gutter (`pl-8`); it never overlaps the label.
 
 If you find yourself styling around a primitive (`<Popover>` to act like a `<Dialog>`, or vice versa), stop and reconsider — the focus-management semantics differ and a future contributor will be misled by the mismatch.
 

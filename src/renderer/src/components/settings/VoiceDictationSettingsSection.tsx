@@ -3,6 +3,7 @@ import { Label } from '../ui/label'
 import { Separator } from '../ui/separator'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
 
 type VoiceDictationSettingsSectionProps = {
   voiceSettings: VoiceSettings
@@ -24,7 +25,7 @@ export function VoiceDictationSettingsSection({
       <div className="flex items-center justify-between gap-4 py-2">
         <div className="space-y-0.5">
           <Label>
-            {translate('auto.components.settings.VoicePane.0121960365', 'Enable Voice Dictation')}
+            {translate('auto.components.settings.VoicePane.0121960365', 'Enable voice dictation')}
           </Label>
           <p className="text-xs text-muted-foreground">
             {translate('auto.components.settings.VoicePane.4465596675', 'Press')} {shortcutLabel}{' '}
@@ -34,26 +35,16 @@ export function VoiceDictationSettingsSection({
             )}
           </p>
         </div>
-        <button
-          role="switch"
-          aria-checked={voiceSettings.enabled}
+        <Switch
+          checked={voiceSettings.enabled}
           aria-label={translate(
             'auto.components.settings.VoicePane.0121960365',
-            'Enable Voice Dictation'
+            'Enable voice dictation'
           )}
           aria-busy={permissionPending}
           disabled={permissionPending}
           onClick={() => void onToggleVoiceDictation()}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-            voiceSettings.enabled ? 'bg-foreground' : 'bg-muted-foreground/30'
-          } ${permissionPending ? 'cursor-wait opacity-70' : ''}`}
-        >
-          <span
-            className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-              voiceSettings.enabled ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        />
       </div>
 
       <Separator />
@@ -61,7 +52,7 @@ export function VoiceDictationSettingsSection({
       <div className="flex items-center justify-between gap-4 py-2">
         <div className="space-y-0.5">
           <Label>
-            {translate('auto.components.settings.VoicePane.ba4a900d1d', 'Dictation Mode')}
+            {translate('auto.components.settings.VoicePane.ba4a900d1d', 'Dictation mode')}
           </Label>
           <p className="text-xs text-muted-foreground">
             {translate('auto.components.settings.VoicePane.ff9a680010', 'Toggle: press')}{' '}

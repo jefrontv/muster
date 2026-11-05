@@ -119,7 +119,7 @@ export function WorktreeTitleInlineRename({
   // hovercard can use a compact field that reads more like native rename UI.
   const editingInputClassName =
     editingPresentation === 'field'
-      ? 'h-6 rounded-sm border border-input bg-input/40 px-1.5 py-0 shadow-xs selection:bg-[Highlight] selection:text-[HighlightText] focus-visible:border-ring focus-visible:ring-[1px] focus-visible:ring-ring/50 dark:bg-input/30'
+      ? 'h-6 rounded-sm border border-input bg-input/40 px-1.5 py-0 shadow-xs selection:bg-[Highlight] selection:text-[HighlightText] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring dark:bg-input/30'
       : 'h-[1lh] rounded-none border-0 !border-transparent !bg-transparent p-0 !shadow-none focus-visible:border-transparent focus-visible:ring-0 focus-visible:outline-none dark:!bg-transparent'
   const savingInputClassName = editingPresentation === 'field' ? 'pr-6' : 'pr-4'
   const savingSpinnerClassName = editingPresentation === 'field' ? 'right-1.5' : 'right-0'
@@ -308,14 +308,14 @@ export function WorktreeTitleInlineRename({
       key={`title:${titleElementKey}`}
       ref={handleRootRef}
       className={cn(
-        'block min-w-0 leading-tight focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring',
+        'block min-w-0 leading-tight',
         wrapTitle ? 'break-words whitespace-normal' : 'truncate',
         titleEmphasisClassName,
         className
       )}
       data-worktree-title-inline-rename=""
+      // Not a Tab stop: the tree row owns focus; rename is double-click, the row menu or the shortcut.
       onDoubleClick={startRename}
-      tabIndex={disabled ? undefined : 0}
     >
       {/* Why: visible text alone misses the unread state for assistive tech. */}
       {showUnreadEmphasis && (

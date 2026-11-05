@@ -80,7 +80,7 @@ export function PortsStatusSegment({ iconOnly }: PortsStatusSegmentProps): React
             <button
               type="button"
               {...STATUS_BAR_CONTEXT_MENU_EXEMPT_PROPS}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-accent/70"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={translate(
                 'auto.components.status.bar.PortsStatusSegment.b8bc3e420a',
                 'Ports, {{value0}} workspace {{value1}}',
@@ -108,7 +108,7 @@ export function PortsStatusSegment({ iconOnly }: PortsStatusSegmentProps): React
         <TooltipContent side="top" sideOffset={6}>
           {translate(
             'auto.components.status.bar.PortsStatusSegment.ca41be2802',
-            'Ports — {{value0}} workspace {{value1}}{{value2}}',
+            'Ports: {{value0}} workspace {{value1}}{{value2}}',
             {
               value0: workspacePortCount,
               value1:
@@ -162,7 +162,7 @@ export function PortsStatusSegment({ iconOnly }: PortsStatusSegmentProps): React
               )}
             </div>
           ) : (
-            <div className="max-h-[28rem] overflow-y-auto scrollbar-sleek">
+            <div className="max-h-[28rem] overflow-y-auto scrollbar-sleek p-1">
               {workspaceGroups.length > 0 ? (
                 workspaceGroups.map((group) => (
                   <WorkspaceGroupRows
@@ -176,7 +176,7 @@ export function PortsStatusSegment({ iconOnly }: PortsStatusSegmentProps): React
                   {refreshing
                     ? translate(
                         'auto.components.status.bar.PortsStatusSegment.c174bbbfed',
-                        'Scanning for workspace ports...'
+                        'Scanning for workspace ports…'
                       )
                     : translate(
                         'auto.components.status.bar.PortsStatusSegment.3a87d54dfb',
@@ -185,10 +185,10 @@ export function PortsStatusSegment({ iconOnly }: PortsStatusSegmentProps): React
                 </div>
               )}
 
-              <section className="border-t border-border/60">
+              <section className="mt-1 border-t border-border/60 pt-1">
                 <button
                   type="button"
-                  className="sticky top-0 z-10 flex w-full items-center gap-1.5 border-b border-border/40 bg-popover px-3 py-2 text-left text-[11px] font-medium uppercase tracking-[0.05em] text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                  className="sticky top-0 z-10 flex w-full items-center gap-1.5 rounded-md bg-popover px-2 py-1.5 text-left text-[12px] font-medium text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-expanded={externalOpen}
                   onClick={() => {
                     recordFeatureInteraction('ports')
@@ -203,13 +203,13 @@ export function PortsStatusSegment({ iconOnly }: PortsStatusSegmentProps): React
                   <span>
                     {translate(
                       'auto.components.status.bar.PortsStatusSegment.7dac3ecc9d',
-                      'External Ports'
+                      'External ports'
                     )}
                   </span>
-                  <span className="ml-auto font-mono text-[10px]">{externalPorts.length}</span>
+                  <span className="ml-auto font-mono text-[11px]">{externalPorts.length}</span>
                 </button>
                 {externalOpen && (
-                  <div className="px-1 pb-1">
+                  <div className="pb-1">
                     {externalPorts.length > 0 ? (
                       externalPorts.map((port) => (
                         <PortRow

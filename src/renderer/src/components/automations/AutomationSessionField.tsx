@@ -8,13 +8,11 @@ import { translate } from '@/i18n/i18n'
 
 type AutomationSessionFieldProps = {
   draft: AutomationDraft
-  toggleItemClassName: string
   onDraftChange: (updater: (current: AutomationDraft) => AutomationDraft) => void
 }
 
 export function AutomationSessionField({
   draft,
-  toggleItemClassName,
   onDraftChange
 }: AutomationSessionFieldProps): React.JSX.Element {
   return (
@@ -30,7 +28,7 @@ export function AutomationSessionField({
                   'auto.components.automations.AutomationSessionField.4bdce31f37',
                   'Session reuse help'
                 )}
-                className="rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Info className="size-3.5" />
               </button>
@@ -58,14 +56,14 @@ export function AutomationSessionField({
             workspaceMode: value === 'reuse' ? 'existing' : current.workspaceMode
           }))
         }}
-        variant="outline"
+        variant="segmented"
         size="sm"
-        className="grid w-full grid-cols-2"
+        className="h-8"
       >
-        <ToggleGroupItem value="fresh" className={toggleItemClassName}>
+        <ToggleGroupItem value="fresh">
           {translate('auto.components.automations.AutomationSessionField.c90888ee94', 'Fresh')}
         </ToggleGroupItem>
-        <ToggleGroupItem value="reuse" className={toggleItemClassName}>
+        <ToggleGroupItem value="reuse">
           {translate('auto.components.automations.AutomationSessionField.f3c76dce51', 'Reuse')}
         </ToggleGroupItem>
       </ToggleGroup>

@@ -36,7 +36,7 @@ describe('attemptEditorFileSave', () => {
     await expect(attemptEditorFileSave({ fileId: 'file-1' })).resolves.toBe(false)
 
     expect(toastError).toHaveBeenCalledTimes(1)
-    expect(toastError).toHaveBeenCalledWith('Failed to save the file. Please try again.')
+    expect(toastError).toHaveBeenCalledWith('Failed to save the file. Try again.')
     expect(consoleError).toHaveBeenCalledWith('[editor] file save failed', cause)
   })
 })

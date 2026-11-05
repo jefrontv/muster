@@ -115,7 +115,7 @@ export function GeneralShellCommandSection(): React.JSX.Element {
       <SettingsSubsectionHeader
         title={translate(
           'auto.components.settings.GeneralShellCommandSection.title',
-          'Shell Command'
+          'Shell command'
         )}
       />
       <SearchableSetting {...entry}>

@@ -16,7 +16,7 @@ vi.mock('@/store', () => ({
 vi.mock('./native-chat-attachment-upload', () => ({
   resolveNativeChatAttachmentOwner: mocks.resolveNativeChatAttachmentOwner,
   uploadNativeChatAttachmentPaths: mocks.uploadNativeChatAttachmentPaths,
-  nativeChatWorktreeNotReadyNotice: () => 'Worktree not ready — try again in a moment.'
+  nativeChatWorktreeNotReadyNotice: () => 'Worktree not ready: try again in a moment.'
 }))
 
 import { useNativeChatExternalAttachments } from './use-native-chat-external-attachments'
@@ -134,7 +134,7 @@ describe('useNativeChatExternalAttachments', () => {
     await act(async () => {
       probe.latest().attachExternalPaths(['/local/a.txt'])
     })
-    expect(setNotice).toHaveBeenCalledWith('Worktree not ready — try again in a moment.')
+    expect(setNotice).toHaveBeenCalledWith('Worktree not ready: try again in a moment.')
     expect(attachResolvedPaths).not.toHaveBeenCalled()
   })
 

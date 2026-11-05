@@ -22,7 +22,7 @@ export function TabBarQuickCommandItem({
     <CommandItem
       value={command.id}
       onSelect={onRun}
-      className="group/qc mx-1 my-0.5 items-center gap-2 rounded-[7px] px-2 py-1.5 text-[12px] leading-5 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+      className="group/qc items-center gap-2 rounded-md px-2 py-1.5 text-[14px] leading-[18px] data-[selected=true]:bg-foreground/[0.06] data-[selected=true]:text-foreground"
     >
       {isTerminalAgentQuickCommand(command) ? (
         <span className="shrink-0 text-muted-foreground">
@@ -50,14 +50,14 @@ export function TabBarQuickCommandItem({
             event.stopPropagation()
             onEdit()
           }}
-          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="hit-area flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground"
           aria-label={translate(
             'auto.components.tab.bar.TabBarQuickCommandsButton.15529ede69',
             'Edit {{value0}}',
             { value0: command.label }
           )}
         >
-          <Pencil className="size-3" />
+          <Pencil className="size-3.5" />
         </button>
         <button
           type="button"
@@ -65,14 +65,14 @@ export function TabBarQuickCommandItem({
             event.stopPropagation()
             onDelete()
           }}
-          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+          className="hit-area flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/[0.07] hover:text-destructive"
           aria-label={translate(
             'auto.components.tab.bar.TabBarQuickCommandsButton.196593b6a9',
             'Remove {{value0}}',
             { value0: command.label }
           )}
         >
-          <Trash2 className="size-3" />
+          <Trash2 className="size-3.5" />
         </button>
       </span>
     </CommandItem>

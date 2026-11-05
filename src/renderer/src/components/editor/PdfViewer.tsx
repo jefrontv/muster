@@ -401,7 +401,7 @@ export default function PdfViewer({
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="rounded p-1 hover:bg-accent hover:text-foreground disabled:opacity-50"
+            className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={zoomOut}
             disabled={scale <= MIN_SCALE}
             title={translate('auto.components.editor.PdfViewer.fa5d096b00', 'Zoom out')}
@@ -410,7 +410,7 @@ export default function PdfViewer({
           </button>
           <button
             type="button"
-            className="rounded p-1 hover:bg-accent hover:text-foreground"
+            className="rounded-full p-1 hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={zoomReset}
             title={translate('auto.components.editor.PdfViewer.c0119616d6', 'Fit to width')}
           >
@@ -418,7 +418,7 @@ export default function PdfViewer({
           </button>
           <button
             type="button"
-            className="rounded p-1 hover:bg-accent hover:text-foreground disabled:opacity-50"
+            className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={zoomIn}
             disabled={scale >= MAX_SCALE}
             title={translate('auto.components.editor.PdfViewer.2b6eb1ccd6', 'Zoom in')}
@@ -429,7 +429,7 @@ export default function PdfViewer({
         </div>
         <button
           type="button"
-          className="rounded p-1 hover:bg-accent hover:text-foreground"
+          className="rounded-full p-1 hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={() => setFindOpen(true)}
           title={translate(
             'auto.components.editor.PdfViewer.069ff59932',

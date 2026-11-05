@@ -78,7 +78,7 @@ function ScrollSpeedSlider({
           }
         }}
       />
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground">
+      <div className="mt-1 flex justify-between font-mono text-[11px] text-muted-foreground">
         <span>{formatScrollSpeedValue(min)}</span>
         <span>{formatScrollSpeedValue(max)}</span>
       </div>
@@ -118,7 +118,7 @@ export function TerminalInteractionSection({
       <SettingsSubsectionHeader
         title={translate(
           'auto.components.settings.TerminalPane.45721f3e67',
-          'Terminal Interaction'
+          'Terminal interaction'
         )}
         description={translate(
           'auto.components.settings.TerminalPane.96fe15def8',
@@ -130,7 +130,7 @@ export function TerminalInteractionSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalPane.scrollSpeed.title',
-            'Scroll Speed'
+            'Scroll speed'
           )}
           description={translate(
             'auto.components.settings.TerminalPane.scrollSpeed.description',
@@ -155,7 +155,7 @@ export function TerminalInteractionSection({
                 <Label>
                   {translate(
                     'auto.components.settings.TerminalPane.scrollSpeed.title',
-                    'Scroll Speed'
+                    'Scroll speed'
                   )}
                 </Label>
                 <p className="max-w-xl text-xs text-muted-foreground">
@@ -272,7 +272,7 @@ export function TerminalInteractionSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalPane.8eefeaa3da',
-            'Focus Follows Mouse'
+            'Focus follows mouse'
           )}
           description={translate(
             'auto.components.settings.TerminalPane.9129b7e805',
@@ -283,7 +283,7 @@ export function TerminalInteractionSection({
           <SettingsSwitchRow
             label={translate(
               'auto.components.settings.TerminalPane.8eefeaa3da',
-              'Focus Follows Mouse'
+              'Focus follows mouse'
             )}
             description={translate(
               'auto.components.settings.TerminalPane.9129b7e805',
@@ -299,7 +299,7 @@ export function TerminalInteractionSection({
         </SearchableSetting>
 
         <SearchableSetting
-          title={translate('auto.components.settings.TerminalPane.902f5dee1f', 'Copy on Select')}
+          title={translate('auto.components.settings.TerminalPane.902f5dee1f', 'Copy on select')}
           description={translate(
             'auto.components.settings.TerminalPane.4729c645fc',
             'Automatically copy terminal selections to the clipboard.'
@@ -318,7 +318,7 @@ export function TerminalInteractionSection({
           ]}
         >
           <SettingsSwitchRow
-            label={translate('auto.components.settings.TerminalPane.902f5dee1f', 'Copy on Select')}
+            label={translate('auto.components.settings.TerminalPane.902f5dee1f', 'Copy on select')}
             description={translate(
               'auto.components.settings.TerminalPane.4729c645fc',
               'Automatically copy terminal selections to the clipboard.'
@@ -336,7 +336,7 @@ export function TerminalInteractionSection({
           id={OSC52_CLIPBOARD_SETTING_ID}
           title={translate(
             'auto.components.settings.TerminalPane.3338dcf8c1',
-            'Allow TUI Clipboard Writes (OSC 52)'
+            'Allow TUI clipboard writes (OSC 52)'
           )}
           description={translate(
             'auto.components.settings.TerminalPane.69c64a479c',
@@ -360,7 +360,7 @@ export function TerminalInteractionSection({
           <SettingsSwitchRow
             label={translate(
               'auto.components.settings.TerminalPane.3338dcf8c1',
-              'Allow TUI Clipboard Writes (OSC 52)'
+              'Allow TUI clipboard writes (OSC 52)'
             )}
             description={translate(
               'auto.components.settings.TerminalPane.6e6480a7df',

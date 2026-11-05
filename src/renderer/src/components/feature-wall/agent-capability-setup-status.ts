@@ -117,7 +117,7 @@ function getSkillInstallStatus(skill: {
   return {
     label: translate(
       'auto.components.feature.wall.agent.capability.setup.status.aae94eeb52',
-      'Click Install CLI & Skills'
+      'Click install CLI & skills'
     ),
     tone: 'pending'
   }

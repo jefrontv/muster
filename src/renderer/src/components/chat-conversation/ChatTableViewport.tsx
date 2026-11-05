@@ -144,7 +144,7 @@ export function ChatTableViewport(props: {
                       aria-label={label}
                       title={label}
                       onClick={() => props.onSort(index)}
-                      className="ms-1 inline-flex size-6 items-center justify-center rounded-md align-middle text-chat-ink-secondary hover:bg-chat-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
+                      className="ms-1 inline-flex size-6 items-center justify-center rounded-full align-middle text-chat-ink-secondary hover:bg-chat-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
                     >
                       {sorted && sort.descending ? (
                         <ArrowDown className="size-3" aria-hidden />

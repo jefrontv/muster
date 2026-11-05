@@ -11,6 +11,7 @@ import { botsSupported } from '@/lib/bots-platform'
 import { chatModeSupported } from '@/lib/chat-mode-platform'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
+import { handleTablistKeyDown } from '@/lib/tablist-keyboard'
 
 const SLIDE_MS = 280
 const SLIDE_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)'
@@ -41,9 +42,10 @@ export function ChatModeToggle({ mode }: { mode: AppMode }): React.JSX.Element |
     s.activeView === 'chat' || s.activeView === 'bots' ? s.activeView === mode : mode === 'code'
   )
 
+  // The surface's own mode always gets a segment, or a hidden one would light up its neighbour.
   const modes: AppMode[] = [
-    ...(chatEnabled ? (['chat'] as const) : []),
-    ...(botsEnabled ? (['bots'] as const) : []),
+    ...(chatEnabled || mode === 'chat' ? (['chat'] as const) : []),
+    ...(botsEnabled || mode === 'bots' ? (['bots'] as const) : []),
     'code'
   ]
   // Why the owning surface's mode, not the live view: on a switch the outgoing surface
@@ -107,11 +109,11 @@ export function ChatModeToggle({ mode }: { mode: AppMode }): React.JSX.Element |
     bots: { icon: Bot, text: translate('auto.components.chat.mode.bots', 'Bots') },
     code: { icon: Code2, text: translate('auto.components.chat.mode.code', 'Code') }
   }
-  const label = (target: AppMode, active: boolean): React.JSX.Element => {
+  const label = (target: AppMode): React.JSX.Element => {
     const { icon: Icon, text } = labels[target]
     return (
       <>
-        <Icon className="size-3.5" strokeWidth={active ? 2.25 : 1.75} />
+        <Icon className="size-3.5" />
         {text}
       </>
     )
@@ -120,7 +122,9 @@ export function ChatModeToggle({ mode }: { mode: AppMode }): React.JSX.Element |
     <div
       role="tablist"
       aria-label={translate('auto.components.chat.mode.toggleLabel', 'App mode')}
-      className="relative flex h-9 rounded-full bg-foreground/[0.05] p-[3px]"
+      onKeyDown={(event) => handleTablistKeyDown(event, { activation: 'manual' })}
+      // The inverted pill paints over the active tab's own ring, so that ring goes on the track.
+      className="relative flex h-9 rounded-full bg-foreground/[0.05] p-[3px] has-[[aria-selected=true]:focus-visible]:ring-2 has-[[aria-selected=true]:focus-visible]:ring-ring"
     >
       {modes.map((target) => {
         const active = target === mode
@@ -130,14 +134,16 @@ export function ChatModeToggle({ mode }: { mode: AppMode }): React.JSX.Element |
             type="button"
             role="tab"
             aria-selected={active}
+            tabIndex={active ? 0 : -1}
             className={cn(
               segment,
-              'outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/60',
-              active ? 'text-foreground' : 'text-foreground/55 hover:text-foreground/85'
+              'outline-none transition-colors',
+              !active && 'focus-visible:ring-2 focus-visible:ring-ring',
+              active ? 'text-foreground' : 'text-foreground/70 hover:text-foreground'
             )}
             onClick={() => select(target)}
           >
-            {label(target, active)}
+            {label(target)}
           </button>
         )
       })}
@@ -150,7 +156,7 @@ export function ChatModeToggle({ mode }: { mode: AppMode }): React.JSX.Element |
       >
         {modes.map((target) => (
           <span key={target} className={segment}>
-            {label(target, true)}
+            {label(target)}
           </span>
         ))}
       </div>

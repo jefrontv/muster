@@ -79,7 +79,7 @@ export function GeneralRemoteServerUpdates(): React.JSX.Element | null {
     <SearchableSetting
       title={translate(
         'auto.components.settings.GeneralRemoteServerUpdates.title',
-        'Remote Muster Servers'
+        'Remote Muster servers'
       )}
       description={translate(
         'auto.components.settings.GeneralRemoteServerUpdates.description',
@@ -92,7 +92,7 @@ export function GeneralRemoteServerUpdates(): React.JSX.Element | null {
         <div className="text-sm font-medium">
           {translate(
             'auto.components.settings.GeneralRemoteServerUpdates.title',
-            'Remote Muster Servers'
+            'Remote Muster servers'
           )}
         </div>
         <p className="text-xs text-muted-foreground">
@@ -106,7 +106,7 @@ export function GeneralRemoteServerUpdates(): React.JSX.Element | null {
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          size="default"
           className="gap-2"
           title={updateCheckHint}
           disabled={checking || running}
@@ -127,7 +127,7 @@ export function GeneralRemoteServerUpdates(): React.JSX.Element | null {
               )
             : translate(
                 'auto.components.settings.GeneralRemoteServerUpdates.reviewServers',
-                'Check for Server Updates'
+                'Check for server updates'
               )}
         </Button>
       </div>

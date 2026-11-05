@@ -4574,6 +4574,75 @@ describe('Store', () => {
     expect(store.getRepos()[0]!.repoIcon).toBeUndefined()
   })
 
+  it('persists a repo image icon once and restores it on the projected project', async () => {
+    const repoIcon = {
+      type: 'image' as const,
+      source: 'upload' as const,
+      src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+    }
+    const store = await createStore()
+    store.addRepo(makeRepo({ repoIcon }))
+    expect(store.getProjects()[0]?.repoIcon).toEqual(repoIcon)
+    store.flush()
+
+    const persisted = readDataFile() as {
+      repos: { repoIcon?: unknown }[]
+      projects: { repoIcon?: unknown }[]
+    }
+    expect(persisted.repos[0]?.repoIcon).toEqual(repoIcon)
+    expect(persisted.projects).toHaveLength(1)
+    expect(persisted.projects[0]).not.toHaveProperty('repoIcon')
+
+    const reloaded = await createStore()
+    expect(reloaded.getRepo('r1')?.repoIcon).toEqual(repoIcon)
+    expect(reloaded.getProjects()[0]?.repoIcon).toEqual(repoIcon)
+  })
+
+  it('strips duplicated project icons from older data files on load', async () => {
+    const repoIcon = { type: 'emoji' as const, emoji: 'R' }
+    const store = await createStore()
+    store.addRepo(makeRepo({ repoIcon }))
+    store.flush()
+    const persisted = readDataFile() as { projects: Record<string, unknown>[] }
+    // Older builds wrote the icon on projects too.
+    persisted.projects[0]!.repoIcon = repoIcon
+    writeDataFile(persisted)
+
+    const reloaded = await createStore()
+    expect(reloaded.getProjects()[0]?.repoIcon).toEqual(repoIcon)
+    reloaded.flush()
+    const rewritten = readDataFile() as { projects: Record<string, unknown>[] }
+    expect(rewritten.projects[0]).not.toHaveProperty('repoIcon')
+  })
+
+  it('keeps icons on independent projects that no repo re-derives', async () => {
+    const repoIcon = { type: 'emoji' as const, emoji: 'R' }
+    // Same source repo and icon as the projected project, but a different id.
+    const independentProject = makeProject({
+      id: 'cloud-project',
+      sourceRepoIds: ['r1'],
+      repoIcon
+    })
+    writeDataFile({
+      ...getDefaultPersistedState(testState.dir),
+      repos: [makeRepo({ repoIcon })],
+      projects: [independentProject],
+      projectHostSetups: [
+        makeProjectHostSetup({ id: 'cloud-project::vm', projectId: 'cloud-project' })
+      ]
+    })
+
+    const store = await createStore()
+    store.flush()
+    const persisted = readDataFile() as PersistedState
+    expect(persisted.projects.find((project) => project.id === 'repo:r1')).not.toHaveProperty(
+      'repoIcon'
+    )
+    expect(persisted.projects.find((project) => project.id === 'cloud-project')?.repoIcon).toEqual(
+      repoIcon
+    )
+  })
+
   it('updateRepo normalizes and persists repo upstream metadata', async () => {
     const store = await createStore()
     store.addRepo(makeRepo())

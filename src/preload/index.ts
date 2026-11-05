@@ -927,6 +927,7 @@ const api = {
     start: () => ipcRenderer.invoke('bots:start'),
     status: () => ipcRenderer.invoke('bots:status'),
     restart: () => ipcRenderer.invoke('bots:restart'),
+    openLog: () => ipcRenderer.invoke('bots:openLog'),
     onStatusChanged: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

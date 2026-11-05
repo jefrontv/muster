@@ -28,7 +28,7 @@ export async function openSiteRunLog(run: SiteRun): Promise<void> {
       toast.error(
         translate(
           'auto.components.sites.openSiteRunLog.noWorkspace',
-          'Open a workspace first — run logs open as an editor tab.'
+          'Open a workspace first. Run logs open as an editor tab.'
         )
       )
       return

@@ -51,8 +51,8 @@ export function SshTargetForm({
     >
       <p className="text-sm font-medium">
         {editingId
-          ? translate('auto.components.settings.SshTargetForm.f2331ce599', 'Edit SSH Target')
-          : translate('auto.components.settings.SshTargetForm.29af933cd5', 'New SSH Target')}
+          ? translate('auto.components.settings.SshTargetForm.f2331ce599', 'Edit SSH target')
+          : translate('auto.components.settings.SshTargetForm.29af933cd5', 'New SSH target')}
       </p>
 
       <div className="grid grid-cols-2 gap-4">
@@ -63,7 +63,7 @@ export function SshTargetForm({
             onChange={(e) => onFormChange((f) => ({ ...f, label: e.target.value }))}
             placeholder={translate(
               'auto.components.settings.SshTargetForm.b8dab0aa7b',
-              'My Server'
+              'My server'
             )}
           />
         </div>
@@ -105,7 +105,7 @@ export function SshTargetForm({
         <div className="col-span-2 space-y-1.5">
           <Label className="flex items-center gap-1.5">
             <FileKey className="size-3.5" />
-            {translate('auto.components.settings.SshTargetForm.63c0c145c1', 'Identity File')}
+            {translate('auto.components.settings.SshTargetForm.63c0c145c1', 'Identity file')}
           </Label>
           <Input
             value={form.identityFile}
@@ -134,8 +134,8 @@ export function SshTargetForm({
       <div className="flex items-center gap-2">
         <Button type="submit" size="sm">
           {editingId
-            ? translate('auto.components.settings.SshTargetForm.a62b4cb39a', 'Save Changes')
-            : translate('auto.components.settings.SshTargetForm.9518545cb6', 'Add Target')}
+            ? translate('auto.components.settings.SshTargetForm.a62b4cb39a', 'Save changes')
+            : translate('auto.components.settings.SshTargetForm.9518545cb6', 'Add target')}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
           {translate('auto.components.settings.SshTargetForm.fea9cb402e', 'Cancel')}

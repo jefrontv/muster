@@ -104,7 +104,7 @@ export default function TerminalPaneHeaderOverlay({
 }: TerminalPaneHeaderOverlayProps): React.JSX.Element {
   const splitRightLabel = translate(
     'auto.components.terminal.pane.TerminalContextMenu.20e565d865',
-    'Split Terminal Right'
+    'Split terminal right'
   )
 
   return (
@@ -254,7 +254,7 @@ export default function TerminalPaneHeaderOverlay({
                           className="pane-title-split-trigger"
                           aria-label={translate(
                             'components.agentSessionContinuation.continueInNewSession',
-                            'Continue in New Session…'
+                            'Continue in new session…'
                           )}
                           onClick={(event) => {
                             event.stopPropagation()
@@ -267,7 +267,7 @@ export default function TerminalPaneHeaderOverlay({
                       <TooltipContent side="bottom" sideOffset={4}>
                         {translate(
                           'components.agentSessionContinuation.continueInNewSession',
-                          'Continue in New Session…'
+                          'Continue in new session…'
                         )}
                       </TooltipContent>
                     </Tooltip>
@@ -380,7 +380,7 @@ export default function TerminalPaneHeaderOverlay({
                           }}
                           aria-label={translate(
                             'auto.components.terminal.pane.TerminalContextMenu.8c17d6786d',
-                            'Close Pane'
+                            'Close pane'
                           )}
                         >
                           <X className="size-3" />
@@ -389,7 +389,7 @@ export default function TerminalPaneHeaderOverlay({
                       <TooltipContent side="bottom" sideOffset={4}>
                         {translate(
                           'auto.components.terminal.pane.TerminalContextMenu.8c17d6786d',
-                          'Close Pane'
+                          'Close pane'
                         )}
                       </TooltipContent>
                     </Tooltip>

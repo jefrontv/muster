@@ -123,7 +123,7 @@ export const AgentStateDot = React.memo(function AgentStateDot({
           r={dotRadius}
           className={
             state === 'blocked' || state === 'interrupted' || state === 'failed'
-              ? 'fill-red-500'
+              ? 'fill-status-danger'
               : 'fill-neutral-500/40'
           }
         />

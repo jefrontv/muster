@@ -1571,7 +1571,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
                     onPointerDown={stopQuickActionPointerPropagation}
                     onClick={handleOpenRenameErrorDialog}
                     onDoubleClick={handleOpenRenameErrorDialog}
-                    className="h-4 shrink-0 gap-0.5 rounded !px-0.5 text-[10px] font-medium leading-none text-destructive border border-destructive/40 bg-destructive/10 hover:bg-destructive/15 hover:text-destructive has-[>svg]:!px-0.5"
+                    className="h-4 shrink-0 gap-0.5 rounded !px-0.5 text-[11px] font-medium leading-none text-destructive border border-destructive/40 bg-destructive/10 hover:bg-destructive/15 hover:text-destructive has-[>svg]:!px-0.5"
                     aria-label={translate(
                       'auto.components.sidebar.WorktreeCard.02e19349f4',
                       'Auto-rename failed: view error'
@@ -1598,11 +1598,8 @@ const WorktreeCard = React.memo(function WorktreeCard({
             {!compactCards && !newCardStyle && worktree.isMainWorktree && !isFolder && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className="h-[16px] px-1.5 text-[10px] font-medium rounded shrink-0 leading-none text-foreground/70 border-foreground/20 bg-foreground/[0.06]"
-                  >
-                    {translate('auto.components.sidebar.WorktreeCard.7d517f82e2', 'primary')}
+                  <Badge variant="muted" className="shrink-0">
+                    {translate('auto.components.sidebar.WorktreeCard.7d517f82e2', 'Primary')}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8}>
@@ -1617,11 +1614,8 @@ const WorktreeCard = React.memo(function WorktreeCard({
             {worktree.isSparse && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className="h-[16px] px-1.5 text-[10px] font-medium rounded shrink-0 leading-none text-amber-700 dark:text-amber-300 border-amber-500/30 bg-amber-500/5"
-                  >
-                    {translate('auto.components.sidebar.WorktreeCard.4f964d5e8c', 'sparse')}
+                  <Badge variant="attention" className="shrink-0">
+                    {translate('auto.components.sidebar.WorktreeCard.4f964d5e8c', 'Sparse')}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={8} className="max-w-72">
@@ -1659,7 +1653,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
                         'Primary worktree'
                       )}
                     >
-                      <Star className="size-3 fill-amber-400 text-amber-400" />
+                      <Star className="size-3 fill-status-attention text-status-attention" />
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={8}>
@@ -1682,17 +1676,14 @@ const WorktreeCard = React.memo(function WorktreeCard({
               {showRepoBadgeInMetaRow && repo && (
                 <div className="flex items-center gap-1.5 shrink-0 px-1.5 py-0.5 rounded-[4px] bg-accent border border-border dark:bg-accent/50 dark:border-border/60">
                   <RepoBadgeMark color={repo.badgeColor} />
-                  <span className="text-[10px] font-semibold text-foreground truncate max-w-[6rem] leading-none lowercase">
+                  <span className="text-[11px] font-semibold text-foreground truncate max-w-[6rem] leading-none lowercase">
                     {repo.displayName}
                   </span>
                 </div>
               )}
 
               {showHostContextBadge && (
-                <Badge
-                  variant="secondary"
-                  className="h-[16px] max-w-[7rem] shrink-0 rounded border border-border bg-accent px-1.5 text-[10px] font-medium leading-none text-muted-foreground dark:bg-accent/80 dark:border-border/50"
-                >
+                <Badge variant="muted" className="max-w-[7rem] shrink-0">
                   <span className="truncate">{hostContextLabel}</span>
                 </Badge>
               )}
@@ -1727,10 +1718,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
               ) : null}
 
               {showConflictOperationBadge && (
-                <Badge
-                  variant="outline"
-                  className="h-[16px] px-1.5 text-[10px] font-medium rounded shrink-0 gap-1 text-amber-600 border-amber-500/30 bg-amber-500/5 dark:text-amber-400 dark:border-amber-400/30 dark:bg-amber-400/5 leading-none"
-                >
+                <Badge variant="attention" className="shrink-0">
                   <GitMerge className="size-2.5" />
                   {CONFLICT_OPERATION_LABELS[conflictOperation]}
                 </Badge>
@@ -1750,7 +1738,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
         )}
 
         {remoteBranchConflict && (
-          <div className="mt-0.5 flex items-start gap-1.5 rounded border border-amber-500/25 bg-amber-500/5 px-1.5 py-1 text-[10.5px] leading-snug text-amber-700 dark:text-amber-300">
+          <div className="mt-0.5 flex items-start gap-1.5 rounded border border-status-attention-border bg-status-attention-background px-1.5 py-1 text-[11px] leading-snug text-status-attention">
             <AlertTriangle className="mt-[1px] size-3 shrink-0" />
             <span className="min-w-0 flex-1">
               {translate(
@@ -1802,7 +1790,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
                   type="button"
                   variant="ghost"
                   size="xs"
-                  className="relative z-10 h-[18px] max-w-[8rem] gap-1 rounded-full border border-worktree-sidebar-border bg-worktree-sidebar px-1.5 text-[10px] font-medium leading-none text-muted-foreground shadow-none hover:bg-worktree-sidebar-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring"
+                  className="relative z-10 h-[18px] max-w-[8rem] gap-1 rounded-full border border-worktree-sidebar-border bg-worktree-sidebar px-1.5 text-[11px] font-medium leading-none text-muted-foreground shadow-none hover:bg-worktree-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring"
                   aria-label={lineageChildAriaLabel}
                   aria-expanded={!lineageCollapsed}
                   onClick={onLineageToggle}
@@ -1909,7 +1897,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
             : isActiveSurface
               ? activeSurfaceIsSecondary
                 ? 'border border-sidebar-ring/25 bg-sidebar-accent/45 shadow-none ring-1 ring-sidebar-ring/15'
-                : 'bg-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.015] dark:bg-white/[0.10] dark:border-border/40 dark:shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
+                : 'bg-black/[0.08] shadow-xs border border-black/[0.015] dark:bg-white/[0.10] dark:border-border/40 dark:shadow-xs'
               : isMultiSelected
                 ? 'border border-worktree-sidebar-ring/35 bg-worktree-sidebar-accent/70 ring-1 ring-worktree-sidebar-ring/30'
                 : 'border border-transparent worktree-sidebar-card-hover',

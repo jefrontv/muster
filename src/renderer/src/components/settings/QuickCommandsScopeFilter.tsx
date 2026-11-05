@@ -74,7 +74,7 @@ export function QuickCommandsScopeFilter({
             variant="outline"
             role="combobox"
             aria-expanded={scopePopoverOpen}
-            className="h-8 min-w-52 justify-between px-3 text-xs font-normal"
+            className="min-w-52 justify-between px-3.5 font-normal"
           >
             <ScopeTriggerLabel
               showAll={showAll}

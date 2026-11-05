@@ -14,6 +14,7 @@ import { LabelsEditor } from './LabelsEditor'
 import { AssigneesEditor } from './AssigneesEditor'
 import { CommentsList, NewCommentForm } from './Comments'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 export function SlugDialogBody({
   projectOrigin,
@@ -279,11 +280,11 @@ export function SlugDialogBody({
             <section>
               {editingBody ? (
                 <div className="flex flex-col gap-2">
-                  <textarea
+                  <Textarea
                     autoFocus
                     value={bodyDraft}
                     onChange={(e) => setBodyDraft(e.target.value)}
-                    className="min-h-[140px] w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="min-h-[140px]"
                   />
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => void commitBody()}>

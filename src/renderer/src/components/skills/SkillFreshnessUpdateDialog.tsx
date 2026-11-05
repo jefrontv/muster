@@ -83,7 +83,7 @@ function SummaryHeadline({
   if (kind === 'current') {
     return (
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-        <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+        <CheckCircle2 className="size-4 text-status-success" />
         {translate(
           'auto.components.skills.SkillFreshnessUpdateDialog.success',
           'All installed Muster skills are up to date.'
@@ -95,7 +95,7 @@ function SummaryHeadline({
     return (
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+          <AlertTriangle className="size-4 text-status-attention" />
           {translate(
             'auto.components.skills.SkillFreshnessUpdateDialog.attention',
             'Some installed Muster skills were left out of the update.'

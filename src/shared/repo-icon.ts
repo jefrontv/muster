@@ -76,7 +76,44 @@ function normalizeGitHubAvatarHost(rawHost?: string): string {
   }
 }
 
+// Why: main hydrates every repo per getRepos() call; re-decoding each inline icon cost ~23ms per call.
+// The verdict is a pure function of (source, src), so cache it. Map keys reuse V8's cached string hash.
+const MAX_IMAGE_SRC_VERDICT_CACHE_ENTRIES = 512
+const imageSrcVerdictCache = new Map<string, Map<RepoIconImageSource, boolean>>()
+
 function isSupportedImageSrc(src: string, source: RepoIconImageSource): boolean {
+  if (!src.startsWith('data:')) {
+    return computeIsSupportedImageSrc(src, source)
+  }
+  const cachedBySource = imageSrcVerdictCache.get(src)
+  const cached = cachedBySource?.get(source)
+  if (cached !== undefined) {
+    return cached
+  }
+  const verdict = computeIsSupportedImageSrc(src, source)
+  if (cachedBySource) {
+    cachedBySource.set(source, verdict)
+  } else {
+    if (imageSrcVerdictCache.size >= MAX_IMAGE_SRC_VERDICT_CACHE_ENTRIES) {
+      const oldest = imageSrcVerdictCache.keys().next().value
+      if (oldest !== undefined) {
+        imageSrcVerdictCache.delete(oldest)
+      }
+    }
+    imageSrcVerdictCache.set(src, new Map([[source, verdict]]))
+  }
+  return verdict
+}
+
+export function resetRepoIconImageSrcCacheForTests(): void {
+  imageSrcVerdictCache.clear()
+}
+
+export function getRepoIconImageSrcCacheSizeForTests(): number {
+  return imageSrcVerdictCache.size
+}
+
+function computeIsSupportedImageSrc(src: string, source: RepoIconImageSource): boolean {
   if (source === 'upload' || source === 'file') {
     return (
       /^data:image\/png;base64,[A-Za-z0-9+/=\s]+$/i.test(src) &&

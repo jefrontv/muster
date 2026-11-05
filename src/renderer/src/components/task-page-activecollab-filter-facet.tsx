@@ -85,7 +85,7 @@ export function ActiveCollabFilterFacet({
           role="combobox"
           aria-expanded={open}
           aria-label={triggerName}
-          className="h-7 shrink-0 gap-1.5 px-2 text-[11px] font-normal"
+          className="h-7 shrink-0 gap-1.5 px-2.5 text-xs font-normal"
         >
           <span className="truncate">{label}</span>
           {/* aria-hidden: the count is already in the trigger's accessible name above, and a bare

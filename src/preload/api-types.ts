@@ -1009,6 +1009,8 @@ export type BotsApi = {
   start: () => Promise<BotsSidecarStatus>
   status: () => Promise<BotsSidecarStatus>
   restart: () => Promise<BotsSidecarStatus>
+  /** Opens the server log; resolves to an error message, or empty on success. */
+  openLog: () => Promise<string>
   onStatusChanged: (callback: (status: BotsSidecarStatus) => void) => () => void
   composioKeyStatus: () => Promise<BotsKeyStatus>
   /** Empty clears the key. Applies live while the bots server runs. */

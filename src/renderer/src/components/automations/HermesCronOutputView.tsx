@@ -63,15 +63,15 @@ function getMetadataIconStyle(label: string): MetadataIconStyle {
   if (/time|run/.test(normalized)) {
     return {
       icon: Clock,
-      iconClass: 'text-sky-400',
-      ringClass: 'bg-sky-500/10 ring-1 ring-sky-500/30'
+      iconClass: 'text-status-info',
+      ringClass: 'bg-status-info-background ring-1 ring-status-info/30'
     }
   }
   if (/schedule|cron/.test(normalized)) {
     return {
       icon: CalendarClock,
-      iconClass: 'text-amber-400',
-      ringClass: 'bg-amber-500/10 ring-1 ring-amber-500/30'
+      iconClass: 'text-status-attention',
+      ringClass: 'bg-status-attention-background ring-1 ring-status-attention/30'
     }
   }
   return {
@@ -133,9 +133,9 @@ function SectionCard({ title, accent = 'default', children }: SectionCardProps):
       className={cn(
         'relative overflow-hidden rounded-lg border shadow-sm',
         accent === 'error'
-          ? 'border-rose-500/30 bg-gradient-to-br from-rose-500/10 via-background to-background'
+          ? 'border-status-danger-border bg-gradient-to-br from-rose-500/10 via-background to-background'
           : accent === 'response'
-            ? 'border-emerald-500/25 bg-gradient-to-br from-emerald-500/5 via-background to-background'
+            ? 'border-status-success-border bg-gradient-to-br from-emerald-500/5 via-background to-background'
             : 'border-border/50 bg-background'
       )}
     >
@@ -143,9 +143,9 @@ function SectionCard({ title, accent = 'default', children }: SectionCardProps):
         className={cn(
           'flex items-center gap-2 border-b px-4 py-2.5 text-xs font-semibold uppercase tracking-wide',
           accent === 'error'
-            ? 'border-rose-500/20 text-rose-700 dark:text-rose-300'
+            ? 'border-status-danger-border text-status-danger'
             : accent === 'response'
-              ? 'border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+              ? 'border-status-success-border text-status-success'
               : 'border-border/50 text-foreground'
         )}
       >
@@ -213,7 +213,7 @@ export function HermesCronOutputView({ content }: { content: string }): React.JS
                   <Icon className={cn('size-3.5', iconClass)} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                     {getMetadataDisplayLabel(entry.label)}
                   </dt>
                   <MetadataValue label={entry.label} value={entry.value} />

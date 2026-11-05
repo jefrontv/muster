@@ -26,7 +26,7 @@ export type SiteSetupRunProps = {
 const VISIBLE_STEP_IDS = SETUP_RUN_STEP_ORDER.filter((id) => id !== 'register')
 
 const STEP_ICONS: Record<SetupRunStep['state'], React.ReactNode> = {
-  done: <Check className="size-4 text-green-600 dark:text-green-500" />,
+  done: <Check className="size-4 text-status-success" />,
   running: <Loader2 className="size-4 animate-spin" />,
   failed: <X className="size-4 text-destructive" />,
   skipped: <Minus className="size-4 text-muted-foreground" />,

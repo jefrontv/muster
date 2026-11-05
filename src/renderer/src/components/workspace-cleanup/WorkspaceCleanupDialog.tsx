@@ -689,7 +689,7 @@ export default function WorkspaceCleanupDialog(): React.JSX.Element {
                   <DialogTitle className="text-base">
                     {translate(
                       'auto.components.workspace.cleanup.WorkspaceCleanupDialog.b2c1331844',
-                      'Delete Inactive Workspaces'
+                      'Delete inactive workspaces'
                     )}
                   </DialogTitle>
                 </div>
@@ -1532,7 +1532,7 @@ function formatWorkspaceCleanupProgress(progress: WorkspaceCleanupScanProgress |
   if (!progress || progress.scannedWorktreeCount === 0) {
     return translate(
       'auto.components.workspace.cleanup.WorkspaceCleanupDialog.4cc5b73efe',
-      'Finding inactive workspaces...'
+      'Finding inactive workspaces…'
     )
   }
   return translate(
@@ -1550,7 +1550,7 @@ function SkeletonRows(): React.JSX.Element {
       {[0, 1, 2].map((index) => (
         <div
           key={index}
-          className="h-24 animate-pulse rounded-lg border border-border bg-muted/35"
+          className="h-24 animate-pulse rounded-lg border border-border bg-foreground/[0.07]"
         />
       ))}
     </div>

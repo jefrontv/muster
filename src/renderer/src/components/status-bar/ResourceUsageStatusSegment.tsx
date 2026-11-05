@@ -394,7 +394,7 @@ export function SessionRow({
       <span
         className={cn(
           'size-1.5 shrink-0 rounded-full',
-          session.bound ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+          session.bound ? 'bg-status-success' : 'bg-muted-foreground/40'
         )}
       />
       <span className="text-[11px] text-muted-foreground truncate min-w-0 flex-1">
@@ -519,7 +519,7 @@ export function WorktreeRow({
           <span className="text-xs font-medium truncate">{rowLabel}</span>
           {/* Why: gate the chip on SSH connectionId, not missing data — warm-reattached local PTYs land here with hasLocalSamples=false. */}
           {worktree.isRemote && (
-            <span className="shrink-0 text-[9px] uppercase tracking-wide text-muted-foreground/70">
+            <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground/70">
               {translate(
                 'auto.components.status.bar.ResourceUsageStatusSegment.21cacb16d1',
                 '· remote'
@@ -697,7 +697,7 @@ function ResourceTree({
                     {group.repoName}
                   </span>
                   {group.hasRemoteChildren && (
-                    <span className="shrink-0 text-[9px] uppercase tracking-wide text-muted-foreground/70">
+                    <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground/70">
                       {translate(
                         'auto.components.status.bar.ResourceUsageStatusSegment.21cacb16d1',
                         '· remote'
@@ -1133,7 +1133,7 @@ export function ResourceUsageStatusSegment({
             <button
               type="button"
               {...STATUS_BAR_CONTEXT_MENU_EXEMPT_PROPS}
-              className="relative inline-flex items-center gap-1.5 cursor-pointer rounded px-1 py-0.5 hover:bg-accent/70"
+              className="relative inline-flex items-center gap-1.5 cursor-pointer rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={
                 daemonUnreachable
                   ? translate(
@@ -1161,7 +1161,7 @@ export function ResourceUsageStatusSegment({
                   <span className="text-[11px] tabular-nums text-muted-foreground">
                     {triggerSessionCount}
                     {orphanCount > 0 && (
-                      <span className="text-yellow-500 ml-0.5">({orphanCount})</span>
+                      <span className="text-status-attention ml-0.5">({orphanCount})</span>
                     )}
                   </span>
                 </>
@@ -1173,7 +1173,7 @@ export function ResourceUsageStatusSegment({
               )}
               {daemonUnreachable && (
                 <AlertTriangle
-                  className="size-3 text-yellow-500"
+                  className="size-3 text-status-attention"
                   aria-label={translate(
                     'auto.components.status.bar.ResourceUsageStatusSegment.ca95d077db',
                     'Daemon unreachable'
@@ -1211,7 +1211,7 @@ export function ResourceUsageStatusSegment({
           <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-foreground">
             <MemoryStick className="size-3 shrink-0 text-muted-foreground" />
             <span className="truncate">
-              {translate('auto.components.status.bar.StatusBar.d1e1a7a6bf', 'Resource Manager')}
+              {translate('auto.components.status.bar.StatusBar.d1e1a7a6bf', 'Resource manager')}
             </span>
           </div>
 
@@ -1226,7 +1226,7 @@ export function ResourceUsageStatusSegment({
                     'auto.components.status.bar.ResourceUsageStatusSegment.c9382662bb',
                     'Restart daemon'
                   )}
-                  className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
+                  className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-foreground disabled:opacity-40"
                 >
                   <RotateCw className="size-3" />
                 </button>
@@ -1248,7 +1248,7 @@ export function ResourceUsageStatusSegment({
                     'auto.components.status.bar.ResourceUsageStatusSegment.bd19fd7a59',
                     'Kill all sessions'
                   )}
-                  className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                  className="inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
                 >
                   <Trash2 className="size-3" />
                 </button>
@@ -1264,8 +1264,8 @@ export function ResourceUsageStatusSegment({
         </div>
 
         {daemonUnreachable && (
-          <div className="flex items-start gap-2 border-b border-border bg-yellow-500/10 px-3 py-2 text-[11px] text-foreground">
-            <AlertTriangle className="mt-0.5 size-3 shrink-0 text-yellow-500" />
+          <div className="flex items-start gap-2 border-b border-border bg-status-attention-background px-3 py-2 text-[11px] text-foreground">
+            <AlertTriangle className="mt-0.5 size-3 shrink-0 text-status-attention" />
             <div className="flex-1">
               <div className="font-medium">
                 {translate(
@@ -1301,7 +1301,7 @@ export function ResourceUsageStatusSegment({
             className="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-[11px] text-muted-foreground"
             role="status"
           >
-            <AlertTriangle className="size-3 shrink-0 text-yellow-500" />
+            <AlertTriangle className="size-3 shrink-0 text-status-attention" />
             <span>
               {translate(
                 'auto.components.status.bar.ResourceUsageStatusSegment.e7cf14ec78',
@@ -1318,7 +1318,7 @@ export function ResourceUsageStatusSegment({
                 <TooltipTrigger asChild>
                   <span
                     tabIndex={0}
-                    className="font-medium text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:rounded"
+                    className="font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded"
                   >
                     {formatCpu(totalCpu)}
                   </span>
@@ -1335,7 +1335,7 @@ export function ResourceUsageStatusSegment({
                 <TooltipTrigger asChild>
                   <span
                     tabIndex={0}
-                    className="font-medium text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:rounded"
+                    className="font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded"
                   >
                     {formatMemory(totalMemory)}
                   </span>
@@ -1352,7 +1352,7 @@ export function ResourceUsageStatusSegment({
                 <TooltipTrigger asChild>
                   <span
                     tabIndex={0}
-                    className="text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:rounded"
+                    className="text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded"
                   >
                     {formatPercent(hostShare)}{' '}
                     {translate(
@@ -1370,7 +1370,7 @@ export function ResourceUsageStatusSegment({
               </Tooltip>
             </div>
             {orphanCount > 0 && (
-              <span className="shrink-0 text-yellow-500" aria-live="polite">
+              <span className="shrink-0 text-status-attention" aria-live="polite">
                 {orphanCount === 1
                   ? translate(
                       'auto.components.status.bar.ResourceUsageStatusSegment.30ff2c3c31',
@@ -1394,7 +1394,7 @@ export function ResourceUsageStatusSegment({
           className="flex h-[420px] flex-col outline-none"
         >
           {(unifiedRepos.length > 0 || resourceSnapshot) && (
-            <div className="flex items-center justify-between px-3 py-1 bg-muted/30 border-b border-border/50 text-[10px] uppercase tracking-wide shrink-0">
+            <div className="flex items-center justify-between px-3 py-1 bg-muted/30 border-b border-border/50 text-[11px] uppercase tracking-wide shrink-0">
               <button
                 type="button"
                 onClick={() => setSortOption('name')}
@@ -1412,7 +1412,7 @@ export function ResourceUsageStatusSegment({
                 )}
               </button>
               <div className="flex items-center gap-2 shrink-0">
-                <div className={cn(METRIC_COLUMNS_CLS, 'text-[10px]')}>
+                <div className={cn(METRIC_COLUMNS_CLS, 'text-[11px]')}>
                   <button
                     type="button"
                     onClick={() => setSortOption('cpu')}
@@ -1475,7 +1475,7 @@ export function ResourceUsageStatusSegment({
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
                 {translate(
                   'auto.components.status.bar.ResourceUsageStatusSegment.27a74f91f0',
-                  'Nothing running right now'
+                  'No workspace processes running'
                 )}
               </div>
             )}
@@ -1500,10 +1500,12 @@ export function ResourceUsageStatusSegment({
         </div>
 
         <div className="border-t border-border/50 px-3 py-2 shrink-0">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={handleOpenWorkspaceCleanup}
-            className="relative inline-flex w-full items-center justify-center rounded-md border border-border/70 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent/60"
+            className="relative w-full"
           >
             <span className="min-w-0 truncate px-4 text-center">
               {translate(
@@ -1516,12 +1518,14 @@ export function ResourceUsageStatusSegment({
               className="absolute right-2.5 size-3.5 text-muted-foreground"
               aria-hidden
             />
-          </button>
+          </Button>
           {orphanCount > 0 ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => void handleKillOrphans()}
-              className="mt-2 inline-flex w-full items-center justify-center rounded-md border border-border/70 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent/60"
+              className="mt-2 w-full"
             >
               {orphanCount === 1
                 ? translate(
@@ -1534,7 +1538,7 @@ export function ResourceUsageStatusSegment({
                     'Kill {{value0}} orphan terminals',
                     { value0: orphanCount }
                   )}
-            </button>
+            </Button>
           ) : null}
         </div>
 

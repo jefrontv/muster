@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- Why: the GH item dialog keeps its header, conversation, files, and checks tabs co-located so the read-only PR/Issue surface stays in one place while this view evolves. */
+import { Badge } from '@/components/ui/badge'
 import React, {
   Suspense,
   useCallback,
@@ -392,15 +393,15 @@ function getStateTone(item: GitHubWorkItem): string {
       return 'border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300'
     }
     if (item.state === 'closed') {
-      return 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300'
+      return 'border-status-danger-border bg-status-danger-background text-status-danger'
     }
-    return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+    return 'border-status-success-border bg-status-success-background text-status-success'
   }
   if (item.state === 'closed') {
     // Why: keep closed issues neutral (may be completed/resolved); red is reserved for PR closed-without-merge.
     return 'border-ring/50 bg-primary/10 text-foreground'
   }
-  return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+  return 'border-status-success-border bg-status-success-background text-status-success'
 }
 
 function WorkItemStateBadge({
@@ -1187,7 +1188,7 @@ function PRReviewersPanel({
         {reviewer.avatarUrl ? (
           <img src={reviewer.avatarUrl} alt="" className="size-5 shrink-0 rounded-full" />
         ) : (
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground">
             {reviewer.login.slice(0, 1).toUpperCase()}
           </span>
         )}
@@ -1231,7 +1232,7 @@ function PRReviewersPanel({
             </button>
           </PopoverTrigger>
           <PopoverContent
-            className="flex max-h-[420px] w-[330px] flex-col overflow-hidden rounded-md border-border/70 p-0"
+            className="flex max-h-[420px] w-[330px] flex-col overflow-hidden p-0"
             align="end"
             side="bottom"
             sideOffset={6}
@@ -1290,7 +1291,7 @@ function PRReviewersPanel({
             <div className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek">
               {reviewerMetadata.loading ? (
                 <div className="px-3 py-2 text-[13px] text-muted-foreground">
-                  {translate('auto.components.GitHubItemDialog.a98433e73d', 'Loading...')}
+                  {translate('auto.components.GitHubItemDialog.a98433e73d', 'Loading…')}
                 </div>
               ) : filteredReviewerCandidates.length > 0 ? (
                 <>
@@ -2647,8 +2648,8 @@ function PRFilesCombinedDiffViewer({
             onClick={() => setAllSectionsCollapsed(!allSectionsCollapsed)}
           >
             {allSectionsCollapsed
-              ? translate('auto.components.GitHubItemDialog.3c19ec3069', 'Expand All')
-              : translate('auto.components.GitHubItemDialog.d00a0a7f8f', 'Collapse All')}
+              ? translate('auto.components.GitHubItemDialog.3c19ec3069', 'Expand all')
+              : translate('auto.components.GitHubItemDialog.d00a0a7f8f', 'Collapse all')}
           </button>
           <button
             type="button"
@@ -2657,7 +2658,7 @@ function PRFilesCombinedDiffViewer({
           >
             {sideBySide
               ? translate('auto.components.GitHubItemDialog.6e43a16435', 'Inline')
-              : translate('auto.components.GitHubItemDialog.31770bef03', 'Side by Side')}
+              : translate('auto.components.GitHubItemDialog.31770bef03', 'Side by side')}
           </button>
         </div>
       </div>
@@ -2884,7 +2885,7 @@ function CommentCodeContext({
           </span>
           {(from !== commentFrom || to !== commentTo) && (
             <span className="shrink-0 font-mono text-muted-foreground/70">
-              {translate('auto.components.GitHubItemDialog.bd7be7b1fd', 'comment L')}
+              {translate('auto.components.GitHubItemDialog.bd7be7b1fd', 'comment l')}
               {commentFrom}
               {commentTo !== commentFrom
                 ? translate('auto.components.GitHubItemDialog.d1c0dad471', '-L{{value0}}', {
@@ -3012,7 +3013,10 @@ function CommentCodeContext({
               return (
                 <div
                   key={lineNumber}
-                  className={cn('flex font-mono', isCommentedLine && 'bg-emerald-500/10')}
+                  className={cn(
+                    'flex font-mono',
+                    isCommentedLine && 'bg-status-success-background'
+                  )}
                 >
                   <span className="w-12 shrink-0 select-none border-r border-border/40 px-2 text-right text-muted-foreground">
                     {lineNumber}
@@ -3378,9 +3382,9 @@ function ConversationTab({
           </span>
         )}
         {comment.isResolved && (
-          <span className="rounded-full border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground">
+          <Badge variant="muted">
             {translate('auto.components.GitHubItemDialog.68cb993d61', 'resolved')}
-          </span>
+          </Badge>
         )}
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <Tooltip>
@@ -3777,9 +3781,9 @@ function ConversationTab({
                   : translate('auto.components.GitHubItemDialog.1506916c09', 'Comments')}
               </span>
               {comments.length + (item.type === 'issue' ? resolvedTimelineItems.length : 0) > 0 && (
-                <span className="rounded-full border border-border/50 bg-muted/30 px-1.5 py-0.5 text-[11px] tabular-nums text-muted-foreground">
+                <Badge variant="muted" className="tabular-nums">
                   {comments.length + (item.type === 'issue' ? resolvedTimelineItems.length : 0)}
-                </span>
+                </Badge>
               )}
             </div>
 
@@ -4133,7 +4137,7 @@ function PRActionsPanel({
                   type="button"
                   size="sm"
                   className={cn(
-                    'w-full justify-center gap-2 bg-green-600 text-white hover:bg-green-700',
+                    'w-full justify-center gap-2 bg-status-success-solid text-white hover:bg-status-success-solid/90',
                     'disabled:cursor-not-allowed disabled:opacity-50'
                   )}
                 >
@@ -5176,7 +5180,7 @@ function ChecksTab({
       <>
         {compactHeader}
         <div className="flex flex-col items-center justify-center gap-1 px-4 py-6 text-center">
-          <CircleDashed className="size-4 text-muted-foreground/60" />
+          <CircleDashed className="size-4 text-muted-foreground" />
           <div className="text-[12px] text-muted-foreground">
             {translate('auto.components.GitHubItemDialog.e52bed9264', 'No checks reported yet')}
           </div>
@@ -6003,7 +6007,9 @@ function GHEditSection({
               {localState === 'closed' ? (
                 <CircleDashed className={isSidebar ? 'size-3.5' : 'size-3'} />
               ) : (
-                <CircleDot className={cn(isSidebar ? 'size-3.5' : 'size-3', 'text-emerald-500')} />
+                <CircleDot
+                  className={cn(isSidebar ? 'size-3.5' : 'size-3', 'text-status-success')}
+                />
               )}
               {getStateLabel({ ...item, state: localState })}
             </span>
@@ -6087,7 +6093,7 @@ function GHEditSection({
                     {candidate.state === 'closed' ? (
                       <CircleDashed className="mt-0.5 size-4 shrink-0 text-primary" />
                     ) : (
-                      <CircleDot className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                      <CircleDot className="mt-0.5 size-4 shrink-0 text-status-success" />
                     )}
                     <span className="min-w-0 flex-1">
                       <span className="block text-[12px] font-medium leading-snug">
@@ -6413,7 +6419,7 @@ function GHEditSection({
               </span>
             ) : (
               localLabels.map((name) => (
-                <span key={name} className="text-[10px] text-muted-foreground">
+                <span key={name} className="text-[11px] text-muted-foreground">
                   {name}
                 </span>
               ))
@@ -6477,7 +6483,7 @@ function GHEditSection({
               </span>
             ) : (
               localAssignees.map((login) => (
-                <span key={login} className="text-[10px] text-muted-foreground">
+                <span key={login} className="text-[11px] text-muted-foreground">
                   {login}
                 </span>
               ))
@@ -7229,7 +7235,9 @@ export default function GitHubItemDialog({
   const isIssuePage = workItem?.type === 'issue'
   const ownerRepo = workItem ? parseOwnerRepoFromItemUrl(workItem.url) : null
   const issueStateBadgeTone =
-    localState === 'closed' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+    localState === 'closed'
+      ? 'bg-status-danger-solid text-white'
+      : 'bg-status-success-solid text-white'
 
   const content = workItem ? (
     <div className="flex h-full min-h-0 flex-col">
@@ -7276,7 +7284,7 @@ export default function GitHubItemDialog({
                       )}
                     >
                       {linkCopied ? (
-                        <Check className="size-4 text-emerald-500" />
+                        <Check className="size-4 text-status-success" />
                       ) : (
                         <Copy className="size-4" />
                       )}
@@ -7468,7 +7476,7 @@ export default function GitHubItemDialog({
                   {formatRelativeTime(workItem.updatedAt)}
                 </span>
                 {workItem.branchName && (
-                  <span className="max-w-full truncate rounded-md border border-border/50 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  <span className="max-w-full truncate rounded-md border border-border/50 bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                     {workItem.branchName}
                   </span>
                 )}
@@ -7520,7 +7528,7 @@ export default function GitHubItemDialog({
                     )}
                   >
                     {linkCopied ? (
-                      <Check className="size-4 text-emerald-500" />
+                      <Check className="size-4 text-status-success" />
                     ) : (
                       <Copy className="size-4" />
                     )}
@@ -7665,7 +7673,7 @@ export default function GitHubItemDialog({
                     <ListChecks className="size-3.5" />
                     {translate('auto.components.GitHubItemDialog.4bd1f5b055', 'Checks')}
                     {checks.length > 0 && (
-                      <span className="ml-1 text-[10px] text-muted-foreground">
+                      <span className="ml-1 text-[11px] text-muted-foreground">
                         {checks.length}
                       </span>
                     )}
@@ -7674,7 +7682,7 @@ export default function GitHubItemDialog({
                     <FileText className="size-3.5" />
                     {translate('auto.components.GitHubItemDialog.999b5ad7d9', 'Files')}
                     {files.length > 0 && (
-                      <span className="ml-1 text-[10px] text-muted-foreground">{files.length}</span>
+                      <span className="ml-1 text-[11px] text-muted-foreground">{files.length}</span>
                     )}
                   </TabsTrigger>
                 </>

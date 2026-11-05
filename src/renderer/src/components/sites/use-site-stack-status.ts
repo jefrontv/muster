@@ -16,7 +16,13 @@ export type SiteStackTransition = 'starting' | 'stopping' | null
 export type SiteStackStatus = {
   detection: LocalWpStackDetection | null
   transition: SiteStackTransition
+  /** The first detection has run past DETECT_SLOW_MS without an answer. */
+  slow?: boolean
+  /** The first detection failed; cleared by the next answer. */
+  failure?: string | null
 }
+
+export const DETECT_SLOW_MS = 8000
 
 type Entry = {
   status: SiteStackStatus
@@ -72,6 +78,15 @@ export async function refreshSiteStackStatus(siteId: string): Promise<void> {
     return
   }
   entry.inFlight = true
+  if (entry.status.detection === null && entry.status.failure != null) {
+    // A retry after a failure reads as "checking again" straight away.
+    publish(entry, { ...entry.status, failure: null, slow: true })
+  }
+  // Why: only the first answer gates the card; later polls keep showing the last good detection.
+  const slowTimer =
+    entry.status.detection === null
+      ? setTimeout(() => publish(entry, { ...entry.status, slow: true }), DETECT_SLOW_MS)
+      : null
   try {
     const answer = await window.api.siteStacks.detect(siteId)
     if (answer?.ok) {
@@ -79,8 +94,21 @@ export async function refreshSiteStackStatus(siteId: string): Promise<void> {
         ? null
         : entry.status.transition
       publish(entry, { detection: answer.value, transition })
+    } else if (entry.status.detection === null) {
+      publish(entry, { ...entry.status, slow: false, failure: answer?.error ?? '' })
+    }
+  } catch (error) {
+    if (entry.status.detection === null) {
+      publish(entry, {
+        ...entry.status,
+        slow: false,
+        failure: error instanceof Error ? error.message : String(error)
+      })
     }
   } finally {
+    if (slowTimer) {
+      clearTimeout(slowTimer)
+    }
     entry.inFlight = false
     if (entry.queued) {
       entry.queued = false

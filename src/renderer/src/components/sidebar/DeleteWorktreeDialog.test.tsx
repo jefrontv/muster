@@ -284,7 +284,7 @@ describe('DeleteWorktreeDialog lineage copy', () => {
     const markup = renderToStaticMarkup(<DeleteWorktreeDialog />)
 
     expect(markup).toContain('Worktree is locked by Git. Lock reason: active agent session.')
-    expect(markup).not.toContain('Force Delete')
+    expect(markup).not.toContain('Force delete')
     expect(markup).toContain('1 uncommitted or untracked change')
     expect(mocks.state.removeWorktree).not.toHaveBeenCalled()
   })

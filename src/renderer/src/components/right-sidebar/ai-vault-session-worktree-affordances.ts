@@ -31,7 +31,7 @@ export function aiVaultWorktreeJumpTooltip(
   if (canJumpToAiVaultSessionWorktree(worktreeInfo)) {
     return translate(
       'auto.components.right.sidebar.AiVaultSessionWorktree.jumpToWorktree',
-      'Jump to Worktree'
+      'Jump to worktree'
     )
   }
   if (!worktreeInfo) {

@@ -36,7 +36,7 @@ export function ActiveCollabPersonBadge({
     <span
       aria-hidden="true"
       className={cn(
-        'flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-[9px] font-semibold tracking-tight text-muted-foreground',
+        'flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-[11px] font-semibold tracking-tight text-muted-foreground',
         className
       )}
     >

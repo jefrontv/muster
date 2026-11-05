@@ -1,4 +1,5 @@
 // The My Work header band. Split out of the list so the list keeps only its load states: the band
+import { Badge } from '@/components/ui/badge'
 // carries several controls and grew past the point where inlining it read as one component.
 //
 // Every control is icon-xs, matching the project-jump control that was here first — a 41px band has
@@ -52,15 +53,16 @@ export function ActiveCollabMyWorkHeader({
   return (
     <div className="flex h-[41px] items-center gap-2 border-b border-border/50 px-3 py-2">
       <span className="min-w-0 truncate text-sm font-semibold">
-        {translate('auto.components.activecollab.task_list.my_work', 'My Work')}
+        {translate('auto.components.activecollab.task_list.my_work', 'My work')}
       </span>
       {count === null ? null : (
-        <span
+        <Badge
+          variant="muted"
           data-testid="activecollab-my-work-count"
-          className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground"
+          className="shrink-0 text-2xs tabular-nums"
         >
           {count}
-        </span>
+        </Badge>
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-1">

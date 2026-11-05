@@ -145,7 +145,7 @@ export function ManageSessionsSection(): React.JSX.Element {
           toast.error(
             translate(
               'auto.components.settings.ManageSessionsSection.0735b7a586',
-              'Couldn’t kill session — it may already be gone.'
+              'Couldn’t kill session: it may already be gone.'
             )
           )
         }
@@ -187,7 +187,7 @@ export function ManageSessionsSection(): React.JSX.Element {
         <h3 className="text-sm font-semibold">
           {translate(
             'auto.components.settings.ManageSessionsSection.d1b80fd5cd',
-            'Manage Sessions'
+            'Manage sessions'
           )}
         </h3>
         <p className="text-xs text-muted-foreground">

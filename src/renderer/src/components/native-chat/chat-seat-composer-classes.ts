@@ -42,7 +42,7 @@ export const CHAT_SEAT_ATTACH_CLASS =
 
 /** Model, effort and workspace chips: 28px, 13/20, secondary ink; `group/chip` turns the chevron. */
 export const CHAT_SEAT_CHIP_CLASS =
-  'group/chip flex h-7 min-w-0 max-w-[min(360px,45cqw)] items-center gap-1 rounded-md pr-1 pl-2 text-[13px] leading-5 font-normal text-chat-ink-secondary transition-colors duration-100 ease-chat enabled:hover:bg-chat-hover disabled:cursor-default disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent'
+  'group/chip flex h-7 min-w-0 max-w-[min(360px,45cqw)] items-center gap-1 rounded-full pr-1.5 pl-2.5 text-[13px] leading-5 font-normal text-chat-ink-secondary transition-colors duration-100 ease-chat enabled:hover:bg-chat-hover disabled:cursor-default disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent'
 
 export const CHAT_SEAT_CHIP_CHEVRON_CLASS =
   'size-3 shrink-0 text-chat-ink-caption transition-transform duration-[120ms] ease-chat group-data-[state=open]/chip:rotate-180 motion-reduce:transition-none'

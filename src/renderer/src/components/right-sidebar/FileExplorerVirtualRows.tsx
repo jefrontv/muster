@@ -126,7 +126,7 @@ export function FileExplorerVirtualRows(props: FileExplorerVirtualRowsProps): Re
               key={vItem.key}
               data-index={vItem.index}
               ref={virtualizer.measureElement}
-              className="absolute left-0 right-0"
+              className="absolute left-1.5 right-1.5"
               style={{ transform: `translateY(${vItem.start}px)` }}
             >
               <InlineInputRow
@@ -162,7 +162,7 @@ export function FileExplorerVirtualRows(props: FileExplorerVirtualRowsProps): Re
             key={vItem.key}
             data-index={vItem.index}
             ref={virtualizer.measureElement}
-            className={cn('absolute left-0 right-0', isInDropTarget && 'bg-border')}
+            className={cn('absolute left-1.5 right-1.5 rounded-md', isInDropTarget && 'bg-border')}
             style={{ transform: `translateY(${vItem.start}px)` }}
           >
             <FileExplorerRow

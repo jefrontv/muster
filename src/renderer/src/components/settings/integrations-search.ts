@@ -6,7 +6,7 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.integrations.search.f16e41cc72',
-      'GitHub Integration'
+      'GitHub integration'
     ),
     description: translate(
       'auto.components.settings.integrations.search.7166b9090c',
@@ -27,7 +27,7 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.integrations.search.b50b71ef9d',
-      'GitLab Integration'
+      'GitLab integration'
     ),
     description: translate(
       'auto.components.settings.integrations.search.6e2ab619c6',
@@ -53,7 +53,7 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.integrations.search.67a2a0e868',
-      'Bitbucket Integration'
+      'Bitbucket integration'
     ),
     description: translate(
       'auto.components.settings.integrations.search.c97d58a0f3',
@@ -81,7 +81,7 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.integrations.search.af6611fa6e',
-      'Azure DevOps Integration'
+      'Azure DevOps integration'
     ),
     description: translate(
       'auto.components.settings.integrations.search.7b1f3984bb',
@@ -114,7 +114,7 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.integrations.search.aab86d64e5',
-      'Gitea Integration'
+      'Gitea integration'
     ),
     description: translate(
       'auto.components.settings.integrations.search.d0d019dc29',
@@ -143,7 +143,7 @@ export const getIntegrationsPaneSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate(
       'auto.components.settings.integrations.search.activecollab_title',
-      'ActiveCollab Integration'
+      'ActiveCollab integration'
     ),
     description: translate(
       'auto.components.settings.integrations.search.activecollab_description',

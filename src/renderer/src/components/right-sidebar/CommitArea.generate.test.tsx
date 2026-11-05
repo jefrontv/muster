@@ -139,7 +139,7 @@ describe('CommitArea AI generation', () => {
     })
     expect(resolved).toMatchObject({
       ok: false,
-      error: 'Custom command is empty. Add one in Settings -> Git -> Source Control AI.'
+      error: 'Custom command is empty. Add one in Settings -> Git -> Source control AI.'
     })
 
     const props = baseProps({ hasMessage: false })
@@ -219,7 +219,7 @@ describe('CommitArea AI generation', () => {
 })
 
 describe('commit-message generation defaults', () => {
-  it('treats factory Source Control AI settings as needing the first-run dialog', () => {
+  it('treats factory Source control AI settings as needing the first-run dialog', () => {
     expect(
       hasConfiguredCommitMessageGenerationDefaults({
         settings: getDefaultSettings('/tmp'),

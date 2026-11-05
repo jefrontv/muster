@@ -32,7 +32,7 @@ export function DetachedHeadBadge({
           aria-label={display.tooltip}
           tabIndex={tabIndex}
           className={cn(
-            'h-[18px] shrink-0 gap-1 rounded px-1.5 text-[10px] font-medium leading-none',
+            'h-[18px] shrink-0 gap-1 rounded px-1.5 text-[11px] font-medium leading-none',
             'border-[color:color-mix(in_srgb,var(--git-decoration-modified)_30%,transparent)] bg-[color:color-mix(in_srgb,var(--git-decoration-modified)_8%,transparent)] text-[color:var(--git-decoration-modified)]',
             className
           )}

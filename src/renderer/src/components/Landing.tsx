@@ -78,7 +78,7 @@ function PreflightBanner({
           key={issue.id}
           className="flex items-start gap-3 rounded-md px-1 py-1.5 first:pt-0 last:pb-0"
         >
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500/70" />
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-status-attention" />
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="text-[13px] font-medium leading-snug text-foreground">{issue.title}</p>
             <p className="text-xs leading-snug text-muted-foreground">{issue.description}</p>
@@ -92,7 +92,7 @@ function PreflightBanner({
           </div>
           {issue.dismissible && (
             <button
-              className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+              className="-mr-1 -mt-0.5 shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => dismiss(issue)}
               aria-label={translate('auto.components.Landing.preflightDismiss', 'Dismiss')}
             >
@@ -185,8 +185,16 @@ export default function Landing(): React.JSX.Element {
         shortcut: createWorktreeShortcut,
         action: translate('auto.components.Landing.addNewSite', 'Add new site')
       },
-      { id: 'up', shortcut: previousWorktreeShortcut, action: 'Move up workspace' },
-      { id: 'down', shortcut: nextWorktreeShortcut, action: 'Move down workspace' }
+      {
+        id: 'up',
+        shortcut: previousWorktreeShortcut,
+        action: translate('auto.components.Landing.previousWorkspace', 'Previous workspace')
+      },
+      {
+        id: 'down',
+        shortcut: nextWorktreeShortcut,
+        action: translate('auto.components.Landing.nextWorkspace', 'Next workspace')
+      }
     ]
   }, [createWorktreeShortcut, nextWorktreeShortcut, previousWorktreeShortcut])
 
@@ -201,7 +209,7 @@ export default function Landing(): React.JSX.Element {
       <div className="w-full max-w-lg px-6">
         <div className="flex flex-col items-center gap-4 py-8">
           <div
-            className="flex items-center justify-center size-20 rounded-2xl border border-border/80 shadow-lg shadow-black/40"
+            className="flex items-center justify-center size-20 rounded-2xl border border-border/80 shadow-floating shadow-black/40"
             style={{ backgroundColor: '#12181e' }}
           >
             <img
@@ -210,7 +218,7 @@ export default function Landing(): React.JSX.Element {
               className="size-12"
             />
           </div>
-          <h1 className="text-4xl font-bold text-foreground tracking-tight">
+          <h1 className="text-4xl font-semibold text-foreground tracking-tight">
             {translate('auto.components.Landing.6ca6ff404e', 'Muster')}
           </h1>
 
@@ -231,7 +239,7 @@ export default function Landing(): React.JSX.Element {
               onClick={() => openModal('add-repo')}
             >
               <FolderPlus className="size-3.5" />
-              {translate('auto.components.Landing.f9eaa9e12d', 'Add Project')}
+              {translate('auto.components.Landing.f9eaa9e12d', 'Add project')}
             </button>
 
             <button
@@ -250,7 +258,7 @@ export default function Landing(): React.JSX.Element {
                 <ShortcutKeyCombo
                   keys={shortcut.shortcut.keys}
                   doubleTap={shortcut.shortcut.doubleTap}
-                  separatorClassName="mx-0.5 text-[10px] text-muted-foreground"
+                  separatorClassName="mx-0.5 text-[11px] text-muted-foreground"
                 />
               </div>
             ))}

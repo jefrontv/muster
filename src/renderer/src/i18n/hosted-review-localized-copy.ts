@@ -27,7 +27,7 @@ export function localizedHostedReviewCopy(
     return {
       shortLabel: translate('auto.i18n.hostedReview.copy.c4e8f1a2b9', 'MR'),
       reviewLabel: translate('auto.i18n.hostedReview.copy.b3d7e0f1a8', 'merge request'),
-      titleLabel: translate('auto.i18n.hostedReview.copy.a2c6d9e0f7', 'Merge Request'),
+      titleLabel: translate('auto.i18n.hostedReview.copy.a2c6d9e0f7', 'Merge request'),
       providerName: translate('auto.i18n.hostedReview.copy.91b5c8d7e6', 'GitLab')
     }
   }
@@ -35,7 +35,7 @@ export function localizedHostedReviewCopy(
     return {
       shortLabel: translate('auto.i18n.hostedReview.copy.f0a4b8c2d1', 'PR'),
       reviewLabel: translate('auto.i18n.hostedReview.copy.e9f3a7b1c0', 'pull request'),
-      titleLabel: translate('auto.i18n.hostedReview.copy.d8e2f6a0b9', 'Pull Request'),
+      titleLabel: translate('auto.i18n.hostedReview.copy.d8e2f6a0b9', 'Pull request'),
       providerName: 'Azure DevOps'
     }
   }
@@ -43,14 +43,14 @@ export function localizedHostedReviewCopy(
     return {
       shortLabel: translate('auto.i18n.hostedReview.copy.f0a4b8c2d1', 'PR'),
       reviewLabel: translate('auto.i18n.hostedReview.copy.e9f3a7b1c0', 'pull request'),
-      titleLabel: translate('auto.i18n.hostedReview.copy.d8e2f6a0b9', 'Pull Request'),
+      titleLabel: translate('auto.i18n.hostedReview.copy.d8e2f6a0b9', 'Pull request'),
       providerName: 'Gitea'
     }
   }
   return {
     shortLabel: translate('auto.i18n.hostedReview.copy.f0a4b8c2d1', 'PR'),
     reviewLabel: translate('auto.i18n.hostedReview.copy.e9f3a7b1c0', 'pull request'),
-    titleLabel: translate('auto.i18n.hostedReview.copy.d8e2f6a0b9', 'Pull Request'),
+    titleLabel: translate('auto.i18n.hostedReview.copy.d8e2f6a0b9', 'Pull request'),
     providerName: translate('auto.i18n.hostedReview.copy.c7d1e5f9a8', 'GitHub')
   }
 }

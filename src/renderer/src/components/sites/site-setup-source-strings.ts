@@ -41,7 +41,7 @@ export const getSiteSetupSourceStrings = createLocalizedCatalog(() => ({
   ),
   openIntegrationsSettings: translate(
     'auto.components.sites.SiteSetupSourceScreen.openIntegrationsSettings',
-    'Open Settings → Integrations'
+    'Open settings → Integrations'
   ),
   copyCommand: translate('auto.components.sites.SiteSetupSourceScreen.copyCommand', 'Copy command'),
   copyCommandCopiedToast: translate(

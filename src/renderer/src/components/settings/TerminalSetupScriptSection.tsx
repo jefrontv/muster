@@ -18,7 +18,7 @@ export function TerminalSetupScriptSection({
       <SettingsSubsectionHeader
         title={translate(
           'auto.components.settings.TerminalPane.21f8da2078',
-          'Workspace Setup Script'
+          'Workspace setup script'
         )}
         description={translate(
           'auto.components.settings.TerminalPane.34a0dfa06e',
@@ -30,7 +30,7 @@ export function TerminalSetupScriptSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.TerminalPane.d23b43c5be',
-            'Setup Script Location'
+            'Setup script location'
           )}
           description={translate(
             'auto.components.settings.TerminalPane.34a0dfa06e',
@@ -52,7 +52,7 @@ export function TerminalSetupScriptSection({
           <SettingsRow
             label={translate(
               'auto.components.settings.TerminalPane.d23b43c5be',
-              'Setup Script Location'
+              'Setup script location'
             )}
             description={translate(
               'auto.components.settings.TerminalPane.a9d47451d1',
@@ -82,7 +82,7 @@ export function TerminalSetupScriptSection({
                     'Run in a new tab'
                   )}
                 >
-                  {translate('auto.components.settings.TerminalPane.1158f8fd55', 'New Tab')}
+                  {translate('auto.components.settings.TerminalPane.1158f8fd55', 'New tab')}
                 </ToggleGroupItem>
                 <ToggleGroupItem
                   value="split-vertical"
@@ -94,7 +94,7 @@ export function TerminalSetupScriptSection({
                 >
                   {translate(
                     'auto.components.settings.TerminalPane.332e8a2872',
-                    'Split Vertically'
+                    'Split vertically'
                   )}
                 </ToggleGroupItem>
                 <ToggleGroupItem
@@ -107,7 +107,7 @@ export function TerminalSetupScriptSection({
                 >
                   {translate(
                     'auto.components.settings.TerminalPane.003df129fe',
-                    'Split Horizontally'
+                    'Split horizontally'
                   )}
                 </ToggleGroupItem>
               </ToggleGroup>

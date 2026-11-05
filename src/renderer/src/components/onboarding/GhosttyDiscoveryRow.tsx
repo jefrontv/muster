@@ -36,8 +36,8 @@ export function GhosttyDiscoveryRow({
 
   if (discovery.status === 'imported') {
     return (
-      <div className="flex items-center gap-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/[0.07] px-3.5 py-2.5 text-[12px] text-foreground">
-        <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={3} />
+      <div className="flex items-center gap-2.5 rounded-lg border border-status-success-border bg-status-success-background px-3.5 py-2.5 text-[12px] text-foreground">
+        <Check className="size-3.5 text-status-success" strokeWidth={3} />
         <span className="flex-1">
           <span className="font-medium">
             {translate('auto.components.onboarding.ThemeStep.78b6386140', 'Imported from Ghostty.')}
@@ -72,7 +72,7 @@ export function GhosttyDiscoveryRow({
         </div>
         {preview.configPath && (
           <div
-            className="mt-0.5 truncate font-mono text-[10.5px] text-muted-foreground"
+            className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
             title={preview.configPath}
           >
             {preview.configPath}
@@ -80,7 +80,7 @@ export function GhosttyDiscoveryRow({
         )}
       </div>
       <button
-        className="shrink-0 rounded-md bg-foreground px-3 py-1.5 text-[11.5px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
+        className="shrink-0 rounded-md bg-foreground px-3 py-1.5 text-[11px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
         disabled={importing || disabled}
         onClick={() => onImport(preview)}
       >

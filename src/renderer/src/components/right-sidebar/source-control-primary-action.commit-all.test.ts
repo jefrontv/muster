@@ -26,7 +26,7 @@ describe('resolveCommitAreaPrimaryAction Commit All', () => {
   it('offers Commit All with the file count when a message is typed and nothing is staged', () => {
     expect(resolveCommitAreaPrimaryAction(inputs())).toEqual({
       kind: 'commit',
-      label: 'Commit All',
+      label: 'Commit all',
       title: 'Stage and commit 4 files',
       disabled: false,
       commitAll: true
@@ -71,7 +71,7 @@ describe('resolveCommitAreaPrimaryAction Commit All', () => {
     const result = resolveCommitAreaPrimaryAction(
       inputs({ isRemoteOperationActive: true, inFlightRemoteOpKind: 'fetch' })
     )
-    expect(result.label).toBe('Commit All')
+    expect(result.label).toBe('Commit all')
     expect(result.disabled).toBe(true)
   })
 })

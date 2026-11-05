@@ -92,7 +92,7 @@ describe('resolveForcePushConfirmation', () => {
       title: 'Force push and replace remote commits?',
       description:
         "origin/staging has 2 commits that aren't on your branch. Force pushing deletes them from the remote.",
-      confirmLabel: 'Force Push',
+      confirmLabel: 'Force push',
       confirmVariant: 'destructive'
     })
   })

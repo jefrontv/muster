@@ -125,7 +125,7 @@ export default function ImageViewer({
           isIntrinsicLayout ? 'min-h-64' : 'h-full'
         )}
       >
-        {translate('auto.components.editor.ImageViewer.3ef9551ba2', 'Loading preview...')}
+        {translate('auto.components.editor.ImageViewer.3ef9551ba2', 'Loading preview…')}
       </div>
     )
   }
@@ -187,7 +187,7 @@ export default function ImageViewer({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="rounded p-1 hover:bg-accent hover:text-foreground disabled:opacity-50"
+              className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() =>
                 applyInlineZoomChange((currentZoom) => currentZoom / IMAGE_VIEWER_ZOOM_STEP)
               }
@@ -198,7 +198,7 @@ export default function ImageViewer({
             </button>
             <button
               type="button"
-              className="rounded p-1 hover:bg-accent hover:text-foreground disabled:opacity-50"
+              className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => applyInlineZoomChange(() => 1)}
               disabled={inlineZoom === 1}
               title={translate('auto.components.editor.ImageViewer.6c89c73d9f', 'Reset zoom')}
@@ -207,7 +207,7 @@ export default function ImageViewer({
             </button>
             <button
               type="button"
-              className="rounded p-1 hover:bg-accent hover:text-foreground disabled:opacity-50"
+              className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() =>
                 applyInlineZoomChange((currentZoom) => currentZoom * IMAGE_VIEWER_ZOOM_STEP)
               }

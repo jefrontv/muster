@@ -20,7 +20,7 @@ function itemInputs(overrides: Partial<AmendCommitItemInputs> = {}): AmendCommit
 describe('resolveAmendCommitItem', () => {
   it('is enabled with a message and a HEAD commit', () => {
     const item = resolveAmendCommitItem(itemInputs())
-    expect(item.label).toBe('Commit (Amend)')
+    expect(item.label).toBe('Commit (amend)')
     expect(item.disabled).toBe(false)
     expect(item.title).toBe('Replace the last commit with the staged changes and this message')
   })
@@ -59,7 +59,7 @@ describe('resolveAmendCommitConfirmation', () => {
       behind: 0
     })
     expect(confirmation?.description).toBe(
-      'This commit is already on origin/x. Amending it only changes your local branch, and your next push will need Force Push.'
+      'This commit is already on origin/x. Amending it only changes your local branch, and your next push will need a force push.'
     )
   })
 

@@ -44,8 +44,14 @@ import {
 import {
   RIGHT_SIDEBAR_MIN_WIDTH,
   clampRightSidebarPanelWidth,
-  computeMaxRightSidebarPanelWidth
+  computeMaxRightSidebarPanelWidth,
+  widthBesideLeftSidebar
 } from './right-sidebar-width'
+import {
+  ACTIVITY_BAR_SIDE_WIDTH,
+  useRenderedLeftSidebarWidth,
+  useWindowWidth
+} from '../sidebar/side-panel-room'
 import { translate } from '@/i18n/i18n'
 import { RightSidebarPanelContent } from './right-sidebar-panel-content'
 import { useMeasuredWidth } from './right-sidebar-measured-width'
@@ -61,8 +67,6 @@ import {
   shouldRenderDesktopWindowChrome
 } from '@/lib/desktop-window-chrome'
 import { getRendererAppPlatform } from '@/lib/renderer-app-platform'
-
-const ACTIVITY_BAR_SIDE_WIDTH = 40
 
 function RightSidebarInner(): React.JSX.Element {
   const hasDesktopWindowChrome = shouldRenderDesktopWindowChrome({
@@ -129,14 +133,14 @@ function RightSidebarInner(): React.JSX.Element {
       {
         id: 'pr-checks',
         icon: ListChecks,
-        title: translate('auto.components.right.sidebar.index.parentPrChecks', 'PR Checks'),
+        title: translate('auto.components.right.sidebar.index.parentPrChecks', 'PR checks'),
         shortcut: '',
         folderOnly: true
       },
       {
         id: 'source-control',
         icon: GitBranch,
-        title: translate('auto.components.right.sidebar.index.0314901467', 'Source Control'),
+        title: translate('auto.components.right.sidebar.index.0314901467', 'Source control'),
         shortcut: sourceControlShortcut === 'Unassigned' ? '' : sourceControlShortcut,
         gitOnly: true
       },
@@ -230,7 +234,7 @@ function RightSidebarInner(): React.JSX.Element {
   }
 
   const activityBarSideWidth = activityBarPosition === 'side' ? ACTIVITY_BAR_SIDE_WIDTH : 0
-  const windowWidth = useWindowWidth()
+  const windowWidth = widthBesideLeftSidebar(useWindowWidth(), useRenderedLeftSidebarWidth())
   const maxWidth = computeMaxRightSidebarPanelWidth(windowWidth, activityBarSideWidth)
   const renderedRightSidebarWidth = clampRightSidebarPanelWidth(
     rightSidebarWidth,
@@ -293,7 +297,7 @@ function RightSidebarInner(): React.JSX.Element {
             'Toggle right sidebar'
           )}
         >
-          <PanelRight size={16} />
+          <PanelRight size={14} />
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={6}>
@@ -347,7 +351,7 @@ function RightSidebarInner(): React.JSX.Element {
                             button and desktop window controls. Overflow goes
                             behind More instead of creating a horizontally
                             scrollable toolbar. */}
-                        <div className="flex min-w-0 shrink">
+                        <div className="flex min-w-0 shrink items-center gap-0.5 pl-1">
                           {topActivityLayout.visibleItems.map((item) => (
                             <ActivityBarButton
                               key={item.id}
@@ -404,7 +408,7 @@ function RightSidebarInner(): React.JSX.Element {
                         in the titlebar area; keep sidebar navigation in the
                         sidebar body so the titlebar stays visually native
                         instead of crowded. */}
-                    <div className="flex min-w-0 flex-1 shrink">
+                    <div className="flex min-w-0 flex-1 shrink items-center gap-0.5 pl-1">
                       {topActivityLayout.visibleItems.map((item) => (
                         <ActivityBarButton
                           key={item.id}
@@ -464,7 +468,7 @@ function RightSidebarInner(): React.JSX.Element {
       {activityBarPosition === 'side' && (
         <ContextMenu>
           <ContextMenuTrigger asChild>
-            <div className="flex flex-col items-center w-10 min-w-[40px] bg-sidebar border-l border-border side-activity-bar-windows-inset">
+            <div className="flex flex-col items-center gap-1 pt-1.5 w-10 min-w-[40px] bg-sidebar border-l border-border side-activity-bar-windows-inset">
               <TooltipProvider delayDuration={400}>{sideActivityBarIcons}</TooltipProvider>
             </div>
           </ContextMenuTrigger>
@@ -481,30 +485,6 @@ function RightSidebarInner(): React.JSX.Element {
 const RightSidebar = React.memo(RightSidebarInner)
 export default RightSidebar
 
-// Why: persisted right-sidebar widths can outlive the window size they were
-// chosen in. Clamp from the current window so the terminal/editor never render
-// underneath the sidebar after resize or hydration.
-function useWindowWidth(): number | null {
-  const [windowWidth, setWindowWidth] = useState(() => getWindowWidth())
-
-  useEffect(() => {
-    function update(): void {
-      setWindowWidth(getWindowWidth())
-    }
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
-
-  return windowWidth
-}
-
-function getWindowWidth(): number | null {
-  if (typeof window === 'undefined' || !Number.isFinite(window.innerWidth)) {
-    return null
-  }
-  return window.innerWidth
-}
-
 // ─── Context Menu for Activity Bar Position ───────────
 function ActivityBarPositionMenu({
   currentPosition,
@@ -516,7 +496,7 @@ function ActivityBarPositionMenu({
   return (
     <ContextMenuContent>
       <ContextMenuLabel>
-        {translate('auto.components.right.sidebar.index.864111caa2', 'Activity Bar Position')}
+        {translate('auto.components.right.sidebar.index.864111caa2', 'Activity bar position')}
       </ContextMenuLabel>
       <ContextMenuRadioGroup
         value={currentPosition}

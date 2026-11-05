@@ -1,4 +1,5 @@
 // Header and footer of the plan review, laid out like the editor panel's header.
+import { Badge } from '@/components/ui/badge'
 //
 // The footer is the one part with no markdown viewer equivalent: the decision is what the waiting
 // agent acts on, so it stays visible rather than behind a menu.
@@ -48,7 +49,7 @@ function HeaderIconButton({
           aria-pressed={pressed}
           disabled={disabled}
           onClick={onClick}
-          className={`flex-shrink-0 rounded p-1 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground ${
+          className={`flex-shrink-0 rounded-full p-1 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground ${
             pressed ? 'bg-accent text-foreground' : 'text-muted-foreground'
           }`}
         >
@@ -105,9 +106,9 @@ export function PlanAnnotationHeader({
         <DialogTitle className="flex min-w-0 flex-1 items-center gap-2 text-[12px] font-normal">
           <span className="shrink-0 font-medium text-foreground">Plan review</span>
           {round > 1 ? (
-            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+            <Badge variant="muted" className="shrink-0">
               round {round}
-            </span>
+            </Badge>
           ) : null}
           <span className="truncate text-muted-foreground">
             {[title, ...provenance].join(' · ')}

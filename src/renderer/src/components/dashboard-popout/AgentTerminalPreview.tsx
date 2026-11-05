@@ -420,7 +420,7 @@ export function AgentTerminalPreview({ ptyId }: { ptyId: string }): React.JSX.El
         <div className="absolute inset-0 flex items-center justify-center px-2.5 py-8 text-center text-[11px] text-muted-foreground">
           {translate(
             'dashboardPopout.terminal.closed',
-            "No live terminal — this agent's pane has closed."
+            "No live terminal: this agent's pane has closed."
           )}
         </div>
       ) : null}

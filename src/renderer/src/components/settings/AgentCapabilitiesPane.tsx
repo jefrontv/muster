@@ -53,7 +53,7 @@ export function AgentCapabilitiesPane({
           <span>
             {translate(
               'auto.components.settings.AgentCapabilities.sitesWarning',
-              'These tools reach real infrastructure — WordPress deploys, uploads syncs, and remote database queries. Turning them off is a legitimate way to harden what an agent can touch.'
+              'These tools reach real infrastructure. WordPress deploys, uploads syncs, and remote database queries. Turning them off is a legitimate way to harden what an agent can touch.'
             )}
           </span>
         </div>

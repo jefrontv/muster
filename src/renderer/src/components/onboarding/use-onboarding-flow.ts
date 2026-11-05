@@ -16,7 +16,6 @@ import { resolveOnboardingSettingsHydration } from './onboarding-settings-hydrat
 import { translate } from '@/i18n/i18n'
 import { resolveAgentPermissionModeSummary } from '../../../../shared/tui-agent-permissions'
 import { isWindowsUserAgent } from '@/components/terminal-pane/pane-helpers'
-import { chatModeSupported } from '@/lib/chat-mode-platform'
 import { buildWindowsTerminalSnapshotPayload } from './windows-terminal-onboarding-telemetry'
 import {
   onboardingFinishBusyLabel,
@@ -25,6 +24,7 @@ import {
 } from './onboarding-finish-cta'
 import {
   applyOnboardingDefaultView,
+  availableOnboardingDefaultViews,
   resolveOnboardingDefaultView,
   type OnboardingDefaultView
 } from './onboarding-default-view-step'
@@ -226,8 +226,13 @@ export function useOnboardingFlow(
   const activeCollabConfigured = useAppStore.getState().activeCollabStatus.configured
 
   // Declared ahead of the skip options because the site_mcp step is gated on it.
-  // No Chat/Code choice where Chat is unavailable.
-  const skipDefaultView = !chatModeSupported()
+  const experimentalBots = settings?.experimentalBots
+  const defaultViews = useMemo(
+    () => availableOnboardingDefaultViews(experimentalBots),
+    [experimentalBots]
+  )
+  // No mode choice when Code is the only mode on offer.
+  const skipDefaultView = defaultViews.length < 2
   const [defaultView, setDefaultView] = useState<OnboardingDefaultView>(() =>
     skipDefaultView ? 'code' : resolveOnboardingDefaultView(useAppStore.getState().activeView)
   )
@@ -649,7 +654,7 @@ export function useOnboardingFlow(
         }
         trackCurrentStepCompleted(advancedVia)
         setBusyLabel(
-          translate('auto.components.onboarding.use.onboarding.flow.finishing', 'Finishing...')
+          translate('auto.components.onboarding.use.onboarding.flow.finishing', 'Finishing…')
         )
         await closeWith('completed', {}, ONBOARDING_FINAL_STEP, 'done')
       } finally {
@@ -673,7 +678,7 @@ export function useOnboardingFlow(
       }
       trackCurrentStepCompleted('button')
       setBusyLabel(
-        translate('auto.components.onboarding.use.onboarding.flow.finishing', 'Finishing...')
+        translate('auto.components.onboarding.use.onboarding.flow.finishing', 'Finishing…')
       )
       const closed = await closeWith('completed', {}, ONBOARDING_FINAL_STEP, 'add_project_modal')
       if (closed) {
@@ -827,6 +832,7 @@ export function useOnboardingFlow(
     theme,
     setTheme: setThemeInteractive,
     defaultView,
+    defaultViews,
     setDefaultView: setDefaultViewInteractive,
     busyLabel,
     error,

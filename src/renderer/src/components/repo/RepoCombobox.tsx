@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Check, ChevronsUpDown, FolderPlus, Server } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -207,10 +208,10 @@ export default function RepoCombobox({
                   badgeClassName="size-1.5"
                 />
                 {selectedRepo.connectionId && (
-                  <span className="shrink-0 inline-flex items-center gap-0.5 rounded bg-muted px-1 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
+                  <Badge variant="muted" className="shrink-0 gap-0.5">
                     <Server className="size-2.5" />
                     {translate('auto.components.repo.RepoCombobox.3639fd9da2', 'SSH')}
-                  </span>
+                  </Badge>
                 )}
               </span>
             ) : (
@@ -233,7 +234,7 @@ export default function RepoCombobox({
               ref={setInputNode}
               placeholder={translate(
                 'auto.components.repo.RepoCombobox.a0c48f5f29',
-                'Search projects/folders...'
+                'Search projects/folders…'
               )}
               value={query}
               onValueChange={setQuery}
@@ -266,10 +267,10 @@ export default function RepoCombobox({
                         className="max-w-full"
                       />
                       {repo.connectionId && (
-                        <span className="shrink-0 inline-flex items-center gap-0.5 rounded bg-muted px-1 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
+                        <Badge variant="muted" className="shrink-0 gap-0.5">
                           <Server className="size-2.5" />
                           {translate('auto.components.repo.RepoCombobox.3639fd9da2', 'SSH')}
-                        </span>
+                        </Badge>
                       )}
                     </span>
                     <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{repo.path}</p>

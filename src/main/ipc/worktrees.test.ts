@@ -269,6 +269,7 @@ import {
   registerWorktreeHandlers
 } from './worktrees'
 import { clearConfiguredWorktreeSharedDirectoriesCacheForTests } from '../git/worktree-shared-directories'
+import { BULK_WORKTREE_SCAN_REUSE_MS } from '../git/worktree-scan-reuse'
 
 type HandlerMap = Record<string, (_event: unknown, args: unknown) => unknown>
 
@@ -2334,7 +2335,10 @@ describe('registerWorktreeHandlers', () => {
 
     const result = await handlers['worktrees:listDetected'](null, { repoId: 'repo-1' })
 
-    expect(listWorktreesMock).toHaveBeenCalledWith('/workspace/repo', { wslDistro: 'Ubuntu' })
+    expect(listWorktreesMock).toHaveBeenCalledWith('/workspace/repo', {
+      wslDistro: 'Ubuntu',
+      reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+    })
     expect(result).toMatchObject({
       repoId: 'repo-1',
       authoritative: true,
@@ -2592,9 +2596,12 @@ describe('registerWorktreeHandlers', () => {
     expect(hostResult.worktrees[0].head).toBe('host-head')
     expect(wslResult.worktrees[0].head).toBe('wsl-head')
     expect(listWorktreesMock).toHaveBeenCalledTimes(2)
-    expect(listWorktreesMock).toHaveBeenNthCalledWith(1, '/workspace/repo')
+    expect(listWorktreesMock).toHaveBeenNthCalledWith(1, '/workspace/repo', {
+      reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+    })
     expect(listWorktreesMock).toHaveBeenNthCalledWith(2, '/workspace/repo', {
-      wslDistro: 'Ubuntu'
+      wslDistro: 'Ubuntu',
+      reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
     })
   })
 

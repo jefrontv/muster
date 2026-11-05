@@ -45,7 +45,7 @@ export const NativeChatPickerMenu = memo(function NativeChatPickerMenu({
     <div
       id={listboxId}
       role="listbox"
-      className="scrollbar-sleek absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+      className="scrollbar-sleek absolute bottom-full left-0 right-0 z-20 mb-1 max-h-72 overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-floating"
     >
       {showCommandsHeading ? <PickerGroupHeading kind="commands" /> : null}
       {commands.map((item) => {
@@ -67,7 +67,7 @@ export const NativeChatPickerMenu = memo(function NativeChatPickerMenu({
       {autocomplete.skillStatus === 'loading' ? (
         <PickerStatus>
           <Loader2 className="size-3.5 animate-spin" />
-          {translate('components.native-chat.composer.loadingSkills', 'Loading skills...')}
+          {translate('components.native-chat.composer.loadingSkills', 'Loading skills…')}
         </PickerStatus>
       ) : null}
       {autocomplete.skillStatus === 'error' ? (
@@ -114,7 +114,7 @@ export const NativeChatPickerMenu = memo(function NativeChatPickerMenu({
       {noMatches ? <PickerStatus>{emptyText}</PickerStatus> : null}
       <div aria-live="polite" className="sr-only">
         {autocomplete.skillStatus === 'loading'
-          ? translate('components.native-chat.composer.loadingSkills', 'Loading skills...')
+          ? translate('components.native-chat.composer.loadingSkills', 'Loading skills…')
           : autocomplete.skillStatus === 'error'
             ? translate(
                 'components.native-chat.composer.skillsLoadFailed',
@@ -273,7 +273,7 @@ export function NativeChatMentionHint({
         event.preventDefault()
         onAccept()
       }}
-      className="absolute bottom-full left-3 right-3 mb-1 flex w-auto items-center gap-2 rounded-md border border-border bg-popover px-3 py-1.5 text-left text-xs text-muted-foreground shadow-md sm:left-4 sm:right-4"
+      className="absolute bottom-full left-3 right-3 mb-1 flex w-auto items-center gap-2 rounded-md border border-border bg-popover px-3 py-1.5 text-left text-xs text-muted-foreground shadow-floating sm:left-4 sm:right-4"
     >
       {translate('components.native-chat.composer.mentionHint', 'Referencing file:')}{' '}
       <span className="font-medium text-foreground">@{query || '…'}</span>

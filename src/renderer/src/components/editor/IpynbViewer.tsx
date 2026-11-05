@@ -404,7 +404,7 @@ function CodeCell({
   }
 
   return (
-    <div className="bg-editor-surface focus-within:ring-1 focus-within:ring-ring">
+    <div className="bg-editor-surface focus-within:ring-2 focus-within:ring-ring">
       <Editor
         height={editorHeight}
         defaultLanguage={cell.language}
@@ -451,7 +451,7 @@ function EditableTextCell({
     <textarea
       value={source}
       onChange={(event) => onChange(event.target.value)}
-      className="block min-h-24 w-full resize-y border-0 bg-background px-4 py-3 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring"
+      className="block min-h-24 w-full resize-y border-0 bg-background px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
     />
   )
 }
@@ -988,7 +988,7 @@ export default function IpynbViewer({
         <DialogContent className="max-w-md sm:max-w-md" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="text-sm">
-              {translate('auto.components.editor.IpynbViewer.9e06ae5d36', 'Run Notebook Code?')}
+              {translate('auto.components.editor.IpynbViewer.9e06ae5d36', 'Run notebook code?')}
             </DialogTitle>
             <DialogDescription className="text-xs">
               {translate(

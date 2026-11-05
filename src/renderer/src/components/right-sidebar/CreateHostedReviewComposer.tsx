@@ -327,12 +327,12 @@ function getCreateButtonLabel({
   shortLabel: string
 }): string {
   if (isCreating) {
-    return translate('auto.components.right.sidebar.SourceControl.26511c22b4', 'Creating...')
+    return translate('auto.components.right.sidebar.SourceControl.26511c22b4', 'Creating…')
   }
   if (pushBeforeCreate) {
     return translate(
       'auto.components.right.sidebar.CreateHostedReviewComposer.741ff8a0d2',
-      'Push & Create {{value0}}',
+      'Push & create {{value0}}',
       { value0: shortLabel }
     )
   }

@@ -59,7 +59,7 @@ function ProviderRow(props: {
             <h3 className="text-[13px] font-semibold leading-tight text-foreground">{name}</h3>
             <ConnectionPill connected={connected} label={connectionLabel} />
           </div>
-          <p className="mt-0.5 truncate text-[11.5px] leading-snug text-muted-foreground">
+          <p className="mt-0.5 truncate text-[11px] leading-snug text-muted-foreground">
             {description}
           </p>
         </div>

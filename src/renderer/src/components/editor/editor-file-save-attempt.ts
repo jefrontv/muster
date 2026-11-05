@@ -12,7 +12,7 @@ export async function attemptEditorFileSave(target: EditorSaveFileTarget): Promi
     toast.error(
       translate(
         'auto.components.editor.editor.save.failure.notice.8c59ce5075',
-        'Failed to save the file. Please try again.'
+        'Failed to save the file. Try again.'
       )
     )
     return false

@@ -46,7 +46,7 @@ export type {
  * An undefined upstream status means fetchUpstreamStatus has not resolved
  * yet for this worktree. We return a disabled Commit so the button has a
  * stable frame until the real status lands — otherwise it would flash
- * through "Publish Branch" on every worktree switch.
+ * through "Publish branch" on every worktree switch.
  */
 export function resolvePrimaryAction(inputs: PrimaryActionInputs): PrimaryAction {
   return toRendererPrimaryAction(resolveSourceControlPrimaryActionDecision(inputs), inputs)
@@ -79,7 +79,7 @@ function resolvePrimaryActionLabel(
   if (decision.labelIntent === 'force_push') {
     return translate(
       'auto.components.right.sidebar.source.control.primary.action.390abeab93',
-      'Force Push'
+      'Force push'
     )
   }
   if (decision.labelIntent === 'create_pr') {
@@ -101,12 +101,12 @@ function resolvePrimaryActionLabel(
     case 'commit_all':
       return translate(
         'auto.components.right.sidebar.source.control.primary.action.commitAll',
-        'Commit All'
+        'Commit all'
       )
     case 'stage':
       return translate(
         'auto.components.right.sidebar.source.control.primary.action.18a0fca877',
-        'Stage All'
+        'Stage all'
       )
     case 'push':
       return translate(
@@ -126,7 +126,7 @@ function resolvePrimaryActionLabel(
     case 'publish':
       return translate(
         'auto.components.right.sidebar.source.control.primary.action.7b4d02e6b8',
-        'Publish Branch'
+        'Publish branch'
       )
     case 'create_pr_intent':
       return resolvePrimaryActionLabel({ ...decision, labelIntent: 'create_pr' }, inputs)
@@ -149,7 +149,7 @@ function resolvePrimaryActionTitle(
     case 'force_push_in_progress':
       return translate(
         'auto.components.right.sidebar.source.control.primary.action.74fc171e99',
-        'Force Push in progress…'
+        'Force push in progress…'
       )
     case 'action_in_progress':
       return translate(
@@ -165,7 +165,7 @@ function resolvePrimaryActionTitle(
     case 'remote_operation_blocks_commit':
       return translate(
         'auto.components.right.sidebar.source.control.primary.action.7f8a9b0c1d',
-        'Remote operation in progress — try again once it finishes'
+        'Remote operation in progress. Try again once it finishes'
       )
     case 'resolve_conflicts_before_commit':
       return translate(

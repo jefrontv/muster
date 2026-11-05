@@ -108,7 +108,7 @@ describe('openAiVaultSessionLogInOrca', () => {
     await openAiVaultSessionLogInOrca({ filePath: LOG_PATH, executionHostId: 'local' })
 
     expect(state.openFile).not.toHaveBeenCalled()
-    expect(toastErrorMock).toHaveBeenCalledWith("Couldn't open log — path not authorized.")
+    expect(toastErrorMock).toHaveBeenCalledWith("Couldn't open log: path not authorized.")
   })
 
   it('toasts and creates no tab when the workspace vanishes after authorization', async () => {
@@ -121,7 +121,7 @@ describe('openAiVaultSessionLogInOrca', () => {
     expect(state.openFile).not.toHaveBeenCalled()
     expect(stateAfter.openFile).not.toHaveBeenCalled()
     expect(toastErrorMock).toHaveBeenCalledWith(
-      "Couldn't open log — workspace is no longer available."
+      "Couldn't open log: workspace is no longer available."
     )
   })
 

@@ -106,7 +106,7 @@ function ChatToolGroupRowImpl({ items }: { items: ChatToolItem[] }): React.JSX.E
       label={
         <>
           <span className="min-w-0 truncate">{label}</span>
-          <span className="ml-2 shrink-0 tabular-nums text-chat-ink-caption">
+          <span className="ml-2 shrink-0 tabular-nums text-chat-ink-tertiary">
             {translate('components.chat-thread.group.calls', '{{count}} calls', {
               count: items.length
             })}

@@ -342,7 +342,7 @@ describe('CommitArea', () => {
     expect(button).toContain('animate-spin')
   })
 
-  it('hides commit failure AI actions when Source Control AI actions are hidden', () => {
+  it('hides commit failure AI actions when Source control AI actions are hidden', () => {
     const markup = renderCommitArea({
       ...baseProps(),
       commitError: 'husky - pre-commit hook failed',
@@ -350,7 +350,7 @@ describe('CommitArea', () => {
       sourceControlAiActionsVisible: false
     })
 
-    expect(markup).not.toContain('AI Fix')
+    expect(markup).not.toContain('AI fix')
     expect(markup).not.toContain('Fix commit failure with AI')
     expect(markup).toContain('Commit blocked')
   })
@@ -402,7 +402,7 @@ describe('CommitArea', () => {
     expect(markup).toContain('Details')
   })
 
-  it('hides push failure AI actions when Source Control AI actions are hidden', () => {
+  it('hides push failure AI actions when Source control AI actions are hidden', () => {
     const markup = renderCommitArea({
       ...baseProps(),
       pushRecovery: buildPushRecovery('husky - pre-push hook failed'),
@@ -572,7 +572,7 @@ describe('CommitArea', () => {
     const markup = renderCommitArea(baseProps(input))
 
     const stageAllButton = firstButton(markup)
-    expect(stageAllButton).toContain('Stage All')
+    expect(stageAllButton).toContain('Stage all')
     expect(stageAllButton).toContain('data-variant="default"')
     expect(stageAllButton).not.toContain('disabled=""')
     expect(stageAllButton).toContain('lucide-plus')
@@ -755,7 +755,7 @@ describe('ConflictSummaryCard', () => {
     expect(markup).not.toMatch(/\blucide-sparkle(?!s)\b/)
   })
 
-  it('hides Resolve with AI when Source Control AI actions are hidden', () => {
+  it('hides Resolve with AI when Source control AI actions are hidden', () => {
     const markup = renderToStaticMarkup(
       <ConflictSummaryCard
         conflictOperation="merge"

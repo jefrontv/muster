@@ -1,4 +1,5 @@
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: feedback viewer details are loaded through GitHub IPC after the dialog receives the issue URL. */
+import { Input } from '@/components/ui/input'
 import React, { useRef, useState } from 'react'
 import { ExternalLink, Github } from 'lucide-react'
 import { toast } from 'sonner'
@@ -15,6 +16,7 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import { cn } from '@/lib/utils'
 import type { GitHubViewer } from '../../../../shared/types'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 const GITHUB_ISSUES_URL = 'https://github.com/jefrontv/muster/issues/'
 /** Per-viewer convenience only: the name is re-sent with every report, never read back. */
@@ -119,7 +121,7 @@ export function SidebarFeedbackDialog({
       toast.warning(
         translate(
           'auto.components.sidebar.SidebarFeedbackDialog.a2fd890d9e',
-          'Please enter feedback before submitting.'
+          'Enter feedback before submitting.'
         )
       )
       return
@@ -163,7 +165,7 @@ export function SidebarFeedbackDialog({
         toast.error(
           translate(
             'auto.components.sidebar.SidebarFeedbackDialog.60b721e857',
-            'Failed to submit feedback. Please try again.'
+            'Failed to submit feedback. Try again.'
           )
         )
       }
@@ -186,7 +188,7 @@ export function SidebarFeedbackDialog({
       >
         <DialogHeader>
           <DialogTitle className="text-sm">
-            {translate('auto.components.sidebar.SidebarFeedbackDialog.0eb643f07f', 'Send Feedback')}
+            {translate('auto.components.sidebar.SidebarFeedbackDialog.0eb643f07f', 'Send feedback')}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {translate(
@@ -221,7 +223,7 @@ export function SidebarFeedbackDialog({
           </div>
         </div>
 
-        <input
+        <Input
           type="text"
           value={reporterName}
           onChange={(event) => setReporterName(event.target.value)}
@@ -235,10 +237,10 @@ export function SidebarFeedbackDialog({
             'auto.components.sidebar.SidebarFeedbackDialog.b3f59dc70e',
             'Your name (optional)'
           )}
-          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="h-9 text-sm"
         />
 
-        <textarea
+        <Textarea
           ref={feedbackTextareaRef}
           value={feedback}
           onChange={(event) => setFeedback(event.target.value)}
@@ -247,7 +249,7 @@ export function SidebarFeedbackDialog({
             'What could we improve?'
           )}
           rows={7}
-          className="min-h-32 w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="min-h-32"
         />
 
         <div className="min-h-9 rounded-md border border-border/70 bg-muted/30 px-3 py-2">

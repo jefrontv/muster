@@ -370,7 +370,7 @@ describe('PRCommentsList', () => {
 
     expect(markup).toContain('aria-label="Start conversation"')
     expect(markup).toContain('lucide-plus')
-    expect(markup).not.toContain('Start conversation...')
+    expect(markup).not.toContain('Start conversation…')
     expect(markup).not.toContain('No comments yet')
     expect(markup).not.toContain('Add a comment')
     expect((markup.match(/lucide-message-square/g) ?? []).length).toBe(1)

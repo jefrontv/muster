@@ -532,10 +532,10 @@ export function FileExplorerRow({
           data-file-explorer-row=""
           data-selected={isSelected ? 'true' : undefined}
           className={cn(
-            'flex w-full items-center gap-1 rounded-sm px-2 py-1 text-left text-xs transition-colors',
-            !isSelected && 'hover:bg-accent hover:text-foreground',
+            'flex w-full items-center gap-1 rounded-md px-2 py-1 text-left text-xs transition-colors',
+            !isSelected && 'hover:bg-foreground/[0.06] hover:text-foreground',
             isSelected && 'text-accent-foreground',
-            isFlashing && 'bg-amber-400/20 ring-1 ring-inset ring-amber-400/70'
+            isFlashing && 'bg-status-attention-background ring-1 ring-inset ring-status-attention'
           )}
           style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
           ref={setRowDragNode}
@@ -663,7 +663,7 @@ export function FileExplorerRow({
           </span>
           {nodeStatus ? (
             <span
-              className="ml-auto shrink-0 text-[10px] font-semibold tracking-wide mr-2"
+              className="ml-auto shrink-0 text-[11px] font-semibold tracking-wide mr-2"
               style={{ color: statusColor ?? undefined }}
             >
               {STATUS_LABELS[nodeStatus]}
@@ -687,11 +687,11 @@ export function FileExplorerRow({
       >
         <ContextMenuItem onSelect={() => onStartNew('file', targetDir, targetDepth)}>
           <FilePlus />
-          {translate('auto.components.right.sidebar.FileExplorerRow.37c875d827', 'New File')}
+          {translate('auto.components.right.sidebar.FileExplorerRow.37c875d827', 'New file')}
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => onStartNew('folder', targetDir, targetDepth)}>
           <FolderPlus />
-          {translate('auto.components.right.sidebar.FileExplorerRow.f61af83316', 'New Folder')}
+          {translate('auto.components.right.sidebar.FileExplorerRow.f61af83316', 'New folder')}
         </ContextMenuItem>
         <ContextMenuSeparator />
         {showCopyFileAction && (
@@ -703,8 +703,8 @@ export function FileExplorerRow({
         <ContextMenuItem onSelect={() => onCopyPaths('absolute')}>
           <Copy />
           {selectionSize > 1
-            ? translate('auto.components.right.sidebar.FileExplorerRow.f9d7ca753d', 'Copy Paths')
-            : translate('auto.components.right.sidebar.FileExplorerRow.b5d436aa30', 'Copy Path')}
+            ? translate('auto.components.right.sidebar.FileExplorerRow.f9d7ca753d', 'Copy paths')
+            : translate('auto.components.right.sidebar.FileExplorerRow.b5d436aa30', 'Copy path')}
           {copyPathShortcutLabel !== 'Unassigned' ? (
             <ContextMenuShortcut>{copyPathShortcutLabel}</ContextMenuShortcut>
           ) : null}
@@ -714,11 +714,11 @@ export function FileExplorerRow({
           {selectionSize > 1
             ? translate(
                 'auto.components.right.sidebar.FileExplorerRow.42e10cbf57',
-                'Copy Relative Paths'
+                'Copy relative paths'
               )
             : translate(
                 'auto.components.right.sidebar.FileExplorerRow.66a29dde82',
-                'Copy Relative Path'
+                'Copy relative path'
               )}
           {copyRelativePathShortcutLabel !== 'Unassigned' ? (
             <ContextMenuShortcut>{copyRelativePathShortcutLabel}</ContextMenuShortcut>
@@ -735,7 +735,7 @@ export function FileExplorerRow({
             <FolderPlus />
             {translate(
               'auto.components.right.sidebar.FileExplorerRow.1bb9be455c',
-              'Add as Project...'
+              'Add as project…'
             )}
           </ContextMenuItem>
         )}
@@ -744,14 +744,14 @@ export function FileExplorerRow({
             <SquareTerminal />
             {translate(
               'auto.components.right.sidebar.FileExplorerRow.e887fa4b2e',
-              'Open in Terminal'
+              'Open in terminal'
             )}
           </ContextMenuItem>
         )}
         {shouldShowViewFileAction(node) && (
           <ContextMenuItem onSelect={onViewFile}>
             <File />
-            {translate('auto.components.right.sidebar.FileExplorerRow.1d8e182c32', 'View File')}
+            {translate('auto.components.right.sidebar.FileExplorerRow.1d8e182c32', 'View file')}
           </ContextMenuItem>
         )}
         {!node.isDirectory && activeWorktreeId && (
@@ -759,7 +759,7 @@ export function FileExplorerRow({
             <Globe />
             {translate(
               'auto.components.right.sidebar.FileExplorerRow.dd112c81d2',
-              'Open in Muster Browser'
+              'Open in Muster browser'
             )}
           </ContextMenuItem>
         )}
@@ -777,7 +777,7 @@ export function FileExplorerRow({
             <Eye />
             {translate(
               'auto.components.right.sidebar.FileExplorerRow.d87a4c42e1',
-              'Open Markdown Preview'
+              'Open Markdown preview'
             )}
           </ContextMenuItem>
         )}
@@ -787,7 +787,7 @@ export function FileExplorerRow({
             {node.isDirectory
               ? translate(
                   'auto.components.right.sidebar.FileExplorerRow.7ac885bd2f',
-                  'Download Folder'
+                  'Download folder'
                 )
               : translate('auto.components.right.sidebar.FileExplorerRow.c2112579f6', 'Download')}
           </ContextMenuItem>
@@ -797,7 +797,7 @@ export function FileExplorerRow({
             <ListCollapse />
             {translate(
               'auto.components.right.sidebar.FileExplorerRow.d6a25618aa',
-              'Collapse Folder'
+              'Collapse folder'
             )}
           </ContextMenuItem>
         )}
@@ -806,7 +806,7 @@ export function FileExplorerRow({
             <Search />
             {translate(
               'auto.components.right.sidebar.FileExplorerRow.0df0e5abac',
-              'Find in Folder'
+              'Find in folder'
             )}
             {findInFolderShortcutLabel !== 'Unassigned' ? (
               <ContextMenuShortcut>{findInFolderShortcutLabel}</ContextMenuShortcut>

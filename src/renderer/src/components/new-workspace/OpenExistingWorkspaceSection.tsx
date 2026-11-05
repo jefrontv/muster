@@ -99,14 +99,14 @@ export function OpenExistingWorkspaceSection({
           <p className="rounded-md border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
             {translate(
               'auto.components.new.workspace.open.noCheckout',
-              'This project has no checkout to open yet — create a worktree instead.'
+              'This project has no checkout to open yet. Create a worktree instead.'
             )}
           </p>
         )}
         <p className="text-xs text-muted-foreground">
           {translate(
             'auto.components.new.workspace.open.hint',
-            'Opens the existing checkout on its current branch — nothing new is created.'
+            'Opens the existing checkout on its current branch. Nothing new is created.'
           )}
         </p>
       </div>
@@ -122,7 +122,7 @@ export function OpenExistingWorkspaceSection({
           onOpenManageAgents={onOpenAgentSettings}
           defaultAgent={defaultTuiAgent}
           onSetDefault={(next) => void updateSettings({ defaultTuiAgent: next })}
-          triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-[3px] focus:ring-ring/50"
+          triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-2 focus:ring-ring"
           onTriggerEnter={openDisabled ? undefined : onOpen}
         />
       </div>

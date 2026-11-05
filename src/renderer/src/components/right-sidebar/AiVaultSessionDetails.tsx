@@ -134,7 +134,7 @@ export function SessionInlineDetails({
               <MessageSquarePlus className="size-3.5" />
               {translate(
                 'components.agentSessionContinuation.continueInNewSession',
-                'Continue in New Session…'
+                'Continue in new session…'
               )}
             </Button>
           ) : null}
@@ -154,7 +154,7 @@ export function SessionInlineDetails({
               <Play className="size-3.5" />
               {translate(
                 'auto.components.right.sidebar.AiVaultSessionDetails.resumeInWorktree',
-                'Resume in Worktree'
+                'Resume in workspace'
               )}
             </Button>
           ) : null}
@@ -174,7 +174,7 @@ export function SessionInlineDetails({
               <Play className="size-3.5" />
               {translate(
                 'auto.components.right.sidebar.AiVaultSessionRow.resumeInNewTab',
-                'Resume in New Tab'
+                'Resume in new tab'
               )}
             </Button>
           ) : null}
@@ -191,7 +191,7 @@ export function SessionInlineDetails({
               className="h-7 shrink-0 px-2.5 text-[11px] text-muted-foreground"
             >
               <FileJson className="size-3.5" />
-              {translate('auto.components.right.sidebar.AiVaultSessionDetails.viewLog', 'View Log')}
+              {translate('auto.components.right.sidebar.AiVaultSessionDetails.viewLog', 'View log')}
             </Button>
           ) : null}
         </div>
@@ -238,7 +238,7 @@ function ConversationTurnCard({
           : 'border-sidebar-border/70 bg-sidebar-accent/25'
       )}
     >
-      <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
         {conversationRoleLabel(role)}
       </div>
       <p className="line-clamp-4 text-[12px] leading-[1.35] text-foreground/90 [overflow-wrap:anywhere]">
@@ -267,7 +267,7 @@ function WorktreeMetadataLines({
           vaultScope
         }) ? (
           <>
-            <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
               {aiVaultWorktreeStatusLabel(worktreeInfo.status)}
             </span>
             <span className="shrink-0 text-muted-foreground/45">·</span>

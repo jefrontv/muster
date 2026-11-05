@@ -218,9 +218,7 @@ function QuickTabBody({
   const isFolderWorkspaceTarget = selectedProjectOption?.kind === 'project-group'
   const primaryActionLabel = isFolderWorkspaceTarget
     ? getFolderWorkspacePrimaryActionLabel()
-    : cardProps.selectedRepoIsGit
-      ? translate('auto.components.NewWorkspaceComposerModal.createWorktree', 'Create worktree')
-      : translate('auto.components.NewWorkspaceComposerModal.createWorkspace', 'Create workspace')
+    : translate('auto.components.NewWorkspaceComposerModal.createWorkspace', 'Create workspace')
 
   // Open vs New worktree: "Create workspace" always creating a worktree read
   // as opening a project to many users, so opening the existing checkout is
@@ -249,7 +247,7 @@ function QuickTabBody({
       toast.error(
         translate(
           'auto.components.NewWorkspaceComposerModal.openNoCheckout',
-          'This project has no checkout to open yet — create a worktree instead.'
+          'This project has no checkout to open yet. Create a worktree instead.'
         )
       )
       return
@@ -330,7 +328,7 @@ function QuickTabBody({
           {isFolderWorkspaceTarget
             ? translate(
                 'auto.components.sidebar.FolderWorkspaceComposerDialog.title',
-                'Create Folder Workspace'
+                'Create folder workspace'
               )
             : openModeActive
               ? translate('auto.components.NewWorkspaceComposerModal.openTitle', 'Open workspace')

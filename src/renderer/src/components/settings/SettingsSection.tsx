@@ -1,4 +1,5 @@
 import type React from 'react'
+import { Badge } from '@/components/ui/badge'
 import { createContext, useContext } from 'react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '../../store'
@@ -10,6 +11,27 @@ import { matchesSettingsSearch } from './settings-search'
 const ActiveSettingsSectionContext = createContext<string | null>(null)
 
 export const ActiveSettingsSectionProvider = ActiveSettingsSectionContext.Provider
+
+// Why: Settings paints its shell before pane bodies mount; this marks that first frame.
+const SettingsPanesPendingContext = createContext(false)
+
+export const SettingsPanesPendingProvider = SettingsPanesPendingContext.Provider
+
+function SettingsSectionSkeleton(): React.JSX.Element {
+  return (
+    <div aria-hidden className="space-y-5">
+      {[0, 1, 2].map((row) => (
+        <div key={row} className="flex items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="h-3 w-40 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-2.5 w-64 animate-pulse rounded-full bg-foreground/[0.05]" />
+          </div>
+          <div className="h-5 w-9 animate-pulse rounded-full bg-foreground/[0.07]" />
+        </div>
+      ))}
+    </div>
+  )
+}
 
 type SettingsSectionProps = {
   id: string
@@ -49,6 +71,7 @@ export function SettingsSection({
 }: SettingsSectionProps): React.JSX.Element | null {
   const query = useAppStore((state) => state.settingsSearchQuery)
   const activeFromContext = useContext(ActiveSettingsSectionContext)
+  const panesPending = useContext(SettingsPanesPendingContext)
   const sectionIsActive = isActive ?? activeFromContext === id
   const hasQuery = query.trim() !== ''
   const matchesQuery = !searchEntries || matchesSettingsSearch(query, searchEntries)
@@ -68,11 +91,7 @@ export function SettingsSection({
         <div className="min-w-0 space-y-2">
           <h2 className="flex flex-wrap items-center gap-2 text-2xl font-semibold leading-tight text-foreground">
             {title}
-            {badge ? (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
-                {badge}
-              </span>
-            ) : null}
+            {badge ? <Badge variant="muted">{badge}</Badge> : null}
             {badgeAccessory}
           </h2>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
@@ -88,7 +107,7 @@ export function SettingsSection({
           bodyClassName
         )}
       >
-        {children}
+        {panesPending && !children ? <SettingsSectionSkeleton /> : children}
       </div>
     </section>
   )

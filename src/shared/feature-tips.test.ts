@@ -69,8 +69,8 @@ describe('feature tips', () => {
       eyebrow: 'Tip',
       ctaLabel: 'Got it'
     })
-    expect(paletteTip?.description).toContain('worktrees')
-    expect(paletteTip?.description).toContain('spin up a new worktree')
+    expect(paletteTip?.description).toContain('workspaces')
+    expect(paletteTip?.description).toContain('spin up a new workspace')
   })
 
   it('does not label the voice dictation tip as new', () => {

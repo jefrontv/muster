@@ -30,6 +30,7 @@ export function TerminalZoomControl({
       <Button
         variant="outline"
         size="icon-sm"
+        aria-label={translate('auto.components.settings.TerminalZoomControl.zoomOut', 'Zoom out')}
         onClick={() => apply(size - 1)}
         disabled={size <= MIN_FONT_SIZE}
       >
@@ -39,6 +40,7 @@ export function TerminalZoomControl({
       <Button
         variant="outline"
         size="icon-sm"
+        aria-label={translate('auto.components.settings.TerminalZoomControl.zoomIn', 'Zoom in')}
         onClick={() => apply(size + 1)}
         disabled={size >= MAX_FONT_SIZE}
       >

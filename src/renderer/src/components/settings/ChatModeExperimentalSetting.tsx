@@ -32,7 +32,7 @@ export function ChatModeExperimentalSetting({
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.ExperimentalPane.chatMode.copy',
-              'Adds a Chat/Code switch at the top of the sidebar. Chat workspaces are just a name plus folders, with chat threads inside — no branches or worktrees.'
+              'Adds a Chat/Code switch at the top of the sidebar. Chat workspaces are just a name plus folders, with chat threads inside. No branches or worktrees.'
             )}
           </p>
         </div>

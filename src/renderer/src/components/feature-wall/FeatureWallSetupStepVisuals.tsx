@@ -23,7 +23,7 @@ export function SetupWorkspacesVisual(): JSX.Element {
   return (
     <div aria-hidden className="relative h-28 w-[156px] shrink-0">
       <WorktreeGlyphPanel className="right-0 top-0 bg-muted/60" />
-      <WorktreeGlyphPanel className="bottom-0 left-0 bg-muted shadow-[0_6px_16px_rgba(0,0,0,0.12)]" />
+      <WorktreeGlyphPanel className="bottom-0 left-0 bg-muted shadow-floating" />
     </div>
   )
 }
@@ -50,7 +50,7 @@ function WorktreeGlyphPanel(props: { className?: string }): JSX.Element {
 export function SetupBrowserVisual(): JSX.Element {
   return (
     <div aria-hidden className="relative h-28 w-[156px] shrink-0">
-      <div className="absolute inset-y-1 inset-x-0 flex flex-col overflow-hidden rounded-[10px] border-[1.5px] border-border bg-muted shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+      <div className="absolute inset-y-1 inset-x-0 flex flex-col overflow-hidden rounded-[10px] border-[1.5px] border-border bg-muted shadow-floating">
         <div className="flex items-center gap-1.5 border-b border-border px-2 py-1.5">
           <TerminalDots />
           <span className="ml-1 h-[5px] flex-1 rounded-full bg-foreground/10" />
@@ -80,7 +80,7 @@ export function SetupMultipleReposVisual(): JSX.Element {
 
 function RepoCard(props: { nameWidth: string; worktreeWidth: string }): JSX.Element {
   return (
-    <div className="flex flex-col gap-2 rounded-[10px] border-[1.5px] border-emerald-500/35 bg-muted p-2.5 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+    <div className="flex flex-col gap-2 rounded-[10px] border-[1.5px] border-emerald-500/35 bg-muted p-2.5 shadow-floating">
       <span className="flex items-center gap-1.5">
         <FolderGit2 className="size-[15px] shrink-0 text-muted-foreground" />
         <span className={cn('h-[5px] rounded-full bg-foreground/10', props.nameWidth)} />

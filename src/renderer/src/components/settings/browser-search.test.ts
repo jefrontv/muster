@@ -14,14 +14,14 @@ describe('browser settings search copy', () => {
     expect(description).not.toContain('Cmd/Ctrl')
 
     const linkRoutingEntry = getBrowserPaneSearchEntries({ isMac: true }).find(
-      (entry) => entry.title === 'Link Routing'
+      (entry) => entry.title === 'Link routing'
     )
     expect(linkRoutingEntry?.description).toBe(description)
     expect(linkRoutingEntry?.keywords).toContain('cmd')
     expect(linkRoutingEntry?.keywords).not.toContain('ctrl')
 
     const defaultZoomEntry = getBrowserPaneSearchEntries({ isMac: true }).find(
-      (entry) => entry.title === 'Default Zoom'
+      (entry) => entry.title === 'Default zoom'
     )
     expect(defaultZoomEntry?.keywords).toContain('zoom')
   })
@@ -34,7 +34,7 @@ describe('browser settings search copy', () => {
     expect(description).not.toContain('Cmd/Ctrl')
 
     const linkRoutingEntry = getBrowserPaneSearchEntries({ isMac: false }).find(
-      (entry) => entry.title === 'Link Routing'
+      (entry) => entry.title === 'Link routing'
     )
     expect(linkRoutingEntry?.description).toBe(description)
     expect(linkRoutingEntry?.keywords).toContain('ctrl')

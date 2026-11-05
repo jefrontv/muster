@@ -245,7 +245,7 @@ export default function MobilePage(): React.JSX.Element {
       toast.message(
         translate(
           'auto.components.mobile.MobilePageToolbar.e1c7b4a92d',
-          'Configure in Settings > Mobile.'
+          'Configure in settings > Mobile.'
         )
       )
     }

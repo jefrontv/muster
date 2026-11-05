@@ -30,7 +30,7 @@ export function useNativeChatEngineThread(input: {
   const previousRef = useRef<{ threadId: string; state: NativeChatEngineTurnsState } | null>(null)
   const failedDeliveryText = translate(
     'components.native-chat.launchPromptNotDelivered',
-    'Not delivered — check the terminal'
+    'Not delivered: check the terminal'
   )
   const state = useMemo(() => {
     const previous = previousRef.current?.threadId === threadId ? previousRef.current.state : null

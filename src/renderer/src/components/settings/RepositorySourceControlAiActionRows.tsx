@@ -40,6 +40,7 @@ import {
 import { hasOwnActionOverride } from './repository-source-control-ai-draft'
 import { getRepositorySourceControlAiActionRecipeSectionId } from './repository-settings-targets'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 type RepositorySourceControlAiActionRowsProps = {
   repoId: string
@@ -141,7 +142,7 @@ export function RepositorySourceControlAiActionRows({
                 value={hasOverride ? ACTION_MODE_OVERRIDE : ACTION_MODE_INHERIT}
                 onValueChange={(value) => onActionModeChange(actionId, value)}
               >
-                <SelectTrigger size="sm" className="h-8 w-full shrink-0 text-xs sm:w-[150px]">
+                <SelectTrigger className="w-full shrink-0 sm:w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,7 +174,7 @@ export function RepositorySourceControlAiActionRows({
                   onValueChange={(value) => onActionAgentChange(actionId, value)}
                   disabled={!hasOverride}
                 >
-                  <SelectTrigger size="sm" className="h-8 w-full text-xs">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -224,7 +225,7 @@ export function RepositorySourceControlAiActionRows({
                   disabled={!hasOverride}
                   placeholder={agentArgsPlaceholder}
                   spellCheck={false}
-                  className="h-8 font-mono text-xs disabled:cursor-not-allowed disabled:bg-muted/40"
+                  className="font-mono text-xs"
                 />
               </div>
               <div className="space-y-2">
@@ -234,14 +235,14 @@ export function RepositorySourceControlAiActionRows({
                     'Command template'
                   )}
                 </Label>
-                <textarea
+                <Textarea
                   rows={3}
                   value={templateValue}
                   onChange={(event) => onActionTemplateChange(actionId, event.target.value)}
                   disabled={!hasOverride}
                   placeholder={inheritedTemplate}
                   spellCheck={false}
-                  className="w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/70 disabled:cursor-not-allowed disabled:bg-muted/40 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="resize-y font-mono text-xs"
                 />
                 <SourceControlActionVariableChips
                   actionId={actionId}
@@ -288,7 +289,7 @@ export function RepositorySourceControlAiActionRows({
                     {isSavingAction
                       ? translate(
                           'auto.components.settings.SourceControlAiActionRecipeDefaults.4f549a5fa8',
-                          'Saving...'
+                          'Saving…'
                         )
                       : translate(
                           'auto.components.settings.SourceControlAiActionRecipeDefaults.d18d665e12',

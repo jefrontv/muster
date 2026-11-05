@@ -15,7 +15,7 @@ describe('getTerminalPaneSearchEntries', () => {
 
   it('includes the PowerShell version setting on Windows', () => {
     const entries = getTerminalPaneSearchEntries({ isWindows: true, isMac: false })
-    expect(entries.some((entry) => entry.title === 'PowerShell Version')).toBe(true)
+    expect(entries.some((entry) => entry.title === 'PowerShell version')).toBe(true)
   })
 
   it('keeps Windows host entries separate from Windows client entries', () => {
@@ -25,14 +25,14 @@ describe('getTerminalPaneSearchEntries', () => {
       isMac: false
     })
 
-    expect(entries.some((entry) => entry.title === 'Default Shell')).toBe(true)
-    expect(entries.some((entry) => entry.title === 'PowerShell Version')).toBe(true)
+    expect(entries.some((entry) => entry.title === 'Default shell')).toBe(true)
+    expect(entries.some((entry) => entry.title === 'PowerShell version')).toBe(true)
     expect(entries.some((entry) => entry.title === 'Right-click to paste')).toBe(true)
   })
 
   it('omits legacy WSL distribution terminal settings on Windows', () => {
     const entries = getTerminalPaneSearchEntries({ isWindows: true, isMac: false })
-    expect(entries.some((entry) => entry.title === 'WSL Distribution')).toBe(false)
+    expect(entries.some((entry) => entry.title === 'WSL distribution')).toBe(false)
     expect(matchesSettingsSearch('ubuntu distro', entries)).toBe(false)
   })
 
@@ -45,25 +45,25 @@ describe('getTerminalPaneSearchEntries', () => {
 
   it('omits the PowerShell version setting elsewhere', () => {
     const entries = getTerminalPaneSearchEntries({ isWindows: false, isMac: false })
-    expect(entries.some((entry) => entry.title === 'PowerShell Version')).toBe(false)
+    expect(entries.some((entry) => entry.title === 'PowerShell version')).toBe(false)
   })
 
   it('includes the Option as Alt setting on macOS', () => {
     const entries = getTerminalPaneSearchEntries({ isWindows: false, isMac: true })
-    expect(entries.some((entry) => entry.title === 'Option as Alt')).toBe(true)
+    expect(entries.some((entry) => entry.title === 'Use Option as Alt')).toBe(true)
   })
 
   it('omits the Option as Alt setting on non-macOS', () => {
     const entries = getTerminalPaneSearchEntries({ isWindows: false, isMac: false })
-    expect(entries.some((entry) => entry.title === 'Option as Alt')).toBe(false)
+    expect(entries.some((entry) => entry.title === 'Use Option as Alt')).toBe(false)
   })
 
   it('includes the JIS Yen mapping setting only on macOS', () => {
     const entriesMac = getTerminalPaneSearchEntries({ isWindows: false, isMac: true })
     const entriesLinux = getTerminalPaneSearchEntries({ isWindows: false, isMac: false })
 
-    expect(entriesMac.some((entry) => entry.title === 'JIS Yen (¥) to Backslash (\\)')).toBe(true)
-    expect(entriesLinux.some((entry) => entry.title === 'JIS Yen (¥) to Backslash (\\)')).toBe(
+    expect(entriesMac.some((entry) => entry.title === 'JIS Yen (¥) to backslash (\\)')).toBe(true)
+    expect(entriesLinux.some((entry) => entry.title === 'JIS Yen (¥) to backslash (\\)')).toBe(
       false
     )
   })
@@ -72,14 +72,14 @@ describe('getTerminalPaneSearchEntries', () => {
     const entriesWindows = getTerminalPaneSearchEntries({ isWindows: true, isMac: false })
     const entriesMac = getTerminalPaneSearchEntries({ isWindows: false, isMac: true })
     const entriesLinux = getTerminalPaneSearchEntries({ isWindows: false, isMac: false })
-    expect(entriesWindows.some((entry) => entry.title === 'Manage Sessions')).toBe(true)
-    expect(entriesMac.some((entry) => entry.title === 'Manage Sessions')).toBe(true)
-    expect(entriesLinux.some((entry) => entry.title === 'Manage Sessions')).toBe(true)
+    expect(entriesWindows.some((entry) => entry.title === 'Manage sessions')).toBe(true)
+    expect(entriesMac.some((entry) => entry.title === 'Manage sessions')).toBe(true)
+    expect(entriesLinux.some((entry) => entry.title === 'Manage sessions')).toBe(true)
   })
 
   it('indexes terminal scrollback as rows rather than MB size', () => {
     const entries = getTerminalPaneSearchEntries({ isWindows: false, isMac: false })
-    const scrollbackEntry = entries.find((entry) => entry.title === 'Scrollback Rows')
+    const scrollbackEntry = entries.find((entry) => entry.title === 'Scrollback rows')
 
     expect(scrollbackEntry).toBeDefined()
     expect(matchesSettingsSearch('rows', [scrollbackEntry!])).toBe(true)
@@ -91,13 +91,13 @@ describe('getTerminalPaneSearchEntries', () => {
     const entriesMac = getTerminalPaneSearchEntries({ isWindows: false, isMac: true })
     const entriesLinux = getTerminalPaneSearchEntries({ isWindows: false, isMac: false })
     expect(
-      entriesWindows.some((entry) => entry.title === 'Allow TUI Clipboard Writes (OSC 52)')
+      entriesWindows.some((entry) => entry.title === 'Allow TUI clipboard writes (OSC 52)')
     ).toBe(true)
-    expect(entriesMac.some((entry) => entry.title === 'Allow TUI Clipboard Writes (OSC 52)')).toBe(
+    expect(entriesMac.some((entry) => entry.title === 'Allow TUI clipboard writes (OSC 52)')).toBe(
       true
     )
     expect(
-      entriesLinux.some((entry) => entry.title === 'Allow TUI Clipboard Writes (OSC 52)')
+      entriesLinux.some((entry) => entry.title === 'Allow TUI clipboard writes (OSC 52)')
     ).toBe(true)
   })
 
@@ -108,7 +108,7 @@ describe('getTerminalPaneSearchEntries', () => {
     const hasEntry = (entries: typeof entriesWindows): boolean =>
       entries.some(
         (entry) =>
-          entry.title === 'Ask Before Closing Running Terminals' &&
+          entry.title === 'Ask before closing running terminals' &&
           matchesSettingsSearch('confirm', [entry]) &&
           matchesSettingsSearch('agent', [entry]) &&
           matchesSettingsSearch('close', [entry])
@@ -125,13 +125,13 @@ describe('getTerminalPaneSearchEntries', () => {
     const entriesLinux = getTerminalPaneSearchEntries({ isWindows: false, isMac: false })
 
     expect(entriesWindows.some((entry) => entry.title === 'Import from Ghostty')).toBe(false)
-    expect(entriesMac.some((entry) => entry.title === 'Font Size')).toBe(false)
-    expect(entriesLinux.some((entry) => entry.title === 'Dark Theme')).toBe(false)
+    expect(entriesMac.some((entry) => entry.title === 'Font size')).toBe(false)
+    expect(entriesLinux.some((entry) => entry.title === 'Dark theme')).toBe(false)
     expect(
       getAppearancePaneSearchEntries().some((entry) => entry.title === 'Import from Ghostty')
     ).toBe(true)
-    expect(getAppearancePaneSearchEntries().some((entry) => entry.title === 'Font Size')).toBe(true)
-    expect(getAppearancePaneSearchEntries().some((entry) => entry.title === 'Dark Theme')).toBe(
+    expect(getAppearancePaneSearchEntries().some((entry) => entry.title === 'Font size')).toBe(true)
+    expect(getAppearancePaneSearchEntries().some((entry) => entry.title === 'Dark theme')).toBe(
       true
     )
   })
@@ -169,15 +169,15 @@ describe('getTerminalPaneSearchEntries', () => {
     const desktopEntries = getAppearancePaneSearchEntries({ showSystemTray: true })
     const webEntries = getAppearancePaneSearchEntries({ showSystemTray: false })
 
-    expect(desktopEntries.some((entry) => entry.title === 'Minimize to Tray on Close')).toBe(true)
-    expect(webEntries.some((entry) => entry.title === 'Minimize to Tray on Close')).toBe(false)
+    expect(desktopEntries.some((entry) => entry.title === 'Minimize to tray on close')).toBe(true)
+    expect(webEntries.some((entry) => entry.title === 'Minimize to tray on close')).toBe(false)
     expect(matchesSettingsSearch('tray', desktopEntries)).toBe(true)
     expect(matchesSettingsSearch('tray', webEntries)).toBe(false)
   })
 
   it('keeps sidebar shortcut restore settings in the Appearance search index', () => {
     const automationsEntry = getSidebarEntries().find(
-      (entry) => entry.title === 'Show Automations Button'
+      (entry) => entry.title === 'Show automations button'
     )
 
     expect(automationsEntry).toBeDefined()
@@ -185,7 +185,7 @@ describe('getTerminalPaneSearchEntries', () => {
       expect.arrayContaining(['automations', 'sidebar', 'hide', 'show'])
     )
     expect(
-      getAppearancePaneSearchEntries().some((entry) => entry.title === 'Show Automations Button')
+      getAppearancePaneSearchEntries().some((entry) => entry.title === 'Show automations button')
     ).toBe(true)
   })
 

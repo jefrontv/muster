@@ -68,7 +68,7 @@ export function SiteMcpHarnessRow({
           {state.actionLabel}
         </Button>
         {state.blockedReason ? (
-          <span className="text-xs text-amber-700 dark:text-amber-300">{state.blockedReason}</span>
+          <span className="text-xs text-status-attention">{state.blockedReason}</span>
         ) : null}
       </div>
       {notice ? (

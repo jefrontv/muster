@@ -209,12 +209,12 @@ describe('DashboardAgentRow', () => {
   it('marks sending rows with a non-clickable progress treatment', () => {
     const markup = renderSendTargetRow({
       sendTargetStatus: 'sending',
-      sendTargetDisabledReason: 'Sending...'
+      sendTargetDisabledReason: 'Sending…'
     })
     const tokens = classTokens(markup)
 
     expect(markup).toContain('data-agent-send-target="sending"')
-    expect(markup).toContain('title="Sending... • started 1m ago"')
+    expect(markup).toContain('title="Sending… • started 1m ago"')
     expect(tokens).not.toContain('worktree-agent-send-target')
     expect(tokens).not.toContain('ring-offset-sidebar')
     expect(tokens).toContain('worktree-agent-send-target-button')
@@ -254,7 +254,7 @@ describe('DashboardAgentRow', () => {
     expect(markup).toContain('aria-label="Waiting for input"')
     expect(markup).toContain('lucide-message-circle-question-mark')
     expect(tokens).toContain('text-status-attention')
-    expect(tokens).not.toContain('fill-red-500')
+    expect(tokens).not.toContain('fill-status-danger')
   })
 
   it('keeps blocked rows red', () => {
@@ -262,7 +262,7 @@ describe('DashboardAgentRow', () => {
     const tokens = classTokens(markup)
 
     expect(markup).toContain('aria-label="Blocked"')
-    expect(tokens).toContain('fill-red-500')
+    expect(tokens).toContain('fill-status-danger')
     expect(tokens).not.toContain('bg-status-attention')
   })
 
@@ -319,7 +319,7 @@ describe('DashboardAgentRow', () => {
     // on the response line so it does not compete with the user's prompt.
     expect(markup).toContain('data-slot="tooltip-trigger"')
     expect(markup).toContain('aria-label="Interrupted by user"')
-    expect(markup).toContain('fill-red-500')
+    expect(markup).toContain('fill-status-danger')
     expect(markup).not.toContain('data-slot="badge"')
     expect(interruptedIndex).toBeGreaterThan(promptIndex)
     expect(markup).not.toContain('lucide-circle-check')

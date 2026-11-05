@@ -219,7 +219,7 @@ describe('handleInternalTerminalFileDrop', () => {
     expect(sendInput).not.toHaveBeenCalled()
     expect(focus).not.toHaveBeenCalled()
     expect(mocks.recordTerminalUserInputForLeaf).not.toHaveBeenCalled()
-    expect(mocks.toastError).toHaveBeenCalledWith('Worktree not ready — try again in a moment.')
+    expect(mocks.toastError).toHaveBeenCalledWith('Worktree not ready: try again in a moment.')
   })
 
   it('uses the terminal worktree owner runtime instead of the focused runtime', async () => {

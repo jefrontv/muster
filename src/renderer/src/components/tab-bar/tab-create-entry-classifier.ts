@@ -106,7 +106,7 @@ export function getTabEntryOptions(
           kind: 'empty',
           message: translate(
             'auto.components.tab.bar.tab.create.entry.classifier.5a9c83c04b',
-            'Open any file, URL, agent, ...'
+            'Open any file, URL, agent, …'
           )
         }
       }
@@ -167,7 +167,7 @@ export function getTabEntryOptions(
           kind: 'blocked',
           message: translate(
             'auto.components.tab.bar.tab.create.entry.classifier.097a982ee0',
-            'Loading files...'
+            'Loading files…'
           )
         }
       }

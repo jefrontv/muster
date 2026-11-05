@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -149,7 +150,7 @@ export default function TeamMultiCombobox({
             autoFocus
             placeholder={translate(
               'auto.components.ui.team.multi.combobox.18ec58881e',
-              'Search teams...'
+              'Search teams…'
             )}
             value={query}
             onValueChange={setQuery}
@@ -204,9 +205,9 @@ export default function TeamMultiCombobox({
                   <div className="min-w-0 flex-1">
                     <span className="inline-flex max-w-full items-center gap-1.5 text-xs">
                       <span className="min-w-0 truncate">{team.name}</span>
-                      <span className="shrink-0 rounded bg-muted px-1 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
+                      <Badge variant="muted" className="shrink-0">
                         {team.key}
-                      </span>
+                      </Badge>
                     </span>
                   </div>
                 </CommandItem>

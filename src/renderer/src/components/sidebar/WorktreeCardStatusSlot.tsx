@@ -164,7 +164,7 @@ export function WorktreeCardStatusSlot({
               'group/unread relative flex cursor-pointer items-center justify-center rounded transition-all',
               newCardStyle && showStatus ? 'size-5' : 'size-4',
               'hover:bg-accent/80 active:scale-95',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               className
             )}
             aria-label={actionLabel}
@@ -184,7 +184,7 @@ export function WorktreeCardStatusSlot({
                 <span className="sr-only">{actionLabel}</span>
               )
             ) : isUnread ? (
-              <FilledBellIcon className="size-[13px] text-amber-500 drop-shadow-sm" />
+              <FilledBellIcon className="size-[13px] text-status-attention drop-shadow-sm" />
             ) : showStatus ? (
               <>
                 <StatusIndicator
@@ -192,10 +192,10 @@ export function WorktreeCardStatusSlot({
                   aria-hidden="true"
                   className="transition-opacity group-hover/unread:opacity-0 group-focus-within/unread:opacity-0"
                 />
-                <Bell className="absolute size-3 text-muted-foreground/40 opacity-0 transition-opacity group-hover/unread:opacity-100 group-focus-within/unread:opacity-100" />
+                <Bell className="absolute size-3 text-muted-foreground opacity-0 transition-opacity group-hover/unread:opacity-100 group-focus-within/unread:opacity-100" />
               </>
             ) : (
-              <Bell className="size-3 text-muted-foreground/40 can-hover:opacity-0 transition-opacity group-hover:opacity-100 group-hover/unread:opacity-100 group-focus-within/unread:opacity-100" />
+              <Bell className="size-3 text-muted-foreground can-hover:opacity-0 transition-opacity group-hover:opacity-100 group-hover/unread:opacity-100 group-focus-within/unread:opacity-100" />
             )}
           </button>
         </TooltipTrigger>

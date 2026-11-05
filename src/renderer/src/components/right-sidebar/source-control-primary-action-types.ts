@@ -19,7 +19,7 @@ export type PrimaryActionKind = SourceControlPrimaryActionKind
 // claiming a stale or unrelated operation is running. Dropdown-only remote
 // kinds are included because they participate in the busy flag, but they are
 // intentionally NOT in PrimaryActionKind — when Fetch is in flight the primary
-// keeps its natural label, while Force Push maps back to the push icon/slot.
+// keeps its natural label, while Force push maps back to the push icon/slot.
 export type RemoteOpKind = SourceControlRemoteOpKind
 
 export type PrimaryAction = {
@@ -54,7 +54,7 @@ export type PrimaryActionInputs = {
   // force-push labels; publishing itself can push the current HEAD even at 0.
   branchCommitsAhead?: number
   // Why: detached HEAD can look like an unpublished branch from upstream
-  // status alone, but it has no branch ref that Publish Branch can push.
+  // status alone, but it has no branch ref that Publish branch can push.
   hasCurrentBranch?: boolean
   // Why: linked review branches without upstream counts are pushable only when
   // Orca has a persisted or Git-configured target. Otherwise Push could fall
@@ -72,7 +72,7 @@ export const PRIMARY_LABEL_BY_KIND: Record<Exclude<PrimaryActionKind, 'commit'>,
   push: 'Push',
   pull: 'Pull',
   sync: 'Sync',
-  publish: 'Publish Branch',
+  publish: 'Publish branch',
   create_pr_intent: 'Create PR',
   create_pr: 'Create PR'
 }

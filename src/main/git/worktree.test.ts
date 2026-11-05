@@ -19,6 +19,7 @@ vi.mock('./runner', () => ({
 }))
 
 import { clearGitCapabilityStateForTests } from './git-capability-state'
+import { invalidateRecentWorktreeScans } from './worktree-scan-reuse'
 
 import {
   addSparseWorktree,
@@ -97,6 +98,74 @@ describe('listWorktrees in-flight sharing', () => {
     await listWorktrees('/repo')
 
     expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(2)
+  })
+
+  describe('recent-scan reuse for bulk readers', () => {
+    const scanOutput = 'worktree /repo\nHEAD abc123\nbranch refs/heads/main\n'
+
+    it('reuses a settled listing only for callers that opt in', async () => {
+      gitExecFileAsyncMock.mockResolvedValue({ stdout: scanOutput })
+
+      await listWorktrees('/repo')
+      const reused = await listWorktrees('/repo', { reuseRecentScanMs: 5_000 })
+      await listWorktrees('/repo')
+
+      expect(reused[0]?.path).toBe('/repo')
+      expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('keeps WSL distros and hosts separate', async () => {
+      gitExecFileAsyncMock.mockResolvedValue({ stdout: scanOutput })
+
+      await listWorktrees('/repo')
+      await listWorktrees('/repo', { wslDistro: 'Ubuntu', reuseRecentScanMs: 5_000 })
+
+      expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    })
+
+    it('expires after the reuse window', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      try {
+        gitExecFileAsyncMock.mockResolvedValue({ stdout: scanOutput })
+        await listWorktrees('/repo')
+        vi.setSystemTime(Date.now() + 5_001)
+        await listWorktrees('/repo', { reuseRecentScanMs: 5_000 })
+
+        expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(2)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('drops the listing on invalidation, including a scan that was in flight', async () => {
+      let resolveScan!: () => void
+      gitExecFileAsyncMock.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveScan = () => resolve({ stdout: scanOutput })
+          })
+      )
+      gitExecFileAsyncMock.mockResolvedValue({ stdout: scanOutput })
+
+      const pending = listWorktrees('/repo')
+      invalidateRecentWorktreeScans('/repo')
+      resolveScan()
+      await pending
+      await listWorktrees('/repo', { reuseRecentScanMs: 5_000 })
+      invalidateRecentWorktreeScans('/repo')
+      await listWorktrees('/repo', { reuseRecentScanMs: 5_000 })
+
+      expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(3)
+    })
+
+    it('does not reuse an empty (failed) listing', async () => {
+      gitExecFileAsyncMock.mockResolvedValue({ stdout: '' })
+
+      await listWorktrees('/repo')
+      await listWorktrees('/repo', { reuseRecentScanMs: 5_000 })
+
+      expect(gitExecFileAsyncMock).toHaveBeenCalledTimes(2)
+    })
   })
 
   it('runs a fresh scan after a timed-out shared scan settles', async () => {

@@ -21,7 +21,7 @@ export function EntryStatusRow({
   message: string
 }): React.JSX.Element {
   return (
-    <div className="flex min-h-6 items-center gap-1.5 rounded-[7px] px-1 text-[11px] leading-5 text-muted-foreground">
+    <div className="flex min-h-6 items-center gap-1.5 rounded-md px-1.5 text-xs leading-5 text-muted-foreground">
       {loading ? <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden="true" /> : null}
       <span className="truncate">{message}</span>
     </div>
@@ -48,10 +48,10 @@ export function EntryActionRow({
       role="option"
       aria-selected={selected}
       className={cn(
-        'flex h-6 w-full items-center gap-1.5 rounded-[7px] px-1 text-left text-[11px] leading-5 outline-none',
+        'flex h-6 w-full items-center gap-1.5 rounded-md px-1.5 text-left text-xs leading-5 outline-none',
         selected
-          ? 'bg-black/8 text-accent-foreground dark:bg-white/14'
-          : 'text-muted-foreground hover:bg-black/8 hover:text-accent-foreground dark:hover:bg-white/14'
+          ? 'bg-foreground/[0.06] text-foreground'
+          : 'text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground'
       )}
       onClick={onClick}
     >

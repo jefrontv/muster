@@ -100,7 +100,7 @@ const OrcaYamlTrustDialog = React.memo(function OrcaYamlTrustDialog() {
             {previouslyApproved
               ? translate(
                   'auto.components.sidebar.OrcaYamlTrustDialog.02b0ede5ad',
-                  "{{value0}}'s {{value1}} changed — run the new version?",
+                  "{{value0}}'s {{value1}} changed: run the new version?",
                   { value0: repoName, value1: SCRIPT_KIND_LABEL[scriptKind] }
                 )
               : translate(

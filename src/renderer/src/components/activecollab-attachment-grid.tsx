@@ -50,7 +50,7 @@ function ActiveCollabAttachmentThumbnail({
           'Open {{value0}}',
           { value0: attachment.name }
         )}
-        className="block w-full cursor-zoom-in overflow-hidden rounded-md border border-border/50 bg-muted/20 transition-colors hover:border-border focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        className="block w-full cursor-zoom-in overflow-hidden rounded-md border border-border/50 bg-muted/20 transition-colors hover:border-border focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <img
           src={state.dataUrl}
@@ -158,7 +158,7 @@ function ActiveCollabAttachmentDownloadChip({
           'Download {{value0}}',
           { value0: name }
         )}
-        className="inline-flex min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-progress disabled:opacity-70"
+        className="inline-flex min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-progress disabled:opacity-70"
       >
         <Paperclip className="size-3 shrink-0" />
         <span className="truncate">{name}</span>

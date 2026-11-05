@@ -242,7 +242,7 @@ describe('AppearancePane', () => {
     const container = await renderAppearancePane(settings, updateSettings)
     const matchTerminalButton = Array.from(
       container.querySelectorAll<HTMLButtonElement>('button[role="radio"]')
-    ).find((button) => button.textContent === 'Match Terminal')
+    ).find((button) => button.textContent === 'Match terminal')
 
     expect(matchTerminalButton).toBeDefined()
 
@@ -264,7 +264,7 @@ describe('AppearancePane', () => {
 
     const container = await renderAppearancePane(settings, updateSettings)
     const switchControl = container.querySelector<HTMLButtonElement>(
-      'button[role="switch"][aria-label="Show Automations Button"]'
+      'button[role="switch"][aria-label="Show automations button"]'
     )
 
     expect(switchControl).not.toBeNull()
@@ -304,7 +304,7 @@ describe('AppearancePane', () => {
 
     expect(container.textContent).toContain('Interface')
     expect(container.textContent).toContain('Terminal')
-    expect(container.textContent).toContain('Window & Sidebar')
+    expect(container.textContent).toContain('Window & sidebar')
     // Code & Markdown is intentionally omitted — Orca has no Appearance-level
     // code/markdown settings, so the row would be empty.
     expect(container.textContent).not.toContain('Code & Markdown')
@@ -339,7 +339,7 @@ describe('AppearancePane', () => {
 
     expect(interfaceRow).toBeDefined()
     expect(appIconImage).not.toBeNull()
-    // The App Icon block sits after the Interface section row in document order.
+    // The App icon block sits after the Interface section row in document order.
     expect(
       interfaceRow &&
         appIconImage &&
@@ -348,19 +348,19 @@ describe('AppearancePane', () => {
   })
 
   it('reveals an advanced sidebar control when its search matches, even though it is hidden by default', async () => {
-    // The Show Tasks Button toggle lives behind the Window & Sidebar Advanced
+    // The Show tasks button toggle lives behind the Window & sidebar Advanced
     // disclosure; with no search it stays collapsed, but a matching query must
     // force the disclosure open so the control is reachable.
     mocks.state.settingsSearchQuery = ''
     const collapsedContainer = await renderAppearancePane(getDefaultSettings('/tmp'))
     expect(
-      collapsedContainer.querySelector('button[role="switch"][aria-label="Show Tasks Button"]')
+      collapsedContainer.querySelector('button[role="switch"][aria-label="Show tasks button"]')
     ).toBeNull()
 
     mocks.state.settingsSearchQuery = 'tasks'
     const searchedContainer = await renderAppearancePane(getDefaultSettings('/tmp'))
     expect(
-      searchedContainer.querySelector('button[role="switch"][aria-label="Show Tasks Button"]')
+      searchedContainer.querySelector('button[role="switch"][aria-label="Show tasks button"]')
     ).not.toBeNull()
   })
 
@@ -372,12 +372,12 @@ describe('AppearancePane', () => {
     expect(container.textContent).not.toContain('Advanced')
   })
 
-  it('shows useful primary rows for a Window & Sidebar section-label search', async () => {
-    mocks.state.settingsSearchQuery = 'Window & Sidebar'
+  it('shows useful primary rows for a Window & sidebar section-label search', async () => {
+    mocks.state.settingsSearchQuery = 'Window & sidebar'
     const container = await renderAppearancePane(getDefaultSettings('/tmp'))
 
-    expect(container.textContent).toContain('Left Sidebar Appearance')
-    expect(container.textContent).toContain('Status Bar')
+    expect(container.textContent).toContain('Left sidebar appearance')
+    expect(container.textContent).toContain('Status bar')
     expect(container.textContent).not.toContain('Advanced')
   })
 
@@ -418,7 +418,7 @@ describe('AppearancePane', () => {
     mocks.state.availableStatusBarToggles = [
       {
         id: 'minimax',
-        title: 'MiniMax Usage',
+        title: 'MiniMax usage',
         description: 'Show MiniMax subscription usage in the status bar.',
         toggleDescription: 'Show MiniMax subscription usage for the active workspace.',
         keywords: ['status bar', 'minimax', 'usage']
@@ -427,7 +427,7 @@ describe('AppearancePane', () => {
     mocks.state.settingsSearchQuery = 'minimax'
     const container = await renderAppearancePane(getDefaultSettings('/tmp'))
     const miniMaxSwitch = container.querySelector<HTMLButtonElement>(
-      'button[role="switch"][aria-label="MiniMax Usage"]'
+      'button[role="switch"][aria-label="MiniMax usage"]'
     )
 
     expect(miniMaxSwitch).not.toBeNull()
@@ -443,7 +443,7 @@ describe('AppearancePane', () => {
     mocks.state.availableStatusBarToggles = [
       {
         id: 'antigravity',
-        title: 'Antigravity Usage',
+        title: 'Antigravity usage',
         description: 'Show Antigravity subscription usage in the status bar.',
         toggleDescription: 'Show Antigravity subscription usage for the active workspace.',
         keywords: ['status bar', 'antigravity', 'usage']
@@ -452,7 +452,7 @@ describe('AppearancePane', () => {
     mocks.state.settingsSearchQuery = 'antigravity'
     const container = await renderAppearancePane(getDefaultSettings('/tmp'))
     const antigravitySwitch = container.querySelector<HTMLButtonElement>(
-      'button[role="switch"][aria-label="Antigravity Usage"]'
+      'button[role="switch"][aria-label="Antigravity usage"]'
     )
 
     expect(antigravitySwitch).not.toBeNull()

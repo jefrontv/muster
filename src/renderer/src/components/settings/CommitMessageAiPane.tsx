@@ -27,6 +27,7 @@ import { matchesSettingsSearch } from './settings-search'
 import { getSettingOwnershipSummary } from './setting-ownership'
 import { translate } from '@/i18n/i18n'
 import { HostedReviewCreationDefaults } from './HostedReviewCreationDefaults'
+import { Switch } from '@/components/ui/switch'
 
 type CommitMessageAiPaneProps = {
   settings: GlobalSettings
@@ -155,7 +156,7 @@ export function CommitMessageAiPane({
     matchesSettingsSearch(searchQuery, {
       title: translate(
         'auto.components.settings.CommitMessageAiPane.d5b45a3628',
-        'Show Source Control AI actions'
+        'Show Source control AI actions'
       ),
       description: translate(
         'auto.components.settings.CommitMessageAiPane.7bcad2b200',
@@ -176,7 +177,7 @@ export function CommitMessageAiPane({
         key="enabled"
         title={translate(
           'auto.components.settings.CommitMessageAiPane.d5b45a3628',
-          'Show Source Control AI actions'
+          'Show Source control AI actions'
         )}
         description={translate(
           'auto.components.settings.CommitMessageAiPane.7bcad2b200',
@@ -189,7 +190,7 @@ export function CommitMessageAiPane({
           <Label>
             {translate(
               'auto.components.settings.CommitMessageAiPane.d5b45a3628',
-              'Show Source Control AI actions'
+              'Show Source control AI actions'
             )}
           </Label>
           <p className="text-xs text-muted-foreground">
@@ -199,20 +200,7 @@ export function CommitMessageAiPane({
             )}
           </p>
         </div>
-        <button
-          role="switch"
-          aria-checked={config.enabled}
-          onClick={onToggleEnabled}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-            config.enabled ? 'bg-foreground' : 'bg-muted-foreground/30'
-          }`}
-        >
-          <span
-            className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-              config.enabled ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        <Switch checked={config.enabled} onClick={onToggleEnabled} />
       </SearchableSetting>
     )
   }
@@ -343,7 +331,7 @@ export function CommitMessageAiPane({
         <h3 className="text-sm font-semibold">
           {translate(
             'auto.components.settings.CommitMessageAiPane.ad66ff886d',
-            'Source Control AI defaults'
+            'Source control AI defaults'
           )}
         </h3>
         <p className="text-xs text-muted-foreground">{ownership.description}</p>

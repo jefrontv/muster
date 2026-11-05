@@ -93,7 +93,7 @@ export default function NewExternalWorktreesInboxLine({
         <span className="relative inline-grid size-6 shrink-0 place-items-center">
           <span
             className={cn(
-              'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-border px-1.5 text-[10px] font-medium leading-none text-muted-foreground transition-opacity',
+              'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-border px-1.5 text-[11px] font-medium leading-none text-muted-foreground transition-opacity',
               onSuppress &&
                 'can-hover:group-hover:opacity-0 can-hover:group-focus-within:opacity-0 [@media(hover:none)]:opacity-0'
             )}
@@ -125,7 +125,7 @@ export default function NewExternalWorktreesInboxLine({
 
       {isExpanded ? (
         <div className="ml-4 mt-0.5 border-l border-worktree-sidebar-border pb-1 pl-2">
-          <p className="px-1.5 py-1 text-[10px] leading-4 text-muted-foreground">
+          <p className="px-1.5 py-1 text-[11px] leading-4 text-muted-foreground">
             {translate(
               'auto.components.sidebar.NewExternalWorktreesInboxLine.4d7a1c9e53',
               'These worktrees were created outside of Muster.'
@@ -140,7 +140,7 @@ export default function NewExternalWorktreesInboxLine({
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{worktree.displayName}</div>
                   {worktree.path ? (
-                    <div className="truncate font-mono text-[10px] text-muted-foreground">
+                    <div className="truncate font-mono text-[11px] text-muted-foreground">
                       {worktree.path}
                     </div>
                   ) : null}

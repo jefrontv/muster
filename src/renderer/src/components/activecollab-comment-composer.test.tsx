@@ -189,7 +189,7 @@ async function render({
 function promptButton(): HTMLButtonElement | null {
   return (
     Array.from(container.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === 'Write a comment...'
+      (button) => button.textContent?.trim() === 'Write a comment…'
     ) ?? null
   )
 }
@@ -310,7 +310,7 @@ function staged(name: string, size: number, rejected: 'too-large' | null = null)
 
 function attachButton(): HTMLButtonElement {
   const button = [...container.querySelectorAll('button')].find(
-    (candidate) => candidate.textContent?.trim() === 'Attach Files'
+    (candidate) => candidate.textContent?.trim() === 'Attach files'
   )
   if (button === undefined) {
     throw new Error('attach button missing')
@@ -357,7 +357,7 @@ describe('ActiveCollabCommentComposer layout', () => {
       field!.compareDocumentPosition(buttonRow!) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
     expect(buttonRow?.className).toContain('justify-between')
-    expect(buttonRow?.textContent).toContain('Attach Files')
+    expect(buttonRow?.textContent).toContain('Attach files')
   })
 
   it('carries the placeholder onto the field, which is what the empty-state CSS reads', async () => {
@@ -367,7 +367,7 @@ describe('ActiveCollabCommentComposer layout', () => {
     // Both halves of the contract with rich-markdown-editor.css: the rule is keyed on
     // `p.is-editor-empty:first-child::before` and prints `attr(data-placeholder)`. Lose either and
     // the field is silently blank with no hint of what it is for.
-    expect(firstParagraph?.getAttribute('data-placeholder')).toBe('Add an ActiveCollab comment...')
+    expect(firstParagraph?.getAttribute('data-placeholder')).toBe('Add an ActiveCollab comment…')
     expect(firstParagraph?.classList.contains('is-editor-empty')).toBe(true)
 
     await type('now it has words')

@@ -33,7 +33,7 @@ export function FeatureTourWorkspaceCard({
         )}
         <span
           className={cn(
-            'truncate text-[16.5px] leading-none',
+            'truncate text-[16px] leading-none',
             status === 'done' ? 'text-muted-foreground' : 'font-medium text-foreground'
           )}
         >

@@ -80,7 +80,7 @@ function ActiveCollabTaskTitle({
           'auto.components.activecollab.task_workspace.rename_task',
           'Rename task'
         )}
-        className="w-full rounded-sm border border-ring bg-transparent px-1 py-0.5 text-[17px] font-semibold leading-snug text-foreground outline-none"
+        className="w-full rounded-sm border border-ring bg-transparent px-1 py-0.5 text-lg font-semibold leading-snug text-foreground outline-none"
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
         onKeyDown={(event) => {
@@ -101,7 +101,7 @@ function ActiveCollabTaskTitle({
   return (
     <h2
       className={cn(
-        'flex items-center gap-2 text-[17px] font-semibold leading-snug',
+        'flex items-center gap-2 text-lg font-semibold leading-snug',
         task.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
       )}
     >
@@ -109,7 +109,7 @@ function ActiveCollabTaskTitle({
         type="button"
         disabled={disabled}
         onClick={() => setDraft(task.name)}
-        className="-mx-1 min-w-0 rounded-sm px-1 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none"
+        className="-mx-1 min-w-0 rounded-sm px-1 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
       >
         {task.name}
       </button>
@@ -171,7 +171,7 @@ export function ActiveCollabTaskHeader({
       )
     : translate(
         'auto.components.activecollab.task_workspace.start_work_unbound',
-        'Link this project to a site first — use the link button on the project heading'
+        'Link this project to a site first. Use the link button on the project heading'
       )
 
   return (
@@ -189,7 +189,7 @@ export function ActiveCollabTaskHeader({
                 disabled={disabled}
                 onClick={() => onCompletedChange(!task.isCompleted)}
                 className={cn(
-                  'mt-px flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-50',
+                  'mt-px flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50',
                   task.isCompleted
                     ? 'border-primary bg-primary text-primary-foreground'
                     : // A ghost check on hover: the affordance is discoverable without a label.
@@ -227,7 +227,7 @@ export function ActiveCollabTaskHeader({
                       'View all tasks in {{project}}',
                       { project: task.projectName }
                     )}
-                    className="min-w-0 truncate rounded-sm font-medium text-foreground/80 transition-colors hover:text-foreground hover:underline hover:underline-offset-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="min-w-0 truncate rounded-sm font-medium text-foreground/80 transition-colors hover:text-foreground hover:underline hover:underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {task.projectName}
                   </button>

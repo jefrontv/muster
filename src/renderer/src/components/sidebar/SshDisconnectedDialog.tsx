@@ -33,7 +33,7 @@ const STATUS_MESSAGES: Partial<Record<SshConnectionStatus, string>> = {
   get reconnecting() {
     return translate(
       'auto.components.sidebar.SshDisconnectedDialog.reconnecting',
-      'Reconnecting to the remote host...'
+      'Reconnecting to the remote host…'
     )
   },
   get 'reconnection-failed'() {
@@ -102,7 +102,7 @@ export function SshDisconnectedDialog({
     STATUS_MESSAGES.reconnecting ??
     translate(
       'auto.components.sidebar.SshDisconnectedDialog.reconnecting',
-      'Reconnecting to the remote host...'
+      'Reconnecting to the remote host…'
     )
   const disconnectedMessage =
     STATUS_MESSAGES.disconnected ??
@@ -145,18 +145,18 @@ export function SshDisconnectedDialog({
         <DialogHeader className="gap-1">
           <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
             {isConnecting ? (
-              <Loader2 className="size-4 text-yellow-500 animate-spin" />
+              <Loader2 className="size-4 text-status-attention animate-spin" />
             ) : (
               <ServerOff className="size-4 text-muted-foreground" />
             )}
             {isConnecting
               ? translate(
                   'auto.components.sidebar.SshDisconnectedDialog.cb5938ae79',
-                  'Reconnecting...'
+                  'Reconnecting…'
                 )
               : translate(
                   'auto.components.sidebar.SshDisconnectedDialog.11552bf786',
-                  'SSH Disconnected'
+                  'SSH disconnected'
                 )}
           </DialogTitle>
           <DialogDescription className="text-xs">{message}</DialogDescription>
@@ -168,7 +168,7 @@ export function SshDisconnectedDialog({
             <span className="text-xs font-medium">{targetLabel}</span>
           </div>
           {isConnecting ? (
-            <Loader2 className="size-3.5 shrink-0 text-yellow-500 animate-spin" />
+            <Loader2 className="size-3.5 shrink-0 text-status-attention animate-spin" />
           ) : (
             <span className={`size-1.5 shrink-0 rounded-full ${statusColor(status)}`} />
           )}
@@ -190,7 +190,7 @@ export function SshDisconnectedDialog({
                   <Loader2 className="size-3.5 animate-spin" />
                   {translate(
                     'auto.components.sidebar.SshDisconnectedDialog.ca4a7892af',
-                    'Connecting...'
+                    'Connecting…'
                   )}
                 </>
               ) : (

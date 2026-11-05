@@ -79,7 +79,7 @@ export function SiteFinishSetupBanner({
     return null
   }
   return (
-    <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-3 py-2.5">
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-3 py-2.5">
       <AlertTriangle className="size-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1 space-y-0.5">
         <p className="text-sm font-medium">

@@ -135,7 +135,7 @@ export function WorktreeCardIssueDetailSection({
           <div className="flex flex-wrap gap-1">
             {issue.state && <IssueStateBadge state={issue.state} />}
             {issueLabels.map((label) => (
-              <Badge key={label} variant="outline" className="h-4 px-1.5 text-[9px]">
+              <Badge key={label} variant="outline">
                 {label}
               </Badge>
             ))}

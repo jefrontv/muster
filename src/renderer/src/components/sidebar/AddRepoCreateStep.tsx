@@ -172,7 +172,7 @@ export function CreateStep({
             type="button"
             onClick={() => setAdvancedOpen((open) => !open)}
             aria-expanded={advancedOpen}
-            className="flex w-full min-w-0 items-start gap-2.5 rounded-md px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="flex w-full min-w-0 items-start gap-2.5 rounded-md px-3 py-2.5 text-left transition-colors cursor-pointer hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-border bg-background/60 text-muted-foreground">
               <GitBranch className="size-3.5" />
@@ -193,7 +193,7 @@ export function CreateStep({
                   <Loader2 className="size-3 animate-spin" />
                   {translate(
                     'auto.components.sidebar.AddRepoCreateStep.2a762f3b19',
-                    'Checking Git on this host...'
+                    'Checking Git on this host…'
                   )}
                 </p>
               ) : showGitFallback ? (

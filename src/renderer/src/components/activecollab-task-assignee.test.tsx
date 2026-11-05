@@ -212,7 +212,7 @@ async function openPicker(): Promise<void> {
 }
 
 function searchInput(): HTMLInputElement {
-  const input = container.querySelector<HTMLInputElement>('input[placeholder="Search people..."]')
+  const input = container.querySelector<HTMLInputElement>('input[placeholder="Search people…"]')
   expect(input, 'no roster search field').toBeTruthy()
   return input as HTMLInputElement
 }

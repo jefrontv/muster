@@ -5,6 +5,7 @@
 // is what brings it back. Adding the one without the other would make archive a
 // one-way trip.
 
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { CircleCheck, MoreHorizontal, Pin, PinOff, ShieldQuestion } from 'lucide-react'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import type React from 'react'
@@ -70,7 +71,7 @@ function ThreadStatusLabel({
 }): React.JSX.Element | null {
   if (status === 'approval') {
     return (
-      <span className="flex shrink-0 items-center gap-1 text-[11px] text-amber-700 dark:text-amber-300">
+      <span className="flex shrink-0 items-center gap-1 text-[11px] text-status-attention">
         <ShieldQuestion className="size-3" />
         {translate('auto.components.chat.sidebar.statusApproval', 'Approval')}
       </span>
@@ -78,8 +79,8 @@ function ThreadStatusLabel({
   }
   if (status === 'working') {
     return (
-      <span className="flex shrink-0 items-center gap-1 text-[11px] text-sky-600 dark:text-sky-400">
-        <span className="size-1.5 animate-pulse rounded-full bg-sky-400" />
+      <span className="flex shrink-0 items-center gap-1 text-[11px] text-status-info">
+        <span className="size-1.5 animate-pulse rounded-full bg-status-info" />
         {/* aria-hidden: a ticking timer would be announced every second. */}
         <span aria-hidden>
           {translate('auto.components.chat.sidebar.statusWorking', 'Working')}
@@ -95,7 +96,7 @@ function ThreadStatusLabel({
   }
   if (status === 'unread-done') {
     return (
-      <span className="flex shrink-0 items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+      <span className="flex shrink-0 items-center gap-1 text-[11px] text-status-success">
         <CircleCheck className="size-3" />
         {translate('auto.components.chat.sidebar.statusDone', 'Done')}
       </span>
@@ -212,13 +213,16 @@ export function ChatThreadRow({
             ? 'bg-accent text-accent-foreground'
             : status === 'idle'
               ? // Recede (T3): nothing here needs a human, so the row rests dim.
-                'font-normal text-muted-foreground/75 transition-colors hover:bg-muted/60 hover:text-foreground/90'
-              : 'text-foreground/90 hover:bg-muted/60'
+                cn(
+                  'font-normal text-muted-foreground transition-colors hover:text-foreground',
+                  ROW_HOVER
+                )
+              : cn('text-foreground/90', ROW_HOVER)
         )}
         onClick={() => setActiveChatThread(thread.id)}
       >
         {thread.activeCollabTask ? (
-          <ActiveCollabIcon className="size-3 shrink-0 text-muted-foreground/60" />
+          <ActiveCollabIcon className="size-3 shrink-0 text-muted-foreground" />
         ) : null}
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate">

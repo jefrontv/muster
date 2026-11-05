@@ -82,6 +82,34 @@ describe('enrichRepoGitUsernames', () => {
     expect(resolveLocalGitUsernameDetailedMock).toHaveBeenCalledTimes(1)
   })
 
+  it('with maxRepos, probes only the leading repos and never walks further on later calls', async () => {
+    const store = makeStore([
+      makeRepo(),
+      makeRepo({ id: 'r2', path: 'C:/repos/two' }),
+      makeRepo({ id: 'r3', path: 'C:/repos/three' })
+    ])
+
+    enrichRepoGitUsernames(store, { maxRepos: 1 })
+    await flushRepoGitUsernameEnrichmentForTests()
+    enrichRepoGitUsernames(store, { maxRepos: 1 })
+    await flushRepoGitUsernameEnrichmentForTests()
+
+    expect(resolveLocalGitUsernameDetailedMock).toHaveBeenCalledTimes(1)
+    expect(resolveLocalGitUsernameDetailedMock).toHaveBeenCalledWith('C:/repos/one')
+  })
+
+  it('with maxRepos, skips a leading folder or SSH repo instead of probing the next one', async () => {
+    const store = makeStore([
+      makeRepo({ kind: 'folder' }),
+      makeRepo({ id: 'r2', path: 'C:/repos/two' })
+    ])
+
+    enrichRepoGitUsernames(store, { maxRepos: 1 })
+    await flushRepoGitUsernameEnrichmentForTests()
+
+    expect(resolveLocalGitUsernameDetailedMock).not.toHaveBeenCalled()
+  })
+
   it('keeps persisted usernames on a non-authoritative empty resolution', async () => {
     resolveLocalGitUsernameDetailedMock.mockResolvedValue(resolved('', false))
     const store = makeStore([makeRepo()])

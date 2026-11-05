@@ -1,4 +1,6 @@
 import { LoaderCircle, RefreshCw, Search, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { SEARCH_FIELD_INPUT, SEARCH_FIELD_SHELL } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import type {
@@ -73,7 +75,7 @@ export function AiVaultPanelHeader({
             <span className="@max-[300px]/ai-vault:hidden">
               {translate(
                 'auto.components.right.sidebar.AiVaultPanel.sessionHistory',
-                'Agent Session History'
+                'Agent session history'
               )}
             </span>
             <span className="hidden @max-[300px]/ai-vault:inline">
@@ -130,7 +132,7 @@ export function AiVaultPanelHeader({
             size="icon-xs"
             aria-label={translate(
               'auto.components.right.sidebar.AiVaultPanel.refreshSessionHistory',
-              'Refresh Session History'
+              'Refresh session history'
             )}
             onClick={onRefresh}
             disabled={loading}
@@ -155,7 +157,7 @@ export function AiVaultPanelHeader({
         />
       </div>
 
-      <div className="mt-2 flex h-8 items-center gap-1.5 rounded-md border border-sidebar-border bg-input/50 px-2 focus-within:border-sidebar-ring focus-within:ring-[2px] focus-within:ring-sidebar-ring/30">
+      <div className={cn('mt-2', SEARCH_FIELD_SHELL)}>
         <Search className="size-3.5 shrink-0 text-muted-foreground" />
         <input
           value={query}
@@ -164,7 +166,7 @@ export function AiVaultPanelHeader({
             'auto.components.right.sidebar.AiVaultPanel.searchSessions',
             'Search sessions'
           )}
-          className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
+          className={SEARCH_FIELD_INPUT}
           spellCheck={false}
         />
         {loading ? <LoaderCircle className="size-3 animate-spin text-muted-foreground" /> : null}
@@ -173,7 +175,7 @@ export function AiVaultPanelHeader({
             type="button"
             variant="ghost"
             size="icon-xs"
-            className="size-5 text-muted-foreground hover:text-foreground"
+            className="hit-area -mr-1.5 size-5 text-muted-foreground hover:text-foreground"
             onClick={() => onQueryChange('')}
             aria-label={translate(
               'auto.components.right.sidebar.AiVaultPanel.clearSearch',

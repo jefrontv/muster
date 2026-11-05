@@ -51,7 +51,7 @@ export function ActiveCollabNotificationSection({
           <Label>
             {translate(
               'auto.components.settings.ActiveCollabNotificationSection.group',
-              'ActiveCollab Tasks'
+              'ActiveCollab tasks'
             )}
           </Label>
         </div>
@@ -68,7 +68,7 @@ export function ActiveCollabNotificationSection({
           icon={<UserPlus className="size-4" />}
           label={translate(
             'auto.components.settings.ActiveCollabNotificationSection.assigned',
-            'Task Assigned To You'
+            'Task assigned to you'
           )}
           description={translate(
             'auto.components.settings.ActiveCollabNotificationSection.assignedDescription',
@@ -87,7 +87,7 @@ export function ActiveCollabNotificationSection({
           icon={<MessageSquare className="size-4" />}
           label={translate(
             'auto.components.settings.ActiveCollabNotificationSection.comments',
-            'New Comments'
+            'New comments'
           )}
           description={translate(
             'auto.components.settings.ActiveCollabNotificationSection.commentsDescription',
@@ -106,11 +106,11 @@ export function ActiveCollabNotificationSection({
           icon={<CalendarClock className="size-4" />}
           label={translate(
             'auto.components.settings.ActiveCollabNotificationSection.due',
-            'Due Date Getting Closer'
+            'Due date getting closer'
           )}
           description={translate(
             'auto.components.settings.ActiveCollabNotificationSection.dueDescription',
-            'An assigned task moves into a nearer due window — this week, then tomorrow, then today, then overdue.'
+            'An assigned task moves into a nearer due window: this week, then tomorrow, then today, then overdue.'
           )}
           checked={notificationSettings.activeCollabDue}
           disabled={!notificationsEnabled}
@@ -125,11 +125,11 @@ export function ActiveCollabNotificationSection({
           icon={<PencilLine className="size-4" />}
           label={translate(
             'auto.components.settings.ActiveCollabNotificationSection.updated',
-            'Task Details Edited'
+            'Task details edited'
           )}
           description={translate(
             'auto.components.settings.ActiveCollabNotificationSection.updatedDescription',
-            'An assigned task is edited without a new comment — renamed, re-described, re-labelled, or its due date changed.'
+            'An assigned task is edited without a new comment: renamed, re-described, re-labelled, or its due date changed.'
           )}
           checked={notificationSettings.activeCollabUpdated}
           disabled={!notificationsEnabled}
@@ -144,11 +144,11 @@ export function ActiveCollabNotificationSection({
           icon={<AtSign className="size-4" />}
           label={translate(
             'auto.components.settings.ActiveCollabNotificationSection.mention',
-            'Mentioned You'
+            'Mentioned you'
           )}
           description={translate(
             'auto.components.settings.ActiveCollabNotificationSection.mentionDescription',
-            'Somebody @-mentions you, on any task you can see — not only ones assigned to you. Read from ActiveCollab’s own notification stream, so it costs one extra request per poll while switched on.'
+            'Somebody @-mentions you on any task you can see, not only ones assigned to you. Read from ActiveCollab’s own notification stream, so it costs one extra request per poll while switched on.'
           )}
           checked={notificationSettings.activeCollabMention}
           disabled={!notificationsEnabled}
@@ -165,7 +165,7 @@ export function ActiveCollabNotificationSection({
               <Timer className="size-4" />
               {translate(
                 'auto.components.settings.ActiveCollabNotificationSection.pollInterval',
-                'Check Every'
+                'Check every'
               )}
             </span>
           }
@@ -177,7 +177,7 @@ export function ActiveCollabNotificationSection({
             <SettingsSegmentedControl
               ariaLabel={translate(
                 'auto.components.settings.ActiveCollabNotificationSection.pollInterval',
-                'Check Every'
+                'Check every'
               )}
               size="sm"
               value={effectiveInterval}

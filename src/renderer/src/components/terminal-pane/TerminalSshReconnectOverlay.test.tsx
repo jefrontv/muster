@@ -106,7 +106,7 @@ describe('TerminalSshReconnectOverlay', () => {
     )
 
     expect(screen.getByText(/Connecting to devbox/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Connecting.../ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Connecting…/ })).toBeDisabled()
     expect(connect).not.toHaveBeenCalled()
   })
 

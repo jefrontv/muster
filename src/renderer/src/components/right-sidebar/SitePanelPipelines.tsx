@@ -32,8 +32,8 @@ const DOT_STATUS: Record<SitePipelineRun['status'], string> = {
 const TONE: Record<SitePipelineRun['status'], string> = {
   running: 'text-primary',
   pending: 'text-primary',
-  paused: 'text-amber-500/90',
-  success: 'text-emerald-500/90',
+  paused: 'text-status-attention',
+  success: 'text-status-success',
   failure: 'text-destructive',
   stopped: 'text-muted-foreground',
   unknown: 'text-muted-foreground'
@@ -121,7 +121,7 @@ export function SitePanelPipelines({
                   )}
                   <button
                     type="button"
-                    className="rounded p-1 text-muted-foreground opacity-80 hover:bg-accent hover:text-foreground"
+                    className="rounded-full p-1 text-muted-foreground opacity-80 hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`${openLabel} #${run.buildNumber}`}
                     onClick={() => void openHttpLink(run.url)}
                   >

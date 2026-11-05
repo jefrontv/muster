@@ -152,7 +152,7 @@ export function useDaemonActions(callbacks?: DaemonActionCallbacks): DaemonActio
         toast.error(
           translate(
             'auto.components.shared.useDaemonActions.b5954e12d3',
-            'Restart failed — check logs.'
+            'Restart failed: check logs.'
           )
         )
       }

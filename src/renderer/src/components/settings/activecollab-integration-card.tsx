@@ -132,7 +132,7 @@ export function ActiveCollabIntegrationCard(): React.JSX.Element {
                   'auto.components.settings.activecollab.integration.card.disconnect_label',
                   'Disconnect ActiveCollab'
                 )}
-                className="rounded-md p-1 text-muted-foreground/50 transition-colors hover:text-destructive"
+                className="rounded-full p-1 text-muted-foreground transition-colors hover:text-destructive outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Unlink className="size-3.5" />
               </button>

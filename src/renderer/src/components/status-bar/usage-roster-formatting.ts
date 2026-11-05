@@ -23,10 +23,10 @@ export function formatPlanLabel(planType: string | null | undefined): string | n
 // inherits the foreground color (STYLEGUIDE: color reserved for state).
 export function usageTextColorClass(usedPercent: number): string {
   if (usedPercent >= 80) {
-    return 'text-red-500'
+    return 'text-status-danger'
   }
   if (usedPercent >= 60) {
-    return 'text-yellow-500'
+    return 'text-status-attention'
   }
   return 'text-foreground'
 }

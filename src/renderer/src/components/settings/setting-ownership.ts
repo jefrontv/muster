@@ -30,7 +30,7 @@ function buildSummaries(): Record<string, SettingOwnershipSummary> {
       ),
       description: translate(
         'auto.components.settings.settingOwnership.repositorySourceControlAi',
-        'These overrides apply to this project setup and inherit the client Source Control AI defaults until customized.'
+        'These overrides apply to this project setup and inherit the client Source control AI defaults until customized.'
       )
     },
     agentLaunchDefaults: {

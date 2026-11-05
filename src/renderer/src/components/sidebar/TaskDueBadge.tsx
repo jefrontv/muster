@@ -20,9 +20,9 @@ export function TaskDueBadge({ className }: { className?: string }): React.JSX.E
     <span
       title={translate('auto.components.chat.sidebar.tasksDue', 'Tasks due today or overdue')}
       className={cn(
-        'flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-medium tabular-nums',
+        'flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-2xs font-medium tabular-nums',
         overdueCount > 0
-          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+          ? 'bg-status-attention-background text-status-attention'
           : 'bg-muted text-muted-foreground',
         className
       )}

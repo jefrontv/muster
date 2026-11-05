@@ -158,7 +158,7 @@ export function CmdJPaletteFeatureTipVisual(): JSX.Element {
       ) : null}
 
       <div
-        className={`relative mt-3 h-[12.75rem] w-full max-w-[21rem] overflow-hidden rounded-xl border border-border bg-card text-left shadow-lg transition-opacity duration-300 ease-out ${
+        className={`relative mt-3 h-[12.75rem] w-full max-w-[21rem] overflow-hidden rounded-xl border border-border bg-card text-left shadow-floating transition-opacity duration-300 ease-out ${
           !paletteMounted
             ? 'pointer-events-none invisible opacity-0'
             : paletteOpaque
@@ -191,18 +191,18 @@ export function CmdJPaletteFeatureTipVisual(): JSX.Element {
               >
                 <span className="flex w-4 shrink-0 items-center justify-center">
                   {result.status === 'done' ? (
-                    <span className="size-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                    <span className="size-2.5 rounded-full bg-status-success" aria-hidden="true" />
                   ) : (
                     // Why: this tip can stay mounted while Orca is idle; mirror
                     // the sidebar's static working ring instead of spinning.
-                    <span className="block size-2.5 rounded-full border-[1.5px] border-yellow-500 bg-yellow-500/15" />
+                    <span className="block size-2.5 rounded-full border-[1.5px] border-status-attention bg-status-attention-background" />
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] font-semibold tracking-[-0.01em] text-foreground">
+                  <span className="block truncate text-[12px] font-semibold tracking-[-0.01em] text-foreground">
                     {result.name}
                   </span>
-                  <span className="block truncate text-[10px] text-muted-foreground/70">
+                  <span className="block truncate text-[11px] text-muted-foreground/70">
                     {result.branch}
                   </span>
                 </div>
@@ -215,10 +215,10 @@ export function CmdJPaletteFeatureTipVisual(): JSX.Element {
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-dashed border-border/60 bg-muted/25 text-muted-foreground/70">
                   <Plus size={13} aria-hidden="true" />
                 </div>
-                <div className="min-w-0 flex-1 truncate text-[12.5px] font-semibold tracking-[-0.01em] text-foreground">
+                <div className="min-w-0 flex-1 truncate text-[12px] font-semibold tracking-[-0.01em] text-foreground">
                   {translate(
                     'auto.components.feature.tips.CmdJPaletteFeatureTipVisual.ab94e16d44',
-                    'Create worktree "{{value0}}"',
+                    'Create workspace "{{value0}}"',
                     { value0: renderQuery.trim() }
                   )}
                 </div>

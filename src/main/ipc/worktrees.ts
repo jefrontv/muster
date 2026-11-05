@@ -58,6 +58,10 @@ import { pruneWorktreePRRefreshAliases } from '../github/pr-refresh-coordinator'
 import { resolveGitHubReviewHeadRemote } from '../github/review-head-remote'
 import { listRepoWorktrees } from '../repo-worktrees'
 import {
+  BULK_WORKTREE_SCAN_REUSE_MS,
+  invalidateRecentWorktreeScans
+} from '../git/worktree-scan-reuse'
+import {
   migrateAllLocalWpRepoPathsIfNeeded,
   migrateLocalWpRepoPathIfNeeded
 } from '../sites/localwp-repo-path'
@@ -569,7 +573,10 @@ async function listDetectedGitWorktrees(
 
   const scan: DetectedWorktreeScan = {
     invalidated: false,
-    promise: listRepoWorktrees(repo, localWorktreeGitOptions)
+    promise: listRepoWorktrees(repo, {
+      ...localWorktreeGitOptions,
+      reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+    })
   }
   detectedWorktreeScanInFlight.set(cacheKey, scan)
   try {
@@ -1066,11 +1073,18 @@ async function listDetectedWorktreesForRepoId(
   }
 }
 
+let unregisterRecentWorktreeScanInvalidator: (() => void) | null = null
+
 export function registerWorktreeHandlers(
   mainWindow: BrowserWindow,
   store: Store,
   runtime: OrcaRuntimeService
 ): void {
+  // Why: an out-of-band change notification must also retire the shared path-level listing.
+  unregisterRecentWorktreeScanInvalidator?.()
+  unregisterRecentWorktreeScanInvalidator = registerWorktreeChangeInvalidator((repoId) => {
+    invalidateRecentWorktreeScans(store.getRepo(repoId)?.path)
+  })
   // Remove previously registered handlers so re-register works when macOS re-activates and creates a new window.
   ipcMain.removeHandler('worktrees:listAll')
   ipcMain.removeHandler('worktrees:list')

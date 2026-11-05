@@ -66,7 +66,7 @@ export function FileExplorerToolbar({
             )}
             aria-label={translate(
               'auto.components.right.sidebar.FileExplorerToolbar.6026b16950',
-              'Collapse All'
+              'Collapse all'
             )}
             aria-disabled={!canCollapseAll}
             // Why: native disabled buttons suppress Radix tooltip triggers in Chromium.
@@ -84,7 +84,7 @@ export function FileExplorerToolbar({
         <TooltipContent side="bottom" sideOffset={4}>
           {translate(
             'auto.components.right.sidebar.FileExplorerToolbar.6026b16950',
-            'Collapse All'
+            'Collapse all'
           )}
         </TooltipContent>
       </Tooltip>
@@ -100,7 +100,7 @@ export function FileExplorerToolbar({
             )}
             aria-label={translate(
               'auto.components.right.sidebar.FileExplorerToolbar.d95e30fe28',
-              'Refresh Explorer'
+              'Refresh explorer'
             )}
             aria-disabled={!canRefresh || refresh.isRefreshing}
             disabled={refresh.isRefreshing}
@@ -122,7 +122,7 @@ export function FileExplorerToolbar({
         <TooltipContent side="bottom" sideOffset={4}>
           {translate(
             'auto.components.right.sidebar.FileExplorerToolbar.d95e30fe28',
-            'Refresh Explorer'
+            'Refresh explorer'
           )}
         </TooltipContent>
       </Tooltip>
@@ -137,7 +137,7 @@ export function FileExplorerToolbar({
                 className="text-muted-foreground hover:text-foreground"
                 aria-label={translate(
                   'auto.components.right.sidebar.FileExplorerToolbar.31b4c3195d',
-                  'More Explorer Actions'
+                  'More explorer actions'
                 )}
               >
                 <Ellipsis className="size-3" />
@@ -147,7 +147,7 @@ export function FileExplorerToolbar({
           <TooltipContent side="bottom" sideOffset={4}>
             {translate(
               'auto.components.right.sidebar.FileExplorerToolbar.31b4c3195d',
-              'More Explorer Actions'
+              'More explorer actions'
             )}
           </TooltipContent>
         </Tooltip>
@@ -155,7 +155,7 @@ export function FileExplorerToolbar({
           <DropdownMenuCheckboxItem checked={showDotfiles} onCheckedChange={onToggleDotfiles}>
             {translate(
               'auto.components.right.sidebar.FileExplorerToolbar.78f133232c',
-              'Show Dotfiles'
+              'Show dotfiles'
             )}
           </DropdownMenuCheckboxItem>
           {showGitIgnoredFilesToggle ? (
@@ -165,7 +165,7 @@ export function FileExplorerToolbar({
             >
               {translate(
                 'auto.components.right.sidebar.FileExplorerToolbar.d238264654',
-                'Show Git Ignored Files'
+                'Show Git ignored files'
               )}
             </DropdownMenuCheckboxItem>
           ) : null}

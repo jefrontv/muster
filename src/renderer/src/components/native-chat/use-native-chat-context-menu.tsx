@@ -180,7 +180,7 @@ export function useNativeChatContextMenu({
               <MessageSquarePlus />
               {translate(
                 'components.agentSessionContinuation.continueInNewSession',
-                'Continue in New Session…'
+                'Continue in new session…'
               )}
             </DropdownMenuItem>
           ) : null}
@@ -188,7 +188,7 @@ export function useNativeChatContextMenu({
             <GitFork />
             {translate(
               'auto.components.terminal.pane.TerminalContextMenu.8a7ddb8b8a',
-              'Fork Agent Session…'
+              'Fork agent session…'
             )}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -196,14 +196,14 @@ export function useNativeChatContextMenu({
             <PanelRightClose />
             {translate(
               'auto.components.terminal.pane.TerminalContextMenu.20e565d865',
-              'Split Terminal Right'
+              'Split terminal right'
             )}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={actions.onSplitDown}>
             <PanelBottomClose />
             {translate(
               'auto.components.terminal.pane.TerminalContextMenu.98bccf4fa2',
-              'Split Terminal Down'
+              'Split terminal down'
             )}
           </DropdownMenuItem>
           {actions.canEqualizePaneSizes ? (
@@ -211,7 +211,7 @@ export function useNativeChatContextMenu({
               <PanelsTopLeft />
               {translate(
                 'auto.components.terminal.pane.TerminalContextMenu.06c2b0f043',
-                'Equalize Pane Sizes'
+                'Equalize pane sizes'
               )}
             </DropdownMenuItem>
           ) : null}
@@ -221,11 +221,11 @@ export function useNativeChatContextMenu({
               {actions.isPaneExpanded
                 ? translate(
                     'auto.components.terminal.pane.TerminalContextMenu.df766809e0',
-                    'Collapse Pane'
+                    'Collapse pane'
                   )
                 : translate(
                     'auto.components.terminal.pane.TerminalContextMenu.925f49f210',
-                    'Expand Pane'
+                    'Expand pane'
                   )}
             </DropdownMenuItem>
           ) : null}
@@ -234,21 +234,21 @@ export function useNativeChatContextMenu({
             <Pencil />
             {translate(
               'auto.components.terminal.pane.TerminalContextMenu.39809d152f',
-              'Set Title…'
+              'Set title…'
             )}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={actions.onCopyTerminalId}>
             <Copy />
             {translate(
               'auto.components.terminal.pane.TerminalContextMenu.copyTerminalId',
-              'Copy Terminal ID'
+              'Copy terminal ID'
             )}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={actions.onCopyPaneId}>
             <Copy />
             {translate(
               'auto.components.terminal.pane.TerminalContextMenu.2cf85a6a55',
-              'Copy Pane ID'
+              'Copy pane ID'
             )}
           </DropdownMenuItem>
           {actions.canClosePane ? (
@@ -258,7 +258,7 @@ export function useNativeChatContextMenu({
                 <X />
                 {translate(
                   'auto.components.terminal.pane.TerminalContextMenu.8c17d6786d',
-                  'Close Pane'
+                  'Close pane'
                 )}
               </DropdownMenuItem>
             </>

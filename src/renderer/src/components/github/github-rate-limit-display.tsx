@@ -149,8 +149,8 @@ function GitHubRateLimitRows({
             <span
               className={cn(
                 'tabular-nums text-foreground',
-                tone === 'crit' && 'text-red-600 dark:text-red-300',
-                tone === 'warn' && 'text-amber-700 dark:text-amber-300'
+                tone === 'crit' && 'text-status-danger',
+                tone === 'warn' && 'text-status-attention'
               )}
             >
               {v.remaining}{' '}
@@ -182,7 +182,7 @@ export function GitHubRateLimitPanel({ className }: { className?: string }): Rea
             <Gauge className="size-4" />
             {translate(
               'auto.components.github.github.rate.limit.display.58c5f88216',
-              'GitHub API Budget'
+              'GitHub API budget'
             )}
           </div>
           <p className="text-xs text-muted-foreground">

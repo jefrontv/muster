@@ -148,7 +148,7 @@ export const CandidateRow = React.memo(function CandidateRow({
               { value0: candidate.displayName }
             )}
             onClick={() => onToggleSelected(candidate.worktreeId)}
-            className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border border-border bg-background text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="hit-area mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border border-border bg-background text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {selected ? <Check className="size-3" strokeWidth={3} /> : null}
           </button>

@@ -21,7 +21,7 @@ export type { FeatureTourPreviewFrameCopy } from './feature-tour-preview-copy'
 function WorkspaceFrame(): JSX.Element {
   return (
     <div className="absolute inset-0 flex flex-col gap-5 bg-card px-4 py-4">
-      <div className="text-[14.5px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
+      <div className="text-[14px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
         {translate(
           'auto.components.feature.wall.FeatureTourPreview.56a0271428',
           'Isolated workspaces'
@@ -74,7 +74,7 @@ function OrchestrationFrame(): JSX.Element {
   // to viewport-relative anchors (root left, children right column).
   return (
     <div className="absolute inset-0 flex flex-col gap-5 bg-card px-4 py-4">
-      <div className="text-[14.5px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
+      <div className="text-[14px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
         {translate(
           'auto.components.feature.wall.FeatureTourPreview.e44269e97d',
           'Agent orchestration'
@@ -142,7 +142,7 @@ function OrchestrationFrame(): JSX.Element {
           <div className="mt-2 flex items-center gap-1.5 pl-3.5">
             <WorkingSpinner size="xs" />
             <ClaudeIcon size={13} />
-            <span className="truncate text-[12.5px] leading-none text-muted-foreground">
+            <span className="truncate text-[12px] leading-none text-muted-foreground">
               {translate(
                 'auto.components.feature.wall.FeatureTourPreview.5171768676',
                 'orchestrating 3 agents'
@@ -200,7 +200,7 @@ function TasksFrame(): JSX.Element {
   // makes the cause/effect visible in the composition itself.
   return (
     <div className="absolute inset-0 flex flex-col gap-5 bg-card px-4 py-4">
-      <div className="text-[14.5px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
+      <div className="text-[14px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
         {translate(
           'auto.components.feature.wall.FeatureTourPreview.bee6b4088d',
           'GitHub & Linear tasks'
@@ -265,7 +265,7 @@ function TasksFrame(): JSX.Element {
         <div className="feature-tour-tasks-workspace flex flex-col gap-2 rounded-md border border-border bg-background px-4 py-2.5">
           <div className="flex items-center gap-2.5">
             <WorkingSpinner />
-            <span className="truncate text-[15.5px] font-medium leading-none text-foreground">
+            <span className="truncate text-[15px] font-medium leading-none text-foreground">
               {translate(
                 'auto.components.feature.wall.FeatureTourPreview.3822d8d14b',
                 'fix/worktree-picker-truncates'
@@ -280,7 +280,7 @@ function TasksFrame(): JSX.Element {
             <ClaudeIcon size={12} />
             <span className="h-2 w-[55%] rounded-full bg-foreground/15" />
           </div>
-          <div className="text-[13.5px] leading-none text-muted-foreground">
+          <div className="text-[13px] leading-none text-muted-foreground">
             {translate(
               'auto.components.feature.wall.FeatureTourPreview.2a7cfc82c8',
               'Linked to GH #1842'

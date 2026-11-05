@@ -114,7 +114,7 @@ export function GrokAccountsSection(): React.JSX.Element {
                     )
                   : translate(
                       'auto.components.settings.GrokAccountsSection.f08c41de73',
-                      'Session expired — run grok on the computer running Muster and wait for it to start. If prompted, complete sign-in, then click Refresh usage. No chat message is needed.'
+                      'Session expired: run grok on the computer running Muster and wait for it to start. If prompted, complete sign-in, then click Refresh usage. No chat message is needed.'
                     )}
               </p>
             </>

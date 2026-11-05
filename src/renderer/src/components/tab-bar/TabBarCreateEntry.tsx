@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useRuntimeFileListForWorktree } from '../quick-open-file-list'
 import {
@@ -260,7 +261,9 @@ export default function TabBarCreateEntry({
       }}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <div className="-mx-1 flex items-center px-3">
+      {/* Same pill as CommandInput, the search field in every other palette and picker. */}
+      <div className="flex h-8 items-center gap-2 rounded-full bg-foreground/[0.05] px-3 focus-within:ring-2 focus-within:ring-ring">
+        <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
         <Input
           ref={inputRef}
           value={query}
@@ -282,14 +285,14 @@ export default function TabBarCreateEntry({
           }
           aria-label={translate(
             'auto.components.tab.bar.TabBarCreateEntry.39676a184c',
-            'Open any file, URL, agent, ...'
+            'Open any file, URL, agent, …'
           )}
           aria-invalid={error ? true : undefined}
           placeholder={translate(
             'auto.components.tab.bar.TabBarCreateEntry.39676a184c',
-            'Open any file, URL, agent, ...'
+            'Open any file, URL, agent, …'
           )}
-          className="h-9 rounded-none border-0 bg-transparent px-0 text-xs font-normal text-foreground shadow-none placeholder:font-normal placeholder:text-muted-foreground focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 md:text-xs dark:bg-transparent"
+          className="h-full rounded-none border-0 bg-transparent px-0 text-[13px] font-normal text-foreground shadow-none placeholder:font-normal placeholder:text-muted-foreground focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 md:text-[13px] dark:bg-transparent"
         />
       </div>
       {error || activeOptions.length > 0 || hasQuery ? (

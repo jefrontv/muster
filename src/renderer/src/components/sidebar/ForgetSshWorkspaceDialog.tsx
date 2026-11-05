@@ -127,7 +127,7 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
                 )
               : translate(
                   'auto.components.sidebar.ForgetSshWorkspaceDialog.ghostBody',
-                  '{{host}} is no longer a saved SSH host, so this workspace is no longer connected to a live host. It can only be removed from Muster — files and branches on the remote are left untouched.',
+                  '{{host}} is no longer a saved SSH host, so this workspace is no longer connected to a live host. It can only be removed from Muster. Files and branches on the remote are left untouched.',
                   { host: hostLabel }
                 )}
           </DialogDescription>
@@ -169,7 +169,7 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
               {busy === 'reconnect' ? <Loader2 className="size-3.5 animate-spin" /> : null}
               {translate(
                 'auto.components.sidebar.ForgetSshWorkspaceDialog.reconnectAndDelete',
-                'Reconnect & Delete'
+                'Reconnect & delete'
               )}
             </Button>
           ) : null}

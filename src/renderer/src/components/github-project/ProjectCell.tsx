@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- Why: ProjectCell dispatches on field.dataType for every supported ProjectV2 field type; keeping the dispatch table and renderers colocated keeps the type-to-renderer mapping easy to audit. */
+import { Badge } from '@/components/ui/badge'
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: Project field details are fetched from provider metadata IPC after the concrete field/value identity is known. */
 // Why: one cell per visible column. Dispatch on `field.dataType` first (so
 // built-in ASSIGNEES/LABELS cells render their dedicated content) and fall
@@ -390,7 +391,7 @@ function IssueTypeCell({
           const colors = singleSelectChipColors(issueType.color ?? '')
           return (
             <span
-              className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none text-[var(--github-project-chip-fg-light)] dark:text-[var(--github-project-chip-fg-dark)]"
+              className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none text-[var(--github-project-chip-fg-light)] dark:text-[var(--github-project-chip-fg-dark)]"
               style={chipStyle(colors)}
             >
               {issueType.name}
@@ -460,7 +461,7 @@ function IssueTypeCell({
               <span className="min-w-0">
                 <span className="block truncate">{t.name}</span>
                 {t.description ? (
-                  <span className="block truncate text-[10px] text-muted-foreground">
+                  <span className="block truncate text-[11px] text-muted-foreground">
                     {t.description}
                   </span>
                 ) : null}
@@ -613,7 +614,7 @@ function IterationCell({
       </PopoverTrigger>
       <PopoverContent className="w-64 p-1">
         {completed.length > 0 ? (
-          <div className="px-2 pt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+          <div className="px-2 pt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
             {translate('auto.components.github.project.ProjectCell.e17bb96881', 'Completed')}
           </div>
         ) : null}
@@ -628,7 +629,7 @@ function IterationCell({
           />
         ))}
         {active.length > 0 ? (
-          <div className="px-2 pt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+          <div className="px-2 pt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
             {translate(
               'auto.components.github.project.ProjectCell.191905e20e',
               'Current & upcoming'
@@ -674,7 +675,7 @@ function IterationRow({
       onClick={onClick}
     >
       <span className="text-sm">{iteration.title}</span>
-      <span className="text-[10px] text-muted-foreground">
+      <span className="text-[11px] text-muted-foreground">
         {iteration.startDate} · {iteration.duration}d
       </span>
     </button>
@@ -799,12 +800,13 @@ function LabelChip({ label }: { label: GitHubProjectLabel }): React.JSX.Element 
   // outline-only chip we had before was hard to read against the dark UI.
   const colors = labelChipColors(label.color)
   return (
-    <span
-      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none text-[var(--github-project-chip-fg-light)] dark:text-[var(--github-project-chip-fg-dark)]"
+    <Badge
+      variant="muted"
+      className="text-[var(--github-project-chip-fg-light)] dark:text-[var(--github-project-chip-fg-dark)]"
       style={chipStyle(colors)}
     >
       {label.name}
-    </span>
+    </Badge>
   )
 }
 
@@ -822,7 +824,7 @@ function UserChip({ user }: { user: GitHubProjectUser }): React.JSX.Element {
   return (
     <span
       title={user.login}
-      className="inline-flex size-5 items-center justify-center rounded-full bg-muted text-[10px]"
+      className="inline-flex size-5 items-center justify-center rounded-full bg-muted text-[11px]"
     >
       {user.login.slice(0, 1).toUpperCase()}
     </span>

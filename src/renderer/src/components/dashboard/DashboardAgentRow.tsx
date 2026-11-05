@@ -288,7 +288,7 @@ const DashboardAgentRow = React.memo(function DashboardAgentRow({
         </span>
         {model && (
           <span
-            className="max-w-24 shrink-0 truncate font-mono text-[10px] text-muted-foreground/70"
+            className="max-w-24 shrink-0 truncate font-mono text-[11px] text-muted-foreground/70"
             title={model}
           >
             {model}
@@ -297,7 +297,7 @@ const DashboardAgentRow = React.memo(function DashboardAgentRow({
         {/* Why: "+N" badge shows the hidden child count when collapsed; redundant once children are expanded below. */}
         {hasChildDisclosure && !childAgentsExpanded && (
           <span
-            className="shrink-0 text-[10px] font-normal leading-none text-muted-foreground/70 tabular-nums"
+            className="shrink-0 text-2xs font-normal leading-none text-muted-foreground/70 tabular-nums"
             aria-hidden
           >
             +{childAgentCount}

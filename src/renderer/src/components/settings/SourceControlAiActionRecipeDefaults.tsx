@@ -48,7 +48,7 @@ const ACTION_RECIPES_SEARCH_ENTRY = {
   get description() {
     return translate(
       'auto.components.settings.SourceControlAiActionRecipeDefaults.cf01d41bce',
-      'Agent, CLI arguments, and command template used by each Source Control AI button.'
+      'Agent, CLI arguments, and command template used by each Source control AI button.'
     )
   },
   get keywords() {
@@ -144,16 +144,16 @@ export function SourceControlAiActionRecipeDefaults({
         }
       })
     } catch (error) {
-      console.error('Failed to save Source Control AI action agent default', error)
+      console.error('Failed to save Source control AI action agent default', error)
       try {
         await writeConfig({ actions: previousActions })
       } catch (rollbackError) {
-        console.error('Failed to roll back Source Control AI action agent default', rollbackError)
+        console.error('Failed to roll back Source control AI action agent default', rollbackError)
       }
       toast.error(
         translate(
           'auto.components.settings.SourceControlAiActionRecipeDefaults.b5f46664d3',
-          'Failed to save Source Control AI action default: {{value0}}',
+          'Failed to save Source control AI action default: {{value0}}',
           { value0: error instanceof Error ? error.message : 'Unknown error' }
         )
       )

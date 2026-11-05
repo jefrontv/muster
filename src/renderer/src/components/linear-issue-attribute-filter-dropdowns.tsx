@@ -222,7 +222,7 @@ export default function LinearIssueAttributeFilterDropdowns({
               'Filters'
             )}
             {activeCount > 0 ? (
-              <span className="rounded-full bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">
+              <span className="rounded-full bg-muted px-1.5 text-2xs font-medium text-muted-foreground">
                 {activeCount}
               </span>
             ) : null}

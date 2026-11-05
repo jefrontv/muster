@@ -68,7 +68,7 @@ function WordPressLoginConfig({ enabled }: { enabled: boolean }): React.JSX.Elem
           {status?.hasPassword
             ? translate(
                 'auto.components.settings.BundledExtensionsSection.b7c04f12ae',
-                'Password (stored — type to replace)'
+                'Password (stored: type to replace)'
               )
             : translate('auto.components.settings.BundledExtensionsSection.c58e29a4d1', 'Password')}
         </Label>
@@ -108,14 +108,14 @@ function WordPressLoginConfig({ enabled }: { enabled: boolean }): React.JSX.Elem
             ? translate('auto.components.settings.BundledExtensionsSection.f16b8d05c7', 'Saved')
             : translate(
                 'auto.components.settings.BundledExtensionsSection.a2c7e94013',
-                'Save Credentials'
+                'Save credentials'
               )}
         </Button>
         {status?.hasPassword ? (
           <Button type="button" variant="ghost" size="sm" onClick={() => void clearPassword()}>
             {translate(
               'auto.components.settings.BundledExtensionsSection.b8e1490fd2',
-              'Clear Password'
+              'Clear password'
             )}
           </Button>
         ) : null}
@@ -137,7 +137,7 @@ export function BundledExtensionsSection(): React.JSX.Element {
 
   const title = translate(
     'auto.components.settings.BundledExtensionsSection.d5910be3c7',
-    'Muster Extensions'
+    'Muster extensions'
   )
   const description = translate(
     'auto.components.settings.BundledExtensionsSection.e6b204af91',

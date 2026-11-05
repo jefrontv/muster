@@ -22,7 +22,7 @@ type RepositorySourceControlAiSectionProps = {
 }
 
 /**
- * Per-repo Source Control AI settings — save UX matches global Git / Source Control AI:
+ * Per-repo Source control AI settings — save UX matches global Git / Source control AI:
  * selects and simple controls persist immediately; each action recipe drafts CLI args +
  * command template until that row's Save (same as global action recipes).
  */
@@ -74,7 +74,7 @@ export function RepositorySourceControlAiSection({
         <h3 className="text-sm font-semibold">
           {translate(
             'auto.components.settings.RepositorySourceControlAiSection.71b003b62b',
-            'Source Control AI'
+            'Source control AI'
           )}
         </h3>
         <p className="text-xs text-muted-foreground">{ownership.description}</p>

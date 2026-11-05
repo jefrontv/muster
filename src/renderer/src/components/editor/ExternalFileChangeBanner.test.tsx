@@ -74,8 +74,8 @@ describe('ExternalFileChangeBanner', () => {
     expect(html).toContain('changed on disk')
     expect(html).toContain('Saving will overwrite')
     expect(html).toContain('Compare')
-    expect(html).toContain('Reload from Disk')
-    expect(html).toContain('Keep My Edits')
+    expect(html).toContain('Reload from disk')
+    expect(html).toContain('Keep my edits')
   })
 
   it('reload clears the draft, dirty flag, and mark before refetching content', () => {

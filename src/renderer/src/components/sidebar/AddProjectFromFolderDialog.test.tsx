@@ -111,7 +111,7 @@ function makeRepo(overrides: Partial<Repo> = {}): Repo {
 }
 
 async function clickAddProject(): Promise<void> {
-  const button = mocks.buttons.find((entry) => entry.label.includes('Add Project'))
+  const button = mocks.buttons.find((entry) => entry.label.includes('Add project'))
   if (!button?.onClick) {
     throw new Error('Add Project button not found')
   }
@@ -250,7 +250,7 @@ describe('AddProjectFromFolderDialog', () => {
     const { default: AddProjectFromFolderDialog } = await import('./AddProjectFromFolderDialog')
 
     renderToStaticMarkup(<AddProjectFromFolderDialog />)
-    const addPromise = getButton('Add Project').onClick?.()
+    const addPromise = getButton('Add project').onClick?.()
     await Promise.resolve()
     expect(mocks.state.fetchWorktrees).toHaveBeenCalledWith(repo.id, {
       requireAuthoritative: true

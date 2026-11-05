@@ -129,8 +129,8 @@ export function SiteStepToggles({
     action: React.ReactNode,
     groupCustomSteps: readonly SiteCustomStep[]
   ): React.JSX.Element => (
-    <fieldset className="flex min-w-0 flex-1 flex-col gap-1.5">
-      <legend className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+    <fieldset className="flex min-w-36 flex-1 flex-col gap-1.5">
+      <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
         {heading}
       </legend>
       {toggles.map((toggle) => (
@@ -167,7 +167,7 @@ export function SiteStepToggles({
 
   return (
     <div className={cn('space-y-1.5', className)}>
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-x-4 gap-y-3">
         {group(
           translate('auto.components.right.sidebar.SitePanel.importStepsHeading', 'Import'),
           SITE_IMPORT_TOGGLES,

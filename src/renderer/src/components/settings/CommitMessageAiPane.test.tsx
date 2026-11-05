@@ -55,8 +55,8 @@ describe('CommitMessageAiPane', () => {
   it('renders only the opt-in control before the feature is enabled', () => {
     const markup = renderPane(buildSettings())
 
-    expect(markup).toContain('Source Control AI')
-    expect(markup).toContain('Show Source Control AI actions')
+    expect(markup).toContain('Source control AI')
+    expect(markup).toContain('Show Source control AI actions')
     expect(markup).toContain('aria-checked="false"')
     expect(markup).not.toContain('Action recipes')
     expect(markup).not.toContain('Command template')
@@ -64,7 +64,7 @@ describe('CommitMessageAiPane', () => {
     expect(markup).not.toContain('Thinking effort')
   })
 
-  it('renders action recipes for every Source Control AI action', () => {
+  it('renders action recipes for every Source control AI action', () => {
     const markup = renderPane(
       buildSettings({
         commitMessageAi: {
@@ -267,7 +267,7 @@ describe('CommitMessageAiPane', () => {
       })
     )
 
-    expect(markup).toContain('Source Control AI')
+    expect(markup).toContain('Source control AI')
     expect(markup).toContain('use $best-commit-msg to write a commit')
     expect(markup).toContain('use /fix-ci-issue to fix the linked CI bug')
   })
@@ -364,8 +364,8 @@ describe('CommitMessageAiPane', () => {
     )
 
     expect(markup).toContain('Action recipes')
-    expect(markup).not.toContain('Gemini Source Control AI is coming soon')
-    expect(markup).not.toContain('Which model Source Control AI uses')
+    expect(markup).not.toContain('Gemini Source control AI is coming soon')
+    expect(markup).not.toContain('Which model Source control AI uses')
   })
 
   it('keeps action recipes discoverable in settings search metadata', () => {

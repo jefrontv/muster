@@ -134,7 +134,7 @@ const WorktreeCardAgentsBody = React.memo(function WorktreeCardAgentsBody({
         target.paneKey,
         agentSendPopoverTargetMode?.status === 'sending' &&
         agentSendPopoverTargetMode.sendingPaneKey === target.paneKey
-          ? { status: 'sending' as const, disabledReason: 'Sending...' }
+          ? { status: 'sending' as const, disabledReason: 'Sending…' }
           : target.disabledReason
             ? { status: target.status, disabledReason: target.disabledReason }
             : { status: target.status }

@@ -110,7 +110,7 @@ export function SiteRootsDialog({
           {entries.map((entry, index) => (
             <div
               key={entry.path}
-              className="flex items-center gap-2 rounded-md border border-border px-3 py-2"
+              className="flex items-center gap-2 rounded-xl border border-border px-3 py-2"
             >
               <span className="min-w-0 flex-1 break-all font-mono text-xs">{entry.path}</span>
               {entry.missing ? (

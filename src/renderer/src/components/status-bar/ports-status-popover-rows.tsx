@@ -46,7 +46,7 @@ function PortAction({
       type="button"
       variant="ghost"
       size="icon-xs"
-      className="size-5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:text-muted-foreground/35"
+      className="hit-area size-5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:text-muted-foreground/35"
       aria-label={label}
       onClick={handleClick}
       disabled={disabled}
@@ -98,7 +98,7 @@ export function PortRow({
   const canStop = canStopWorkspacePort(port)
   const openBrowserLabel = translate(
     'auto.components.status.bar.ports.status.popover.rows.085f4f0334',
-    'Open in Browser'
+    'Open in browser'
   )
 
   const handleOpen = useCallback(
@@ -254,7 +254,7 @@ export function PortRow({
             <PortAction
               label={translate(
                 'auto.components.status.bar.ports.status.popover.rows.0e72c8d9fb',
-                'Stop Process'
+                'Stop process'
               )}
               disabled={!canStop}
               onClick={handleStop}
@@ -263,7 +263,7 @@ export function PortRow({
             </PortAction>
           </div>
         </div>
-        <div className="select-text truncate text-[10px] text-muted-foreground/70">
+        <div className="select-text truncate text-[11px] text-muted-foreground/70">
           {external ? port.kind : addressForPort(port)}
         </div>
       </div>
@@ -295,8 +295,8 @@ export function WorkspaceGroupRows({
   )
 
   return (
-    <section className="border-t border-border/40 first:border-t-0">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/40 bg-popover px-3 py-2">
+    <section>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 rounded-md bg-popover px-2 py-1.5">
         <span className="min-w-0 truncate text-[12px] font-medium text-foreground">
           {group.displayName}
         </span>
@@ -304,19 +304,19 @@ export function WorkspaceGroupRows({
           <PortAction
             label={translate(
               'auto.components.status.bar.ports.status.popover.rows.a49ea79246',
-              'Go to Worktree'
+              'Go to workspace'
             )}
             onClick={handleGoToWorkspace}
             disabled={group.ports.length === 0}
           >
             <FolderOpen className="size-3" />
           </PortAction>
-          <span className="font-mono text-[10px] text-muted-foreground/70">
+          <span className="font-mono text-[11px] text-muted-foreground/70">
             {group.ports.length}
           </span>
         </div>
       </div>
-      <div className="px-1 pb-1">
+      <div className="pb-1">
         {group.ports.map((port) => (
           <PortRow key={port.id} port={port} activeWorktreeId={activeWorktreeId} />
         ))}

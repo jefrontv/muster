@@ -3565,7 +3565,7 @@ describe('createEditorSlice remote branch actions', () => {
     await expect(store.getState().pullBranch('wt-1', '/repo')).rejects.toThrow()
 
     expect(toastErrorMock).toHaveBeenCalledWith(
-      'Pull stopped with merge conflicts. Resolve them in Source Control, then commit the merge.'
+      'Pull stopped with merge conflicts. Resolve them in source control, then commit the merge.'
     )
   })
 
@@ -3655,7 +3655,7 @@ describe('createEditorSlice remote branch actions', () => {
     )
 
     expect(toastErrorMock).toHaveBeenCalledWith(
-      'Publish Branch failed. Authentication failed for https://github.com/acme/private-repo.git. Check your remote access and try again.'
+      'Publish branch failed. Authentication failed for https://github.com/acme/private-repo.git. Check your remote access and try again.'
     )
   })
 
@@ -3669,7 +3669,7 @@ describe('createEditorSlice remote branch actions', () => {
     )
 
     expect(toastErrorMock).toHaveBeenCalledWith(
-      'Publish Branch failed. Check your remote access and try again.'
+      'Publish branch failed. Check your remote access and try again.'
     )
     expect(gitStatusMock).not.toHaveBeenCalled()
     expect(gitUpstreamStatusMock).not.toHaveBeenCalled()
@@ -3857,7 +3857,7 @@ describe('createEditorSlice remote branch actions', () => {
     ).rejects.toThrow(pushError.message)
 
     expect(toastErrorMock).toHaveBeenCalledWith(
-      'Force Push failed. Check your connection and try again.'
+      'Force push failed. Check your connection and try again.'
     )
     expect(store.getState().isRemoteOperationActive).toBe(false)
   })
@@ -4156,7 +4156,7 @@ describe('createEditorSlice remote branch actions', () => {
 
     expect(toastErrorMock).toHaveBeenCalledTimes(1)
     expect(toastErrorMock).toHaveBeenCalledWith(
-      'Sync stopped with merge conflicts. Resolve them in Source Control, then commit the merge.'
+      'Sync stopped with merge conflicts. Resolve them in source control, then commit the merge.'
     )
     expect(gitPushMock).not.toHaveBeenCalled()
     expect(store.getState().isRemoteOperationActive).toBe(false)

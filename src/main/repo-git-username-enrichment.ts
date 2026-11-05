@@ -8,6 +8,8 @@ type RepoUsernameStore = {
 
 type EnrichmentOptions = {
   onChanged?: () => void
+  /** Probe only the first N repos in store order (unset = all). */
+  maxRepos?: number
 }
 
 // Why: resolution spawns git (and possibly gh) subprocesses, so run it at most
@@ -25,7 +27,10 @@ async function enrichRepoGitUsernamesInBackground(
   store: RepoUsernameStore,
   options: EnrichmentOptions
 ): Promise<void> {
-  const candidates = store.getRepos().filter(
+  const repos = store.getRepos()
+  // Why slice before filtering: a cap applied after the attempted filter would walk one new repo per call.
+  const scope = options.maxRepos === undefined ? repos : repos.slice(0, options.maxRepos)
+  const candidates = scope.filter(
     (repo) =>
       repo.kind !== 'folder' &&
       // Why: SSH repo paths are remote; local git cannot inspect them. The

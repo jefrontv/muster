@@ -103,7 +103,7 @@ export function OnboardingSiteMcpStep(): React.JSX.Element {
                   <span
                     className={cn(
                       'flex size-4 shrink-0 items-center justify-center',
-                      added ? 'text-[var(--status-success)]' : 'text-muted-foreground/50'
+                      added ? 'text-[var(--status-success)]' : 'text-muted-foreground'
                     )}
                   >
                     {mcp.busy === harness.id ? (

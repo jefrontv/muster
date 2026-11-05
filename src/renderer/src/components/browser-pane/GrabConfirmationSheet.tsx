@@ -137,7 +137,16 @@ export default function GrabConfirmationSheet({
             )}
           </span>
         </div>
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCancel}>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          aria-label={translate(
+            'auto.components.browser.pane.GrabConfirmationSheet.close',
+            'Close'
+          )}
+          onClick={onCancel}
+        >
           <X className="size-4" />
         </Button>
       </div>
@@ -166,7 +175,7 @@ export default function GrabConfirmationSheet({
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {translate(
                 'auto.components.browser.pane.GrabConfirmationSheet.a759d8f866',
-                'Selected Element'
+                'Selected element'
               )}
             </h3>
             <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-sm">
@@ -194,7 +203,7 @@ export default function GrabConfirmationSheet({
               <div className="mt-1 font-mono text-xs text-muted-foreground/70">
                 <EscapedText text={target.selector} />
               </div>
-              <div className="mt-1 text-xs text-muted-foreground/60">
+              <div className="mt-1 text-xs text-muted-foreground">
                 {Math.round(target.rectViewport.width)}x{Math.round(target.rectViewport.height)}
               </div>
             </div>
@@ -241,7 +250,7 @@ export default function GrabConfirmationSheet({
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {translate(
                   'auto.components.browser.pane.GrabConfirmationSheet.effd75e330',
-                  'Nearby Context'
+                  'Nearby context'
                 )}
               </h3>
               <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
@@ -272,7 +281,7 @@ export default function GrabConfirmationSheet({
             <Image className="size-3.5" />
             {translate(
               'auto.components.browser.pane.GrabConfirmationSheet.7095e98362',
-              'Copy Screenshot'
+              'Copy screenshot'
             )}
           </Button>
         ) : null}

@@ -1766,7 +1766,7 @@ export default function AutomationsPage(): React.JSX.Element {
         action: {
           label: translate(
             'auto.components.automations.AutomationsPage.8a3226f172',
-            'Open Settings'
+            'Open settings'
           ),
           onClick: () => {
             openSettingsPage()
@@ -2254,7 +2254,7 @@ export default function AutomationsPage(): React.JSX.Element {
             <DialogTitle className="text-sm">
               {translate(
                 'auto.components.automations.AutomationsPage.080dcb5fbb',
-                'Delete Automation'
+                'Delete automation'
               )}
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -2341,7 +2341,7 @@ export default function AutomationsPage(): React.JSX.Element {
             <DialogTitle className="text-sm">
               {translate(
                 'auto.components.automations.AutomationsPage.9adfab2596',
-                'Delete External Automation'
+                'Delete external automation'
               )}
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -2519,7 +2519,7 @@ export default function AutomationsPage(): React.JSX.Element {
                         {automationRunAvailability.canRunNow
                           ? translate(
                               'auto.components.automations.AutomationsPage.2faecab10b',
-                              'Run Now'
+                              'Run now'
                             )
                           : automationRunAvailability.message}
                       </span>
@@ -2696,7 +2696,7 @@ export default function AutomationsPage(): React.JSX.Element {
                         {disabledMessage ??
                           translate(
                             'auto.components.automations.AutomationsPage.2faecab10b',
-                            'Run Now'
+                            'Run now'
                           )}
                       </span>
                     </ContextMenuItem>
@@ -2766,7 +2766,7 @@ export default function AutomationsPage(): React.JSX.Element {
                     key={template.id}
                     type="button"
                     onClick={() => openCreateDialog(template)}
-                    className="rounded-md border border-border/70 bg-background px-3 py-2 text-left shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="rounded-md border border-border/70 bg-background px-3 py-2 text-left shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <div className="text-[11px] font-medium uppercase text-muted-foreground">
                       {template.category}
@@ -2853,7 +2853,7 @@ export default function AutomationsPage(): React.JSX.Element {
                         {selectedExternalSourceAvailability?.isConnecting
                           ? translate(
                               'auto.components.automations.AutomationsPage.f93ed7a6f8',
-                              'Connecting...'
+                              'Connecting…'
                             )
                           : selectedExternalSshConnected
                             ? translate(

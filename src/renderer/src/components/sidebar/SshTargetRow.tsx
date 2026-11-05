@@ -32,9 +32,9 @@ export function SshTargetRow({
     status === 'deploying-relay' ||
     status === 'reconnecting'
   const dotColor = isConnected
-    ? 'bg-green-500'
+    ? 'bg-status-success'
     : isBusy
-      ? 'bg-yellow-500'
+      ? 'bg-status-attention'
       : 'bg-muted-foreground/30'
 
   const handleRowClick = (): void => {

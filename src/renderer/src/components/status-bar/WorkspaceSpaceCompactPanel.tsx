@@ -46,7 +46,7 @@ export function WorkspaceSpaceCompactPanel({
                   'Space'
                 )}
               </span>
-              <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
+              <Badge variant="secondary">
                 {translate(
                   'auto.components.status.bar.WorkspaceSpaceCompactPanel.c361440dc0',
                   'Beta'
@@ -139,7 +139,7 @@ export function WorkspaceSpaceCompactPanel({
       </div>
 
       {analysis ? (
-        <div className="mt-2 grid grid-cols-3 gap-1 text-[10px] tabular-nums">
+        <div className="mt-2 grid grid-cols-3 gap-1 text-2xs tabular-nums">
           <div className="rounded border border-border/60 bg-background/40 px-2 py-1">
             <div className="text-muted-foreground">
               {translate(

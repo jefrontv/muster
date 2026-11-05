@@ -92,6 +92,7 @@ import { ConfirmationDialogProvider } from './components/confirmation-dialog'
 import { LinkRoutingPreferenceDialogProvider } from './components/link-routing-preference-dialog'
 import RecentTabSwitcher from './components/tab-bar/RecentTabSwitcher'
 import { useGitStatusPolling } from './components/right-sidebar/useGitStatusPolling'
+import { useNarrowWindowRightSidebarCollapse } from './components/right-sidebar/narrow-window-collapse'
 import { requestCommitMessageFocus } from './components/right-sidebar/source-control-commit-message-focus'
 import { useEditorExternalWatch } from './hooks/useEditorExternalWatch'
 import { useSiteRootsRefresh } from './lib/use-site-roots-refresh'
@@ -457,6 +458,7 @@ function App(): React.JSX.Element {
   const clearUnreadDockBadge = useUnreadDockBadge()
   useRadixBodyPointerEventsRecovery()
   useWebSessionTabsSync()
+  useNarrowWindowRightSidebarCollapse()
   const [floatingTerminalOpen, setFloatingTerminalOpen] = useState(false)
   const floatingWorkspaceTourInteractionSnapshotRef = useRef<{
     wasPreviouslyInteracted?: boolean
@@ -692,6 +694,7 @@ function App(): React.JSX.Element {
   const markdownTocPanelWidth = useAppStore((s) => s.markdownTocPanelWidth)
   const activeCollabTaskPaneWidth = useAppStore((s) => s.activeCollabTaskPaneWidth)
   const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen)
+  const rightSidebarAutoFolded = useAppStore((s) => s.rightSidebarAutoFolded)
   const rightSidebarTab = useAppStore((s) => s.rightSidebarTab)
   const rightSidebarExplorerView = useAppStore((s) => s.rightSidebarExplorerView)
   const isFullScreen = useAppStore((s) => s.isFullScreen)
@@ -1345,7 +1348,8 @@ function App(): React.JSX.Element {
     const timer = window.setTimeout(() => {
       void window.api.ui.set({
         sidebarWidth,
-        rightSidebarOpen,
+        // Why: the narrow fold is window state, not a choice; save what the user wants on a wide window.
+        rightSidebarOpen: rightSidebarOpen || rightSidebarAutoFolded,
         rightSidebarTab,
         rightSidebarExplorerView,
         rightSidebarWidth,
@@ -1379,6 +1383,7 @@ function App(): React.JSX.Element {
     persistedUIReady,
     sidebarWidth,
     rightSidebarOpen,
+    rightSidebarAutoFolded,
     rightSidebarTab,
     rightSidebarExplorerView,
     rightSidebarWidth,
@@ -2042,7 +2047,7 @@ function App(): React.JSX.Element {
                       void actions.updateSettings({ showTitlebarAppName: false })
                     }}
                   >
-                    {translate('auto.App.e81217c1b7', 'Hide App Name')}
+                    {translate('auto.App.e81217c1b7', 'Hide app name')}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -2057,7 +2062,7 @@ function App(): React.JSX.Element {
                 onClick={actions.toggleSidebar}
                 aria-label={translate('auto.App.e4b9e7dff7', 'Toggle sidebar')}
               >
-                <PanelLeft size={16} />
+                <PanelLeft size={14} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={6}>
@@ -2080,7 +2085,7 @@ function App(): React.JSX.Element {
                 disabled={!canGoBackWorktree}
                 aria-label={translate('auto.App.064bd07810', 'Go back')}
               >
-                <ArrowLeft size={12} />
+                <ArrowLeft size={14} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={6}>
@@ -2097,7 +2102,7 @@ function App(): React.JSX.Element {
                 disabled={!canGoForwardWorktree}
                 aria-label={translate('auto.App.cf9099fe98', 'Go forward')}
               >
-                <ArrowRight size={12} />
+                <ArrowRight size={14} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={6}>
@@ -2119,7 +2124,7 @@ function App(): React.JSX.Element {
           onClick={actions.toggleRightSidebar}
           aria-label={translate('auto.App.9e0b441a91', 'Toggle right sidebar')}
         >
-          <PanelRight size={16} />
+          <PanelRight size={14} />
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={6}>

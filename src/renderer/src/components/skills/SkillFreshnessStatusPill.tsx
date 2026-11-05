@@ -73,7 +73,7 @@ export function SkillFreshnessStatusPill({ skillName }: { skillName: string }): 
           size="xs"
           className={cn(
             'gap-1 px-1.5 text-[11px]',
-            needsAttention && 'text-amber-500 hover:text-amber-500'
+            needsAttention && 'text-status-attention hover:text-status-attention'
           )}
           onClick={() => requestSkillFreshnessUpdateDialog()}
         >

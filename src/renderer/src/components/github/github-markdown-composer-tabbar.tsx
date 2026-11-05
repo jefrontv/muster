@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { handleTablistKeyDown } from '@/lib/tablist-keyboard'
 import { translate } from '@/i18n/i18n'
 import type { ReactNode } from 'react'
 
@@ -15,11 +16,16 @@ export function GitHubMarkdownComposerTabbar({
 }): React.JSX.Element {
   return (
     <div className="github-markdown-composer-tabbar">
-      <div className="github-markdown-composer-tabs" role="tablist">
+      <div
+        className="github-markdown-composer-tabs"
+        role="tablist"
+        onKeyDown={(event) => handleTablistKeyDown(event)}
+      >
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === 'write'}
+          tabIndex={activeTab === 'write' ? 0 : -1}
           className={cn('github-markdown-composer-tab', activeTab === 'write' && 'is-active')}
           onClick={() => onTabChange('write')}
         >
@@ -29,6 +35,7 @@ export function GitHubMarkdownComposerTabbar({
           type="button"
           role="tab"
           aria-selected={activeTab === 'preview'}
+          tabIndex={activeTab === 'preview' ? 0 : -1}
           className={cn('github-markdown-composer-tab', activeTab === 'preview' && 'is-active')}
           onClick={() => onTabChange('preview')}
         >

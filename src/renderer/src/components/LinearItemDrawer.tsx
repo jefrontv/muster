@@ -50,6 +50,7 @@ import {
   linearUpdateIssue
 } from '@/runtime/runtime-linear-client'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 function LinearIcon({ className }: { className?: string }): React.JSX.Element {
   return (
@@ -68,7 +69,7 @@ const PRIORITY_LABELS: Record<number, string> = {
 }
 
 const LINEAR_EDIT_CHIP_CLASS =
-  'inline-flex h-6 min-w-0 max-w-[14rem] cursor-pointer items-center gap-1.5 rounded-full border border-border/70 bg-background/70 px-2.5 text-[11px] font-medium leading-none text-muted-foreground shadow-xs transition-[background-color,border-color,color,box-shadow] hover:border-border hover:bg-accent hover:text-accent-foreground hover:[--linear-state-pill-current-background:var(--linear-state-pill-hover-background)] hover:[--linear-state-pill-current-border:var(--linear-state-pill-hover-border)] hover:[--linear-state-pill-current-foreground:var(--linear-state-pill-hover-foreground)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-80'
+  'inline-flex h-6 min-w-0 max-w-[14rem] cursor-pointer items-center gap-1.5 rounded-full border border-border/70 bg-background/70 px-2.5 text-[11px] font-medium leading-none text-muted-foreground shadow-xs transition-[background-color,border-color,color,box-shadow] hover:border-border hover:bg-accent hover:text-accent-foreground hover:[--linear-state-pill-current-background:var(--linear-state-pill-hover-background)] hover:[--linear-state-pill-current-border:var(--linear-state-pill-hover-border)] hover:[--linear-state-pill-current-foreground:var(--linear-state-pill-hover-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-80'
 
 const LINEAR_EDIT_MENU_ITEM_CLASS =
   'flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-[12px] hover:bg-accent'
@@ -435,7 +436,7 @@ export function LinearIssueEditSection({
 
   if (layout === 'properties') {
     const propertyRowClass =
-      'flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-80'
+      'flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-80'
     const propertyIconClass = 'size-4 shrink-0 text-muted-foreground'
 
     return (
@@ -1156,10 +1157,7 @@ export function LinearIssueCommentFooter({
             autoGrow()
           }}
           onKeyDown={handleKeyDown}
-          placeholder={translate(
-            'auto.components.LinearItemDrawer.2820f0f0f0',
-            'Leave a comment...'
-          )}
+          placeholder={translate('auto.components.LinearItemDrawer.2820f0f0f0', 'Leave a comment…')}
           rows={3}
           className="scrollbar-sleek min-h-24 max-h-40 w-full resize-none overflow-y-auto rounded-t-xl bg-transparent px-5 py-4 text-sm placeholder:text-muted-foreground focus-visible:outline-none"
         />
@@ -1193,7 +1191,7 @@ export function LinearIssueCommentFooter({
       ref={handleFooterRef}
       className="flex items-end gap-2 border-t border-border/60 bg-background/40 px-4 py-3"
     >
-      <textarea
+      <Textarea
         ref={textareaRef}
         value={body}
         onChange={(e) => {
@@ -1203,7 +1201,7 @@ export function LinearIssueCommentFooter({
         onKeyDown={handleKeyDown}
         placeholder={translate('auto.components.LinearItemDrawer.2fcff829a8', 'Add a comment…')}
         rows={1}
-        className="scrollbar-sleek min-h-[32px] max-h-[96px] flex-1 resize-none overflow-y-auto rounded-xl bg-foreground/[0.05] px-3 py-2 text-[13px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="scrollbar-sleek min-h-[32px] max-h-[96px] flex-1 resize-none overflow-y-auto text-[13px]"
       />
       <Button
         size="icon"

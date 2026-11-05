@@ -184,7 +184,7 @@ export function NativeChatComposerActions({
                   <span className="text-xs text-muted-foreground">
                     {translate(
                       'auto.components.native-chat.composer.fullAccessItemHint',
-                      'Runs every tool without asking — remembered for all chats'
+                      'Runs every tool without asking. Remembered for all chats'
                     )}
                   </span>
                 </span>

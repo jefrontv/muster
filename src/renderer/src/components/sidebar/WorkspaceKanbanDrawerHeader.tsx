@@ -47,7 +47,7 @@ export default function WorkspaceKanbanDrawerHeader({
             )}
           </span>
           {selectedCount > 1 ? (
-            <span className="rounded-full bg-worktree-sidebar-accent px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className="rounded-full bg-worktree-sidebar-accent px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
               {selectedCount}{' '}
               {translate(
                 'auto.components.sidebar.WorkspaceKanbanDrawerHeader.81870af08f',

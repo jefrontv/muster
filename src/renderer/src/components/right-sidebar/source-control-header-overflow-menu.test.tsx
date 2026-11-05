@@ -56,27 +56,27 @@ const stashMenu: SourceControlStashMenu = {
 describe('SourceControlHeaderOverflowMenu stash items', () => {
   it('offers Stash Changes and Pop Latest Stash', () => {
     const markup = renderMenu(stashMenu)
-    expect(itemDisabled(markup, 'Stash Changes')).toBe('false')
-    expect(itemDisabled(markup, 'Pop Latest Stash')).toBe('false')
+    expect(itemDisabled(markup, 'Stash changes')).toBe('false')
+    expect(itemDisabled(markup, 'Pop latest stash')).toBe('false')
   })
 
   it('disables Pop with a reason when the branch has no stash', () => {
     const markup = renderMenu({ ...stashMenu, branchStash: { branch: 'main', stash: null } })
-    expect(itemDisabled(markup, 'Pop Latest Stash')).toBe('true')
+    expect(itemDisabled(markup, 'Pop latest stash')).toBe('true')
     expect(markup).toContain('No stash for main')
   })
 
   it('disables Pop on a detached HEAD and while the lookup is loading', () => {
     const detached = renderMenu({ ...stashMenu, branchStash: { branch: null, stash: null } })
-    expect(itemDisabled(detached, 'Pop Latest Stash')).toBe('true')
+    expect(itemDisabled(detached, 'Pop latest stash')).toBe('true')
     expect(detached).toContain('Detached HEAD')
     expect(
-      itemDisabled(renderMenu({ ...stashMenu, branchStash: undefined }), 'Pop Latest Stash')
+      itemDisabled(renderMenu({ ...stashMenu, branchStash: undefined }), 'Pop latest stash')
     ).toBe('true')
   })
 
   it('disables Stash Changes on a clean tree', () => {
-    expect(itemDisabled(renderMenu({ ...stashMenu, canStash: false }), 'Stash Changes')).toBe(
+    expect(itemDisabled(renderMenu({ ...stashMenu, canStash: false }), 'Stash changes')).toBe(
       'true'
     )
   })

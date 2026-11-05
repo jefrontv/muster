@@ -307,7 +307,7 @@ describe('WorktreeCard quick actions', () => {
     expect(branchLabelTag).toContain('text-muted-foreground')
     expect(branchLabelTag).toContain('leading-none')
     expect(markup).toContain('data-worktree-card-meta-row=""')
-    expect(markup).toContain('tabindex="0"')
+    expect(markup).not.toContain('tabindex="0"')
   })
 
   it('renders detached HEAD identity in detailed card metadata', () => {
@@ -326,7 +326,7 @@ describe('WorktreeCard quick actions', () => {
     expect(markup).toContain('data-worktree-card-meta-row=""')
     expect(markup).toContain('Detached HEAD @ abc123')
     expect(markup).toContain('Detached HEAD at abc123. You are viewing a commit, not a branch.')
-    expect(markup).toContain('tabindex="0"')
+    expect(markup).not.toContain('tabindex="0"')
   })
 
   it('omits the repeated branch metadata row when compact cards are enabled', () => {
@@ -343,7 +343,7 @@ describe('WorktreeCard quick actions', () => {
     )
 
     expect(markup).not.toContain('data-worktree-card-meta-row=""')
-    expect(markup).toContain('tabindex="0"')
+    expect(markup).not.toContain('tabindex="0"')
   })
 
   it('omits the branch metadata row when the workspace has a custom title', () => {
@@ -381,7 +381,7 @@ describe('WorktreeCard quick actions', () => {
       />
     )
 
-    expect(markup).toContain('primary')
+    expect(markup).toContain('>Primary<')
     expect(markup).not.toContain('aria-label="Primary worktree"')
     expect(markup).toContain('data-worktree-card-meta-row=""')
   })

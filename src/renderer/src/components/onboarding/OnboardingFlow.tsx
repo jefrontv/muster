@@ -45,7 +45,12 @@ export default function OnboardingFlow({
           'auto.components.onboarding.OnboardingFlow.agentSubtitleChat',
           'Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.'
         )
-      : copy.subtitle
+      : currentStep.id === 'default_view' && flow.defaultViews.includes('bots')
+        ? translate(
+            'auto.components.onboarding.OnboardingFlow.defaultViewSubtitleWithBots',
+            'Chat is a conversation desk. Code is worktrees and terminals. Bots run tasks across your apps. Switch any time from the sidebar.'
+          )
+        : copy.subtitle
   const [welcomeVisible, setWelcomeVisible] = useState(
     () => remapOpenOnboardingLastCompletedStep(onboarding) <= 0
   )
@@ -161,7 +166,7 @@ export default function OnboardingFlow({
           aria-modal="true"
           data-onboarding-modal
           className={cn(
-            'relative flex h-[calc(100vh-2rem)] max-h-[960px] min-h-0 w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition-[max-width] duration-[760ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+            'relative flex h-[calc(100vh-2rem)] max-h-[960px] min-h-0 w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-floating transition-[max-width] duration-[760ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
             'max-w-[1100px]'
           )}
         >
@@ -273,6 +278,7 @@ export default function OnboardingFlow({
                   )}
                   {currentStep.id === 'default_view' && (
                     <OnboardingDefaultViewStep
+                      views={flow.defaultViews}
                       value={flow.defaultView}
                       onChange={flow.setDefaultView}
                     />

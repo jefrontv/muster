@@ -77,7 +77,7 @@ export function GeneralUpdateSettingsSection(): React.JSX.Element {
       <SearchableSetting
         title={translate(
           'auto.components.settings.GeneralUpdateSettingsSection.e1a647adc5',
-          'Check for Updates'
+          'Check for updates'
         )}
         description={translate(
           'auto.components.settings.GeneralUpdateSettingsSection.ceb579abaf',
@@ -104,7 +104,7 @@ export function GeneralUpdateSettingsSection(): React.JSX.Element {
             )}
             {translate(
               'auto.components.settings.GeneralUpdateSettingsSection.e1a647adc5',
-              'Check for Updates'
+              'Check for updates'
             )}
           </Button>
 
@@ -130,7 +130,7 @@ export function GeneralUpdateSettingsSection(): React.JSX.Element {
               <Download className="size-3.5" />
               {translate(
                 'auto.components.settings.GeneralUpdateSettingsSection.42717918f4',
-                'Install Update ('
+                'Install update ('
               )}
               {updateStatus.version})
             </Button>
@@ -139,7 +139,7 @@ export function GeneralUpdateSettingsSection(): React.JSX.Element {
               <Download className="size-3.5" />
               {translate(
                 'auto.components.settings.GeneralUpdateSettingsSection.f44299636f',
-                'Restart to Update ('
+                'Restart to update ('
               )}
               {updateStatus.version})
             </Button>
@@ -155,7 +155,7 @@ export function GeneralUpdateSettingsSection(): React.JSX.Element {
           {updateStatus.state === 'checking' &&
             translate(
               'auto.components.settings.GeneralUpdateSettingsSection.31fd7150cf',
-              'Checking for updates...'
+              'Checking for updates…'
             )}
           {updateStatus.state === 'available' && (
             <>
@@ -192,7 +192,7 @@ export function GeneralUpdateSettingsSection(): React.JSX.Element {
           {updateStatus.state === 'downloading' &&
             translate(
               'auto.components.settings.GeneralUpdateSettingsSection.2a48034c4c',
-              'Downloading v{{value0}}... {{value1}}%',
+              'Downloading v{{value0}}… {{value1}}%',
               { value0: updateStatus.version, value1: updateStatus.percent }
             )}
           {updateStatus.state === 'downloaded' && (

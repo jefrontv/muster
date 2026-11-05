@@ -50,7 +50,7 @@ export function VoiceSpeechModelSection({
   return (
     <div className="flex items-center justify-between gap-4 py-2">
       <div className="space-y-0.5">
-        <Label>{translate('auto.components.settings.VoicePane.43fd4f454b', 'Speech Model')}</Label>
+        <Label>{translate('auto.components.settings.VoicePane.43fd4f454b', 'Speech model')}</Label>
         <p className="text-xs text-muted-foreground">
           {selectedModel && selectedIsReady
             ? `${selectedModel.label} — ${selectedModel.description}`
@@ -70,7 +70,7 @@ export function VoiceSpeechModelSection({
           >
             {selectedModel && selectedIsReady
               ? selectedModel.label
-              : translate('auto.components.settings.VoicePane.fbe5990716', 'Select Model')}
+              : translate('auto.components.settings.VoicePane.fbe5990716', 'Select model')}
             <ChevronDown className="size-3 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
@@ -127,23 +127,23 @@ export function VoiceSpeechModelSection({
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium">{manifest.label}</span>
                     {!isCloud && (
-                      <span className="text-[10px] px-1 py-px rounded-full leading-none bg-muted text-muted-foreground">
+                      <span className="text-[11px] px-1 py-px rounded-full leading-none bg-muted text-muted-foreground">
                         {manifest.streaming
                           ? translate('auto.components.settings.VoicePane.d504ab05f0', 'streaming')
                           : translate('auto.components.settings.VoicePane.8f4d2a51d7', 'offline')}
                       </span>
                     )}
                     {manifest.recommended && (
-                      <span className="text-[10px] px-1 py-px rounded-full leading-none bg-status-success-background text-status-success">
+                      <span className="text-[11px] px-1 py-px rounded-full leading-none bg-status-success-background text-status-success">
                         {translate('auto.components.settings.VoicePane.1ba81c0ff0', 'recommended')}
                       </span>
                     )}
-                    <span className="text-[10px] text-muted-foreground/60">
+                    <span className="text-[11px] text-muted-foreground">
                       {isDownloading && mState?.progress !== undefined
                         ? mState.status === 'extracting'
                           ? translate(
                               'auto.components.settings.VoicePane.61a16c8141',
-                              'Extracting...'
+                              'Extracting…'
                             )
                           : `${Math.round(mState.progress * 100)}%`
                         : isCloud

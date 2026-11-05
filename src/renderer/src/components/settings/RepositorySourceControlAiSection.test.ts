@@ -12,7 +12,7 @@ import { RepositorySourceControlAiActionRows } from './RepositorySourceControlAi
 import { RepositorySourceControlAiEnablement } from './RepositorySourceControlAiEnablement'
 
 describe('RepositorySourceControlAiEnablement', () => {
-  it('describes repo enablement as Source Control AI action visibility', () => {
+  it('describes repo enablement as Source control AI action visibility', () => {
     const markup = renderToStaticMarkup(
       React.createElement(RepositorySourceControlAiEnablement, {
         value: false,
@@ -21,11 +21,11 @@ describe('RepositorySourceControlAiEnablement', () => {
       })
     )
 
-    expect(markup).toContain('Show Source Control AI actions')
-    expect(markup).toContain('Controls whether Source Control AI buttons are shown')
+    expect(markup).toContain('Show Source control AI actions')
+    expect(markup).toContain('Controls whether Source control AI buttons are shown')
     expect(markup).toContain('separate features follows those features&#x27; settings')
     expect(markup).toContain('Show')
-    expect(markup).not.toContain('Source Control AI enabled')
+    expect(markup).not.toContain('Source control AI enabled')
   })
 })
 

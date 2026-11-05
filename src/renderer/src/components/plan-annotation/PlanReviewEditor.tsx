@@ -215,7 +215,7 @@ export function PlanReviewEditor({
                   }
                 }}
               >
-                <Plus className="size-3.5" strokeWidth={2.5} />
+                <Plus className="size-3.5" />
               </button>
             ) : null}
             {annotations.reviewRailVisible && annotations.notePositions.length > 0 ? (

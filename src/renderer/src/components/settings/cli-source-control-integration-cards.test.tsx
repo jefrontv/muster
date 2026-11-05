@@ -97,7 +97,7 @@ describe('CLI source-control integration card account scope', () => {
     )
     await act(async () => {
       Array.from(rendered.querySelectorAll('button'))
-        .find((button) => button.textContent === 'Open Remote Servers')
+        .find((button) => button.textContent === 'Open remote servers')
         ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 

@@ -28,7 +28,7 @@ function StepRow({
   action?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-2.5 py-2">
+    <li className="flex items-center justify-between gap-3 rounded-xl border border-border/60 px-2.5 py-2">
       <SiteCustomStepSummary step={step} />
       {action ? <div className="flex shrink-0 items-center gap-1">{action}</div> : null}
     </li>
@@ -172,7 +172,7 @@ export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): R
 
       {library.length > 0 ? (
         <div className="space-y-1.5">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
             {translate('auto.components.sites.StepLibrary.libraryHeading', 'Library')}
           </p>
           <ul className="space-y-1.5">
@@ -212,7 +212,7 @@ export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): R
                           )}
                           disabled={busyId !== null}
                           onClick={() => void removeFromLibrary(step)}
-                          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
+                          className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <Trash2 className="size-3.5" />
                         </button>

@@ -54,7 +54,7 @@ function StagedRow({
         type="button"
         variant="ghost"
         size="icon"
-        className="size-5 shrink-0"
+        className="hit-area size-5 shrink-0"
         disabled={disabled || busy}
         aria-label={translate(
           'auto.components.activecollab.comment_attachments.remove',

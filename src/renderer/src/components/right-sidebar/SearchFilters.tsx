@@ -1,4 +1,5 @@
 import React from 'react'
+import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 
 export type SearchFiltersProps = {
@@ -21,13 +22,13 @@ export function SearchFilters({
   return (
     <div className="flex flex-col gap-1">
       <label className="flex flex-col gap-0.5">
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-          {translate('auto.components.right.sidebar.SearchFilters.a69ee1bd0e', 'Files To Include')}
+        <span className="text-[11px] text-muted-foreground">
+          {translate('auto.components.right.sidebar.SearchFilters.a69ee1bd0e', 'Files to include')}
         </span>
-        <input
+        <Input
           ref={includeInputRef}
           type="text"
-          className="bg-input/50 border border-border rounded-sm px-2 py-1 text-xs outline-none focus:border-ring text-foreground placeholder:text-muted-foreground/50"
+          className="h-7 text-xs md:text-xs"
           placeholder={translate(
             'auto.components.right.sidebar.SearchFilters.8a77efcbd1',
             'files to include (e.g. *.ts, src/**)'
@@ -38,13 +39,13 @@ export function SearchFilters({
         />
       </label>
       <label className="flex flex-col gap-0.5">
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-          {translate('auto.components.right.sidebar.SearchFilters.0a6412a895', 'Files To Exclude')}
+        <span className="text-[11px] text-muted-foreground">
+          {translate('auto.components.right.sidebar.SearchFilters.0a6412a895', 'Files to exclude')}
         </span>
-        <input
+        <Input
           ref={excludeInputRef}
           type="text"
-          className="bg-input/50 border border-border rounded-sm px-2 py-1 text-xs outline-none focus:border-ring text-foreground placeholder:text-muted-foreground/50"
+          className="h-7 text-xs md:text-xs"
           placeholder={translate(
             'auto.components.right.sidebar.SearchFilters.01e4671ccf',
             'files to exclude (e.g. *.min.js, dist/**)'

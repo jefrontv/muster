@@ -53,7 +53,7 @@ function CursorIcon(): JSX.Element {
       viewBox="0 0 16 16"
       aria-hidden
       focusable="false"
-      className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]"
+      className="drop-shadow-xs"
     >
       <path
         d="M2 1.5 L2 12 L5 9 L7.2 14.5 L9.5 13.6 L7.3 8 L11.5 8 Z"
@@ -102,7 +102,7 @@ type RightLine =
 type CursorTarget = { kind: 'hidden' } | { kind: 'pane' } | { kind: 'split-row' }
 
 const KBD_CLASS =
-  'rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[11.5px] text-foreground'
+  'rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[11px] text-foreground'
 
 // Beat timings — kept in named constants so the loop reads top-to-bottom.
 const PRE_HOVER_MS = 450
@@ -425,7 +425,7 @@ export function WorkbenchAnimatedVisual(props: {
   return (
     <div
       ref={panelRef}
-      className="relative overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-[0_1px_2px_rgba(24,24,27,0.04)]"
+      className="relative overflow-hidden rounded-xl border border-border bg-card text-foreground shadow-xs"
     >
       {/* Faux titlebar — three traffic lights, nothing else. */}
       <div className="flex h-7 items-center gap-1.5 border-b border-border bg-muted/40 px-3">
@@ -626,7 +626,7 @@ function ClaudeChecklistPane(props: { reducedMotion: boolean }): JSX.Element {
         )}
       </TermLine>
       <TermLine>
-        <span className="mr-1.5 font-bold text-emerald-600">✓</span>
+        <span className="mr-1.5 font-semibold text-emerald-600">✓</span>
         <span className="text-foreground">
           {translate('auto.components.feature.wall.WorkbenchAnimatedVisual.9923847785', 'Read')}
         </span>
@@ -638,7 +638,7 @@ function ClaudeChecklistPane(props: { reducedMotion: boolean }): JSX.Element {
         </span>
       </TermLine>
       <TermLine>
-        <span className="mr-1.5 font-bold text-emerald-600">✓</span>
+        <span className="mr-1.5 font-semibold text-emerald-600">✓</span>
         <span className="text-foreground">
           {translate('auto.components.feature.wall.WorkbenchAnimatedVisual.17cfdc3344', 'Grep')}
         </span>
@@ -692,7 +692,7 @@ function Prompt(props: { children: React.ReactNode; claude?: boolean }): JSX.Ele
 }
 
 function PwCheck(): JSX.Element {
-  return <span className="mr-1.5 font-bold text-emerald-600">✓</span>
+  return <span className="mr-1.5 font-semibold text-emerald-600">✓</span>
 }
 
 function PwIdx(props: { children: React.ReactNode }): JSX.Element {
@@ -728,7 +728,7 @@ function ContextMenu(props: {
   return (
     <div
       className={cn(
-        'absolute left-[110px] top-[78px] z-10 min-w-[218px] origin-top-left rounded-lg border border-border bg-card p-1.5 font-sans text-[12px] text-foreground shadow-[0_16px_38px_rgba(24,24,27,0.18),0_2px_6px_rgba(24,24,27,0.08)] transition-[opacity,transform] duration-[160ms] ease-out',
+        'absolute left-[110px] top-[78px] z-10 min-w-[218px] origin-top-left rounded-lg border border-border bg-card p-1.5 font-sans text-[12px] text-foreground shadow-floating transition-[opacity,transform] duration-[160ms] ease-out',
         props.shown ? 'opacity-100' : '-translate-y-[3px] scale-[0.985] opacity-0'
       )}
       style={{ pointerEvents: 'none' }}
@@ -751,7 +751,7 @@ function ContextMenu(props: {
         <span className="whitespace-nowrap leading-none">
           {translate(
             'auto.components.feature.wall.WorkbenchAnimatedVisual.e370fa8c2b',
-            'Split Terminal Right'
+            'Split terminal right'
           )}
         </span>
         <span className="font-mono text-[11px] text-muted-foreground">
@@ -765,7 +765,7 @@ function ContextMenu(props: {
         <span className="whitespace-nowrap leading-none">
           {translate(
             'auto.components.feature.wall.WorkbenchAnimatedVisual.ca2cfbf188',
-            'Split Terminal Down'
+            'Split terminal down'
           )}
         </span>
         <span className="font-mono text-[11px] text-muted-foreground">
@@ -862,7 +862,7 @@ function RightPaneScrollback(props: {
               {line.working ? (
                 <RunSpinner />
               ) : (
-                <span className="mr-1.5 font-bold text-emerald-600">✓</span>
+                <span className="mr-1.5 font-semibold text-emerald-600">✓</span>
               )}
               <span className="text-foreground">{line.action}</span>
               <span className="ml-1.5 truncate text-muted-foreground">{line.target}</span>

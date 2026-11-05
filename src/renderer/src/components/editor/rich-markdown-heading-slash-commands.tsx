@@ -120,7 +120,7 @@ export const headingSlashCommands: SlashCommand[] = [
     get label() {
       return translate(
         'auto.components.editor.rich.markdown.slash.commands.41482b15ce',
-        'Toggle H1'
+        'Toggle h1'
       )
     },
     aliases: ['toggle-h1', 'toggle heading', 'details heading', 'collapse heading'],
@@ -141,7 +141,7 @@ export const headingSlashCommands: SlashCommand[] = [
     get label() {
       return translate(
         'auto.components.editor.rich.markdown.slash.commands.7a2c1f9b04',
-        'Toggle H2'
+        'Toggle h2'
       )
     },
     aliases: ['toggle-h2'],
@@ -162,7 +162,7 @@ export const headingSlashCommands: SlashCommand[] = [
     get label() {
       return translate(
         'auto.components.editor.rich.markdown.slash.commands.2f9d6b4e10',
-        'Toggle H3'
+        'Toggle h3'
       )
     },
     aliases: ['toggle-h3'],
@@ -183,7 +183,7 @@ export const headingSlashCommands: SlashCommand[] = [
     get label() {
       return translate(
         'auto.components.editor.rich.markdown.slash.commands.5e0b9c2a71',
-        'Toggle H4'
+        'Toggle h4'
       )
     },
     aliases: ['toggle-h4'],
@@ -204,7 +204,7 @@ export const headingSlashCommands: SlashCommand[] = [
     get label() {
       return translate(
         'auto.components.editor.rich.markdown.slash.commands.21d8c463e5',
-        'Toggle H5'
+        'Toggle h5'
       )
     },
     aliases: ['toggle-h5'],

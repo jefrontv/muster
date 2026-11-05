@@ -40,6 +40,7 @@ import {
   urlsFromDrafts,
   type ChatWorkspaceUrlDraft
 } from './chat-workspace-url-drafts'
+import { Textarea } from '@/components/ui/textarea'
 
 export function ChatWorkspaceCreateDialog({
   open,
@@ -200,11 +201,11 @@ export function ChatWorkspaceCreateDialog({
               <p className="text-xs text-muted-foreground">
                 {translate(
                   'auto.components.chat.workspaceDialog.notesHint',
-                  'Optional context new chats in this workspace will see — stack, clients, gotchas.'
+                  'Optional context new chats in this workspace will see. Stack, clients, gotchas.'
                 )}
               </p>
             </div>
-            <textarea
+            <Textarea
               id="chat-workspace-notes"
               value={notes}
               rows={3}
@@ -215,8 +216,8 @@ export function ChatWorkspaceCreateDialog({
               )}
               onChange={(event) => setNotes(event.target.value)}
               className={cn(
-                'w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground/60 outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                'resize-y',
+                'focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring'
               )}
             />
           </div>
@@ -245,12 +246,12 @@ export function ChatWorkspaceCreateDialog({
                       <span className="shrink-0 text-xs font-medium">
                         {directory.split(/[\\/]/).findLast((part) => part !== '') ?? directory}
                       </span>
-                      <span className="min-w-0 truncate font-mono text-[10px] text-muted-foreground">
+                      <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
                         {directory}
                       </span>
                     </span>
                     {index === 0 ? (
-                      <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                         {translate('auto.components.chat.workspaceDialog.primary', 'primary')}
                       </span>
                     ) : null}

@@ -146,7 +146,7 @@ export function ActiveCollabLabelPicker({
         <p className="px-1 pt-2 text-[11px] text-muted-foreground">
           {translate(
             'auto.components.activecollab.task_workspace.labels_truncated',
-            'Showing {{value0}} of {{value1}} — keep typing to narrow.',
+            'Showing {{value0}} of {{value1}}: keep typing to narrow.',
             { value0: matches.rows.length, value1: matches.total }
           )}
         </p>

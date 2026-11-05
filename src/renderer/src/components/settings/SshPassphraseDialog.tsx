@@ -121,10 +121,10 @@ export function SshPassphraseDialog(): React.JSX.Element | null {
         <DialogHeader>
           <DialogTitle className="text-sm">
             {isPassword
-              ? translate('auto.components.settings.SshPassphraseDialog.106bd57f4a', 'SSH Password')
+              ? translate('auto.components.settings.SshPassphraseDialog.106bd57f4a', 'SSH password')
               : translate(
                   'auto.components.settings.SshPassphraseDialog.1f3dde805d',
-                  'SSH Key Passphrase'
+                  'SSH key passphrase'
                 )}
           </DialogTitle>
           <DialogDescription className="text-xs">

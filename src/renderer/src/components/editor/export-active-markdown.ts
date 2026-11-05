@@ -11,7 +11,7 @@ export async function exportActiveMarkdownToPdf(options: {
   root: ParentNode | null
 }): Promise<void> {
   const toastId = toast.loading(
-    translate('auto.components.editor.export.active.markdown.d4a901e0ad', 'Exporting PDF...')
+    translate('auto.components.editor.export.active.markdown.d4a901e0ad', 'Exporting PDF…')
   )
   try {
     const payload = await getActiveMarkdownExportPayload(options)

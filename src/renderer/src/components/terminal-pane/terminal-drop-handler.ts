@@ -79,7 +79,7 @@ export async function handleInternalTerminalFileDrop({
     toast.error(
       translate(
         'auto.components.terminal.pane.terminal.drop.handler.0c77693641',
-        'Worktree not ready — try again in a moment.'
+        'Worktree not ready: try again in a moment.'
       )
     )
     return { status: 'ignored', reason: 'worktree-unavailable' }

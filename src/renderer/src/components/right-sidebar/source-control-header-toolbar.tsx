@@ -57,7 +57,7 @@ function HostedReviewToolbarLink({
   return (
     <div
       className={cn(
-        'flex min-w-0 items-center gap-1 text-[11.5px] leading-none',
+        'flex min-w-0 items-center gap-1 text-[11px] leading-none',
         compact ? 'max-w-[72px] shrink-0' : 'flex-1'
       )}
     >
@@ -90,7 +90,7 @@ function CreatePrHeaderButton({
             size="xs"
             disabled={action.disabled}
             onClick={onClick}
-            className="h-6 shrink-0 px-2 text-[11px]"
+            className="h-6 shrink-0 px-2 text-xs"
             title={action.title}
           >
             {isCreatePrIntentInFlight || isCreatingPr ? (
@@ -221,12 +221,14 @@ export function SourceControlHeaderToolbar({
               // Why: keep filter/overflow pinned right without stretching Create PR.
               <span className="min-w-0 flex-1" aria-hidden="true" />
             ) : null}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               data-testid="source-control-filter-toggle"
               className={cn(
-                'relative inline-flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
-                normalizedFilter && 'bg-muted text-foreground'
+                'relative size-7 text-muted-foreground',
+                normalizedFilter && 'bg-foreground/[0.07] text-foreground'
               )}
               onClick={expandFilter}
               aria-label={filterToggleTitle}
@@ -237,7 +239,7 @@ export function SourceControlHeaderToolbar({
               {normalizedFilter ? (
                 <span className="absolute right-1 top-1 size-1.5 rounded-full bg-foreground" />
               ) : null}
-            </button>
+            </Button>
             {renderOverflowMenu(overflowProps)}
           </>
         ) : (
@@ -262,7 +264,7 @@ export function SourceControlHeaderToolbar({
                   'auto.components.right.sidebar.SourceControl.c35baf2f1e',
                   'Filter files…'
                 )}
-                className="min-w-0 w-full flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/60"
+                className="min-w-0 w-full flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
                 aria-label={translate(
                   'auto.components.right.sidebar.SourceControl.c35baf2f1e',
                   'Filter files…'

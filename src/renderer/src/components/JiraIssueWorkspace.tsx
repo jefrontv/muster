@@ -48,6 +48,7 @@ import type {
 } from '../../../shared/types'
 import type { TaskSourceContext } from '../../../shared/task-source-context'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 type JiraIssueWorkspaceProps = {
   issue: JiraIssue | null
@@ -89,10 +90,10 @@ function buildJiraPrompt(issue: JiraIssue): string {
 
 function jiraStatusClass(categoryKey: string): string {
   if (categoryKey === 'done') {
-    return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
+    return 'border-status-success-border bg-status-success-background text-status-success'
   }
   if (categoryKey === 'indeterminate') {
-    return 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-200'
+    return 'border-status-info-border bg-status-info-background text-status-info'
   }
   return 'border-border/50 bg-muted/40 text-muted-foreground'
 }
@@ -802,16 +803,16 @@ export default function JiraIssueWorkspace({
 
             <div className="flex-none border-t border-border/50 bg-background px-3 py-3">
               <div className="flex gap-2">
-                <textarea
+                <Textarea
                   value={commentDraft}
                   onChange={(event) => setCommentDraft(event.target.value)}
                   placeholder={translate(
                     'auto.components.JiraIssueWorkspace.a585fd204e',
-                    'Add a Jira comment...'
+                    'Add a Jira comment…'
                   )}
                   rows={2}
                   disabled={commentSubmitting}
-                  className="min-h-10 flex-1 resize-none rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="min-h-10 flex-1 resize-none"
                 />
                 <Button
                   onClick={() => void handleSubmitComment()}

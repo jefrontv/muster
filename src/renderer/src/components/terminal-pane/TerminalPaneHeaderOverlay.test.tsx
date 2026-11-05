@@ -166,9 +166,9 @@ describe('TerminalPaneHeaderOverlay', () => {
       paneTitles: { 1: '', 2: '' }
     })
 
-    expect(container.querySelector('button[aria-label="Split Terminal Right"]')).not.toBeNull()
+    expect(container.querySelector('button[aria-label="Split terminal right"]')).not.toBeNull()
     expect(container.querySelector('.pane-title-drag-handle')).toBeNull()
-    const closePane = container.querySelector<HTMLButtonElement>('button[aria-label="Close Pane"]')
+    const closePane = container.querySelector<HTMLButtonElement>('button[aria-label="Close pane"]')
     expect(closePane).not.toBeNull()
 
     act(() => closePane?.click())
@@ -184,7 +184,7 @@ describe('TerminalPaneHeaderOverlay', () => {
       showSplitButton: false
     })
 
-    expect(container.querySelector('button[aria-label="Split Terminal Right"]')).toBeNull()
+    expect(container.querySelector('button[aria-label="Split terminal right"]')).toBeNull()
   })
 
   it('ignores IME composition Enter before submitting a pane title rename', () => {
@@ -214,7 +214,7 @@ describe('TerminalPaneHeaderOverlay', () => {
       onContinueAgentSessionInNewSession
     })
     const handoff = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Continue in New Session…"]'
+      'button[aria-label="Continue in new session…"]'
     )
 
     expect(handoff).not.toBeNull()

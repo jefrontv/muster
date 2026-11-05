@@ -25,6 +25,7 @@ import { matchesSettingsSearch } from './settings-search'
 import { translate } from '@/i18n/i18n'
 import { getRepositoryHookScriptTextareaRows } from '@/lib/script-textarea-rows'
 import { getRepoExecutionHostId, parseExecutionHostId } from '../../../../shared/execution-host'
+import { Textarea } from '@/components/ui/textarea'
 
 type RepositoryHooksSectionProps = {
   repo: Repo
@@ -129,16 +130,16 @@ export function getLocalCommandSourcePolicyNotice({
 
 const YAML_STATE_STYLES: Record<string, { card: string; titleClassName: string }> = {
   loaded: {
-    card: 'border-emerald-500/20 bg-emerald-500/5',
-    titleClassName: 'text-emerald-700 dark:text-emerald-300'
+    card: 'border-status-success-border bg-status-success-background',
+    titleClassName: 'text-status-success'
   },
   'update-available': {
-    card: 'border-amber-500/20 bg-amber-500/5',
-    titleClassName: 'text-amber-700 dark:text-amber-300'
+    card: 'border-status-attention-border bg-status-attention-background',
+    titleClassName: 'text-status-attention'
   },
   invalid: {
-    card: 'border-amber-500/20 bg-amber-500/5',
-    titleClassName: 'text-amber-700 dark:text-amber-300'
+    card: 'border-status-attention-border bg-status-attention-background',
+    titleClassName: 'text-status-attention'
   },
   missing: {
     card: 'border-border/50 bg-muted/20',
@@ -236,7 +237,7 @@ function getLocalHookFields(): readonly [LocalHookField, LocalHookField] {
       name: 'setup',
       label: translate(
         'auto.components.settings.RepositoryHooksSection.52b31baf02',
-        'Setup Script'
+        'Setup script'
       ),
       description: translate(
         'auto.components.settings.RepositoryHooksSection.f0710e1c83',
@@ -251,7 +252,7 @@ function getLocalHookFields(): readonly [LocalHookField, LocalHookField] {
       name: 'archive',
       label: translate(
         'auto.components.settings.RepositoryHooksSection.9a100323ff',
-        'Archive Script'
+        'Archive script'
       ),
       description: translate(
         'auto.components.settings.RepositoryHooksSection.6f90ebe3fd',
@@ -440,7 +441,7 @@ function ExampleTemplateCard({
 }): React.JSX.Element {
   return (
     <div className="space-y-2">
-      <p className="text-[10px] tracking-[0.18em] text-muted-foreground">
+      <p className="text-[11px] tracking-[0.18em] text-muted-foreground">
         {translate('auto.components.settings.RepositoryHooksSection.175daba180', 'Example')}{' '}
         <code className="rounded bg-muted px-1 py-0.5">
           {translate('auto.components.settings.RepositoryHooksSection.39da2ae12f', 'orca.yaml')}
@@ -471,7 +472,7 @@ function ExampleTemplateCard({
 
 function YamlScriptBlock({ content }: { content: string }): React.JSX.Element {
   return (
-    <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-border/50 bg-muted/30 p-3 font-mono text-[11.5px] leading-5 text-foreground">
+    <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-border/50 bg-muted/30 p-3 font-mono text-[11px] leading-5 text-foreground">
       {content}
     </pre>
   )
@@ -525,11 +526,11 @@ function SaveIndicator({ status }: { status: SaveStatus }): React.JSX.Element | 
     >
       <span
         className={`size-1.5 rounded-full ${
-          isSaving ? 'animate-pulse bg-amber-500' : 'bg-emerald-500'
+          isSaving ? 'animate-pulse bg-status-attention' : 'bg-status-success'
         }`}
       />
       {isSaving
-        ? translate('auto.components.settings.RepositoryHooksSection.81057d5f71', 'Saving...')
+        ? translate('auto.components.settings.RepositoryHooksSection.81057d5f71', 'Saving…')
         : translate('auto.components.settings.RepositoryHooksSection.2b6356e744', 'Saved')}
     </span>
   )
@@ -544,11 +545,11 @@ function LocalCommandSourceNotice({
 }): React.JSX.Element {
   const isChecking = notice.kind === 'checking'
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+    <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-status-attention-border bg-status-attention-background p-3">
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-300" />
+        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-status-attention" />
         <div className="space-y-1">
-          <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+          <p className="text-sm font-medium text-status-attention">
             {translate(
               'auto.components.settings.RepositoryHooksSection.5426ecbdcb',
               'Local scripts will not run'
@@ -579,7 +580,7 @@ function LocalCommandSourceNotice({
         </Button>
       ) : (
         <span className="shrink-0 rounded-full border border-border/60 bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">
-          {translate('auto.components.settings.RepositoryHooksSection.673a7fd10e', 'Checking...')}
+          {translate('auto.components.settings.RepositoryHooksSection.673a7fd10e', 'Checking…')}
         </span>
       )}
     </div>
@@ -655,9 +656,9 @@ function ScriptEditor({
       {hasShared ? (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-status-success-border bg-status-success-background px-2 py-0.5 text-[11px] font-medium text-status-success">
               {translate('auto.components.settings.RepositoryHooksSection.39da2ae12f', 'orca.yaml')}
-              <span className="font-normal text-emerald-700/80 dark:text-emerald-300/80">
+              <span className="font-normal text-status-success">
                 {translate(
                   'auto.components.settings.RepositoryHooksSection.f828e1de19',
                   '- shared with your team'
@@ -700,7 +701,7 @@ function ScriptEditor({
             )}
             <SaveIndicator status={saveStatus} />
           </div>
-          <textarea
+          <Textarea
             value={value}
             aria-label={field.label}
             onChange={(event) => onChange(event.target.value)}
@@ -708,7 +709,7 @@ function ScriptEditor({
             placeholder={field.placeholder}
             spellCheck={false}
             rows={editorRows}
-            className="w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-[12px] leading-[1.55] transition-[color,box-shadow] placeholder:italic placeholder:text-muted-foreground/60 focus-visible:bg-background focus-visible:ring-ring/40 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="resize-y font-mono text-[12px] leading-[1.55]"
           />
           <p className="text-[11px] text-muted-foreground">
             {translate(
@@ -1010,7 +1011,7 @@ export function RepositoryHooksSection({
         <h2 className="text-sm font-semibold">
           {translate(
             'auto.components.settings.RepositoryHooksSection.ff082fe7c6',
-            'Worktree Hooks'
+            'Worktree hooks'
           )}
         </h2>
         <p className="text-xs text-muted-foreground">
@@ -1024,7 +1025,7 @@ export function RepositoryHooksSection({
       <SearchableSetting
         title={translate(
           'auto.components.settings.RepositoryHooksSection.52b31baf02',
-          'Setup Script'
+          'Setup script'
         )}
         description={translate(
           'auto.components.settings.RepositoryHooksSection.30d555acd2',
@@ -1057,7 +1058,7 @@ export function RepositoryHooksSection({
       <SearchableSetting
         title={translate(
           'auto.components.settings.RepositoryHooksSection.fb6bebcf7e',
-          'When to Run Setup'
+          'When to run setup'
         )}
         description={translate(
           'auto.components.settings.RepositoryHooksSection.63e1783173',
@@ -1125,7 +1126,7 @@ export function RepositoryHooksSection({
       <SearchableSetting
         title={translate(
           'auto.components.settings.RepositoryHooksSection.9a100323ff',
-          'Archive Script'
+          'Archive script'
         )}
         description={translate(
           'auto.components.settings.RepositoryHooksSection.b91a0f297d',
@@ -1166,7 +1167,7 @@ export function RepositoryHooksSection({
       <SearchableSetting
         title={translate(
           'auto.components.settings.RepositoryHooksSection.13394103bd',
-          'Custom GitHub Issue Command'
+          'Custom GitHub issue command'
         )}
         description={translate(
           'auto.components.settings.RepositoryHooksSection.2cc27dc12b',
@@ -1180,7 +1181,7 @@ export function RepositoryHooksSection({
             <h5 className="text-sm font-semibold">
               {translate(
                 'auto.components.settings.RepositoryHooksSection.13394103bd',
-                'Custom GitHub Issue Command'
+                'Custom GitHub issue command'
               )}
             </h5>
             <p className="text-xs text-muted-foreground">
@@ -1201,11 +1202,11 @@ export function RepositoryHooksSection({
               )}
             </p>
           </div>
-          <textarea
+          <Textarea
             value={issueCommandDraft}
             aria-label={translate(
               'auto.components.settings.RepositoryHooksSection.13394103bd',
-              'Custom GitHub Issue Command'
+              'Custom GitHub issue command'
             )}
             onChange={(e) => setIssueCommandDraft(e.target.value)}
             onBlur={commitIssueCommand}
@@ -1216,7 +1217,7 @@ export function RepositoryHooksSection({
             )}
             rows={4}
             spellCheck={false}
-            className="w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs transition-[color,box-shadow] placeholder:italic placeholder:text-muted-foreground/60 focus-visible:bg-background focus-visible:ring-ring/40 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="resize-y font-mono text-xs"
           />
           <p className="text-[11px] text-muted-foreground">
             {translate(
@@ -1301,7 +1302,7 @@ export function RepositoryHooksSection({
                 <p className="text-sm font-medium">
                   {translate(
                     'auto.components.settings.RepositoryHooksSection.32fec28f5b',
-                    'Command Source'
+                    'Command source'
                   )}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
@@ -1347,8 +1348,8 @@ export function RepositoryHooksSection({
                 <YamlScriptBlock content={renderYamlScriptPreview(yamlHooks)} />
               ) : yamlState === 'invalid' ? (
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-background/60 p-3">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                  <div className="flex items-start gap-3 rounded-lg border border-status-attention-border bg-background/60 p-3">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-status-attention" />
                     <div className="space-y-2 text-xs text-muted-foreground">
                       <p>
                         {translate(
@@ -1356,7 +1357,7 @@ export function RepositoryHooksSection({
                           'The file is present, but Muster could not find valid `scripts` or `issueCommand` definitions.'
                         )}
                       </p>
-                      <ol className="space-y-1.5 pl-4 text-[11.5px]">
+                      <ol className="space-y-1.5 pl-4 text-[11px]">
                         {parseErrorFixes.map((fix) => (
                           <li key={fix} className="list-decimal leading-5">
                             {fix}

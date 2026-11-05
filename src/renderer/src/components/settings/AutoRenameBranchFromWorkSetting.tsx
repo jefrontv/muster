@@ -22,6 +22,8 @@ import { getAutoRenameBranchAdvancedSearchEntries } from './auto-rename-branch-s
 import { SearchableSetting } from './SearchableSetting'
 import { matchesSettingsSearch, normalizeSettingsSearchQuery } from './settings-search'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 
 type AutoRenameBranchFromWorkSettingProps = {
   settings: GlobalSettings
@@ -172,24 +174,14 @@ export function AutoRenameBranchFromWorkSetting({
             )}
           </p>
         </div>
-        <button
-          role="switch"
-          aria-checked={settings.autoRenameBranchFromWork}
+        <Switch
+          checked={settings.autoRenameBranchFromWork}
           onClick={() =>
             updateSettings({
               autoRenameBranchFromWork: !settings.autoRenameBranchFromWork
             })
           }
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors ${
-            settings.autoRenameBranchFromWork ? 'bg-foreground' : 'bg-muted-foreground/30'
-          }`}
-        >
-          <span
-            className={`pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform ${
-              settings.autoRenameBranchFromWork ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        />
       </div>
 
       <Collapsible open={advancedOpen} onOpenChange={setOptionsOpen}>
@@ -238,7 +230,7 @@ export function AutoRenameBranchFromWorkSetting({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="inline rounded-sm font-medium text-foreground underline decoration-border underline-offset-2 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        className="inline rounded-md font-medium text-foreground underline decoration-border underline-offset-2 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {translate(
                           'auto.components.settings.AutoRenameBranchFromWorkSetting.9c9b54e4ea',
@@ -294,7 +286,7 @@ export function AutoRenameBranchFromWorkSetting({
                   )}
                 </p>
               </div>
-              <textarea
+              <Textarea
                 id="git-auto-rename-branch-name-template"
                 rows={4}
                 value={branchNameTemplateDraft}
@@ -303,7 +295,7 @@ export function AutoRenameBranchFromWorkSetting({
                   'auto.components.settings.AutoRenameBranchFromWorkSetting.c71770c455',
                   '{basePrompt}'
                 )}
-                className="w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground/70 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="resize-y py-1.5 font-mono text-xs"
               />
               <SourceControlActionVariableChips
                 actionId="branchName"
@@ -352,7 +344,7 @@ export function AutoRenameBranchFromWorkSetting({
                     {isSavingPrompt
                       ? translate(
                           'auto.components.settings.AutoRenameBranchFromWorkSetting.cfd82406dd',
-                          'Saving...'
+                          'Saving…'
                         )
                       : translate(
                           'auto.components.settings.AutoRenameBranchFromWorkSetting.ec3e0c388e',

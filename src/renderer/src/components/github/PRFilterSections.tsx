@@ -96,7 +96,7 @@ function StatusSection({
           >
             <span>{s.label}</span>
             {active ? (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[11px] text-muted-foreground">
                 {translate('auto.components.github.PRFilterSections.e0002f1eba', 'selected')}
               </span>
             ) : null}
@@ -128,11 +128,11 @@ function DraftToggle({
       >
         <span>{translate('auto.components.github.PRFilterSections.b930de7194', 'Draft only')}</span>
         {parsed.draft ? (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground">
             {translate('auto.components.github.PRFilterSections.1e9b5244f2', 'on')}
           </span>
         ) : (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground">
             {translate('auto.components.github.PRFilterSections.f0cf6dd591', 'off')}
           </span>
         )}
@@ -146,7 +146,7 @@ function UserOptionRow({ option }: { option: PickerOption }): React.JSX.Element 
     <div className="flex min-w-0 flex-col">
       <span className="truncate">{option.primary}</span>
       {option.secondary ? (
-        <span className="truncate text-[10px] text-muted-foreground">{option.secondary}</span>
+        <span className="truncate text-[11px] text-muted-foreground">{option.secondary}</span>
       ) : null}
     </div>
   )
@@ -207,7 +207,7 @@ export function SectionMenu({
   const subject = kind === 'prs' ? 'pull requests' : 'issues'
   return (
     <div className="py-1 text-xs">
-      <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {translate('auto.components.github.PRFilterSections.8177eda37e', 'Filter')}{' '}
         <span>{subject}</span>
       </div>

@@ -80,6 +80,7 @@ import {
 } from '../../shared/agent-prompt-injection'
 import { readFolderGitHead } from '../git/folder-git-head'
 import { gitExecFileAsync, gitSpawn, nonInteractiveGitEnv } from '../git/runner'
+import { mapWithConcurrency } from '../../shared/map-with-concurrency'
 import { runWithGitReadCacheInvalidation } from '../git/status'
 import { wakeFolderRepoGitUpgradeWatch } from '../ipc/folder-repo-git-upgrade-wake'
 import {
@@ -812,6 +813,10 @@ import { hasCommitObjectViaGitExec } from '../git/commit-object-ref'
 import { hasWorktreeBaseCommitRef } from '../git/worktree-base-ref-probe'
 import { resolveLocalGitUsername } from '../git/git-username'
 import { getSshGitCapabilityCache } from '../git/git-capability-state'
+import {
+  BULK_WORKTREE_SCAN_REUSE_MS,
+  invalidateRecentWorktreeScans
+} from '../git/worktree-scan-reuse'
 import {
   listWorktrees,
   listWorktreesStrict,
@@ -25245,8 +25250,12 @@ export class OrcaRuntimeService {
         getAgentLaunchPlatformForRepo(repo, projectRuntimeByRepoId.get(repo.id))
       ])
     )
-    const perRepoWorktrees = await Promise.all(
-      repos.map(async (repo) => {
+    // Why capped: an unbounded fan-out started ~190 concurrent `git worktree list` at launch and
+    // stalled the main thread ~0.7s with no wall-time gain over 8 workers.
+    const perRepoWorktrees = await mapWithConcurrency(
+      repos,
+      RESOLVED_WORKTREE_SCAN_CONCURRENCY,
+      async (repo) => {
         if (isFolderRepo(repo)) {
           return listRuntimeFolderWorkspaces(this.requireStore(), repo).map((worktree) => ({
             ...worktree,
@@ -25303,7 +25312,7 @@ export class OrcaRuntimeService {
             comment: merged.comment
           }
         })
-      })
+      }
     )
     const worktrees = projectResolvedWorktreeLineage(
       perRepoWorktrees.flat(),
@@ -25423,10 +25432,11 @@ export class OrcaRuntimeService {
     if (!repo.connectionId) {
       return {
         ok: true,
-        worktrees: await listRepoWorktrees(
-          repo,
-          getLocalProjectWorktreeGitOptionsForRuntime(repo, projectRuntime)
-        )
+        worktrees: await listRepoWorktrees(repo, {
+          ...getLocalProjectWorktreeGitOptionsForRuntime(repo, projectRuntime),
+          // Why: share the IPC/auth sweep's listing instead of re-spawning one per repo.
+          reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+        })
       }
     }
     const provider = getSshGitProvider(repo.connectionId)
@@ -25481,6 +25491,8 @@ export class OrcaRuntimeService {
     this.worktreeScanGenerations.set(repoId, (this.worktreeScanGenerations.get(repoId) ?? 0) + 1)
     this.worktreeScanCache.delete(repoId)
     this.worktreeScanInFlight.delete(repoId)
+    const repoPath = this.store?.getRepo?.(repoId)?.path
+    invalidateRecentWorktreeScans(repoPath)
   }
 
   private invalidateSshWorktreeScanCacheInternal(targetId: string): void {
@@ -30943,6 +30955,7 @@ const WORKTREE_SCAN_CACHE_TTL_MS = 30_000
 // these (crash-cluster diagnostics, 2026-07).
 const WORKTREE_SCAN_AGENT_SCRATCH_TTL_MS = 5 * 60_000
 const RESOLVED_WORKTREE_REPO_TIMEOUT_MS = 5000
+const RESOLVED_WORKTREE_SCAN_CONCURRENCY = 8
 
 export function resolveWorktreeScanCacheTtlMs(repo: Pick<Repo, 'path' | 'connectionId'>): number {
   return !repo.connectionId && isAgentScratchRepoRootPath(repo.path)

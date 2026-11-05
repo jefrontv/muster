@@ -1334,7 +1334,7 @@ describe('FloatingTerminalPanel close behavior', () => {
       FLOATING_TERMINAL_WORKTREE_ID,
       'about:blank',
       {
-        title: 'New Browser Tab',
+        title: 'New browser tab',
         focusAddressBar: true,
         targetGroupId: 'floating-group',
         browserRuntimeEnvironmentId: null
@@ -1466,7 +1466,7 @@ describe('FloatingTerminalPanel close behavior', () => {
       code: 'ShiftLeft',
       ctrlKey: false,
       defaultPrevented: false,
-      key: 'Shift',
+      key: 'shift',
       metaKey: false,
       repeat: false,
       shiftKey: true,
@@ -1542,7 +1542,7 @@ describe('FloatingTerminalPanel close behavior', () => {
       code: 'ShiftLeft',
       ctrlKey: false,
       defaultPrevented: false,
-      key: 'Shift',
+      key: 'shift',
       metaKey: false,
       repeat: false,
       shiftKey: true,
@@ -1864,7 +1864,7 @@ describe('FloatingTerminalPanel close behavior', () => {
       })
     )
 
-    vi.stubGlobal('navigator', { userAgent: 'Linux' })
+    vi.stubGlobal('navigator', { userAgent: 'linux' })
     const altPreventDefault = vi.fn()
     const altStopPropagation = vi.fn()
     const altStopImmediatePropagation = vi.fn()
@@ -1967,7 +1967,7 @@ describe('FloatingTerminalPanel close behavior', () => {
   })
 
   it('routes focused floating workspace maximize shortcuts from a custom binding on Linux', async () => {
-    vi.stubGlobal('navigator', { userAgent: 'Linux' })
+    vi.stubGlobal('navigator', { userAgent: 'linux' })
     ;(storeBox.state as FloatingPanelStoreState).keybindings = {
       'floatingWorkspace.maximize': ['Ctrl+Alt+M']
     } as unknown as KeybindingOverrides

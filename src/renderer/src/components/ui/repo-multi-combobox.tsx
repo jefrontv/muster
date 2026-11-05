@@ -153,7 +153,7 @@ export default function RepoMultiCombobox({
             autoFocus
             placeholder={translate(
               'auto.components.ui.repo.multi.combobox.a58a0cd100',
-              'Search projects...'
+              'Search projects…'
             )}
             value={query}
             onValueChange={setQuery}
@@ -218,7 +218,7 @@ export default function RepoMultiCombobox({
                         className="max-w-full"
                       />
                     </span>
-                    <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{detail}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{detail}</p>
                   </div>
                 </CommandItem>
               )

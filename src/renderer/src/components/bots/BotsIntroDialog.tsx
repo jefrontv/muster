@@ -92,7 +92,7 @@ export function BotsIntroDialog({ active }: { active: boolean }): React.JSX.Elem
             <span className="flex size-12 items-center justify-center rounded-xl bg-foreground/[0.05] text-foreground">
               <Bot className="size-7" strokeWidth={1.75} aria-hidden />
             </span>
-            <Badge variant="secondary" className="font-normal text-muted-foreground">
+            <Badge variant="secondary" className="text-muted-foreground">
               {translate('auto.components.bots.BotsIntro.badge', 'Experimental')}
             </Badge>
           </div>

@@ -32,9 +32,9 @@ export function SiteSetupStatusSegment({
   // or go and answer it. Amber pulsing is this file's own "needs attention" convention.
   const icon =
     primary.phase === 'error' ? (
-      <AlertCircle className="size-3.5 shrink-0 text-yellow-500" />
+      <AlertCircle className="size-3.5 shrink-0 text-status-danger" />
     ) : primary.phase === 'waiting' ? (
-      <span className="animate-attention-pulse size-2 shrink-0 rounded-full bg-amber-500" />
+      <span className="animate-attention-pulse size-2 shrink-0 rounded-full bg-status-attention" />
     ) : (
       <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none" />
     )
@@ -67,7 +67,7 @@ export function SiteSetupStatusSegment({
             const id = primary.id
             window.setTimeout(() => restore(id), 0)
           }}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 hover:bg-accent/70"
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={tooltip}
         >
           {icon}

@@ -103,7 +103,7 @@ export function DateRangeCalendar({
         {WEEKDAYS.map((label, index) => (
           <span
             key={index}
-            className="pb-1 text-[10px] font-semibold uppercase tracking-[0.05em] text-muted-foreground"
+            className="pb-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground"
           >
             {label}
           </span>
@@ -128,7 +128,7 @@ export function DateRangeCalendar({
                 })}
                 onClick={() => onPickDay(day)}
                 className={cn(
-                  'size-7 rounded-md text-[12px] tabular-nums outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring',
+                  'size-7 rounded-md text-[12px] tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
                   inRange && 'rounded-none bg-accent',
                   isEdge && 'bg-primary text-primary-foreground hover:bg-primary'
                 )}

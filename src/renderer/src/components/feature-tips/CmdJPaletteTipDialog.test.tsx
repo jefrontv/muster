@@ -65,7 +65,7 @@ describe('CmdJPaletteTipDialog', () => {
 
     const html = renderDialog()
 
-    expect(html).toContain('Jump to a worktree with')
+    expect(html).toContain('Jump to a workspace with')
     expect(html).toContain('⌘J')
   })
 
@@ -84,6 +84,6 @@ describe('CmdJPaletteTipDialog', () => {
     const html = renderDialog()
 
     expect(html).toContain('Settings → Shortcuts')
-    expect(html).toContain('spin up a new worktree')
+    expect(html).toContain('spin up a new workspace')
   })
 })

@@ -197,12 +197,12 @@ describe('SidebarSettingsHelpMenu', () => {
 
   it('renders Send Feedback menu item', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Send Feedback')
+    expect(html).toContain('Send feedback')
   })
 
   it('renders Keyboard Shortcuts menu item', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Keyboard Shortcuts')
+    expect(html).toContain('Keyboard shortcuts')
   })
 
   it('renders Setup guide with progress when setup is incomplete', () => {
@@ -211,7 +211,7 @@ describe('SidebarSettingsHelpMenu', () => {
     expect(html).toContain('data-testid="setup-guide-progress-ring"')
   })
 
-  it('hides Setup guide when setup is complete', () => {
+  it('keeps Setup guide without the progress ring once setup is complete', () => {
     mocks.setupProgress = {
       ready: true,
       coreDoneCount: 5,
@@ -219,30 +219,20 @@ describe('SidebarSettingsHelpMenu', () => {
       stepDone: {}
     }
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).not.toContain('Setup guide')
+    expect(html).toContain('Setup guide')
+    expect(html).not.toContain('data-testid="setup-guide-progress-ring"')
   })
 
-  it('renders Explore Muster and opens the feature wall like the OS menu', async () => {
+  it('opens the setup guide as the one onboarding entry', async () => {
     const container = await renderMenu()
-    const exploreButton = findMenuItem(container, 'Explore Muster')
+    expect(container.textContent).not.toContain('Explore Muster')
+    expect(container.textContent).not.toContain('Replay onboarding')
 
     await act(async () => {
-      exploreButton.click()
+      findMenuItem(container, 'Setup guide').click()
     })
 
-    expect(mocks.openModal).toHaveBeenCalledWith('feature-wall', { source: 'help_menu' })
-  })
-
-  it('renders Replay Onboarding without holding Option', async () => {
-    const { showOnboardingFromRenderer } = await import('../onboarding/show-onboarding-event')
-    const container = await renderMenu()
-    const replayButton = findMenuItem(container, 'Replay Onboarding')
-
-    await act(async () => {
-      replayButton.click()
-    })
-
-    expect(showOnboardingFromRenderer).toHaveBeenCalled()
+    expect(mocks.openModal).toHaveBeenCalledWith('setup-guide', { telemetrySource: 'help_menu' })
   })
 
   it('renders GitHub link', () => {
@@ -252,14 +242,14 @@ describe('SidebarSettingsHelpMenu', () => {
 
   it('renders Check for Updates menu item', () => {
     const html = renderToStaticMarkup(<SidebarSettingsHelpMenu />)
-    expect(html).toContain('Check for Updates')
+    expect(html).toContain('Check for updates')
     expect(html).toMatch(/(⇧\+click|Shift\+click) checks the latest RC/)
     expect(html).toMatch(/(⌘\+click|Ctrl\+click) checks the latest perf build/)
   })
 
   it('passes update-check modifier options through the updater bridge', async () => {
     const container = await renderMenu()
-    const checkButton = findMenuItem(container, 'Check for Updates')
+    const checkButton = findMenuItem(container, 'Check for updates')
     const primaryModifier = navigator.userAgent.includes('Mac')
       ? { metaKey: true }
       : { ctrlKey: true }

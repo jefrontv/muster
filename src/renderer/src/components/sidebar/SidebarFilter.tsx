@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { useShallow } from 'zustand/react/shallow'
 import { CalendarClock, Check, FolderPlus, GitBranch, ListFilter, Moon, Server } from 'lucide-react'
 import { useAppStore } from '@/store'
@@ -22,6 +23,8 @@ import RepoBadgeLabel from '@/components/repo/RepoBadgeLabel'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { searchRepos } from '@/lib/repo-search'
 import { cn } from '@/lib/utils'
+import { MENU_LABEL, MENU_ROW } from '@/components/ui/menu-surface-classes'
+import { SwitchTrack } from '@/components/ui/switch'
 import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from '../../../../shared/constants'
 import { translate } from '@/i18n/i18n'
 
@@ -166,7 +169,7 @@ const SidebarFilter = React.memo(function SidebarFilter({
                 // applied — without it the list can silently hide workspaces.
                 <span
                   aria-hidden
-                  className="absolute -top-0.5 -right-0.5 flex h-3 min-w-3 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-medium leading-none text-primary-foreground"
+                  className="absolute -top-0.5 -right-0.5 flex h-3 min-w-3 items-center justify-center rounded-full bg-primary px-0.5 text-[11px] font-medium leading-none text-primary-foreground"
                 >
                   {activeFilterCount > 9 ? '9+' : activeFilterCount}
                 </span>
@@ -216,20 +219,16 @@ const SidebarFilter = React.memo(function SidebarFilter({
         {canFilterRepos && (
           <>
             <DropdownMenuSeparator />
-            <div className="flex items-center justify-between px-2 py-1">
-              <span className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground">
+            <div className="flex items-center justify-between">
+              <span className={MENU_LABEL}>
                 {translate('auto.components.sidebar.SidebarFilter.5f7085a077', 'Projects')}
-                {hasRepoFilter && (
-                  <span className="ml-1.5 normal-case tracking-normal font-medium text-foreground">
-                    · {selectedCount}
-                  </span>
-                )}
+                {hasRepoFilter && <span className="ml-1.5 text-foreground">· {selectedCount}</span>}
               </span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={selectAllRepos}
-                  className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent"
+                  className="rounded-full px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent"
                   disabled={allSelected}
                 >
                   {translate('auto.components.sidebar.SidebarFilter.139877b384', 'Select all')}
@@ -237,7 +236,7 @@ const SidebarFilter = React.memo(function SidebarFilter({
                 <button
                   type="button"
                   onClick={clearRepos}
-                  className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent"
+                  className="rounded-full px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent"
                   disabled={!hasRepoFilter}
                 >
                   {translate('auto.components.sidebar.SidebarFilter.779b7ba05d', 'Clear')}
@@ -255,7 +254,7 @@ const SidebarFilter = React.memo(function SidebarFilter({
                 autoFocus
                 placeholder={translate(
                   'auto.components.sidebar.SidebarFilter.489d1c8c9f',
-                  'Search projects...'
+                  'Search projects…'
                 )}
                 value={query}
                 onValueChange={(nextQuery) => {
@@ -265,12 +264,9 @@ const SidebarFilter = React.memo(function SidebarFilter({
                   setQuery(nextQuery)
                 }}
                 onKeyDown={(event) => event.stopPropagation()}
-                className="h-8 py-2 text-xs"
-                wrapperClassName="mx-1 rounded-[7px] border border-border/70 px-2"
-                iconClassName="h-3.5 w-3.5"
               />
               <CommandList className="max-h-64 py-1">
-                <CommandEmpty className="py-4 text-[11px]">
+                <CommandEmpty className="py-4 text-xs">
                   {translate(
                     'auto.components.sidebar.SidebarFilter.b9e8802e73',
                     'No projects match'
@@ -283,7 +279,7 @@ const SidebarFilter = React.memo(function SidebarFilter({
                       key={r.id}
                       value={r.id}
                       onSelect={() => handleToggleRepo(r.id)}
-                      className="mx-1 my-0.5 items-center gap-2 rounded-[7px] px-2 py-1 text-[12px] leading-5 font-medium data-[selected=true]:bg-black/8 dark:data-[selected=true]:bg-white/14"
+                      className="min-h-[30px] items-center gap-2 rounded-md px-2 py-1.5 text-[14px] leading-[18px] data-[selected=true]:bg-foreground/[0.06] data-[selected=true]:text-foreground"
                     >
                       <span className="inline-flex min-w-0 flex-1 items-center gap-1.5">
                         <RepoBadgeLabel
@@ -292,15 +288,13 @@ const SidebarFilter = React.memo(function SidebarFilter({
                           className="max-w-full"
                         />
                         {r.connectionId && (
-                          <span className="shrink-0 inline-flex items-center gap-0.5 rounded bg-muted px-1 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
+                          <Badge variant="muted" className="shrink-0 gap-0.5">
                             <Server className="size-2.5" />
                             {translate('auto.components.sidebar.SidebarFilter.81ded53722', 'SSH')}
-                          </span>
+                          </Badge>
                         )}
                       </span>
-                      {checked && (
-                        <Check className="size-3 shrink-0 text-primary" strokeWidth={3} />
-                      )}
+                      {checked && <Check className="size-3.5 shrink-0 text-foreground" />}
                     </CommandItem>
                   )
                 })}
@@ -318,7 +312,7 @@ const SidebarFilter = React.memo(function SidebarFilter({
             <button
               type="button"
               onClick={clearAll}
-              className="rounded-[5px] px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="rounded-full px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {translate('auto.components.sidebar.SidebarFilter.92a23e6d07', 'Reset filters')}
             </button>
@@ -328,7 +322,7 @@ const SidebarFilter = React.memo(function SidebarFilter({
           <button
             type="button"
             onClick={() => addRepo()}
-            className="inline-flex items-center gap-1.5 rounded-[5px] px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <FolderPlus className="size-3.5" />
             {translate('auto.components.sidebar.SidebarFilter.e3b3898218', 'Add project')}
@@ -358,7 +352,10 @@ function FilterToggleRow({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-2 rounded-[5px] px-2 py-1.5 text-[12px] font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      className={cn(
+        MENU_ROW,
+        'w-full justify-between hover:bg-foreground/[0.06] focus-visible:bg-foreground/[0.06]'
+      )}
     >
       <span className="inline-flex items-center gap-2 text-foreground">
         <span className="text-muted-foreground">{icon}</span>
@@ -366,20 +363,7 @@ function FilterToggleRow({
       </span>
       <span className="inline-flex items-center gap-2">
         {shortcutLabel ? <DropdownMenuShortcut>{shortcutLabel}</DropdownMenuShortcut> : null}
-        <span
-          aria-hidden
-          className={cn(
-            'relative h-3.5 w-6 shrink-0 rounded-full transition-colors',
-            checked ? 'bg-primary' : 'bg-muted-foreground/30'
-          )}
-        >
-          <span
-            className={cn(
-              'absolute top-0.5 left-0.5 size-2.5 rounded-full bg-background shadow-sm transition-transform',
-              checked && 'translate-x-2.5'
-            )}
-          />
-        </span>
+        <SwitchTrack checked={checked} />
       </span>
     </button>
   )

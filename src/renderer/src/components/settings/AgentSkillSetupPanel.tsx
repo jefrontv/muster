@@ -223,7 +223,7 @@ export function AgentSkillSetupPanel({
             <Terminal className="size-3.5" />
           )}
           {terminalOpening
-            ? translate('auto.components.settings.AgentSkillSetupPanel.5f818f12ab', 'Preparing...')
+            ? translate('auto.components.settings.AgentSkillSetupPanel.5f818f12ab', 'Preparing…')
             : installed
               ? installedInstallLabel
               : installLabel}
@@ -289,7 +289,7 @@ export function AgentSkillSetupPanel({
                   <IntegrationStatusPill tone="neutral">
                     {translate(
                       'auto.components.settings.AgentSkillSetupPanel.68a468752e',
-                      'Checking...'
+                      'Checking…'
                     )}
                   </IntegrationStatusPill>
                 ) : installed ? (

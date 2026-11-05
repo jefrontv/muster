@@ -1,4 +1,5 @@
 // Pending tool-permission approval inside the composer frame (chat threads only):
+import { Badge } from '@/components/ui/badge'
 // a header describing the oldest queued request, plus the footer actions row that
 // replaces the normal composer actions while a request is showing.
 
@@ -54,9 +55,9 @@ export function NativeChatApprovalPanel({
         </span>
         <span className="min-w-0 text-sm font-medium">{detail.title}</span>
         {count > 1 ? (
-          <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+          <Badge variant="muted" className="ml-auto text-2xs tabular-nums">
             1/{count}
-          </span>
+          </Badge>
         ) : null}
       </div>
       {detail.caption ? (

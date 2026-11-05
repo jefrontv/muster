@@ -116,7 +116,7 @@ export function NotificationSoundPicker({
           void handleSoundSelect(selected as NotificationSoundSelectValue)
         }
       >
-        <SelectTrigger className="w-full max-w-[360px]" size="sm" aria-label={ariaLabel}>
+        <SelectTrigger className="w-full max-w-[360px]" aria-label={ariaLabel}>
           <SelectValue
             placeholder={translate(
               'auto.components.settings.NotificationsPane.c258cb96dc',
@@ -132,7 +132,7 @@ export function NotificationSoundPicker({
                 <span className="truncate">
                   {translate(
                     'auto.components.settings.NotificationSoundPicker.inherit',
-                    'Use Global Sound'
+                    'Use global sound'
                   )}
                   {inheritedTitle ? ` · ${inheritedTitle}` : ''}
                 </span>
@@ -156,11 +156,11 @@ export function NotificationSoundPicker({
               {customPath
                 ? translate(
                     'auto.components.settings.NotificationsPane.76e02467b8',
-                    'Change Custom File'
+                    'Change custom file'
                   )
                 : translate(
                     'auto.components.settings.NotificationsPane.6e6df3a09a',
-                    'Choose Custom File'
+                    'Choose custom file'
                   )}
             </span>
           </SelectItem>

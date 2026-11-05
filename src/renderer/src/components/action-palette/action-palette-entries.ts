@@ -97,7 +97,8 @@ export function buildActionPaletteCommandEntries(
       group: 'command',
       groupOrder: GROUP_ORDER.command,
       title: definition.title,
-      detail: definition.group,
+      // Every app-wide command is 'Global', so the label tells the user nothing.
+      detail: definition.group === 'Global' ? '' : definition.group,
       icon: Keyboard,
       keybindingActionId: definition.id,
       keywords: [definition.group, ...definition.searchKeywords],

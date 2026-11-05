@@ -27,7 +27,7 @@ function LeadingIcon({ drag }: { drag: TabDragItemData }): React.JSX.Element {
 // the wrapper's top-left.
 export default function TabDragPreview({ drag }: { drag: TabDragItemData }): React.JSX.Element {
   return (
-    <div className="pointer-events-none flex h-full w-full items-center gap-1.5 rounded-sm border border-border bg-accent px-2 text-xs text-foreground shadow-md">
+    <div className="pointer-events-none flex h-full w-full items-center gap-1.5 rounded-sm border border-border bg-accent px-2 text-xs text-foreground shadow-floating">
       <span className="inline-flex shrink-0">
         <LeadingIcon drag={drag} />
       </span>

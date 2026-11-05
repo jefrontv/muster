@@ -100,7 +100,7 @@ export function ActiveCollabUpdateRow({
         <span
           className={cn(
             'mt-0.5 flex min-w-0 items-center gap-1 truncate text-[11px]',
-            unread ? 'text-muted-foreground' : 'text-muted-foreground/60'
+            unread ? 'text-foreground' : 'text-muted-foreground'
           )}
         >
           {update.projectName ? <span className="truncate">{update.projectName}</span> : null}

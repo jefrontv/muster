@@ -32,7 +32,7 @@ const GROUP_RENDER_ORDER: readonly ActionPaletteGroup[] = ['action', 'command', 
 
 function FooterKey({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-medium text-foreground/85">
+    <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[11px] font-medium text-foreground/85">
       {children}
     </span>
   )
@@ -166,7 +166,7 @@ export default function ActionPalette(): React.JSX.Element | null {
       <CommandInput
         placeholder={translate(
           'auto.components.ActionPalette.placeholder',
-          'Run a command or jump to a setting...'
+          'Run a command or jump to a setting…'
         )}
         value={query}
         onValueChange={setQuery}

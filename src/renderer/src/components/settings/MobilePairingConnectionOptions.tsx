@@ -77,7 +77,7 @@ function PathOption({
         'flex cursor-pointer items-start gap-3 px-3 py-2.5 outline-none transition-colors',
         // Why: match SettingsFormControls focus ring so keyboard focus is visible
         // even when the selected row already uses bg-accent/40.
-        'focus-visible:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring',
         selected ? 'bg-accent/40' : 'hover:bg-accent/20'
       )}
     >
@@ -197,9 +197,7 @@ export function MobilePairingConnectionOptions({
           )}
           trailing={
             signedIn && value === 'automatic' ? (
-              <Badge variant="outline" className="text-[11px]">
-                {relayStatusLabel(relayStatus)}
-              </Badge>
+              <Badge variant="outline">{relayStatusLabel(relayStatus)}</Badge>
             ) : null
           }
         />

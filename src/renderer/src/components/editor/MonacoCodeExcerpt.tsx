@@ -101,7 +101,7 @@ export default function MonacoCodeExcerpt({
         return (
           <div
             key={lineNumber}
-            className={cn('flex font-mono', isCommentedLine && 'bg-emerald-500/10')}
+            className={cn('flex font-mono', isCommentedLine && 'bg-status-success-background')}
           >
             <span className="w-12 shrink-0 select-none border-r border-border/40 px-2 text-right text-muted-foreground tabular-nums">
               {lineNumber}

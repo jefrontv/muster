@@ -144,7 +144,7 @@ function TurnActions(props: {
         <NativeChatCopyButton text={props.answer} className={cn(actionButtonClass, replyGlyph)} />
       )}
       {stopped && (
-        <span className="rounded-md bg-chat-hover px-1.5 text-[11px] leading-[18px] text-chat-ink-secondary">
+        <span className="rounded-full bg-chat-hover px-1.5 text-[11px] leading-[18px] text-chat-ink-secondary">
           {translate('components.chat-thread.turnInterrupted', 'Stopped')}
         </span>
       )}

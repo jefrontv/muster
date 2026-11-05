@@ -29,9 +29,6 @@ import { translate } from '@/i18n/i18n'
 
 const PICKER_TRIGGER_CLASS =
   'border-input bg-input/30 shadow-xs hover:bg-accent/60 dark:bg-input/30 dark:hover:bg-input/50'
-const MODE_TOGGLE_ITEM_CLASS =
-  'w-full border-input bg-input/30 shadow-xs hover:bg-accent/60 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 dark:bg-input/30 dark:data-[state=on]:bg-primary dark:data-[state=on]:text-primary-foreground dark:data-[state=on]:hover:bg-primary/90'
-
 export type AutomationDraft = {
   name: string
   prompt: string
@@ -150,7 +147,6 @@ export function AutomationEditorDialog({
           draftName={draft.name}
           templateOpen={templateOpen}
           templates={getAutomationTemplates()}
-          modeToggleItemClassName={MODE_TOGGLE_ITEM_CLASS}
           pickerTriggerClassName={PICKER_TRIGGER_CLASS}
           onCreateTargetChange={onCreateTargetChange}
           onDraftNameChange={(name) => onDraftChange((current) => ({ ...current, name }))}
@@ -186,7 +182,6 @@ export function AutomationEditorDialog({
           visibleAgents={visibleAgents}
           scheduleField={scheduleField}
           pickerTriggerClassName={PICKER_TRIGGER_CLASS}
-          modeToggleItemClassName={MODE_TOGGLE_ITEM_CLASS}
           onProjectChange={onProjectChange}
           getRepoHostLabel={getRepoHostLabel}
           onDraftChange={onDraftChange}

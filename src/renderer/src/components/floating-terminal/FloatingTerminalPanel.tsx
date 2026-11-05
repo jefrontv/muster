@@ -652,7 +652,7 @@ export function FloatingTerminalPanel({
     createBrowserTab(FLOATING_TERMINAL_WORKTREE_ID, url, {
       title: translate(
         'auto.components.floating.terminal.FloatingTerminalPanel.8b14ba6c17',
-        'New Browser Tab'
+        'New browser tab'
       ),
       focusAddressBar: true,
       targetGroupId: activeGroup?.id,
@@ -1430,7 +1430,7 @@ export function FloatingTerminalPanel({
       data-floating-terminal-panel
       aria-hidden={!open}
       tabIndex={-1}
-      className={`fixed z-[45] flex min-h-[280px] min-w-[420px] rounded-lg bg-transparent text-card-foreground shadow-[0_4px_12px_rgba(0,0,0,0.16),0_24px_64px_rgba(0,0,0,0.32)] outline-none dark:shadow-[0_8px_20px_rgba(0,0,0,0.35),0_28px_72px_rgba(0,0,0,0.58)] ${open ? 'opacity-100' : 'invisible pointer-events-none opacity-0'}`}
+      className={`fixed z-[45] flex min-h-[280px] min-w-[420px] rounded-lg bg-transparent text-card-foreground shadow-floating outline-none dark:shadow-floating ${open ? 'opacity-100' : 'invisible pointer-events-none opacity-0'}`}
       style={{
         visibility: open ? 'visible' : 'hidden',
         left: bounds.left,
@@ -1573,7 +1573,7 @@ export function FloatingTerminalPanel({
                   <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                     {translate(
                       'auto.components.floating.terminal.FloatingTerminalPanel.d6b563ae24',
-                      'Loading editor...'
+                      'Loading editor…'
                     )}
                   </div>
                 }
@@ -1679,7 +1679,7 @@ export function FloatingTerminalPanel({
             <DialogTitle className="text-sm">
               {translate(
                 'auto.components.floating.terminal.FloatingTerminalPanel.690b6fb98a',
-                'Unsaved Changes'
+                'Unsaved changes'
               )}
             </DialogTitle>
             <DialogDescription className="text-xs">
@@ -1715,7 +1715,7 @@ export function FloatingTerminalPanel({
             >
               {translate(
                 'auto.components.floating.terminal.FloatingTerminalPanel.918c2139f3',
-                "Don't Save"
+                "Don't save"
               )}
             </Button>
             <Button type="button" size="sm" onClick={handleFloatingSaveDialogSave}>
@@ -1775,7 +1775,7 @@ function FloatingTerminalEmptyState({
           <span className="truncate text-left leading-none">
             {translate(
               'auto.components.floating.terminal.FloatingTerminalPanel.3215fc73e9',
-              'New Terminal'
+              'New terminal'
             )}
           </span>
           <FloatingEmptyStateShortcut shortcut={newTerminalShortcut} />
@@ -1791,7 +1791,7 @@ function FloatingTerminalEmptyState({
           <span className="truncate text-left leading-none">
             {translate(
               'auto.components.floating.terminal.FloatingTerminalPanel.629528690b',
-              'New Markdown Note'
+              'New Markdown note'
             )}
           </span>
           <FloatingEmptyStateShortcut shortcut={newMarkdownShortcut} />
@@ -1806,7 +1806,7 @@ function FloatingTerminalEmptyState({
           <span className="truncate text-left leading-none">
             {translate(
               'auto.components.floating.terminal.FloatingTerminalPanel.88ffb502e5',
-              'Open Markdown Note'
+              'Open Markdown note'
             )}
           </span>
           <FloatingEmptyStateShortcut shortcut={openMarkdownShortcut} />
@@ -1821,7 +1821,7 @@ function FloatingTerminalEmptyState({
           <span className="truncate text-left leading-none">
             {translate(
               'auto.components.floating.terminal.FloatingTerminalPanel.8b07759314',
-              'New Browser'
+              'New browser'
             )}
           </span>
           <FloatingEmptyStateShortcut shortcut={newBrowserShortcut} />
@@ -1859,7 +1859,7 @@ function FloatingEmptyStateShortcut({
       keys={shortcut.keys}
       doubleTap={shortcut.doubleTap}
       className="self-center justify-self-end opacity-90 [&>span]:text-foreground"
-      separatorClassName="mx-0 text-[9px] text-foreground"
+      separatorClassName="mx-0 text-[11px] text-foreground"
     />
   )
 }

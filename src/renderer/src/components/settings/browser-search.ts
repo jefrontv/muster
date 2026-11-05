@@ -25,7 +25,7 @@ export function getBrowserPaneSearchEntries(
 ): SettingsSearchEntry[] {
   return [
     {
-      title: translate('auto.components.settings.browser.search.c3903322d2', 'Default Home Page'),
+      title: translate('auto.components.settings.browser.search.c3903322d2', 'Default home page'),
       description: translate(
         'auto.components.settings.browser.search.a942905148',
         'URL opened when creating a new browser tab. Leave empty to open a blank tab.'
@@ -44,7 +44,7 @@ export function getBrowserPaneSearchEntries(
     {
       title: translate(
         'auto.components.settings.browser.search.5e755920c9',
-        'Default Search Engine'
+        'Default search engine'
       ),
       description: translate(
         'auto.components.settings.browser.search.0628d5943b',
@@ -69,7 +69,7 @@ export function getBrowserPaneSearchEntries(
       ]
     },
     {
-      title: translate('auto.components.settings.browser.search.072b7f5c1f', 'Default Zoom'),
+      title: translate('auto.components.settings.browser.search.072b7f5c1f', 'Default zoom'),
       description: translate(
         'auto.components.settings.browser.search.c3d89ed4d0',
         'Zoom level applied to newly opened browser tabs.'
@@ -91,7 +91,7 @@ export function getBrowserPaneSearchEntries(
       ]
     },
     {
-      title: translate('auto.components.settings.browser.search.5cb082b3e3', 'Link Routing'),
+      title: translate('auto.components.settings.browser.search.5cb082b3e3', 'Link routing'),
       description: getBrowserLinkRoutingDescription(platform),
       keywords: [
         ...translateSearchKeyword('auto.components.settings.browser.search.2d2d995c58', 'browser'),
@@ -112,7 +112,7 @@ export function getBrowserPaneSearchEntries(
     {
       title: translate(
         'auto.components.settings.browser.search.f0a71c3d92',
-        'Open Links in Floating Browser'
+        'Open links in floating browser'
       ),
       description: translate(
         'auto.components.settings.browser.search.a94c26e5f1',
@@ -128,7 +128,7 @@ export function getBrowserPaneSearchEntries(
       ]
     },
     {
-      title: translate('auto.components.settings.browser.search.b52e7f1a06', 'Browser Extensions'),
+      title: translate('auto.components.settings.browser.search.b52e7f1a06', 'Browser extensions'),
       description: translate(
         'auto.components.settings.browser.search.c73d81e4f9',
         'Load unpacked Chrome extensions into the in-app browser.'
@@ -145,7 +145,7 @@ export function getBrowserPaneSearchEntries(
       ]
     },
     {
-      title: translate('auto.components.settings.browser.search.c1908fe37b', 'Muster Extensions'),
+      title: translate('auto.components.settings.browser.search.c1908fe37b', 'Muster extensions'),
       description: translate(
         'auto.components.settings.browser.search.d0472be851',
         'Install extensions Muster ships, including WordPress login autofill.'
@@ -167,7 +167,7 @@ export function getBrowserPaneSearchEntries(
     {
       title: translate(
         'auto.components.settings.browser.search.19ea5607cf',
-        'Localhost Worktree Labels'
+        'Localhost worktree labels'
       ),
       description: translate(
         'auto.components.settings.browser.search.4e0fdf0a3f',
@@ -187,7 +187,7 @@ export function getBrowserPaneSearchEntries(
       ]
     },
     {
-      title: translate('auto.components.settings.browser.search.96afedcb5c', 'Session & Cookies'),
+      title: translate('auto.components.settings.browser.search.96afedcb5c', 'Session & cookies'),
       description: translate(
         'auto.components.settings.browser.search.060ac1fcba',
         'Import cookies from Chrome, Edge, or other browsers to use existing logins inside Muster.'

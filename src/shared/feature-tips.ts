@@ -34,9 +34,9 @@ export const FEATURE_TIPS = [
     eyebrow: 'Tip',
     // Why: "<shortcut>" is a placeholder token; the cmd-j dialog splits the
     // title on it and inlines the live, platform-correct keybinding as a <kbd>.
-    title: 'Jump to a worktree with <shortcut>',
+    title: 'Jump to a workspace with <shortcut>',
     description:
-      'Search worktrees, switch tabs, tweak settings, or spin up a new worktree, all without leaving the keyboard.',
+      'Search workspaces, switch tabs, tweak settings, or spin up a new workspace, all without leaving the keyboard.',
     action: 'learn-cmd-j-palette',
     ctaLabel: 'Got it',
     completedByFeatureInteractions: []

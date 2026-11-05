@@ -411,7 +411,7 @@ describe('TabBar PowerShell launch wiring', () => {
       onTogglePaneExpand: () => {}
     })
 
-    const item = findDropdownMenuItemByText(expandNode(element), 'New Terminal: PowerShell')
+    const item = findDropdownMenuItemByText(expandNode(element), 'New terminal: PowerShell')
     expect(item).not.toBeNull()
 
     const onSelect = item?.props.onSelect as (() => void) | undefined
@@ -445,7 +445,7 @@ describe('TabBar PowerShell launch wiring', () => {
       api: {
         wsl: {
           isAvailable: vi.fn().mockResolvedValue(true),
-          listDistros: vi.fn().mockResolvedValue(['Ubuntu'])
+          listDistros: vi.fn().mockResolvedValue(['ubuntu'])
         },
         pwsh: { isAvailable: vi.fn().mockResolvedValue(false) },
         gitBash: { isAvailable: vi.fn().mockResolvedValue(false) },
@@ -483,9 +483,9 @@ describe('TabBar PowerShell launch wiring', () => {
     })
 
     expect(
-      findDropdownMenuItemByText(expandNode(element), 'New Terminal: PowerShell')
+      findDropdownMenuItemByText(expandNode(element), 'New terminal: PowerShell')
     ).not.toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: WSL')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: WSL')).toBeNull()
   })
 
   it('shows only the WSL terminal row for local WSL-runtime projects', async () => {
@@ -493,7 +493,7 @@ describe('TabBar PowerShell launch wiring', () => {
     appStoreSnapshot.projects = [
       {
         id: 'project-1',
-        localWindowsRuntimePreference: { kind: 'wsl', distro: 'Ubuntu' },
+        localWindowsRuntimePreference: { kind: 'wsl', distro: 'ubuntu' },
         sourceRepoIds: ['repo-1']
       }
     ]
@@ -512,7 +512,7 @@ describe('TabBar PowerShell launch wiring', () => {
       api: {
         wsl: {
           isAvailable: vi.fn().mockResolvedValue(true),
-          listDistros: vi.fn().mockResolvedValue(['Ubuntu'])
+          listDistros: vi.fn().mockResolvedValue(['ubuntu'])
         },
         pwsh: { isAvailable: vi.fn().mockResolvedValue(true) },
         gitBash: { isAvailable: vi.fn().mockResolvedValue(true) },
@@ -549,9 +549,9 @@ describe('TabBar PowerShell launch wiring', () => {
       onTogglePaneExpand: () => {}
     })
 
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: PowerShell')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: Git Bash')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: WSL')).not.toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: PowerShell')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: Git Bash')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: WSL')).not.toBeNull()
   })
 
   it('uses the paired host platform to show Windows shell rows in a Mac browser', async () => {
@@ -561,7 +561,7 @@ describe('TabBar PowerShell launch wiring', () => {
       api: {
         wsl: {
           isAvailable: vi.fn().mockResolvedValue(true),
-          listDistros: vi.fn().mockResolvedValue(['Ubuntu'])
+          listDistros: vi.fn().mockResolvedValue(['ubuntu'])
         },
         pwsh: { isAvailable: vi.fn().mockResolvedValue(false) },
         gitBash: { isAvailable: vi.fn().mockResolvedValue(false) },
@@ -613,12 +613,12 @@ describe('TabBar PowerShell launch wiring', () => {
     })
 
     expect(
-      findDropdownMenuItemByText(expandNode(element), 'New Terminal: PowerShell')
+      findDropdownMenuItemByText(expandNode(element), 'New terminal: PowerShell')
     ).not.toBeNull()
     expect(
-      findDropdownMenuItemByText(expandNode(element), 'New Terminal: CMD Prompt')
+      findDropdownMenuItemByText(expandNode(element), 'New terminal: CMD prompt')
     ).not.toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: WSL')).not.toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: WSL')).not.toBeNull()
   })
 
   it('uses the active remote host platform to show Windows shell rows in a Mac desktop client', async () => {
@@ -628,7 +628,7 @@ describe('TabBar PowerShell launch wiring', () => {
       api: {
         wsl: {
           isAvailable: vi.fn().mockResolvedValue(true),
-          listDistros: vi.fn().mockResolvedValue(['Ubuntu'])
+          listDistros: vi.fn().mockResolvedValue(['ubuntu'])
         },
         pwsh: { isAvailable: vi.fn().mockResolvedValue(false) },
         gitBash: { isAvailable: vi.fn().mockResolvedValue(false) },
@@ -680,12 +680,12 @@ describe('TabBar PowerShell launch wiring', () => {
     })
 
     expect(
-      findDropdownMenuItemByText(expandNode(element), 'New Terminal: PowerShell')
+      findDropdownMenuItemByText(expandNode(element), 'New terminal: PowerShell')
     ).not.toBeNull()
     expect(
-      findDropdownMenuItemByText(expandNode(element), 'New Terminal: CMD Prompt')
+      findDropdownMenuItemByText(expandNode(element), 'New terminal: CMD prompt')
     ).not.toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: WSL')).not.toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: WSL')).not.toBeNull()
   })
 
   it('shows the Git Bash terminal row when shared Windows capabilities find bash.exe', async () => {
@@ -731,7 +731,7 @@ describe('TabBar PowerShell launch wiring', () => {
       onTogglePaneExpand: () => {}
     })
 
-    const item = findDropdownMenuItemByText(expandNode(element), 'New Terminal: Git Bash')
+    const item = findDropdownMenuItemByText(expandNode(element), 'New terminal: Git Bash')
     expect(item).not.toBeNull()
 
     const onSelect = item?.props.onSelect as (() => void) | undefined
@@ -748,7 +748,7 @@ describe('TabBar PowerShell launch wiring', () => {
     }
     const detectRemoteWindowsTerminalCapabilities = vi.fn().mockResolvedValue({
       wslAvailable: true,
-      wslDistros: ['Ubuntu'],
+      wslDistros: ['ubuntu'],
       pwshAvailable: true,
       gitBashAvailable: true,
       hostPlatform: 'win32'
@@ -796,14 +796,14 @@ describe('TabBar PowerShell launch wiring', () => {
 
     const powerShellItem = findDropdownMenuItemByText(
       expandNode(element),
-      'New Terminal: PowerShell'
+      'New terminal: PowerShell'
     )
     expect(powerShellItem).not.toBeNull()
     expect(
-      findDropdownMenuItemByText(expandNode(element), 'New Terminal: CMD Prompt')
+      findDropdownMenuItemByText(expandNode(element), 'New terminal: CMD prompt')
     ).not.toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: Git Bash')).not.toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: WSL')).not.toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: Git Bash')).not.toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: WSL')).not.toBeNull()
 
     const onSelect = powerShellItem?.props.onSelect as (() => void) | undefined
     onSelect?.()
@@ -863,17 +863,17 @@ describe('TabBar PowerShell launch wiring', () => {
       onTogglePaneExpand: () => {}
     })
 
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: PowerShell')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: CMD Prompt')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: Git Bash')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: WSL')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal')).not.toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: PowerShell')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: CMD prompt')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: Git Bash')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: WSL')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal')).not.toBeNull()
   })
 
   it('hides local Windows shell rows for a non-Windows serve runtime', async () => {
     // Why: a Windows desktop client paired to a Linux `orca serve` runs its PTY on
     // the serve host. The local Windows shell choices (PowerShell/CMD/WSL) are
-    // meaningless there; the plain "New Terminal" already opens the serve's default
+    // meaningless there; the plain "New terminal" already opens the serve's default
     // shell. Sibling tests above assert that a win32 remote host still shows the
     // rows, so the LOCAL Windows-WSL project-runtime menu (hostPlatform 'win32')
     // is unaffected by this suppression.
@@ -934,9 +934,9 @@ describe('TabBar PowerShell launch wiring', () => {
       onTogglePaneExpand: () => {}
     })
 
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: PowerShell')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: CMD Prompt')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal: WSL')).toBeNull()
-    expect(findDropdownMenuItemByText(expandNode(element), 'New Terminal')).not.toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: PowerShell')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: CMD prompt')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal: WSL')).toBeNull()
+    expect(findDropdownMenuItemByText(expandNode(element), 'New terminal')).not.toBeNull()
   })
 })

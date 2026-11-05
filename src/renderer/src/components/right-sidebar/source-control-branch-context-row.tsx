@@ -32,7 +32,7 @@ function BaseRefButton({
   return (
     <button
       type="button"
-      className="min-w-0 max-w-full truncate rounded-sm border-0 bg-transparent p-0 text-left font-mono text-[10.5px] font-medium text-foreground/90 underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-foreground"
+      className="min-w-0 max-w-full truncate rounded-md border-0 bg-transparent p-0 text-left font-mono text-[11px] font-medium text-foreground/90 underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-foreground"
       onClick={onClick}
       title={`${title} (${baseRef})`}
       aria-label={accessibleName}
@@ -129,7 +129,7 @@ function HeadIdentity({ display }: { display: WorktreeGitIdentityDisplay }): Rea
     <Tooltip>
       <TooltipTrigger asChild>
         <span
-          className="min-w-0 max-w-full truncate rounded-sm font-mono text-[10.5px] font-medium text-foreground/90 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="min-w-0 max-w-full truncate rounded-sm font-mono text-[11px] font-medium text-foreground/90 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           tabIndex={0}
           aria-label={branchAriaLabel}
           data-testid="source-control-head-identity"
@@ -188,7 +188,7 @@ function BaseLine({
     <div className="flex min-w-0 items-center gap-1.5">
       {leading}
       {showArrow ? (
-        <span className="shrink-0 text-muted-foreground/70" aria-hidden="true">
+        <span className="shrink-0 text-muted-foreground" aria-hidden="true">
           →
         </span>
       ) : (

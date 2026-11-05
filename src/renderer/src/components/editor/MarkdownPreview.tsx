@@ -1990,8 +1990,8 @@ export default function MarkdownPreview({
           {/* Why: remarkFrontmatter strips front matter, so render it as a read-only block when the user opts in. */}
           {frontMatter && frontmatterVisible ? (
             <div className="mb-4 rounded border border-border/60 bg-muted/40 px-3 py-2">
-              <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {translate('auto.components.editor.MarkdownPreview.2b2b31382c', 'Front Matter')}
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+                {translate('auto.components.editor.MarkdownPreview.2b2b31382c', 'Front matter')}
               </div>
               <pre className="max-h-48 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground font-mono scrollbar-editor">
                 {frontMatterInner}

@@ -29,6 +29,7 @@ import { SourceControlActionVariableChips } from '../source-control/SourceContro
 import { sourceControlActionRecipeMatchesTarget } from './source-control-action-recipe-match'
 import type { SourceControlAgentScopeNote } from './source-control-agent-action-dialog-result'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 export type SourceControlAgentActionDeliveryPlanState =
   | { status: 'idle' }
@@ -168,7 +169,7 @@ export function SourceControlAgentActionDialogForm({
                 {detecting
                   ? translate(
                       'auto.components.right.sidebar.SourceControlAgentActionDialogForm.c7ff8cef11',
-                      'Detecting agents...'
+                      'Detecting agents…'
                     )
                   : translate(
                       'auto.components.right.sidebar.SourceControlAgentActionDialogForm.1d47db9bf0',
@@ -244,12 +245,12 @@ export function SourceControlAgentActionDialogForm({
               )}
             </Button>
           </div>
-          <textarea
+          <Textarea
             id="source-control-agent-command-input"
             rows={7}
             value={commandTemplate}
             onChange={(event) => onCommandTemplateChange(event.target.value)}
-            className="box-border min-h-[6.5rem] min-w-0 w-full max-w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/70 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="box-border min-h-[6.5rem] max-w-full resize-y font-mono text-xs"
             spellCheck={false}
           />
           <SourceControlActionVariableChips
@@ -324,7 +325,7 @@ export function SourceControlAgentActionDialogForm({
                       )
                     : translate(
                         'auto.components.right.sidebar.SourceControlAgentActionDialogForm.6cefcdfba1',
-                        'You can change it later in Source Control AI settings.'
+                        'You can change it later in Source control AI settings.'
                       )}
                 </span>
               </span>
@@ -338,7 +339,7 @@ export function SourceControlAgentActionDialogForm({
                   )}
                 </span>
                 <Select value={saveTargetValue} onValueChange={onSaveAgentDefaultChange}>
-                  <SelectTrigger size="sm" className="h-8 w-full text-xs">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

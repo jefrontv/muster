@@ -29,9 +29,9 @@ const CELL = 'min-w-[100px] max-w-[min(30vw,320px)] px-4 py-2.5 first:pl-0 last:
 
 const PROSE = {
   p: 'my-4',
-  h1: 'mb-4 mt-8 text-[21px] font-bold leading-[30px] [&_strong]:font-[inherit]',
-  h2: 'mb-4 mt-8 text-[19px] font-bold leading-[28px] [&_strong]:font-[inherit]',
-  h3: 'mb-4 mt-8 text-[18px] font-bold leading-[26px] [&_strong]:font-[inherit]',
+  h1: 'mb-4 mt-8 text-[21px] font-semibold leading-[30px] [&_strong]:font-[inherit]',
+  h2: 'mb-4 mt-8 text-[19px] font-semibold leading-[28px] [&_strong]:font-[inherit]',
+  h3: 'mb-4 mt-8 text-[18px] font-semibold leading-[26px] [&_strong]:font-[inherit]',
   h4: 'my-4 text-sm font-semibold leading-6 [&_strong]:font-[inherit]',
   list: 'my-4 pl-[18px]',
   hr: 'my-8 h-[0.5px] border-0 bg-chat-line-2',

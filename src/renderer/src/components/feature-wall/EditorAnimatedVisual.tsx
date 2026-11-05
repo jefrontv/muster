@@ -21,7 +21,7 @@ const NEW_LINE_HOLD_MS = 380
 const FINAL_HOLD_MS = 2200
 
 const KBD_CLASS_DOC =
-  'rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground'
+  'rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground'
 
 function CursorIcon(): JSX.Element {
   return (
@@ -31,7 +31,7 @@ function CursorIcon(): JSX.Element {
       viewBox="0 0 16 16"
       aria-hidden
       focusable="false"
-      className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]"
+      className="drop-shadow-xs"
     >
       <path
         d="M2 1.5 L2 12 L5 9 L7.2 14.5 L9.5 13.6 L7.3 8 L11.5 8 Z"
@@ -268,7 +268,7 @@ function SlashRow(props: {
         {TB_ICON[props.iconKey]}
       </span>
       <span className="whitespace-nowrap leading-none">{props.label}</span>
-      <span className="font-mono text-[10.5px] text-muted-foreground">{props.shortcut}</span>
+      <span className="font-mono text-[11px] text-muted-foreground">{props.shortcut}</span>
     </div>
   )
 }
@@ -596,7 +596,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
   }, [reducedMotion])
 
   return (
-    <div className="relative overflow-visible rounded-xl border border-border bg-card text-foreground shadow-[0_1px_2px_rgba(24,24,27,0.04)]">
+    <div className="relative overflow-visible rounded-xl border border-border bg-card text-foreground shadow-xs">
       {/* Faux titlebar with the editing path so the surface reads as a
           real document, not a generic notes widget. */}
       <div className="flex h-7 items-center gap-1.5 border-b border-border bg-muted/40 px-3">
@@ -626,7 +626,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
         <ToolbarBtn iconKey="olist" />
         <ToolbarBtn iconKey="check" />
         <ToolbarBtn iconKey="quote" />
-        <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
+        <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
           <span className="size-1.5 rounded-full bg-emerald-500" />
           <span>
             {translate('auto.components.feature.wall.EditorAnimatedVisual.218503f9f3', 'autosaved')}
@@ -648,7 +648,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
         <DocBlock>
           {translate(
             'auto.components.feature.wall.EditorAnimatedVisual.22ae7b4d9d',
-            "A quick note for the team — pulling together what's left before we ship."
+            "A quick note for the team. Pulling together what's left before we ship."
           )}
         </DocBlock>
 
@@ -675,7 +675,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
         <div
           ref={menuRef}
           data-slash-menu
-          className="pointer-events-none absolute z-10 min-w-[220px] origin-top-left rounded-lg border border-border bg-card p-1.5 text-[12px] shadow-[0_16px_38px_rgba(24,24,27,0.18),0_2px_6px_rgba(24,24,27,0.08)] transition-[opacity,transform] duration-[160ms] ease-out"
+          className="pointer-events-none absolute z-10 min-w-[220px] origin-top-left rounded-lg border border-border bg-card p-1.5 text-[12px] shadow-floating transition-[opacity,transform] duration-[160ms] ease-out"
           style={{
             opacity: 0,
             transform: 'translateY(-4px) scale(0.985)'
@@ -683,7 +683,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
         >
           <div
             data-slash-show="all"
-            className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-[0.06em] text-muted-foreground"
+            className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground"
           >
             {translate('auto.components.feature.wall.EditorAnimatedVisual.1fb29ad710', 'Headings')}
           </div>
@@ -709,7 +709,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
           <div data-slash-show="all" className="my-1 h-px bg-foreground/[0.08]" />
           <div
             data-slash-show="all"
-            className="px-2 pb-1 pt-1.5 text-[9.5px] font-bold uppercase tracking-[0.06em] text-muted-foreground"
+            className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground"
           >
             {translate(
               'auto.components.feature.wall.EditorAnimatedVisual.abbdeea15d',
@@ -728,7 +728,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
             iconKey="list"
             label={translate(
               'auto.components.feature.wall.EditorAnimatedVisual.37fa4948ce',
-              'Bullet List'
+              'Bullet list'
             )}
             shortcut="-"
           />
@@ -739,7 +739,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
             iconKey="code"
             label={translate(
               'auto.components.feature.wall.EditorAnimatedVisual.8268b2376b',
-              'Code Block'
+              'Code block'
             )}
             shortcut="```"
           />
@@ -793,7 +793,7 @@ export function EditorAnimatedVisual(props: { reducedMotion: boolean }): JSX.Ele
 
 function DocTitle(props: { children: ReactNode }): JSX.Element {
   return (
-    <div className="mb-2.5 text-[22px] font-bold leading-[1.15] tracking-[-0.01em]">
+    <div className="mb-2.5 text-[22px] font-semibold leading-[1.15] tracking-[-0.01em]">
       {props.children}
     </div>
   )

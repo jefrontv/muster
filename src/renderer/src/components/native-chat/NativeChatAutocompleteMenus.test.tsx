@@ -86,7 +86,7 @@ describe('NativeChatPickerMenu', () => {
       />
     )
     expect(screen.getByRole('option', { name: /clear/i })).toBeTruthy()
-    expect(screen.getAllByText('Loading skills...')).toHaveLength(2)
+    expect(screen.getAllByText('Loading skills…')).toHaveLength(2)
   })
 
   it('uses command-only empty copy for a picker without skill support', () => {

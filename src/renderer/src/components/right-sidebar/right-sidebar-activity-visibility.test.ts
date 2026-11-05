@@ -15,14 +15,14 @@ const items: ActivityBarItem[] = [
   {
     id: 'pr-checks',
     icon: Files,
-    title: 'PR Checks',
+    title: 'PR checks',
     shortcut: '',
     folderOnly: true
   },
   {
     id: 'source-control',
     icon: Files,
-    title: 'Source Control',
+    title: 'Source control',
     shortcut: '',
     gitOnly: true
   },

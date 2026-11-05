@@ -7,7 +7,7 @@ export function showAutomationPromptNotSentToast(agent: TuiAgent): void {
   toast.message(
     translate(
       'auto.lib.launch.agent.background.session.4ca0651d56',
-      "Your automation prompt wasn't sent — open the workspace and paste it."
+      "Your automation prompt wasn't sent. Open the workspace and paste it."
     )
   )
   track('agent_error', {

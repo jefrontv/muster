@@ -48,7 +48,7 @@ export function NativeChatExperimentalSetting({
           checked={nativeChatEnabled}
           ariaLabel={translate(
             'auto.components.settings.ExperimentalPane.nativeChat.toggleLabel',
-            'Toggle Chat UI'
+            'Toggle chat UI'
           )}
           onChange={() =>
             updateSettings({
@@ -88,7 +88,6 @@ export function NativeChatExperimentalSetting({
                   'Default Chat UI view'
                 )}
                 className="w-36"
-                size="sm"
               >
                 <SelectValue />
               </SelectTrigger>

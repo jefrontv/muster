@@ -67,7 +67,7 @@ function buildBasePromptPreview(actionId: SourceControlTextActionId): string {
           currentTitle: 'Draft title',
           currentBody: 'Draft description',
           currentDraft: false,
-          commitSummary: 'a1b2c3d Add Source Control AI prompt previews',
+          commitSummary: 'a1b2c3d Add Source control AI prompt previews',
           changeSummary: 'src/example.ts | 12 ++++++++++--',
           patch: 'diff --git a/src/example.ts b/src/example.ts\n+addSourceControlAiPreview()'
         },

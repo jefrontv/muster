@@ -67,7 +67,7 @@ describe('EditorPanelMarkdownActionsMenu', () => {
     )
 
     expect(checkboxItems.list).toHaveLength(1)
-    expect(checkboxItems.list[0]).toMatchObject({ checked: true, label: 'Word Wrap' })
+    expect(checkboxItems.list[0]).toMatchObject({ checked: true, label: 'Word wrap' })
     checkboxItems.list[0]?.onCheckedChange?.(false)
     expect(onToggleEditorWordWrap).toHaveBeenCalledOnce()
     expect(onToggleDiffWordWrap).not.toHaveBeenCalled()
@@ -94,7 +94,7 @@ describe('EditorPanelMarkdownActionsMenu', () => {
     )
 
     expect(checkboxItems.list).toHaveLength(1)
-    expect(checkboxItems.list[0]).toMatchObject({ checked: true, label: 'Word Wrap' })
+    expect(checkboxItems.list[0]).toMatchObject({ checked: true, label: 'Word wrap' })
     checkboxItems.list[0]?.onCheckedChange?.(false)
     expect(onToggleDiffWordWrap).toHaveBeenCalledOnce()
     expect(onToggleEditorWordWrap).not.toHaveBeenCalled()

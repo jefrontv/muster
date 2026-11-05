@@ -14,7 +14,7 @@ function SavedInProjectSettingsToast({
       {translate('auto.components.sidebar.SetupScriptPromptCard.a5bb8c5135', 'Saved in this')}{' '}
       <button
         type="button"
-        className="rounded-sm font-medium underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="rounded-md font-medium underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={onOpenSettings}
       >
         {translate(

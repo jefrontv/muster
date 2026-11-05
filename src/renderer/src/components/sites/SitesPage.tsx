@@ -1,27 +1,24 @@
-import { DownloadCloud, Ellipsis, FolderCog, GitBranchPlus, Globe, Search } from 'lucide-react'
+import { Globe, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
+import { useMeasuredWidth } from '../right-sidebar/right-sidebar-measured-width'
 import { filterSites, sitesOnDisk } from './site-filtering'
-import { AddToSidebarButton } from './AddToSidebarButton'
 import { DiscoveredSiteRow } from './DiscoveredSiteRow'
-import { getSiteCloneSourceStrings } from './site-clone-source-strings'
 import { SiteDetailPanel } from './SiteDetailPanel'
 import { SiteRootsDialog } from './SiteRootsDialog'
 import { SitesEmptyState } from './SitesEmptyState'
+import { SitesPageHeader } from './SitesPageHeader'
 import { SiteRow } from './SiteRow'
 import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
 import type { DiscoveredSiteCandidate } from '../../../../shared/site-discovery-types'
+
+// Below this page width the list and detail no longer fit side by side, so the page shows one at a time.
+const SITES_SPLIT_MIN_WIDTH = 640
 
 export default function SitesPage(): React.JSX.Element {
   const closeSitesPage = useAppStore((state) => state.closeSitesPage)
@@ -45,6 +42,9 @@ export default function SitesPage(): React.JSX.Element {
   // Where a new clone lands. Separate from `roots`, whose order is the scan order, not a ranking.
   const [adopting, setAdopting] = useState('')
   const [rootsDialogOpen, setRootsDialogOpen] = useState(false)
+  const [pageWidth, setPageWidth] = useState<number | null>(null)
+  const pageRef = useMeasuredWidth(setPageWidth)
+  const narrow = pageWidth !== null && pageWidth < SITES_SPLIT_MIN_WIDTH
   useContextualTour('sites', true)
 
   useEffect(() => {
@@ -82,17 +82,23 @@ export default function SitesPage(): React.JSX.Element {
         return
       }
       event.preventDefault()
-      closeSitesPage()
+      goBack()
     }
     window.addEventListener('keydown', handleKeyDown, { capture: true })
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
-  }, [closeSitesPage])
+  })
 
   // A site whose folder is gone can't be opened, imported, or deployed, so it never reaches the list.
   const availableSites = useMemo(() => sitesOnDisk(sites), [sites])
   const offDiskCount = sites.length - availableSites.length
   const visibleSites = useMemo(() => filterSites(availableSites, query), [availableSites, query])
   const selected = availableSites.find((entry) => entry.site.id === selectedSiteId) ?? null
+  // Narrow pages show the list or one site; back from a site returns to the list, not out of Sites.
+  const showingDetail = narrow && selected !== null
+  const goBack = (): void => (showingDetail ? selectSite(null) : closeSitesPage())
+  const backLabel = showingDetail
+    ? translate('auto.components.sites.SitesPage.backToList', 'All sites')
+    : translate('auto.components.sites.SitesPage.back', 'Back')
 
   // Main already excludes anything with a Site record, so this only has to survive the race where
   // a site was adopted but the discovery result predates the refetch.
@@ -144,7 +150,7 @@ export default function SitesPage(): React.JSX.Element {
         toast.success(
           translate(
             'auto.components.sites.SitesPage.sidebarUpToDate',
-            'Already up to date — every site folder is in the sidebar.'
+            'Already up to date. Every site folder is in the sidebar.'
           )
         )
         return
@@ -224,62 +230,23 @@ export default function SitesPage(): React.JSX.Element {
   return (
     // border-l: the sidebar and this page share a background, so without it the site list reads as
     // a third sidebar column rather than the start of the page.
-    <main className="flex min-h-0 flex-1 flex-col border-l border-border bg-background">
-      <header className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-3">
-        {/* No Back button: the sidebar shows where you are and Escape closes the page. */}
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Globe className="size-4 shrink-0 text-muted-foreground" />
-          <span className="text-sm font-medium">
-            {translate('auto.components.sites.SitesPage.title', 'Sites')}
-          </span>
-          <span className="truncate whitespace-nowrap text-xs text-muted-foreground">
-            {translate('auto.components.sites.SitesPage.count', '{{count}} configured', {
-              count: availableSites.length
-            })}
-          </span>
-        </div>
-        {/* New site leads: it is the action this page exists for. It keeps the filled variant so
-            there is still one clear primary; everything after it is outline, which is what makes
-            them legible — ghost rendered as bare text with no edge to press. */}
-        {/* The dialog itself lives at the App root so a minimized clone survives leaving this
-            page; this button only raises the flag. */}
-        <Button size="sm" className="shrink-0 gap-1.5" onClick={() => setNewSiteDialogOpen(true)}>
-          <GitBranchPlus className="size-3.5" />
-          {getSiteCloneSourceStrings().trigger}
-        </Button>
-        <AddToSidebarButton
-          busy={importing}
-          autoAdd={autoAddDiscovered}
-          onAdd={() => void runAddToSidebar()}
-          onAutoAddChange={(next) => void handleAutoAddChange(next)}
-        />
-        {/* Why: folder roots and ocsites import are one-time setup, so they share an overflow menu. */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0 px-2"
-              aria-label={translate(
-                'auto.components.sites.SitesPage.moreActions',
-                'More site actions'
-              )}
-            >
-              <Ellipsis className="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => setRootsDialogOpen(true)}>
-              <FolderCog className="size-3.5" />
-              {translate('auto.components.sites.SitesPage.foldersMenu', 'Site folders…')}
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={importing} onSelect={() => void runImport()}>
-              <DownloadCloud className="size-3.5" />
-              {translate('auto.components.sites.SitesPage.import', 'Import from ocsites')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </header>
+    <main
+      ref={pageRef}
+      className="flex min-h-0 flex-1 flex-col border-l border-border bg-background"
+    >
+      <SitesPageHeader
+        narrow={narrow}
+        backLabel={backLabel}
+        onBack={goBack}
+        count={availableSites.length}
+        importing={importing}
+        autoAdd={autoAddDiscovered}
+        onAddToSidebar={() => void runAddToSidebar()}
+        onAutoAddChange={(next) => void handleAutoAddChange(next)}
+        onNewSite={() => setNewSiteDialogOpen(true)}
+        onChooseFolders={() => setRootsDialogOpen(true)}
+        onImport={() => void runImport()}
+      />
 
       <SiteRootsDialog
         open={rootsDialogOpen}
@@ -295,7 +262,12 @@ export default function SitesPage(): React.JSX.Element {
 
       <div className="flex min-h-0 flex-1">
         <aside
-          className="flex w-80 shrink-0 flex-col border-r border-border"
+          className={cn(
+            'flex flex-col',
+            narrow
+              ? cn('min-w-0 flex-1', showingDetail && 'hidden')
+              : 'w-[clamp(15rem,30%,20rem)] shrink-0 border-r border-border'
+          )}
           data-contextual-tour-target="sites-list"
         >
           <div className="shrink-0 p-3">
@@ -370,7 +342,7 @@ export default function SitesPage(): React.JSX.Element {
 
         {selected ? (
           <SiteDetailPanel summary={selected} />
-        ) : (
+        ) : narrow ? null : (
           <div className="flex min-h-0 flex-1 items-center justify-center p-8">
             <div className="flex flex-col items-center gap-1.5 text-center">
               <Globe className="mb-1 size-7 text-muted-foreground/50" strokeWidth={1.5} />

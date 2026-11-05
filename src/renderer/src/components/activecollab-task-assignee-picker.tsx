@@ -67,7 +67,7 @@ export function ActiveCollabAssigneePickerList({
         onValueChange={setQuery}
         placeholder={translate(
           'auto.components.activecollab.task_workspace.search_people',
-          'Search people...'
+          'Search people…'
         )}
       />
       {/* Above the results and never filtered out: clearing the field is an action, not a candidate.

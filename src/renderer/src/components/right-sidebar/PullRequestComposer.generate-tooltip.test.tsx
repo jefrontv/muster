@@ -88,7 +88,7 @@ describe('CreateHostedReviewComposer generate tooltip', () => {
     expect(markup).not.toContain('title="Generate {{value0}} details with AI"')
   })
 
-  it('hides hosted review generation controls when Source Control AI actions are hidden', () => {
+  it('hides hosted review generation controls when Source control AI actions are hidden', () => {
     const markup = renderPullRequestComposer({ aiGenerationEnabled: false })
 
     expect(markup).not.toContain('Generate pull request details with AI')

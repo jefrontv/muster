@@ -24,7 +24,7 @@ export function TerminalMacKeyboardSection({
   return (
     <>
       <SearchableSetting
-        title={translate('auto.components.settings.TerminalPane.0a10420e1a', 'Option as Alt')}
+        title={translate('auto.components.settings.TerminalPane.0a10420e1a', 'Use Option as Alt')}
         description={translate(
           'auto.components.settings.TerminalPane.2561d3fc1b',
           'Controls whether the macOS Option key sends Alt/Esc sequences or composes characters.'
@@ -47,12 +47,12 @@ export function TerminalMacKeyboardSection({
       >
         <SettingsRow
           alignTop
-          label={translate('auto.components.settings.TerminalPane.0a10420e1a', 'Option as Alt')}
+          label={translate('auto.components.settings.TerminalPane.0a10420e1a', 'Use Option as Alt')}
           description={
             settings.terminalMacOptionAsAlt === 'auto'
               ? translate(
                   'auto.components.settings.TerminalPane.d21c493808',
-                  'Auto — detected: {{value0}}.',
+                  'Auto: detected: {{value0}}.',
                   {
                     value0: detectedLayoutLabel
                   }
@@ -77,7 +77,7 @@ export function TerminalMacKeyboardSection({
             <SettingsSegmentedControl
               ariaLabel={translate(
                 'auto.components.settings.TerminalPane.0a10420e1a',
-                'Option as Alt'
+                'Use Option as Alt'
               )}
               value={settings.terminalMacOptionAsAlt}
               onChange={(option) => updateSettings({ terminalMacOptionAsAlt: option })}
@@ -111,7 +111,7 @@ export function TerminalMacKeyboardSection({
       <SearchableSetting
         title={translate(
           'auto.components.settings.TerminalPane.19f4935159',
-          'JIS Yen (¥) to Backslash (\\\\)'
+          'JIS Yen (¥) to backslash (\\\\)'
         )}
         description={translate(
           'auto.components.settings.TerminalPane.1c337bef4a',
@@ -132,7 +132,7 @@ export function TerminalMacKeyboardSection({
         <SettingsSwitchRow
           label={translate(
             'auto.components.settings.TerminalPane.19f4935159',
-            'JIS Yen (¥) to Backslash (\\\\)'
+            'JIS Yen (¥) to backslash (\\\\)'
           )}
           description={translate(
             'auto.components.settings.TerminalPane.4263e940e0',

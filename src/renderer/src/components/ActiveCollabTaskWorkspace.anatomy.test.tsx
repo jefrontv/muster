@@ -377,7 +377,7 @@ describe('ActiveCollabTaskWorkspace anatomy', () => {
     // Radix portals the popover to document.body, so the whole document is queried.
     expect(document.querySelector('[data-slot="date-range-calendar"]')).toBeNull()
 
-    await click(buttonWith('Set...'))
+    await click(buttonWith('Set due date'))
 
     expect(document.querySelector('[data-slot="date-range-calendar"]')).toBeTruthy()
     expect(mocks.updateTask).not.toHaveBeenCalled()

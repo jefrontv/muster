@@ -158,7 +158,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
 
   const hasStaged = stagedCount > 0
   const hasDirtyLocalChanges = hasStaged || inputs.hasUnstagedChanges
-  // Why: undefined upstreamStatus means loading (transient after a worktree switch), not unpublished — treating it as hasUpstream=false would re-enable Publish Branch and clobber the real upstream.
+  // Why: undefined upstreamStatus means loading (transient after a worktree switch), not unpublished — treating it as hasUpstream=false would re-enable Publish branch and clobber the real upstream.
   const upstreamLoading = upstreamStatus === undefined
   const hasUpstream = upstreamStatus?.hasUpstream ?? false
   const hasOpenHostedReview = prState === 'open' || prState === 'draft'
@@ -239,7 +239,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
                     : 'Commit staged changes and push'))
   const commitPushItem: DropdownItem = {
     kind: 'commit_push',
-    label: shouldForcePushWithLease ? 'Commit & Force Push' : 'Commit & Push',
+    label: shouldForcePushWithLease ? 'Commit & force push' : 'Commit & push',
     title: commitPushTitle,
     // Why: match explicit Push — only an open linked review with a known head can commit+push without a git upstream.
     disabled:
@@ -266,13 +266,13 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
       return 'Check out a branch before syncing commits'
     }
     if (!hasUpstream) {
-      // Why: direct the user to Publish Branch (the primary action) rather than naming a nonexistent compound action.
+      // Why: direct the user to Publish branch (the primary action) rather than naming a nonexistent compound action.
       return 'Publish the branch first to sync commits'
     }
     if (shouldForcePushWithLease) {
       return (
         commitDisabledReason ??
-        'Use Commit & Force Push — remote only has older copies of local commits'
+        'Use commit & force push: the remote only has older copies of local commits'
       )
     }
     return commitDisabledReason ?? 'Commit, then pull and push'
@@ -281,7 +281,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     kind: 'commit_sync',
     label: translate(
       'auto.components.right.sidebar.source.control.dropdown.items.323bb614aa',
-      'Commit & Sync'
+      'Commit & sync'
     ),
     title: commitSyncTitle,
     disabled:
@@ -298,7 +298,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
     kind: 'undo_commit',
     label: translate(
       'auto.components.right.sidebar.source.control.dropdown.items.undo_last_commit',
-      'Undo Last Commit'
+      'Undo last commit'
     ),
     title: !hasHeadCommit
       ? 'No commits to undo'
@@ -334,7 +334,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
 
   const forcePushItem: DropdownItem = {
     kind: 'force_push',
-    label: formatCountLabel('Force Push', pushLabelCount),
+    label: formatCountLabel('Force push', pushLabelCount),
     title: publishBlockedByDetachedHead
       ? 'Check out a branch before force pushing commits'
       : pushBlockedByOpenHostedReviewTarget
@@ -371,7 +371,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
             : !hasUpstream
               ? 'Publish the branch first to pull commits'
               : shouldForcePushWithLease
-                ? 'Nothing new to pull — remote only has older copies of local commits'
+                ? 'Nothing new to pull: the remote only has older copies of local commits'
                 : behind === 0
                   ? 'Nothing to pull'
                   : describePullCount(behind),
@@ -392,7 +392,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
             : !hasUpstream
               ? 'Publish the branch first to fast-forward'
               : shouldForcePushWithLease
-                ? 'Nothing new to fast-forward — remote only has older copies of local commits'
+                ? 'Nothing new to fast-forward: the remote only has older copies of local commits'
                 : behind === 0
                   ? 'Nothing to fast-forward'
                   : ahead > 0
@@ -415,7 +415,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
             : !hasUpstream
               ? 'Publish the branch first to sync commits'
               : shouldForcePushWithLease
-                ? 'Use Force Push — remote only has older copies of local commits'
+                ? 'Use force push: the remote only has older copies of local commits'
                 : ahead === 0 && behind === 0
                   ? 'Branch is up to date'
                   : describeSyncCounts(ahead, behind),
@@ -466,7 +466,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
           ? 'Linked Review'
           : publishBlockedByDetachedHead
             ? 'No Branch'
-            : 'Publish Branch',
+            : 'Publish branch',
     title: upstreamLoading
       ? 'Checking branch status…'
       : publishBlockedByPRLoading
@@ -501,11 +501,11 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
       case 'default_branch':
         return 'Switch to a feature branch'
       case 'no_upstream':
-        return 'Publish Branch'
+        return 'Publish branch'
       case 'needs_push':
         return 'Push first'
       case 'needs_sync':
-        return shouldForcePushWithLease ? 'Force Push first' : 'Sync first'
+        return shouldForcePushWithLease ? 'Force push first' : 'Sync first'
       case 'auth_required':
         return `${createReviewCopy.authInstruction} in this environment`
       case 'unsupported_provider':
@@ -549,7 +549,7 @@ export function resolveDropdownItems(inputs: DropdownActionInputs): DropdownEntr
   const pushCreatePRItem: DropdownItem = {
     kind: 'push_create_pr',
     label: shouldForcePushWithLease
-      ? `Force Push before ${createReviewCopy.shortLabel}`
+      ? `Force push before ${createReviewCopy.shortLabel}`
       : `Push before ${createReviewCopy.shortLabel}`,
     title: canPushAndCreate
       ? shouldForcePushWithLease

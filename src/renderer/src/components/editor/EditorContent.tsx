@@ -364,7 +364,7 @@ export function EditorContent({
         'File is too large for rich editing. Showing source mode instead.'
       return (
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-border/60 bg-blue-500/10 px-3 py-2 text-xs text-blue-950 dark:text-blue-100">
+          <div className="border-b border-border/60 bg-status-info-background px-3 py-2 text-xs text-status-info">
             {richFallbackMessage}
           </div>
           <div className="min-h-0 flex-1 h-full">{renderMonacoEditor(fc)}</div>
@@ -425,7 +425,7 @@ export function EditorContent({
       return (
         <div className="flex h-full min-h-0 flex-col">
           {shouldExplainRichFallback ? (
-            <div className="border-b border-border/60 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:text-amber-100">
+            <div className="border-b border-border/60 bg-status-attention-background px-3 py-2 text-xs text-status-attention">
               {richModeUnsupportedMessage}
             </div>
           ) : null}
@@ -481,7 +481,7 @@ export function EditorContent({
       return (
         <div className={className}>
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            {translate('auto.components.editor.EditorContent.b2735221f5', 'Loading...')}
+            {translate('auto.components.editor.EditorContent.b2735221f5', 'Loading…')}
           </div>
         </div>
       )
@@ -510,7 +510,7 @@ export function EditorContent({
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             {translate(
               'auto.components.editor.EditorContent.b9de81ba52',
-              'Binary file — cannot display'
+              'Binary file: cannot display'
             )}
           </div>
         </div>
@@ -685,7 +685,7 @@ export function EditorContent({
     if (!fc) {
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-          {translate('auto.components.editor.EditorContent.37a0e81fa6', 'Loading preview...')}
+          {translate('auto.components.editor.EditorContent.37a0e81fa6', 'Loading preview…')}
         </div>
       )
     }
@@ -732,7 +732,7 @@ export function EditorContent({
     if (!fc) {
       return (
         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-          {translate('auto.components.editor.EditorContent.b2735221f5', 'Loading...')}
+          {translate('auto.components.editor.EditorContent.b2735221f5', 'Loading…')}
         </div>
       )
     }
@@ -754,7 +754,7 @@ export function EditorContent({
         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
           {translate(
             'auto.components.editor.EditorContent.b9de81ba52',
-            'Binary file — cannot display'
+            'Binary file: cannot display'
           )}
         </div>
       )
@@ -845,7 +845,7 @@ export function EditorContent({
   if (!dc) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-        {translate('auto.components.editor.EditorContent.c88c73a0d3', 'Loading diff...')}
+        {translate('auto.components.editor.EditorContent.c88c73a0d3', 'Loading diff…')}
       </div>
     )
   }
@@ -976,8 +976,8 @@ function FrontMatterBanner({ raw }: { raw: string }): React.JSX.Element {
 
   return (
     <div className="border-b border-border/60 bg-muted/40 px-3 py-2">
-      <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {translate('auto.components.editor.EditorContent.e4b074749d', 'Front Matter')}
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+        {translate('auto.components.editor.EditorContent.e4b074749d', 'Front matter')}
         <span className="ml-2 font-normal normal-case tracking-normal opacity-70">
           {translate('auto.components.editor.EditorContent.56dba34e1a', '(edit in source mode)')}
         </span>

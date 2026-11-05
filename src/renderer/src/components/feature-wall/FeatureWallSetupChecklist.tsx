@@ -59,8 +59,8 @@ function SetupStepRow(props: {
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         isEmbedded
           ? cn(
-              'rounded-lg px-3 py-2',
-              active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent'
+              'rounded-md px-3 py-2',
+              active ? 'bg-foreground/[0.07] text-foreground' : 'hover:bg-foreground/[0.05]'
             )
           : cn(
               'rounded-md border px-3 py-2.5',
@@ -70,9 +70,6 @@ function SetupStepRow(props: {
             )
       )}
     >
-      {active ? (
-        <span className="absolute bottom-2 left-0 top-2 w-0.5 rounded-full bg-foreground" />
-      ) : null}
       <span
         className={cn(
           'flex size-5 shrink-0 items-center justify-center rounded-full border',

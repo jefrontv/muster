@@ -88,7 +88,7 @@ describe('tab create entry classification', () => {
       classifyTabEntryQuery('example.com', { files: [], loading: true, loadError: null })
     ).toEqual({
       kind: 'blocked',
-      message: 'Loading files...'
+      message: 'Loading files…'
     })
     expect(
       classifyTabEntryQuery('https://example.com', { files: [], loading: true, loadError: null })

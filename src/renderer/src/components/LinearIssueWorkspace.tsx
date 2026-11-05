@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- Why: the Linear issue page co-locates the
    full-page layout with its hydration/comment state so the selected issue
    surface stays coherent with the existing Linear drawer behavior. */
+import { Input } from '@/components/ui/input'
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: Linear issue hydration and comments are loaded from provider IPC for the selected issue while preserving edit guards. */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -257,7 +258,7 @@ function LinearIssueSubIssueButton({
               type="button"
               onClick={() => void handleOpenSubIssue(subIssue)}
               disabled={openingSubIssueId !== null}
-              className="flex min-h-8 w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex min-h-8 w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span className="shrink-0 font-mono text-xs">{subIssue.identifier}</span>
               <span className="min-w-0 flex-1 truncate">{subIssue.title}</span>
@@ -275,7 +276,7 @@ function LinearIssueSubIssueButton({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-9 items-center gap-2 rounded-md px-1 text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="flex h-9 items-center gap-2 rounded-md px-1 text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Plus className="size-4" />
             <span>
@@ -285,7 +286,7 @@ function LinearIssueSubIssueButton({
         </PopoverTrigger>
         <PopoverContent className="w-80 p-3" align="start">
           <div className="space-y-3">
-            <input
+            <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               onKeyDown={(event) => {
@@ -298,7 +299,7 @@ function LinearIssueSubIssueButton({
                 'auto.components.LinearIssueWorkspace.c182e02de5',
                 'Sub-issue title'
               )}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="h-9 text-sm"
             />
             <div className="flex justify-end">
               <Button
@@ -432,7 +433,7 @@ function LinearIssueSidebarProjectCard({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="m-3 flex min-h-9 w-[calc(100%-1.5rem)] items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="m-3 flex min-h-9 w-[calc(100%-1.5rem)] items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <FolderKanban className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">
@@ -444,14 +445,14 @@ function LinearIssueSidebarProjectCard({
         </PopoverTrigger>
         <PopoverContent className="w-72 p-2" align="start">
           <div className="space-y-2">
-            <input
+            <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={translate(
                 'auto.components.LinearIssueWorkspace.db3f269d98',
                 'Search projects'
               )}
-              className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="h-8 text-sm"
             />
             <div className="max-h-64 overflow-y-auto scrollbar-sleek">
               {loading ? (
@@ -466,7 +467,7 @@ function LinearIssueSidebarProjectCard({
                     type="button"
                     onClick={() => void handleSelectProject(project)}
                     disabled={savingProjectId !== null}
-                    className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-70"
+                    className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-70"
                   >
                     <span
                       className="size-2 shrink-0 rounded-full bg-muted"
@@ -965,7 +966,7 @@ export default function LinearIssueWorkspace({
                         <button
                           type="button"
                           onClick={item.action}
-                          className="flex min-h-9 w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          className="flex min-h-9 w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <Icon className="size-4 shrink-0" />
                           <span className="truncate">{item.label}</span>

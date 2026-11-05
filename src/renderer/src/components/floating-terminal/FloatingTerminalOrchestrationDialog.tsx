@@ -91,7 +91,7 @@ export function FloatingTerminalOrchestrationDialog({
               <IntegrationStatusPill tone="neutral">
                 {translate(
                   'auto.components.floating.terminal.FloatingTerminalOrchestrationDialog.dfd021ce46',
-                  'Checking...'
+                  'Checking…'
                 )}
               </IntegrationStatusPill>
             ) : orchestrationSkillDetected ? (

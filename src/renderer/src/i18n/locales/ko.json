@@ -1077,7 +1077,9 @@
         "ec43b38ba7": "GitHub에 별표 표시됨",
         "157bb5ecbb": "GitHub 열기",
         "preflightDismiss": "닫기",
-        "addNewSite": "Add new site"
+        "addNewSite": "Add new site",
+        "previousWorkspace": "Previous workspace",
+        "nextWorkspace": "Next workspace"
       },
       "LinearIssueMarkdownDescriptionEditor": {
         "d9c47069ef": "Markdown",
@@ -2320,7 +2322,8 @@
             "767951265d": "작업 트리를 만드는 중에 문제가 발생했습니다.",
             "vmProvisioningTitle": "VM 프로비저닝",
             "cancelProvisioning": "취소",
-            "vmProvisioningLogEmpty": "레시피 출력을 기다리는 중…"
+            "vmProvisioningLogEmpty": "레시피 출력을 기다리는 중…",
+            "copyDetails": "Copy details"
           }
         }
       },
@@ -3116,7 +3119,8 @@
             "chipWeek": "Week",
             "chipMonth": "Month",
             "resetBadgeOne": "사용량 재설정 1회 사용 가능",
-            "resetBadgeMany": "사용량 재설정 {{value0}}회 사용 가능"
+            "resetBadgeMany": "사용량 재설정 {{value0}}회 사용 가능",
+            "usedSuffix": "used"
           },
           "StatusBarUsageEmptyCta": {
             "828c764a79": "계정 연결",
@@ -4389,7 +4393,8 @@
           "hostDisconnected": "연결 끊김",
           "failedNestWorkspace": "워크스페이스를 중첩하지 못했습니다",
           "sidebarRowMissing": "대상이 더 이상 존재하지 않습니다",
-          "failedUnnestWorkspace": "워크트리 펼치기 실패"
+          "failedUnnestWorkspace": "워크트리 펼치기 실패",
+          "groupDeleteRetry": "Try again"
         },
         "WorktreeMetaDialog": {
           "3db0a2a593": "취소",
@@ -5319,7 +5324,9 @@
           "b4c167764d": "파일에서 {{value0}}개의 쿠키를 {{value1}}에 가져왔습니다.",
           "a3f8c2d1e0b4": "{{value1}} ({{value2}})에서 {{value0}}개의 쿠키를 {{value3}}(으)로 가져왔습니다.",
           "b4e9d3f2a1c5": "{{value1}}에서 {{value0}}개의 쿠키를 {{value2}}(으)로 가져왔습니다.",
-          "c5a273a809": "{{value0}}에서"
+          "c5a273a809": "{{value0}}에서",
+          "clearCookies": "Clear default cookies",
+          "removeProfile": "Remove profile"
         },
         "CliSkillRuntimeSetup": {
           "04325573f8": "WSL",
@@ -6472,7 +6479,11 @@
           "setupGuideTitle": "Setup guide",
           "setupGuideDescription": "Finish the setup that makes Muster useful for your day-to-day work.",
           "extensionsTitle": "Extensions",
-          "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use."
+          "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use.",
+          "navGroupApp": "App",
+          "navGroupAgents": "Agents",
+          "navGroupWorkspaces": "Workspaces",
+          "navGroupIntegrations": "Integrations"
         },
         "SettingsFormControls": {
           "42a4d15a30": "일치하는 글꼴이 없습니다.",
@@ -6764,7 +6775,9 @@
         "TerminalFontSizeSetting": {
           "9b5252c85a": "px",
           "0f4c92e595": "새 창 및 라이브 업데이트의 기본 terminal 글꼴 크기입니다.",
-          "a4a352b1e9": "글꼴 크기"
+          "a4a352b1e9": "글꼴 크기",
+          "decrease": "Smaller font",
+          "increase": "Larger font"
         },
         "TerminalPane": {
           "4263e940e0": "JIS 엔(¥) 키를 누르면 대신 백슬래시(\\\\)가 전송됩니다.",
@@ -6967,7 +6980,9 @@
           "605a35d600": "Not applied by the terminal renderer yet — xterm.js has no bold color slot. A saved value is preserved."
         },
         "UIZoomControl": {
-          "c2c64b24d0": "재설정"
+          "c2c64b24d0": "재설정",
+          "zoomOut": "Zoom out",
+          "zoomIn": "Zoom in"
         },
         "VoicePane": {
           "68de13f72c": "모델을 삭제하지 못했습니다.",
@@ -9464,7 +9479,9 @@
           "custom": "Custom icon color"
         },
         "TerminalZoomControl": {
-          "reset": "Reset"
+          "reset": "Reset",
+          "zoomOut": "Zoom out",
+          "zoomIn": "Zoom in"
         },
         "extensions": {
           "tab_tools": "Tools",
@@ -9544,6 +9561,11 @@
           "save": "Save",
           "remove": "Remove",
           "placeholder": "ak_…"
+        },
+        "SettingsProjectsNav": {
+          "filter": "Filter projects",
+          "clearFilter": "Clear filter",
+          "showAll": "Show all {{value0}}"
         }
       },
       "right": {
@@ -9551,7 +9573,8 @@
           "BulkActionBar": {
             "79a9f5f712": "언스테이지(",
             "ef5f5bd06e": "스테이지에 올리기 (",
-            "60ed678138": "선택됨"
+            "60ed678138": "선택됨",
+            "clearSelection": "Clear selection"
           },
           "ChecksPanel": {
             "2ef90c9819": "실패한 검사에 대한 AI agent를 시작했습니다.",
@@ -10578,7 +10601,7 @@
               "undo": {
                 "commit": {
                   "confirm_title": "푸시된 Commit을 실행 취소할까요?",
-                  "confirm_description": "이 Commit은 이미 {{value0}}에 있습니다. 실행 취소는 로컬 브랜치만 변경하며, 다음 푸시에는 Force Push가 필요합니다.",
+                  "confirm_description": "이 Commit은 이미 {{value0}}에 있습니다. 실행 취소는 로컬 브랜치만 변경하며, 다음 푸시에는 Force push가 필요합니다.",
                   "confirm_label": "Commit 실행 취소",
                   "remote_fallback": "원격"
                 }
@@ -10607,7 +10630,7 @@
                   "ready": "마지막 Commit을 스테이지된 변경 사항과 이 메시지로 바꿉니다",
                   "load_message": "마지막 Commit 메시지를 불러와 편집한 뒤 수정합니다",
                   "confirm_title": "이미 Push된 Commit을 수정할까요?",
-                  "confirm_description": "이 Commit은 이미 {{value0}}에 있습니다. 수정하면 로컬 브랜치만 바뀌며, 다음 Push에는 Force Push가 필요합니다.",
+                  "confirm_description": "이 Commit은 이미 {{value0}}에 있습니다. 수정하면 로컬 브랜치만 바뀌며, 다음 Push에는 Force push가 필요합니다.",
                   "confirm_label": "Commit 수정",
                   "load_failed": "마지막 Commit 메시지를 불러오지 못했습니다"
                 }
@@ -11225,7 +11248,8 @@
           "windowsTerminalSubtitle": "Choose the default shell for new panes, and how right-click behaves.",
           "agentSubtitleChat": "Muster works with every CLI agent. Your chat threads will run on the one you pick here. Switch any time.",
           "siteMcpTitle": "Tools for your agents",
-          "siteMcpSubtitle": "Let your agents deploy, import and query site databases."
+          "siteMcpSubtitle": "Let your agents deploy, import and query site databases.",
+          "defaultViewSubtitleWithBots": "Chat is a conversation desk. Code is worktrees and terminals. Bots run tasks across your apps. Switch any time from the sidebar."
         },
         "welcome": {
           "eyebrow": "Welcome to",
@@ -11238,7 +11262,10 @@
           "chatDescription": "A conversation desk. Threads, projects, and agents in one place.",
           "code": "Code Mode",
           "codeHint": "Build first",
-          "codeDescription": "Worktrees, terminals, and the classic IDE layout."
+          "codeDescription": "Worktrees, terminals, and the classic IDE layout.",
+          "bots": "Bots mode",
+          "botsHint": "Delegate first",
+          "botsDescription": "Assistants that connect to your apps and run tasks for you."
         },
         "OnboardingFooter": {
           "ba58547306": "뒤로",
@@ -11246,7 +11273,8 @@
           "done": "완료",
           "skipToWorkspaceSetup": "Skip to workspace setup",
           "addProject": "Add a project instead",
-          "skipToSiteSetup": "Skip to site setup"
+          "skipToSiteSetup": "Skip to site setup",
+          "skipToBots": "Skip to Bots"
         },
         "OnboardingInlineCommandTerminal": {
           "4123609efd": "terminal 시작 중..."
@@ -11361,7 +11389,9 @@
         },
         "finish": {
           "firstSite": "Set up your first site",
-          "openingNewSite": "Opening New site..."
+          "openingNewSite": "Opening New site...",
+          "openingNewWorkspace": "Opening new workspace…",
+          "openingBots": "Opening Bots…"
         },
         "RecommendedTools": {
           "title": "Recommended tools",
@@ -13023,7 +13053,12 @@
             "756bfc25c9": "열기",
             "09a9489aa5": "표시",
             "2a4c4b8e1f": "복사",
-            "b41f0c7d92": "Close browser devtools"
+            "b41f0c7d92": "Close browser devtools",
+            "navBack": "Back",
+            "navForward": "Forward",
+            "navReload": "Reload",
+            "navStop": "Stop loading",
+            "navRetry": "Try again"
           },
           "BrowserToolbarMenu": {
             "429ef481f9": "취소",
@@ -13064,7 +13099,8 @@
             "9c6ce0632a": "선택한 요소 스크린샷",
             "50f7114f99": "첨부하기 전에 리뷰하세요. 캡처된 페이지 컨텍스트에는 눈에 보이는 사이트 콘텐츠가 포함될 수 있습니다.",
             "f3575229df": "가져오기",
-            "405bb315da": "제목 없음"
+            "405bb315da": "제목 없음",
+            "close": "Close"
           },
           "browser": {
             "address": {
@@ -13759,7 +13795,7 @@
                 },
                 "reconnect": "구성원을 관리하려면 프로필을 다시 연결하세요.",
                 "unconfigured": "이 빌드에서 조직 관리를 사용할 수 없습니다.",
-                "failed": "문제가 발생했습니다. 다시 시도해 주세요."
+                "failed": "The members change didn't go through: {{value0}}"
               },
               "subtitle": {
                 "named": "{{orgName}}에서 Muster에 협업할 수 있는 사람들.",
@@ -13921,7 +13957,9 @@
           "emptyTitle": "No sites yet.",
           "emptyNewSite": "New site from a repository",
           "emptyFolders": "Choose site folders",
-          "emptyLink": "Or open a site link from Central."
+          "emptyLink": "Or open a site link from Central.",
+          "backToList": "All sites",
+          "escKey": "Esc"
         },
         "SiteRunConsole": {
           "confirmTitle": "Confirm target",
@@ -14342,6 +14380,11 @@
           "configureSite": "Changing site settings",
           "importSiteConfig": "Importing site settings",
           "setUpLocalSite": "Setting up local sites"
+        },
+        "SiteStackDetectionNotice": {
+          "failed": "Couldn't check the Local site.",
+          "slow": "Still checking the Local site…",
+          "retry": "Retry"
         }
       },
       "activecollab": {
@@ -14898,7 +14941,13 @@
           "missing": "Muster Bots is not included in this build",
           "missingDetail": "In a development checkout, run pnpm fetch:muster-bots and reopen this tab.",
           "failed": "Muster Bots stopped",
-          "restart": "Restart"
+          "restart": "Restart",
+          "missingReleaseDetail": "Install the latest Muster release to get it.",
+          "getLatest": "Get the latest Muster",
+          "errorCopied": "Error copied",
+          "openLogFailed": "Couldn't open the log",
+          "copyError": "Copy error",
+          "openLog": "Open log"
         },
         "BotsIntro": {
           "jobTitle": "Give each bot a job",

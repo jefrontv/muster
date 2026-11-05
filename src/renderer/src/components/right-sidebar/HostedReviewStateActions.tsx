@@ -7,7 +7,9 @@ export function HostedReviewActionError({
 }: {
   message: string | null
 }): React.JSX.Element | null {
-  return message ? <div className="text-[10px] text-rose-500 break-words">{message}</div> : null
+  return message ? (
+    <div className="text-[11px] text-status-danger break-words">{message}</div>
+  ) : null
 }
 
 export function ClosedReviewActions({
@@ -37,10 +39,7 @@ export function ClosedReviewActions({
           <CircleDot className="size-3.5" />
         )}
         {stateUpdating === 'open'
-          ? translate(
-              'auto.components.right.sidebar.HostedReviewActions.6645ac7dd1',
-              'Reopening...'
-            )
+          ? translate('auto.components.right.sidebar.HostedReviewActions.6645ac7dd1', 'Reopening…')
           : translate(
               'auto.components.right.sidebar.HostedReviewActions.3ce211ece6',
               'Reopen {{value0}}',
@@ -76,10 +75,10 @@ export function MergedReviewActions({
         <Trash2 className="size-3.5" />
       )}
       {isDeletingWorktree
-        ? translate('auto.components.right.sidebar.HostedReviewActions.eefd50457e', 'Deleting...')
+        ? translate('auto.components.right.sidebar.HostedReviewActions.eefd50457e', 'Deleting…')
         : translate(
             'auto.components.right.sidebar.HostedReviewActions.e4aca40024',
-            'Delete Workspace'
+            'Delete workspace'
           )}
     </Button>
   )

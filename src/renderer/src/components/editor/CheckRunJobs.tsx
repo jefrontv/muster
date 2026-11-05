@@ -13,7 +13,7 @@ function StepOutcomeIcon({ outcome }: { outcome: StepOutcome }): React.JSX.Eleme
     case 'failure':
       return <XCircle className="size-3.5 shrink-0 text-destructive" />
     case 'skipped':
-      return <MinusCircle className="size-3.5 shrink-0 text-muted-foreground/60" />
+      return <MinusCircle className="size-3.5 shrink-0 text-muted-foreground" />
     case 'pending':
       return <CircleDashed className="size-3.5 shrink-0 text-muted-foreground" />
   }

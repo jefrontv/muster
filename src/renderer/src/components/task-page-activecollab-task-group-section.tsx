@@ -1,4 +1,5 @@
 import React from 'react'
+import { Badge } from '@/components/ui/badge'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -72,18 +73,15 @@ export function ActiveCollabTaskGroupSection({
             aria-controls={listId}
             aria-expanded={!collapsed}
             onClick={() => onToggleCollapsed(group.projectId)}
-            className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left uppercase tracking-[inherit] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+            className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left uppercase tracking-[inherit] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           >
             <span className="min-w-0 truncate">{group.projectName}</span>
             {/* The count survives collapse — hiding the size of what you just folded away is the one
                 thing that would make collapsing worse than scrolling. */}
             <span className="flex shrink-0 items-center gap-1.5">
-              <span
-                aria-hidden="true"
-                className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] tabular-nums"
-              >
+              <Badge variant="muted" aria-hidden="true" className="text-2xs tabular-nums">
                 {group.tasks.length}
-              </span>
+              </Badge>
               <ChevronDown
                 aria-hidden="true"
                 className={cn('size-3.5 transition-transform', collapsed && '-rotate-90')}

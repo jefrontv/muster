@@ -181,7 +181,7 @@ function ErrorMessage({
   )
   const staleRefreshLabel = translate(
     'auto.components.status.bar.tooltip.a9a318b7a3',
-    'Refresh failed — showing cached data'
+    'Refresh failed: showing cached data'
   )
   const resolvedLabel =
     stale && (!label || label === genericRefreshLabel)
@@ -257,9 +257,9 @@ export function barColor(usedPct: number): string {
     return 'bg-muted-foreground/40'
   }
   if (usedPct < 80) {
-    return 'bg-yellow-500'
+    return 'bg-status-attention'
   }
-  return 'bg-red-500'
+  return 'bg-status-danger'
 }
 
 export function ProviderPanel({

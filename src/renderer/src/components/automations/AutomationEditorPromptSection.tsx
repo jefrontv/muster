@@ -4,6 +4,7 @@ import { translate } from '@/i18n/i18n'
 import { Field } from './automation-page-parts'
 import { AutomationPrecheckFields } from './AutomationPrecheckFields'
 import type { AutomationDraft } from './AutomationEditorDialog'
+import { Textarea } from '@/components/ui/textarea'
 
 type AutomationEditorPromptSectionProps = {
   draft: AutomationDraft
@@ -28,7 +29,7 @@ export function AutomationEditorPromptSection({
       <Field
         label={translate('auto.components.automations.AutomationEditorDialog.058c23cb3f', 'Prompt')}
       >
-        <textarea
+        <Textarea
           value={draft.prompt}
           placeholder={translate(
             'auto.components.automations.AutomationEditorDialog.6d778190b7',
@@ -37,7 +38,7 @@ export function AutomationEditorPromptSection({
           onChange={(event) =>
             onDraftChange((current) => ({ ...current, prompt: event.target.value }))
           }
-          className="min-h-[260px] w-full resize-none rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="min-h-[260px] resize-none"
         />
         <p className="mt-1 text-xs text-muted-foreground">
           {translate(

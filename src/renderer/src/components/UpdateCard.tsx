@@ -327,7 +327,7 @@ export function UpdateCard() {
       ? isHttp2UpdateError
         ? {
             variant: 'http1Compatibility',
-            title: translate('auto.components.UpdateCard.1339b82cee', 'HTTP/2 Download Blocked'),
+            title: translate('auto.components.UpdateCard.1339b82cee', 'HTTP/2 download blocked'),
             summary: 'Muster can retry through HTTP/1.1 compatibility mode.',
             explainer: translate(
               'auto.components.UpdateCard.90559b14e3',
@@ -336,7 +336,7 @@ export function UpdateCard() {
             detail: compatibilitySetupError ?? status.message,
             releaseUrl: releaseUrlForVersion(cachedVersion),
             primaryAction: {
-              label: translate('auto.components.UpdateCard.933c6fdf5b', 'Enable & Restart'),
+              label: translate('auto.components.UpdateCard.933c6fdf5b', 'Enable & restart'),
               pendingLabel: 'Restarting...',
               isPending: compatibilityRelaunching,
               onClick: handleEnableHttp1Compatibility
@@ -346,7 +346,7 @@ export function UpdateCard() {
           ? {
               // Security stop: installer signed by the wrong publisher — no retry, only a verified-download path.
               variant: 'security',
-              title: translate('auto.components.UpdateCard.5b309b19f3', "Update Wasn't Installed"),
+              title: translate('auto.components.UpdateCard.5b309b19f3', "Update wasn't installed"),
               summary: translate(
                 'auto.components.UpdateCard.092f09fc14',
                 "The installer's publisher doesn't match Muster, so we stopped the update. Don't install this download; check official releases for a corrected version."
@@ -363,16 +363,16 @@ export function UpdateCard() {
             ? {
                 title: translate(
                   'auto.components.UpdateCard.e944c2de43',
-                  'Update Verification Blocked'
+                  'Update verification blocked'
                 ),
                 summary: translate(
                   'auto.components.UpdateCard.a05992a26b',
-                  "The signature check couldn't run — usually because antivirus software blocked it. Retry the download, or get the installer from our official releases."
+                  "The signature check couldn't run, usually because antivirus software blocked it. Retry the download, or get the installer from our official releases."
                 ),
                 detail: status.message,
                 releaseUrl: releaseUrlForVersion(cachedVersion),
                 primaryAction: {
-                  label: translate('auto.components.UpdateCard.48565a32bc', 'Retry Download'),
+                  label: translate('auto.components.UpdateCard.48565a32bc', 'Retry download'),
                   onClick: handleUpdate
                 }
               }
@@ -387,7 +387,7 @@ export function UpdateCard() {
                 // Why: check-time failures are often transient, so offer a Re-check instead of forcing manual download.
                 primaryAction: cachedVersion
                   ? {
-                      label: translate('auto.components.UpdateCard.48565a32bc', 'Retry Download'),
+                      label: translate('auto.components.UpdateCard.48565a32bc', 'Retry download'),
                       onClick: handleUpdate
                     }
                   : {
@@ -399,12 +399,12 @@ export function UpdateCard() {
               }
       : installError
         ? {
-            title: translate('auto.components.UpdateCard.4cf109845a', 'Update Error'),
+            title: translate('auto.components.UpdateCard.4cf109845a', 'Update error'),
             summary: 'Could not restart to install the update.',
             detail: installError,
             releaseUrl: releaseUrlForVersion(cachedVersion),
             primaryAction: {
-              label: translate('auto.components.UpdateCard.2c2d3e03ca', 'Try Again'),
+              label: translate('auto.components.UpdateCard.2c2d3e03ca', 'Try again'),
               onClick: handleInstallRetry
             }
           }
@@ -490,7 +490,7 @@ export function UpdateCard() {
       return (
         <CompactCardContent
           icon="spinner"
-          text={translate('auto.components.UpdateCard.ba5ffc949c', 'Checking for updates...')}
+          text={translate('auto.components.UpdateCard.ba5ffc949c', 'Checking for updates…')}
         />
       )
     }
@@ -529,7 +529,7 @@ export function UpdateCard() {
         return (
           <div className="p-4">
             <p className="text-sm">
-              {translate('auto.components.UpdateCard.09a55c39b5', 'Installing...')}
+              {translate('auto.components.UpdateCard.09a55c39b5', 'Installing…')}
             </p>
           </div>
         )
@@ -696,7 +696,7 @@ function RichCardContent({
           {!mediaLoaded && (
             // Shimmer placeholder while image loads
             <div
-              className="w-full bg-muted/50 animate-pulse rounded-md"
+              className="w-full bg-foreground/[0.07] animate-pulse rounded-md"
               style={{ aspectRatio: '16/9' }}
             />
           )}
@@ -758,7 +758,7 @@ function SimpleCardContent({
     <div className="flex flex-col gap-2.5 p-3.5">
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold">
-          {translate('auto.components.UpdateCard.9abc59f814', 'Update Available')}
+          {translate('auto.components.UpdateCard.9abc59f814', 'Update available')}
         </h3>
         <Button
           variant="ghost"
@@ -836,7 +836,7 @@ function DownloadingContent({
           </h3>
         ) : (
           <h3 className="text-sm font-semibold">
-            {translate('auto.components.UpdateCard.558842597d', 'Downloading Update')}
+            {translate('auto.components.UpdateCard.558842597d', 'Downloading update')}
           </h3>
         )}
         <Button
@@ -854,7 +854,7 @@ function DownloadingContent({
         <div className="relative overflow-hidden rounded-md">
           {!mediaLoaded && (
             <div
-              className="w-full bg-muted/50 animate-pulse rounded-md"
+              className="w-full bg-foreground/[0.07] animate-pulse rounded-md"
               style={{ aspectRatio: '16/9' }}
             />
           )}
@@ -897,7 +897,7 @@ function DownloadingContent({
       <div className="flex flex-col gap-2 mt-1">
         <Progress value={percent} className="h-1.5" />
         <p className="text-xs text-muted-foreground">
-          {translate('auto.components.UpdateCard.6e45bfa2e0', 'Downloading...')} {percent}%
+          {translate('auto.components.UpdateCard.6e45bfa2e0', 'Downloading…')} {percent}%
         </p>
       </div>
     </div>
@@ -1028,7 +1028,7 @@ function ErrorCardContent({
           onClick={() => void window.api.shell.openUrl(releaseUrl)}
           className="flex-1"
         >
-          {manualLabel ?? translate('auto.components.UpdateCard.47126bcf57', 'Download Manually')}
+          {manualLabel ?? translate('auto.components.UpdateCard.47126bcf57', 'Download manually')}
         </Button>
       </div>
     </div>
@@ -1050,7 +1050,7 @@ function ReadyToInstallContent({
     <div className="flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold">
-          {translate('auto.components.UpdateCard.17412483da', 'Ready to Install')}
+          {translate('auto.components.UpdateCard.17412483da', 'Ready to install')}
         </h3>
         <Button
           variant="ghost"
@@ -1072,7 +1072,7 @@ function ReadyToInstallContent({
       </p>
 
       <Button variant="default" size="sm" onClick={onRestart} className="w-full">
-        {translate('auto.components.UpdateCard.68b235d264', 'Restart to Update')}
+        {translate('auto.components.UpdateCard.68b235d264', 'Restart to update')}
       </Button>
     </div>
   )

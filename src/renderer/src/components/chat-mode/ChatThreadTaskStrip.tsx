@@ -109,7 +109,7 @@ export function ChatThreadTaskStrip({
             disabled={writing}
             onClick={() => void toggleCompleted()}
             className={cn(
-              'flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-50',
+              'flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50',
               task.isCompleted
                 ? 'border-primary bg-primary text-primary-foreground'
                 : // Ghost check on hover — same affordance as the Tasks pane header.
@@ -128,8 +128,8 @@ export function ChatThreadTaskStrip({
       <button
         type="button"
         onClick={openInTasks}
-        title={translate('auto.components.chat.taskStrip.openInTasks', 'Open in Tasks')}
-        className="group flex min-w-0 items-center gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        title={translate('auto.components.chat.taskStrip.openInTasks', 'Open in tasks')}
+        className="group flex min-w-0 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <ActiveCollabIcon className="size-3.5 shrink-0 text-muted-foreground" />
         <span
@@ -153,7 +153,7 @@ export function ChatThreadTaskStrip({
           <span
             className={cn(
               'flex items-center gap-1 tabular-nums',
-              overdue && 'text-amber-700 dark:text-amber-300'
+              overdue && 'text-status-attention'
             )}
           >
             <Calendar className="size-3" />

@@ -120,10 +120,7 @@ export function MarkupDrawButton({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <Badge
-                variant="secondary"
-                className="h-5 shrink-0 px-1.5 text-[10px] font-semibold tracking-wider uppercase"
-              >
+              <Badge variant="secondary" className="shrink-0">
                 {translate('auto.components.browser-pane.markup.drawHintBadge', 'New')}
               </Badge>
               <div className="text-sm font-medium text-foreground">{label}</div>
@@ -148,7 +145,7 @@ export function MarkupDrawButton({
             <button
               type="button"
               onClick={dismissHint}
-              className="rounded-sm text-xs text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+              className="rounded-md text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               {translate('auto.components.browser-pane.markup.drawHintDismiss', 'Got it')}
             </button>

@@ -68,6 +68,7 @@ import {
   resolveWorktreeScanCacheTtlMs,
   type RuntimeTerminalAgentStatusEvent
 } from './orca-runtime'
+import { BULK_WORKTREE_SCAN_REUSE_MS } from '../git/worktree-scan-reuse'
 import { RecentPtyOutputBuffer } from './recent-pty-output-buffer'
 import { HeadlessEmulator } from '../daemon/headless-emulator'
 import {
@@ -3572,6 +3573,56 @@ describe('OrcaRuntimeService', () => {
         }
       ]
     })
+  })
+
+  it('caps concurrent worktree scans when resolving every repo', async () => {
+    const repos = Array.from({ length: 20 }, (_, index) => ({
+      id: `cap-repo-${index}`,
+      path: `/tmp/cap-repo-${index}`,
+      displayName: `cap ${index}`,
+      badgeColor: 'blue',
+      addedAt: 1
+    }))
+    let inFlight = 0
+    let maxInFlight = 0
+    vi.mocked(listWorktrees).mockImplementation(async (repoPath: string) => {
+      inFlight += 1
+      maxInFlight = Math.max(maxInFlight, inFlight)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      inFlight -= 1
+      return [
+        {
+          path: repoPath,
+          head: 'abc',
+          branch: 'refs/heads/main',
+          isBare: false,
+          isMainWorktree: true
+        }
+      ]
+    })
+    const metaById: Record<string, WorktreeMeta> = {}
+    const runtimeStore = {
+      ...store,
+      getRepos: () => repos,
+      getRepo: (id: string) => repos.find((repo) => repo.id === id),
+      getAllWorktreeMeta: () => metaById,
+      getWorktreeMeta: (worktreeId: string) => metaById[worktreeId],
+      setWorktreeMeta: (worktreeId: string, meta: Partial<WorktreeMeta>) => {
+        metaById[worktreeId] = { ...makeWorktreeMeta(), ...metaById[worktreeId], ...meta }
+        return metaById[worktreeId]
+      }
+    }
+    try {
+      const runtime = new OrcaRuntimeService(runtimeStore as never)
+      const listed = await runtime.listManagedWorktrees(undefined, 100)
+
+      expect(listed.totalCount).toBe(20)
+      expect(maxInFlight).toBeLessThanOrEqual(8)
+      expect(maxInFlight).toBeGreaterThan(1)
+    } finally {
+      vi.mocked(listWorktrees).mockReset()
+      vi.mocked(listWorktrees).mockResolvedValue(MOCK_GIT_WORKTREES)
+    }
   })
 
   it('does not interpret active as a runtime-global worktree selector', async () => {
@@ -31965,7 +32016,9 @@ describe('OrcaRuntimeService', () => {
     await runtime.listDetectedManagedWorktrees('id:repo-a')
 
     expect(listWorktrees).toHaveBeenCalledTimes(3)
-    expect(listWorktrees).toHaveBeenNthCalledWith(3, '/tmp/repo-a')
+    expect(listWorktrees).toHaveBeenNthCalledWith(3, '/tmp/repo-a', {
+      reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+    })
   })
 
   it('worktree scan cache: metadata invalidation preserves raw scans', async () => {
@@ -32011,7 +32064,9 @@ describe('OrcaRuntimeService', () => {
       await runtime.listDetectedManagedWorktrees('id:repo-b')
 
       expect(listWorktrees).toHaveBeenCalledTimes(3)
-      expect(listWorktrees).toHaveBeenNthCalledWith(3, '/tmp/repo-a')
+      expect(listWorktrees).toHaveBeenNthCalledWith(3, '/tmp/repo-a', {
+        reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+      })
     } finally {
       vi.useRealTimers()
     }
@@ -37179,7 +37234,10 @@ describe('OrcaRuntimeService', () => {
 
     await runtime.removeManagedWorktree(requestedWorktreeId)
 
-    expect(listWorktrees).toHaveBeenCalledWith(repo.path, { wslDistro: 'Ubuntu' })
+    expect(listWorktrees).toHaveBeenCalledWith(repo.path, {
+      wslDistro: 'Ubuntu',
+      reuseRecentScanMs: BULK_WORKTREE_SCAN_REUSE_MS
+    })
     expect(listWorktreesStrict).toHaveBeenCalledWith(repo.path, { wslDistro: 'Ubuntu' })
     expect(assertWorktreeCleanForRemoval).toHaveBeenCalledWith(registeredWorktree.path, false, {
       wslDistro: 'Ubuntu'

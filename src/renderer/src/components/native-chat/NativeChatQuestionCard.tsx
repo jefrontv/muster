@@ -96,7 +96,7 @@ export function NativeChatQuestionCard({
               type="button"
               onClick={onCancel}
               aria-label={translate('components.native-chat.question.cancel', 'Cancel')}
-              className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.07] hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="size-4" />
             </button>
@@ -135,7 +135,7 @@ export function NativeChatQuestionCard({
                   'components.native-chat.question.otherPlaceholder',
                   'Type your answer'
                 )}
-                className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-default disabled:opacity-50"
+                className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-default disabled:opacity-50"
               />
               <button
                 type="button"

@@ -114,12 +114,12 @@ describe('CommitArea tooltips', () => {
 
   it('points to settings with the house separator', () => {
     const markup = renderToStaticMarkup(<CommitArea {...props()} aiAgentConfigured={false} />)
-    expect(markup).toContain('Pick an agent in Settings &gt; Git &gt; Source Control AI.')
+    expect(markup).toContain('Pick an agent in Settings &gt; Git &gt; Source control AI.')
   })
 
   it('shows disabled reasons inline on dropdown rows', () => {
     const markup = renderToStaticMarkup(<CommitArea {...props()} />)
-    const syncRow = menuItems(markup).find((item) => item.includes('Commit &amp; Sync'))
+    const syncRow = menuItems(markup).find((item) => item.includes('Commit &amp; sync'))
     expect(syncRow).toBeDefined()
     expect(syncRow).toContain('data-disabled="true"')
     expect(syncRow).toContain('Publish the branch first to sync commits')

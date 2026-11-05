@@ -97,7 +97,7 @@ export function WorkspaceCombobox({
             ref={setInputNode}
             placeholder={translate(
               'auto.components.automations.WorkspaceCombobox.8e9c8cc6b5',
-              'Search workspaces...'
+              'Search workspaces…'
             )}
           />
           <CommandList className="max-h-72">

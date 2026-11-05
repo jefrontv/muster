@@ -88,7 +88,7 @@ function Popover(props: {
       className={cn(
         'absolute z-10 flex flex-col gap-[7px] rounded-[10px] border bg-card px-3 py-2.5 not-italic',
         'border-border text-foreground',
-        'shadow-[0_16px_38px_rgba(24,24,27,0.18),0_2px_6px_rgba(24,24,27,0.08)]'
+        'shadow-floating'
       )}
       style={{ left: 40, bottom: 70, width: 320 }}
     >
@@ -99,7 +99,7 @@ function Popover(props: {
           </span>
         </span>
         <div>
-          <div className="text-[13.5px] font-bold leading-[1.1]">
+          <div className="text-[13px] font-semibold leading-[1.1]">
             {translate(
               'auto.components.feature.wall.agents.orchestration.UsagePage.6a4b1d3c38',
               'Codex'
@@ -162,7 +162,7 @@ function Popover(props: {
       <div className="text-[11px] font-semibold">
         {translate(
           'auto.components.feature.wall.agents.orchestration.UsagePage.277a9c65a9',
-          'Codex Account'
+          'Codex account'
         )}
       </div>
       <div className="flex items-center justify-between text-[11px]">
@@ -192,7 +192,7 @@ function Popover(props: {
         )}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <div className="pb-1 pt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
             {translate(
               'auto.components.feature.wall.agents.orchestration.UsagePage.be5a165875',
               'Switch to'
@@ -267,14 +267,14 @@ function SwitchAccount(props: {
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-2.5 rounded-md px-1.5 py-1 text-[11.5px] transition-colors duration-[160ms]',
+        'flex items-center justify-between gap-2.5 rounded-md px-1.5 py-1 text-[11px] transition-colors duration-[160ms]',
         props.highlighted ? 'bg-emerald-500/10' : 'bg-transparent'
       )}
     >
       <div className="flex min-w-0 items-center gap-1.5">
         <AccountNameSkeleton widthClassName={props.accountWidthClassName} />
         {props.tag ? (
-          <span className="shrink-0 rounded-full bg-foreground/[0.06] px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <span className="shrink-0 rounded-full bg-foreground/[0.06] px-1.5 py-px text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
             {props.tag}
           </span>
         ) : null}
@@ -286,7 +286,7 @@ function SwitchAccount(props: {
             style={{ width: `${props.fillPct}%` }}
           />
         </span>
-        <span className="min-w-7 text-right font-mono text-[10px] text-muted-foreground">
+        <span className="min-w-7 text-right font-mono text-[11px] text-muted-foreground">
           {props.metaText}
         </span>
       </div>
@@ -304,10 +304,10 @@ function BottomBar(props: { swapped: boolean }): JSX.Element {
   const codexMeta = props.swapped ? '0% used 5h · 4% used wk' : '96% used 47m'
   return (
     <div
-      className="absolute bottom-[22px] left-1/2 flex -translate-x-1/2 items-center gap-3.5 rounded-lg border border-border bg-muted/60 px-3.5 py-1.5 text-[11px] shadow-[0_1px_2px_rgba(24,24,27,0.04)]"
+      className="absolute bottom-[22px] left-1/2 flex -translate-x-1/2 items-center gap-3.5 rounded-lg border border-border bg-muted/60 px-3.5 py-1.5 text-[11px] shadow-xs"
       style={{ width: 340 }}
     >
-      <div className="inline-flex items-center gap-1.5 font-mono text-[10.5px] text-muted-foreground">
+      <div className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
         <ClaudeIcon size={12} />
         <span className="block h-1 w-9 overflow-hidden rounded-full bg-foreground/[0.12]">
           <span className="block h-full rounded-full bg-emerald-500" style={{ width: '29%' }} />
@@ -319,7 +319,7 @@ function BottomBar(props: { swapped: boolean }): JSX.Element {
           )}
         </span>
       </div>
-      <div className="-my-0.5 inline-flex items-center gap-1.5 rounded-md bg-foreground/[0.06] px-1.5 py-0.5 font-mono text-[10.5px] text-foreground">
+      <div className="-my-0.5 inline-flex items-center gap-1.5 rounded-md bg-foreground/[0.06] px-1.5 py-0.5 font-mono text-[11px] text-foreground">
         <span style={{ color: '#111' }}>
           <OpenAIIcon size={12} />
         </span>

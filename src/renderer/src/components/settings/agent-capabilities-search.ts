@@ -24,7 +24,7 @@ export const getAgentCapabilitiesPaneSearchEntries = createLocalizedCatalog(
     {
       title: translate(
         'auto.components.settings.agentCapabilities.search.paneTitle',
-        'Agent Capabilities'
+        'Agent capabilities'
       ),
       description: translate(
         'auto.components.settings.agentCapabilities.search.paneDescription',

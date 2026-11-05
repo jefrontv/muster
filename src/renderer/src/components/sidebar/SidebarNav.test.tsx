@@ -237,7 +237,7 @@ describe('SidebarNav', () => {
   it('keeps the Agent Dashboard row unmounted by default', async () => {
     const container = await renderSidebarNav()
 
-    expect(queryButtonByText(container, 'Agent Dashboard')).toBeNull()
+    expect(queryButtonByText(container, 'Agent dashboard')).toBeNull()
   })
 
   it('mounts the Agent Dashboard row after opt-in', async () => {
@@ -249,7 +249,7 @@ describe('SidebarNav', () => {
     })
     const container = await renderSidebarNav()
 
-    expect(queryButtonByText(container, 'Agent Dashboard')).not.toBeNull()
+    expect(queryButtonByText(container, 'Agent dashboard')).not.toBeNull()
   })
 
   it('uses a question glyph only for the Needs You count', async () => {
@@ -334,7 +334,7 @@ describe('SidebarNav', () => {
     // the two reading as one list.
     const sites = getButtonByText(container, 'Sites')
     // By label, not text: the row also renders its shortcut key caps.
-    const search = container.querySelector('[aria-label="Search worktrees and browser tabs"]')
+    const search = container.querySelector('[aria-label="Search workspaces and browser tabs"]')
     if (!search) {
       throw new Error('expected the Search row')
     }
@@ -383,7 +383,7 @@ describe('SidebarNav', () => {
     const container = await renderSidebarNav()
 
     const searchButton = container.querySelector(
-      'button[aria-label="Search worktrees and browser tabs"]'
+      'button[aria-label="Search workspaces and browser tabs"]'
     )
     expect(searchButton).not.toBeNull()
 

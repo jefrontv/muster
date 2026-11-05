@@ -638,10 +638,10 @@ function CodexRestartStatusPrompt(): React.JSX.Element | null {
           className="mt-2 inline-flex w-full items-center justify-center rounded-md border border-border/70 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent/60"
         >
           {staleCodexStatus.staleSessionCount === 1
-            ? translate('auto.components.status.bar.StatusBar.6cd6650b4c', 'Restart Session')
+            ? translate('auto.components.status.bar.StatusBar.6cd6650b4c', 'Restart session')
             : translate(
                 'auto.components.status.bar.StatusBar.cd9d7b40ff',
-                'Restart {{value0}} Sessions',
+                'Restart {{value0}} sessions',
                 { value0: staleCodexStatus.staleSessionCount }
               )}
         </button>
@@ -681,7 +681,7 @@ function AccountRuntimeToggle<TGroup extends { key: string; label: string }>({
               role="radio"
               aria-checked={active}
               onClick={() => onChange(group)}
-              className={`min-w-0 flex-1 rounded-sm px-2 py-1 text-center text-xs outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+              className={`min-w-0 flex-1 rounded-sm px-2 py-1 text-center text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
                 active
                   ? 'bg-accent font-medium text-accent-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -893,7 +893,7 @@ export function ClaudeSwitcherMenu({
       onOpenChange={handleOpenChange}
     >
       <DropdownMenuLabel>
-        {translate('auto.components.status.bar.StatusBar.d450654fa2', 'Claude Account')}
+        {translate('auto.components.status.bar.StatusBar.d450654fa2', 'Claude account')}
       </DropdownMenuLabel>
       <DropdownMenuItem
         onSelect={(event) => {
@@ -913,7 +913,7 @@ export function ClaudeSwitcherMenu({
       </DropdownMenuItem>
       {accountsExpanded ? (
         <div className="px-1 pb-1">
-          <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
             {translate('auto.components.status.bar.StatusBar.9332ba8684', 'Switch to')}
           </div>
           <div className="max-h-[220px] overflow-y-auto rounded-md border border-border/60 bg-accent/5 p-1 scrollbar-sleek">
@@ -942,7 +942,7 @@ export function ClaudeSwitcherMenu({
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="min-w-0 flex-1 truncate">{target.label}</span>
                       {target.active ? (
-                        <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
+                        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
                           {translate('auto.components.status.bar.StatusBar.ff0fbe9311', 'Active')}
                         </span>
                       ) : null}
@@ -960,7 +960,7 @@ export function ClaudeSwitcherMenu({
               )
             })}
           </div>
-          <div className="px-2 py-1.5 text-[10px] leading-4 text-muted-foreground">
+          <div className="px-2 py-1.5 text-[11px] leading-4 text-muted-foreground">
             {translate(
               'auto.components.status.bar.StatusBar.8295903d17',
               'Restart live Claude terminals before continuing old conversations after switching.'
@@ -979,7 +979,7 @@ export function ClaudeSwitcherMenu({
           openSettingsPage()
         }}
       >
-        {translate('auto.components.status.bar.StatusBar.75ded02687', 'Manage Accounts…')}
+        {translate('auto.components.status.bar.StatusBar.75ded02687', 'Manage accounts…')}
       </DropdownMenuItem>
     </ProviderDetailsMenu>
   )
@@ -1058,13 +1058,13 @@ export function InlineUsageBars({
               }}
             />
           </div>
-          <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+          <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
             {formatUsagePercentageLabel(window.used, display)} {window.label}
           </span>
         </div>
       ))}
       {usageWindows.length === 0 && limits.status === 'error' ? (
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-[11px] text-muted-foreground">
           {translate('auto.components.status.bar.StatusBar.f19a63e7cd', 'Sign in to see usage')}
         </span>
       ) : null}
@@ -1091,7 +1091,7 @@ function InlineUsageSignInAction({
 }): React.JSX.Element {
   return (
     <div className={`flex w-full items-center gap-2 ${isFetching ? 'animate-pulse' : ''}`}>
-      <span className="min-w-0 flex-1 text-[10px] text-muted-foreground">
+      <span className="min-w-0 flex-1 text-[11px] text-muted-foreground">
         {translate('auto.components.status.bar.StatusBar.f19a63e7cd', 'Sign in to see usage')}
       </span>
       <Button
@@ -1271,6 +1271,12 @@ function VerboseProviderUsage({
           <WindowLabel w={window.window} label={window.label} display={display} />
         </React.Fragment>
       ))}
+      {/* "left" labels each window already; "used" is said once for the row. */}
+      {display === 'used' && !compact && visibleWindows.length > 0 ? (
+        <span className="text-muted-foreground">
+          {translate('auto.components.status.bar.StatusBar.usedSuffix', 'used')}
+        </span>
+      ) : null}
     </>
   )
 }
@@ -1326,7 +1332,7 @@ export function ProviderSegment({
       <span className="inline-flex items-center gap-1 text-muted-foreground">
         <ProviderIcon provider={provider} />
         {/* Why: a persistently failing provider shouldn't shout in chrome; the popup carries the detail. */}
-        <AlertTriangle size={11} className="text-muted-foreground/60" aria-label={statusLabel} />
+        <AlertTriangle size={11} className="text-muted-foreground" aria-label={statusLabel} />
       </span>
     )
   }
@@ -1777,7 +1783,7 @@ export function CodexSwitcherMenu({
         </>
       ) : null}
       <DropdownMenuLabel>
-        {translate('auto.components.status.bar.StatusBar.7657e3db9c', 'Codex Account')}
+        {translate('auto.components.status.bar.StatusBar.7657e3db9c', 'Codex account')}
       </DropdownMenuLabel>
       <DropdownMenuItem
         onSelect={(event) => {
@@ -1837,7 +1843,7 @@ export function CodexSwitcherMenu({
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="min-w-0 flex-1 truncate">{target.label}</span>
                           {target.active ? (
-                            <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
+                            <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
                               {translate(
                                 'auto.components.status.bar.StatusBar.ff0fbe9311',
                                 'Active'
@@ -1887,7 +1893,7 @@ export function CodexSwitcherMenu({
           openSettingsPage()
         }}
       >
-        {translate('auto.components.status.bar.StatusBar.75ded02687', 'Manage Accounts…')}
+        {translate('auto.components.status.bar.StatusBar.75ded02687', 'Manage accounts…')}
       </DropdownMenuItem>
     </ProviderDetailsMenu>
   )
@@ -1976,7 +1982,7 @@ export function ProviderDetailsMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center cursor-pointer rounded px-1 py-0.5 hover:bg-accent/70"
+          className="inline-flex items-center cursor-pointer rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={ariaLabel}
         >
           {iconOnly ? (
@@ -2287,7 +2293,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-3 rounded px-1 py-0.5 hover:bg-accent/70"
+                  className="inline-flex items-center gap-3 rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={translate(
                     'auto.components.status.bar.UsageRosterPanel.title',
                     'Usage'
@@ -2386,7 +2392,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="p-0.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                className="hit-area rounded-full p-0.5 text-muted-foreground outline-none transition-colors hover:bg-foreground/[0.07] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40"
                 aria-label={translate(
                   'auto.components.status.bar.StatusBar.3325d996cb',
                   'Refresh rate limits'
@@ -2427,7 +2433,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="relative inline-flex size-5 cursor-pointer items-center justify-center rounded border border-border bg-secondary text-secondary-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="hit-area inline-flex size-5 cursor-pointer items-center justify-center rounded-full border border-border bg-secondary text-secondary-foreground shadow-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={
                     showFloatingWorkspaceAttentionDot
                       ? `${floatingTerminalActionLabel}, new activity`
@@ -2443,7 +2449,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
                     <span
                       aria-hidden
                       data-floating-terminal-attention
-                      className="pointer-events-none absolute right-0.5 top-0.5 size-1.5 rounded-full bg-amber-500 ring-1 ring-secondary"
+                      className="pointer-events-none absolute right-0.5 top-0.5 size-1.5 rounded-full bg-status-attention ring-1 ring-secondary"
                     />
                   ) : null}
                 </button>
@@ -2475,7 +2481,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               }}
             >
               <ClaudeIcon size={14} />
-              {translate('auto.components.status.bar.StatusBar.3885eb74d8', 'Claude Usage')}
+              {translate('auto.components.status.bar.StatusBar.3885eb74d8', 'Claude usage')}
             </DropdownMenuCheckboxItem>
           )}
           {isStatusBarItemAvailable('codex', detectedAgentIds) && (
@@ -2487,7 +2493,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               }}
             >
               <OpenAIIcon size={14} />
-              {translate('auto.components.status.bar.StatusBar.c0909c686e', 'Codex Usage')}
+              {translate('auto.components.status.bar.StatusBar.c0909c686e', 'Codex usage')}
             </DropdownMenuCheckboxItem>
           )}
           {isStatusBarItemAvailable('gemini', detectedAgentIds) && (
@@ -2499,7 +2505,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               }}
             >
               <GeminiIcon size={14} />
-              {translate('auto.components.status.bar.StatusBar.c1df0d67ec', 'Gemini Usage')}
+              {translate('auto.components.status.bar.StatusBar.c1df0d67ec', 'Gemini usage')}
             </DropdownMenuCheckboxItem>
           )}
           {isStatusBarItemAvailable('antigravity', detectedAgentIds) && (
@@ -2513,7 +2519,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               <AgentIcon agent="antigravity" size={14} />
               {translate(
                 'auto.components.status.bar.StatusBar.antigravityUsage',
-                'Antigravity Usage'
+                'Antigravity usage'
               )}
             </DropdownMenuCheckboxItem>
           )}
@@ -2536,7 +2542,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               }}
             >
               <AgentIcon agent="kimi" size={14} />
-              {translate('auto.components.status.bar.StatusBar.5e59007df4', 'Kimi Usage')}
+              {translate('auto.components.status.bar.StatusBar.5e59007df4', 'Kimi usage')}
             </DropdownMenuCheckboxItem>
           )}
           <DropdownMenuCheckboxItem
@@ -2547,7 +2553,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
             }}
           >
             <MiniMaxIcon size={14} />
-            {translate('auto.components.status.bar.StatusBar.3bbf140864', 'MiniMax Usage')}
+            {translate('auto.components.status.bar.StatusBar.3bbf140864', 'MiniMax usage')}
           </DropdownMenuCheckboxItem>
           {isStatusBarItemAvailable('grok', detectedAgentIds) && (
             <DropdownMenuCheckboxItem
@@ -2558,7 +2564,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
               }}
             >
               <AgentIcon agent="grok" size={14} />
-              {translate('auto.components.status.bar.StatusBar.grokUsageMenu', 'Grok Usage')}
+              {translate('auto.components.status.bar.StatusBar.grokUsageMenu', 'Grok usage')}
             </DropdownMenuCheckboxItem>
           )}
           <DropdownMenuCheckboxItem
@@ -2569,7 +2575,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
             }}
           >
             <Server className="size-3.5" />
-            {translate('auto.components.status.bar.StatusBar.24ac89df1a', 'Remote Hosts')}
+            {translate('auto.components.status.bar.StatusBar.24ac89df1a', 'Remote hosts')}
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
             checked={statusBarItems.includes('resource-usage')}
@@ -2579,7 +2585,7 @@ function StatusBarInner({ floatingTerminalOpen }: StatusBarProps): React.JSX.Ele
             }}
           >
             <Activity className="size-3.5" />
-            {translate('auto.components.status.bar.StatusBar.d1e1a7a6bf', 'Resource Manager')}
+            {translate('auto.components.status.bar.StatusBar.d1e1a7a6bf', 'Resource manager')}
           </DropdownMenuCheckboxItem>
           <DropdownMenuCheckboxItem
             checked={statusBarItems.includes('ports')}

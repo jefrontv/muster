@@ -100,13 +100,13 @@ describe('TerminalContextMenu', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders a "Copy Context" item that triggers onCopyAgentSessionContext (issue #5020)', () => {
+  it('renders a "Copy context" item that triggers onCopyAgentSessionContext (issue #5020)', () => {
     const onCopyAgentSessionContext = vi.fn()
     const onForkAgentSession = vi.fn()
     renderMenu({ onCopyAgentSessionContext, onForkAgentSession })
 
     const copyContextItem = items.list.find(
-      (item) => childrenText(item.children) === 'Copy Context'
+      (item) => childrenText(item.children) === 'Copy context'
     )
     expect(copyContextItem).toBeDefined()
 
@@ -124,7 +124,7 @@ describe('TerminalContextMenu', () => {
     })
 
     const handoffItem = items.list.find(
-      (item) => childrenText(item.children) === 'Continue in New Session…'
+      (item) => childrenText(item.children) === 'Continue in new session…'
     )
     expect(handoffItem).toBeDefined()
 
@@ -137,7 +137,7 @@ describe('TerminalContextMenu', () => {
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     })
     const keybindings = {
-      'terminal.copySelection': ['Ctrl+Shift+C', 'Ctrl+Insert', 'Ctrl+C'],
+      'terminal.copySelection': ['Ctrl+Shift+C', 'Ctrl+Insert', 'Ctrl+c'],
       'terminal.splitRight': ['Mod+Shift+D', 'Alt+Shift+Right'],
       'terminal.splitDown': ['Alt+Shift+D', 'Mod+Shift+Minus']
     } satisfies KeybindingOverrides

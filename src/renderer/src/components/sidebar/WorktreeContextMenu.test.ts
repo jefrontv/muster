@@ -164,8 +164,8 @@ describe('parent picker context menu affordance', () => {
   })
 
   it('uses set/change labels based on valid parent presence', () => {
-    expect(getWorktreeParentPickerLabel(null)).toBe('Set Parent Worktree...')
-    expect(getWorktreeParentPickerLabel('parent-1')).toBe('Change Parent Worktree...')
+    expect(getWorktreeParentPickerLabel(null)).toBe('Set parent workspace…')
+    expect(getWorktreeParentPickerLabel('parent-1')).toBe('Change parent workspace…')
   })
 
   it('disables the parent picker while deleting or without candidates', () => {
@@ -236,7 +236,7 @@ describe('project removal from workspace context menus', () => {
     expect(isContextWorktreeDeletable({ isMainWorktree: false }, null)).toBe(false)
   })
 
-  // Why: a folder project has no worktrees, so a greyed "Delete Worktree" tooltipped about a
+  // Why: a folder project has no worktrees, so a greyed "Delete worktree" tooltipped about a
   // primary worktree reads as a broken action next to the only enabled item, project removal.
   it('hides the disabled Delete Worktree row for folder projects', () => {
     expect(

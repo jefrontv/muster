@@ -17,6 +17,7 @@ import {
   type SiteCustomStepPosition,
   type SiteRunGroup
 } from '../../../../shared/site-types'
+import { Textarea } from '@/components/ui/textarea'
 
 export type CustomStepDraft = Pick<
   SiteCustomStep,
@@ -90,11 +91,9 @@ function Select<T extends string>({
 }): React.JSX.Element {
   return (
     <label className="flex min-w-0 flex-1 flex-col gap-1">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       <select
-        className="h-8 rounded-md border border-border bg-background px-2 text-xs"
+        className="h-8 rounded-full bg-foreground/[0.05] px-3 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
         value={value}
         onChange={(event) => onChange(event.target.value as T)}
       >
@@ -146,9 +145,9 @@ export function SiteCustomStepEditor({
   }
 
   return (
-    <div className="space-y-3 rounded-md border border-border bg-muted/20 p-3">
+    <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
       <div className="space-y-1">
-        <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <Label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
           {translate('auto.components.sites.StepEditor.name', 'Name')}
         </Label>
         <Input
@@ -218,7 +217,7 @@ export function SiteCustomStepEditor({
 
       {mode === 'script' ? (
         <div className="space-y-1">
-          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <Label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
             {translate('auto.components.sites.StepEditor.scriptPath', 'Script path')}
           </Label>
           <Input
@@ -228,7 +227,7 @@ export function SiteCustomStepEditor({
             placeholder={`${CUSTOM_STEP_SCRIPT_DIR}/purge.sh`}
             onChange={(event) => onChange({ ...draft, scriptPath: event.target.value })}
           />
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             {translate(
               'auto.components.sites.StepEditor.scriptHint',
               'Bash file inside the checkout, run with these variables set:'
@@ -239,7 +238,7 @@ export function SiteCustomStepEditor({
               <span
                 key={placeholder.name}
                 title={placeholder.description}
-                className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+                className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
               >
                 ${customStepEnvName(placeholder.name)}
               </span>
@@ -248,12 +247,12 @@ export function SiteCustomStepEditor({
         </div>
       ) : (
         <div className="space-y-1">
-          <Label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <Label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
             {translate('auto.components.sites.StepEditor.command', 'Command')}
           </Label>
-          <textarea
+          <Textarea
             ref={setCommandRef}
-            className="min-h-16 w-full rounded-xl bg-foreground/[0.05] px-3 py-1.5 font-mono text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="min-h-16 py-1.5 font-mono text-xs"
             value={draft.command}
             spellCheck={false}
             placeholder="wp cache flush"
@@ -265,7 +264,7 @@ export function SiteCustomStepEditor({
                 key={placeholder.name}
                 type="button"
                 title={placeholder.description}
-                className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:bg-accent"
+                className="rounded border border-border/60 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground hover:bg-accent"
                 onClick={() => insertPlaceholder(placeholder.name)}
               >
                 {`{{${placeholder.name}}}`}

@@ -3,7 +3,8 @@ import {
   RIGHT_SIDEBAR_ABSOLUTE_FALLBACK_MAX_WIDTH,
   RIGHT_SIDEBAR_MIN_WIDTH,
   clampRightSidebarPanelWidth,
-  computeMaxRightSidebarPanelWidth
+  computeMaxRightSidebarPanelWidth,
+  widthBesideLeftSidebar
 } from './right-sidebar-width'
 
 describe('right sidebar rendered width', () => {
@@ -24,5 +25,14 @@ describe('right sidebar rendered width', () => {
     expect(computeMaxRightSidebarPanelWidth(null, 40)).toBe(
       RIGHT_SIDEBAR_ABSOLUTE_FALLBACK_MAX_WIDTH
     )
+  })
+
+  it('keeps the centre reserve when the left sidebar is open', () => {
+    // 800px window, 325px left sidebar: 155px of room is under the 220px floor, so the floor wins.
+    expect(clampRightSidebarPanelWidth(400, widthBesideLeftSidebar(800, 325), 0)).toBe(
+      RIGHT_SIDEBAR_MIN_WIDTH
+    )
+    expect(clampRightSidebarPanelWidth(400, widthBesideLeftSidebar(1200, 325), 0)).toBe(400)
+    expect(widthBesideLeftSidebar(null, 325)).toBeNull()
   })
 })

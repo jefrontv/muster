@@ -241,7 +241,7 @@ export function HeroFlow({
                   'Open Muster Mobile, tap'
                 )}{' '}
                 <strong>
-                  {translate('auto.components.mobile.MobileHero.3aa7bb2d8b', 'Pair Desktop')}
+                  {translate('auto.components.mobile.MobileHero.3aa7bb2d8b', 'Pair desktop')}
                 </strong>
                 {translate('auto.components.mobile.MobileHero.2f077ef4eb', ', and scan the code.')}
               </p>
@@ -301,7 +301,7 @@ export function HeroFlow({
                   <span className="min-w-0">
                     {translate(
                       'auto.components.mobile.MobileHero.relayDegradedNotice',
-                      'Relay couldn’t be reached — this code only works on your LAN or Tailscale.'
+                      'Relay couldn’t be reached. This code only works on your LAN or Tailscale.'
                     )}
                   </span>
                 </p>

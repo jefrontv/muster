@@ -385,7 +385,7 @@ describe('TerminalPane PowerShell version setting', () => {
     expect(text).toContain('Command Prompt')
     expect(text).toContain('WSL')
     expect(hasShellIconFor(element, 'wsl.exe')).toBe(true)
-    expect(text).not.toContain('PowerShell Version')
+    expect(text).not.toContain('PowerShell version')
     expect(text).not.toContain('Choose which WSL distribution')
     expect(text).not.toContain('Windows default')
     expect(text).not.toContain('Ubuntu')

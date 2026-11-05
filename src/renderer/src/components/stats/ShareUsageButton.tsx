@@ -171,7 +171,7 @@ export function ShareUsageButton(props: ShareUsageButtonProps): React.JSX.Elemen
               <span className="mr-2">
                 <XIcon />
               </span>
-              {translate('auto.components.stats.ShareUsageButton.7d6b25323d', 'Share on X')}
+              {translate('auto.components.stats.ShareUsageButton.7d6b25323d', 'Share on x')}
             </Button>
           </div>
         </div>

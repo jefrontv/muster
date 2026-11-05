@@ -8,10 +8,16 @@ import { areWorktreePathsEqual } from './ipc/worktree-logic'
 type LocalRepoWorktreeListOptions = {
   wslDistro?: string
   signal?: AbortSignal
+  /** Local git only; SSH providers keep their own caching. */
+  reuseRecentScanMs?: number
 }
 
 function hasLocalRepoWorktreeListOptions(options: LocalRepoWorktreeListOptions | undefined) {
-  return options?.wslDistro !== undefined || options?.signal !== undefined
+  return (
+    options?.wslDistro !== undefined ||
+    options?.signal !== undefined ||
+    options?.reuseRecentScanMs !== undefined
+  )
 }
 
 export function isRepoRoot(repos: Repo[], resolvedTarget: string): boolean {

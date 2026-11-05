@@ -225,7 +225,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
     <button
       type="button"
       className={cn(
-        'compact-agent-child-disclosure-button flex size-4 shrink-0 items-center justify-center rounded-sm text-worktree-sidebar-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-worktree-sidebar-ring',
+        'hit-area compact-agent-child-disclosure-button flex size-4 shrink-0 items-center justify-center rounded-full text-worktree-sidebar-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring',
         // Why: new-style rows toggle on a click anywhere, so the chevron is a marker with no hover of
         // its own; its glyph, not the 16px hit box, ends on the time column.
         singleText ? '-mr-0.5' : 'hover:bg-worktree-sidebar-accent hover:text-foreground'
@@ -299,7 +299,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
       {model && (
         <span
           className={cn(
-            'max-w-24 shrink-0 truncate font-mono text-[10px]',
+            'max-w-24 shrink-0 truncate font-mono text-[11px]',
             isFocusedPane ? 'text-foreground/70' : 'text-worktree-sidebar-muted-foreground'
           )}
           title={model}
@@ -310,7 +310,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
       {hasChildDisclosure && !childAgentsExpanded && (
         <span
           className={cn(
-            'shrink-0 text-[10px] tabular-nums',
+            'shrink-0 text-2xs tabular-nums',
             isFocusedPane ? 'text-foreground/70' : 'text-worktree-sidebar-muted-foreground'
           )}
         >
@@ -321,7 +321,7 @@ export const CompactAgentRow = React.memo(function CompactAgentRow({
       {shortTime && (
         <span
           className={cn(
-            'shrink-0 text-[10px] tabular-nums',
+            'shrink-0 text-2xs tabular-nums',
             // Why: the muted timestamp drops out against the selected-row fill.
             isFocusedPane ? 'text-foreground/70' : 'text-worktree-sidebar-muted-foreground'
           )}

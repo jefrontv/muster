@@ -42,7 +42,7 @@ function StashEntries({ stash }: { stash: NativeChatPromptStash }): React.JSX.El
               'auto.components.native-chat.stash.delete',
               'Delete stashed prompt'
             )}
-            className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/stash:opacity-100"
+            className="hit-area flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/stash:opacity-100"
             onClick={(event) => {
               event.stopPropagation()
               event.preventDefault()
@@ -74,7 +74,7 @@ export function NativeChatStashMenu({
     stash.entries.length > 0 ? (
       <span
         className={cn(
-          'absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-medium leading-none text-primary-foreground transition-transform',
+          'absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[11px] font-medium leading-none text-primary-foreground transition-transform',
           stash.pulse && 'scale-125'
         )}
       >

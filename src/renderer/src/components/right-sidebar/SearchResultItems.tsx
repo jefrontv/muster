@@ -35,7 +35,7 @@ export function ToggleButton({
       variant="ghost"
       size="icon-xs"
       className={cn(
-        'h-auto w-auto rounded-sm p-0.5 flex-shrink-0',
+        'h-auto w-auto rounded-full p-0.5 flex-shrink-0',
         active
           ? 'bg-accent text-accent-foreground'
           : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -96,7 +96,7 @@ export function FileResultRow({
                       )}
                     </span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground flex-shrink-0 bg-muted/80 rounded-full px-1.5">
+                  <span className="text-2xs text-muted-foreground flex-shrink-0 bg-muted/80 rounded-full px-1.5">
                     {matchCount}
                   </span>
                 </Button>
@@ -109,7 +109,7 @@ export function FileResultRow({
                 <Copy className="size-3.5" />
                 {translate(
                   'auto.components.right.sidebar.SearchResultItems.3596b9668d',
-                  'Copy Path'
+                  'Copy path'
                 )}
               </ContextMenuItem>
             </ContextMenuContent>
@@ -187,13 +187,13 @@ export function MatchResultRow({
           }}
           onClick={onClick}
         >
-          <span className="text-[10px] text-muted-foreground flex-shrink-0 tabular-nums mt-px">
+          <span className="text-2xs text-muted-foreground flex-shrink-0 tabular-nums mt-px">
             {match.line}
           </span>
           <span className="text-xs flex min-w-0 items-baseline whitespace-pre">
             <span className="text-muted-foreground flex-shrink-0">{parts.before}</span>
             {parts.match && (
-              <span className="bg-amber-500/30 text-foreground rounded-sm flex-shrink-0">
+              <span className="bg-status-attention/30 text-foreground rounded-sm flex-shrink-0">
                 {parts.match}
               </span>
             )}
@@ -208,7 +208,7 @@ export function MatchResultRow({
           <Copy className="size-3.5" />
           {translate(
             'auto.components.right.sidebar.SearchResultItems.cc06595a3b',
-            'Copy Line Path'
+            'Copy line path'
           )}
         </ContextMenuItem>
       </ContextMenuContent>

@@ -14,7 +14,7 @@ export async function deliverMarkupToClipboard(result: MarkupComposeResult): Pro
   toast.success(
     translate(
       'auto.components.browser-pane.markup.copiedToast',
-      'Markup copied — paste it into your agent ({{value0}})',
+      'Markup copied: paste it into your agent ({{value0}})',
       { value0: isMac ? '⌘V' : 'Ctrl+V' }
     )
   )

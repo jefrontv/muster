@@ -45,7 +45,7 @@ describe('exportActiveMarkdownToPdf', () => {
       root: document.createElement('div')
     })
 
-    expect(toast.loading).toHaveBeenCalledWith('Exporting PDF...')
+    expect(toast.loading).toHaveBeenCalledWith('Exporting PDF…')
     expect(window.api.export.htmlToPdf).not.toHaveBeenCalled()
     expect(toast.error).toHaveBeenCalledWith(
       'Failed to inline image for PDF export: Unable to fetch blob image',

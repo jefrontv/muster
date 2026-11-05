@@ -11,6 +11,7 @@ import { useId } from 'react'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import { SettingsSwitch } from '@/components/settings/SettingsFormControls'
 import {
   DropdownMenu,
@@ -22,9 +23,12 @@ export function AddToSidebarButton({
   busy,
   autoAdd,
   onAdd,
-  onAutoAddChange
+  onAutoAddChange,
+  compact = false
 }: {
   busy: boolean
+  /** Icon only, for narrow pages; the label moves to aria-label. */
+  compact?: boolean
   autoAdd: boolean
   onAdd: () => void
   onAutoAddChange: (next: boolean) => void
@@ -49,12 +53,13 @@ export function AddToSidebarButton({
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 rounded-r-none pr-2"
+            className={cn('gap-1.5 rounded-r-none', compact ? 'px-2' : 'pr-2')}
+            aria-label={compact ? addLabel : undefined}
             disabled={busy}
             onClick={onAdd}
           >
             <FolderPlus className="size-3.5" />
-            {addLabel}
+            {compact ? null : addLabel}
           </Button>
         </TooltipTrigger>
         <TooltipContent>

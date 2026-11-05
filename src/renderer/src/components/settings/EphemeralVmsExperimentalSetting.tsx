@@ -31,7 +31,7 @@ export function EphemeralVmsExperimentalSetting({
           <Label>
             {translate(
               'auto.components.settings.ephemeralVms.search.title',
-              'Per-Workspace Environments'
+              'Per-workspace environments'
             )}
           </Label>
           <p className="text-xs text-muted-foreground">

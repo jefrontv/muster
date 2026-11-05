@@ -195,7 +195,7 @@ export function AddRepoLocalStartStep({
           </p>
           {/* Outline uses the `input` token (white-ish in dark mode) to match Browse's visible outline variant;
               primary-foreground is near-black in dark mode and rendered the border invisible. */}
-          <div className="overflow-hidden rounded-md border border-input bg-background">
+          <div className="overflow-hidden rounded-xl border border-input bg-background">
             {secondaryActions.map((action, index) => (
               <AddRepoSecondaryStartAction
                 key={action.kind}
@@ -207,8 +207,8 @@ export function AddRepoLocalStartStep({
                 onClick={action.onClick}
                 onFocus={() => setSelectedKind(action.kind)}
                 className={cn(
-                  index === 0 ? 'rounded-t-md' : 'border-t border-border/70',
-                  index === secondaryActions.length - 1 && 'rounded-b-md'
+                  index === 0 ? 'rounded-t-xl' : 'border-t border-border/70',
+                  index === secondaryActions.length - 1 && 'rounded-b-xl'
                 )}
               />
             ))}
@@ -271,10 +271,10 @@ const AddRepoPrimaryStartAction = ({
     disabled={disabled}
     data-add-repo-action
     className={cn(
-      'h-auto min-h-[3.75rem] w-full justify-start gap-3 whitespace-normal px-3 py-2.5 text-left',
+      'h-auto min-h-[3.75rem] w-full justify-start gap-3 whitespace-normal rounded-xl px-3 py-2.5 text-left',
       selected
         ? 'border border-ring bg-foreground/10 text-foreground focus-visible:border-ring focus-visible:ring-0 dark:bg-accent dark:text-accent-foreground'
-        : 'border border-border bg-background shadow-none dark:bg-background'
+        : 'border border-input bg-background shadow-none dark:bg-background'
     )}
   >
     <span
@@ -318,7 +318,7 @@ function AddRepoSecondaryStartAction({
         // Selected mirrors the primary card's neutral wash so the highlight moves between rows.
         selected
           ? 'border-ring bg-foreground/10 text-foreground focus-visible:ring-0 dark:bg-accent dark:text-accent-foreground'
-          : 'hover:bg-accent focus-visible:bg-accent focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-ring/50'
+          : 'hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
       )}
     >
       <span

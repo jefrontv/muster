@@ -31,7 +31,7 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     {
       title: translate(
         'auto.components.settings.notifications.search.activeCollabAssigned',
-        'Task Assigned To You'
+        'Task assigned to you'
       ),
       description: translate(
         'auto.components.settings.notifications.search.activeCollabAssignedDescription',
@@ -48,7 +48,7 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     {
       title: translate(
         'auto.components.settings.notifications.search.activeCollabComments',
-        'New Comments'
+        'New comments'
       ),
       description: translate(
         'auto.components.settings.notifications.search.activeCollabCommentsDescription',
@@ -69,7 +69,7 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     {
       title: translate(
         'auto.components.settings.notifications.search.activeCollabDue',
-        'Due Date Getting Closer'
+        'Due date getting closer'
       ),
       description: translate(
         'auto.components.settings.notifications.search.activeCollabDueDescription',
@@ -94,7 +94,7 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     {
       title: translate(
         'auto.components.settings.notifications.search.activeCollabUpdated',
-        'Task Details Edited'
+        'Task details edited'
       ),
       description: translate(
         'auto.components.settings.notifications.search.activeCollabUpdatedDescription',
@@ -115,7 +115,7 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     {
       title: translate(
         'auto.components.settings.notifications.search.activeCollabMention',
-        'Mentioned You'
+        'Mentioned you'
       ),
       description: translate(
         'auto.components.settings.notifications.search.activeCollabMentionDescription',
@@ -136,7 +136,7 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     {
       title: translate(
         'auto.components.settings.notifications.search.activeCollabSound',
-        'ActiveCollab Sound'
+        'ActiveCollab sound'
       ),
       description: translate(
         'auto.components.settings.notifications.search.activeCollabSoundDescription',
@@ -154,7 +154,7 @@ export function activeCollabNotificationSearchEntries(): NotificationSearchEntry
     {
       title: translate(
         'auto.components.settings.notifications.search.activeCollabStyle',
-        'Banner Wording'
+        'Banner wording'
       ),
       description: translate(
         'auto.components.settings.notifications.search.activeCollabStyleDescription',

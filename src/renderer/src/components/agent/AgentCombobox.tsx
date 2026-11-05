@@ -297,7 +297,7 @@ export default function AgentCombobox({
                 <Terminal className="size-3.5" />
                 <span className="truncate">
                   {emptyLabel ??
-                    translate('auto.components.agent.AgentCombobox.986f946354', 'Blank Terminal')}
+                    translate('auto.components.agent.AgentCombobox.986f946354', 'Blank terminal')}
                 </span>
               </span>
             )}
@@ -321,7 +321,7 @@ export default function AgentCombobox({
               ref={setInputNode}
               placeholder={translate(
                 'auto.components.agent.AgentCombobox.48c6a5a9b4',
-                'Search agents...'
+                'Search agents…'
               )}
               value={query}
               onValueChange={setQuery}
@@ -344,7 +344,7 @@ export default function AgentCombobox({
                     icon: <Terminal className="size-3.5" />,
                     label: translate(
                       'auto.components.agent.AgentCombobox.986f946354',
-                      'Blank Terminal'
+                      'Blank terminal'
                     )
                   })
                 : null}

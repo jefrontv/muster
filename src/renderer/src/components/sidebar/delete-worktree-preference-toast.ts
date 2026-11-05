@@ -34,7 +34,7 @@ export function persistDeleteWorktreeConfirmSkipPreference({
       action: {
         label: translate(
           'auto.components.sidebar.DeleteWorktreeDialog.5cc1a6701c',
-          'Open Settings'
+          'Open settings'
         ),
         onClick: () => {
           openSettingsPage()

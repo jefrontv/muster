@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import { getTerminalQuickCommandAgentOptions } from './terminal-quick-command-agent-options'
 import type { TerminalQuickCommandDialogDraftMemory } from './terminal-quick-command-dialog-draft'
+import { Textarea } from '@/components/ui/textarea'
 
 const QUICK_COMMAND_AGENT_OPTIONS = getTerminalQuickCommandAgentOptions()
 
@@ -126,10 +127,10 @@ export function TerminalQuickCommandContentSection({
               )
             : translate(
                 'auto.components.terminal.quick.commands.TerminalQuickCommandDialog.ca414324ee',
-                'Command Text'
+                'Command text'
               )}
         </Label>
-        <textarea
+        <Textarea
           value={isTerminalAgentQuickCommand(draft) ? draft.prompt : draft.command}
           onChange={(event) => {
             const text = event.target.value
@@ -160,10 +161,7 @@ export function TerminalQuickCommandContentSection({
                 )
           }
           rows={4}
-          className={cn(
-            'min-h-24 w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-1 focus-visible:ring-ring',
-            !isAgentAction && 'font-mono'
-          )}
+          className={cn('min-h-24 resize-y', !isAgentAction && 'font-mono')}
         />
       </div>
 

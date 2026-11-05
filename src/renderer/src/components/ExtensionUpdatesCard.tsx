@@ -45,7 +45,10 @@ export function ExtensionUpdatesCard(): React.JSX.Element | null {
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 z-50 w-80 p-3 shadow-lg" data-testid="extension-updates-card">
+    <Card
+      className="fixed bottom-4 right-4 z-50 w-80 p-3 shadow-floating"
+      data-testid="extension-updates-card"
+    >
       <div className="flex items-start gap-3">
         <Blocks className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1 space-y-1">

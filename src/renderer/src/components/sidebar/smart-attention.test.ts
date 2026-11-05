@@ -5,6 +5,7 @@ import {
   type AgentStatusEntry
 } from '../../../../shared/agent-status-types'
 import {
+  DONE_ATTENTION_MS,
   IDLE,
   buildAttentionByWorktree,
   mostRecentAttentionInHistory,
@@ -163,6 +164,16 @@ describe('resolveAttention', () => {
       cls: 2,
       attentionTimestamp: NOW - 90_000
     })
+  })
+
+  it('lets a done pane fall to idle once its result is older than DONE_ATTENTION_MS', () => {
+    const entry = makeEntry({
+      paneKey: 't:1',
+      state: 'done',
+      stateStartedAt: NOW - DONE_ATTENTION_MS - 1000,
+      updatedAt: NOW - 30_000
+    })
+    expect(resolveAttention([hookPane(entry)], NOW)).toEqual(IDLE)
   })
 
   it('treats interrupted done as idle', () => {

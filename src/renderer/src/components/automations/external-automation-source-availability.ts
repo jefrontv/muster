@@ -31,7 +31,7 @@ export function getExternalAutomationSourceAvailability({
     const isConnecting = isConnectingOverride || isSshConnectionBusy(sshStatus)
     if (isConnecting) {
       return {
-        statusLabel: 'Connecting...',
+        statusLabel: 'Connecting…',
         summary:
           manager.error ??
           `${providerLabel} source unavailable while ${targetKindLabel.toLowerCase()} connects.`,

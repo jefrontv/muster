@@ -33,7 +33,7 @@ export function SiteSetupRowList({
   className?: string
 }): React.JSX.Element {
   return (
-    <div className={cn('divide-y divide-border rounded-md border border-border', className)}>
+    <div className={cn('divide-y divide-border rounded-xl border border-border', className)}>
       {children}
     </div>
   )

@@ -58,9 +58,9 @@ describe('NotificationsPane', () => {
       <NotificationsPane settings={createSettings()} updateSettings={vi.fn()} />
     )
 
-    expect(html).toContain('Notification Sound')
+    expect(html).toContain('Notification sound')
     expect(getNotificationSoundOptions(null).map((option) => option.title)).toEqual(
-      expect.arrayContaining(['System Default', 'Two Tone', 'Bong', 'Ding'])
+      expect.arrayContaining(['System default', 'Two tone', 'Bong', 'Ding'])
     )
   })
 
@@ -69,11 +69,11 @@ describe('NotificationsPane', () => {
       <NotificationsPane settings={createSettings()} updateSettings={vi.fn()} />
     )
 
-    expect(html).toContain('ActiveCollab Tasks')
-    expect(html).toContain('Task Assigned To You')
-    expect(html).toContain('New Comments')
-    expect(html).toContain('Due Date Getting Closer')
-    expect(html).toContain('Task Details Edited')
+    expect(html).toContain('ActiveCollab tasks')
+    expect(html).toContain('Task assigned to you')
+    expect(html).toContain('New comments')
+    expect(html).toContain('Due date getting closer')
+    expect(html).toContain('Task details edited')
   })
 
   it('resets the volume draft only when the persisted volume changes', () => {
@@ -121,7 +121,7 @@ describe('NotificationsPane', () => {
       'Test notification requested',
       expect.objectContaining({
         description: 'If no macOS banner appeared, enable Allow notifications for Muster.',
-        action: expect.objectContaining({ label: 'Open Settings' })
+        action: expect.objectContaining({ label: 'Open settings' })
       })
     )
 
@@ -188,7 +188,7 @@ describe('NotificationsPane', () => {
     expect(toastError).toHaveBeenCalledWith(
       'macOS did not show the notification',
       expect.objectContaining({
-        action: expect.objectContaining({ label: 'Open Settings' })
+        action: expect.objectContaining({ label: 'Open settings' })
       })
     )
 
@@ -229,7 +229,7 @@ describe('NotificationsPane', () => {
       'Windows did not show the notification',
       expect.objectContaining({
         description: 'Enable notifications for Muster in Windows Settings.',
-        action: expect.objectContaining({ label: 'Open Settings' })
+        action: expect.objectContaining({ label: 'Open settings' })
       })
     )
   })

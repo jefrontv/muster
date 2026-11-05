@@ -114,7 +114,7 @@ export async function sendNotificationSettingsTestNotification(
           action: {
             label: translate(
               'auto.components.settings.NotificationsPane.145227ca2b',
-              'Open Settings'
+              'Open settings'
             ),
             onClick: () => {
               void window.api.notifications.openSystemSettings()
@@ -141,7 +141,7 @@ export async function sendNotificationSettingsTestNotification(
         action: {
           label: translate(
             'auto.components.settings.NotificationsPane.145227ca2b',
-            'Open Settings'
+            'Open settings'
           ),
           onClick: () => {
             void window.api.notifications.openSystemSettings()

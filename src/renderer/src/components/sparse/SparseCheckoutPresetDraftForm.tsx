@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 import type { SparsePresetDirectoryParseResult } from '@/lib/sparse-preset-draft'
+import { Textarea } from '@/components/ui/textarea'
 
 export type SparsePresetDraft = {
   mode: 'new' | 'edit'
@@ -87,7 +88,7 @@ export function SparseCheckoutPresetDraftForm({
           </label>
           {/* Why: match the app's canonical textarea (composer Note field) — border-input +
               standard focus ring — instead of a one-off wrapper. font-mono since these are paths. */}
-          <textarea
+          <Textarea
             id="sparse-preset-directories"
             value={draft.directoriesText}
             onChange={(event) => onDraftChange({ ...draft, directoriesText: event.target.value })}
@@ -97,12 +98,12 @@ export function SparseCheckoutPresetDraftForm({
             )}
             rows={3}
             spellCheck={false}
-            className="max-h-28 w-full min-w-0 resize-none rounded-xl bg-foreground/[0.05] px-3 py-1.5 font-mono text-xs leading-5 transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="max-h-28 resize-none py-1.5 font-mono text-xs leading-5 selection:bg-primary selection:text-primary-foreground"
           />
         </div>
       </div>
       <div className="flex min-h-11 items-center justify-between gap-3 border-t border-border px-3 py-2">
-        <div className="min-w-0 text-[10px] text-muted-foreground">
+        <div className="min-w-0 text-[11px] text-muted-foreground">
           {nameError ? (
             <span className="text-destructive">{nameError}</span>
           ) : parsedDirectories?.error ? (

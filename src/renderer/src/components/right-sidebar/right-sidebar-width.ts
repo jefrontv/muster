@@ -26,3 +26,11 @@ export function clampRightSidebarPanelWidth(
     Math.max(RIGHT_SIDEBAR_MIN_WIDTH, width)
   )
 }
+
+/** The window width left over once the open left sidebar is drawn, so the centre pane keeps its reserve. */
+export function widthBesideLeftSidebar(
+  windowWidth: number | null | undefined,
+  leftSidebarWidth: number
+): number | null | undefined {
+  return typeof windowWidth === 'number' ? windowWidth - leftSidebarWidth : windowWidth
+}

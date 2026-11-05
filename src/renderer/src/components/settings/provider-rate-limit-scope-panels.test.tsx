@@ -40,7 +40,7 @@ describe('provider rate-limit panels account scope', () => {
     expect(markup).toContain(
       'GitHub API budget is fetched from the CLI on this desktop client. Use Settings &gt; Remote Muster Servers &gt; Advanced to view server-owned budgets.'
     )
-    expect(markup).toContain('Open Remote Servers')
+    expect(markup).toContain('Open remote servers')
   })
 
   it('shows the remote server scope for GitLab API budget', () => {

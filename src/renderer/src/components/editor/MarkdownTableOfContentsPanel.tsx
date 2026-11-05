@@ -175,7 +175,7 @@ export function MarkdownTableOfContentsPanel({
         <span>
           {translate(
             'auto.components.editor.MarkdownTableOfContentsPanel.06357eea60',
-            'Table of Contents'
+            'Table of contents'
           )}
         </span>
         <div className="markdown-toc-header-actions">
@@ -214,7 +214,7 @@ export function MarkdownTableOfContentsPanel({
                       )
                     : translate(
                         'auto.components.editor.MarkdownTableOfContentsPanel.4680a4b808',
-                        'Collapse to H{{value0}}',
+                        'Collapse to h{{value0}}',
                         { value0: level }
                       )
                 }

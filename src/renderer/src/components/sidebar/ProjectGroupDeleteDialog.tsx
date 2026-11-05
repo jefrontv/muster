@@ -110,7 +110,7 @@ export function ProjectGroupDeleteDialog({
           <DialogTitle className="text-sm">
             {translate(
               'auto.components.sidebar.ProjectGroupDeleteDialog.591f330288',
-              'Delete Project Group'
+              'Delete project group'
             )}
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -204,11 +204,11 @@ export function ProjectGroupDeleteDialog({
             {deleting
               ? translate(
                   'auto.components.sidebar.ProjectGroupDeleteDialog.2c14ce677a',
-                  'Deleting...'
+                  'Deleting…'
                 )
               : translate(
                   'auto.components.sidebar.ProjectGroupDeleteDialog.fec7e9c8ae',
-                  'Delete Group'
+                  'Delete group'
                 )}
           </Button>
         </DialogFooter>

@@ -117,7 +117,7 @@ export function ExternalFileChangeCompareDialog({
               <Loader2 className="mr-2 size-4 animate-spin" />
               {translate(
                 'auto.components.editor.ExternalFileChangeCompareDialog.8fe30ab254',
-                'Reading file from disk...'
+                'Reading file from disk…'
               )}
             </div>
           ) : diskState.kind === 'error' ? (
@@ -132,7 +132,7 @@ export function ExternalFileChangeCompareDialog({
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               {translate(
                 'auto.components.editor.ExternalFileChangeCompareDialog.b6cf20d514',
-                'The file on disk is binary — no text comparison available.'
+                'The file on disk is binary. No text comparison available.'
               )}
             </div>
           ) : (
@@ -144,7 +144,7 @@ export function ExternalFileChangeCompareDialog({
                   <Loader2 className="mr-2 size-4 animate-spin" />
                   {translate(
                     'auto.components.editor.ExternalFileChangeCompareDialog.2c8f1e07b9',
-                    'Loading comparison...'
+                    'Loading comparison…'
                   )}
                 </div>
               }
@@ -175,7 +175,7 @@ export function ExternalFileChangeCompareDialog({
           >
             {translate(
               'auto.components.editor.ExternalFileChangeCompareDialog.3fa2b8d417',
-              'Reload from Disk'
+              'Reload from disk'
             )}
           </Button>
           <Button
@@ -189,7 +189,7 @@ export function ExternalFileChangeCompareDialog({
           >
             {translate(
               'auto.components.editor.ExternalFileChangeCompareDialog.a95d02c644',
-              'Keep My Edits'
+              'Keep my edits'
             )}
           </Button>
         </DialogFooter>

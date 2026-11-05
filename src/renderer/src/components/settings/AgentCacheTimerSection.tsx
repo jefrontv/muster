@@ -23,7 +23,7 @@ export function AgentCacheTimerSection({
       <SettingsSubsectionHeader
         title={translate(
           'auto.components.settings.AgentCacheTimerSection.a137f8854d',
-          'Prompt Cache Timer'
+          'Prompt cache timer'
         )}
         description={translate(
           'auto.components.settings.AgentCacheTimerSection.fe590653c1',
@@ -34,7 +34,7 @@ export function AgentCacheTimerSection({
       <SearchableSetting
         title={translate(
           'auto.components.settings.AgentCacheTimerSection.b4e7302944',
-          'Cache Timer'
+          'Cache timer'
         )}
         description={translate(
           'auto.components.settings.AgentCacheTimerSection.9c20253679',
@@ -53,7 +53,7 @@ export function AgentCacheTimerSection({
             <Label>
               {translate(
                 'auto.components.settings.AgentCacheTimerSection.b4e7302944',
-                'Cache Timer'
+                'Cache timer'
               )}
             </Label>
           </div>
@@ -67,7 +67,7 @@ export function AgentCacheTimerSection({
         <SettingsSwitch
           ariaLabel={translate(
             'auto.components.settings.AgentCacheTimerSection.b4e7302944',
-            'Cache Timer'
+            'Cache timer'
           )}
           checked={settings.promptCacheTimerEnabled}
           onChange={() => {
@@ -84,7 +84,7 @@ export function AgentCacheTimerSection({
         <SearchableSetting
           title={translate(
             'auto.components.settings.AgentCacheTimerSection.a2a8962138',
-            'Timer Duration'
+            'Timer duration'
           )}
           description={translate(
             'auto.components.settings.AgentCacheTimerSection.80c454e8a6',
@@ -97,7 +97,7 @@ export function AgentCacheTimerSection({
             <Label>
               {translate(
                 'auto.components.settings.AgentCacheTimerSection.a2a8962138',
-                'Timer Duration'
+                'Timer duration'
               )}
             </Label>
             <p className="text-xs text-muted-foreground">
@@ -111,7 +111,7 @@ export function AgentCacheTimerSection({
             value={String(settings.promptCacheTtlMs)}
             onValueChange={(v) => updateSettings({ promptCacheTtlMs: Number(v) })}
           >
-            <SelectTrigger size="sm" className="h-7 text-xs w-[120px]">
+            <SelectTrigger className="w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

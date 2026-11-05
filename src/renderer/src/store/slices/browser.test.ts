@@ -1050,7 +1050,7 @@ describe('createBrowserSlice runtime guard', () => {
             activePageId: 'page-1',
             pageIds: ['page-1'],
             url: 'about:blank',
-            title: 'New Tab',
+            title: 'New tab',
             loading: false,
             faviconUrl: null,
             canGoBack: false,

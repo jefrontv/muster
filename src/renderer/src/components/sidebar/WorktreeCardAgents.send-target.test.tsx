@@ -218,7 +218,7 @@ describe('WorktreeCardAgents send targets', () => {
     const markup = renderToStaticMarkup(<WorktreeCardAgents worktreeId="wt-1" />)
 
     expect(markup).toContain('data-agent-send-target="sending"')
-    expect(markup).toContain('data-disabled-reason="Sending..."')
+    expect(markup).toContain('data-disabled-reason="Sending…"')
     expect(markup).toContain(`data-pane-key="${READY_PANE_KEY}"`)
   })
 

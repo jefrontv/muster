@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- Why: keep the full composer card markup together so the inline and modal variants share one UI surface. */
+import { Input } from '@/components/ui/input'
 import React from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -78,6 +79,8 @@ import type { TaskSourceContext } from '../../../shared/task-source-context'
 import type { RuntimeStatus } from '../../../shared/runtime-types'
 import { unwrapRuntimeRpcResult } from '@/runtime/runtime-rpc-client'
 import { translate } from '@/i18n/i18n'
+import { SwitchTrack } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 
 type RepoOption = React.ComponentProps<typeof RepoCombobox>['repos'][number]
 type EphemeralVmRecipeOption = NonNullable<OrcaHooks['environmentRecipes']>[number]
@@ -181,7 +184,7 @@ const SSH_STATUS_LABELS: Partial<Record<SshConnectionStatus, string>> = {
     )
   },
   get connecting() {
-    return translate('auto.components.NewWorkspaceComposerCard.connectingSsh', 'Connecting SSH...')
+    return translate('auto.components.NewWorkspaceComposerCard.connectingSsh', 'Connecting SSH…')
   },
   get 'auth-failed'() {
     return translate(
@@ -192,7 +195,7 @@ const SSH_STATUS_LABELS: Partial<Record<SshConnectionStatus, string>> = {
   get 'deploying-relay'() {
     return translate(
       'auto.components.NewWorkspaceComposerCard.preparingSshConnection',
-      'Preparing SSH connection...'
+      'Preparing SSH connection…'
     )
   },
   get connected() {
@@ -201,7 +204,7 @@ const SSH_STATUS_LABELS: Partial<Record<SshConnectionStatus, string>> = {
   get reconnecting() {
     return translate(
       'auto.components.NewWorkspaceComposerCard.reconnectingSsh',
-      'Reconnecting SSH...'
+      'Reconnecting SSH…'
     )
   },
   get 'reconnection-failed'() {
@@ -406,7 +409,7 @@ function WorkspaceRunTargetCombobox({
       : ''
   const ephemeralVmLabel = translate(
     'auto.components.NewWorkspaceComposerCard.ephemeralVm',
-    'Per-Workspace Environment'
+    'Per-workspace environment'
   )
 
   const handleHostSelect = React.useCallback(
@@ -498,7 +501,7 @@ function WorkspaceRunTargetCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="h-9 w-full justify-between border-input px-3 text-sm font-normal focus:border-ring focus:ring-[3px] focus:ring-ring/50"
+          className="h-9 w-full justify-between border-input px-3 text-sm font-normal focus:border-ring focus:ring-2 focus:ring-ring"
         >
           {selectedRecipe ? (
             <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -598,7 +601,7 @@ function WorkspaceRunTargetCombobox({
                         type="button"
                         variant="ghost"
                         size="xs"
-                        className="ml-1 shrink-0 gap-1 text-muted-foreground/50 hover:text-muted-foreground"
+                        className="ml-1 shrink-0 gap-1 text-muted-foreground hover:text-muted-foreground"
                         // Why: only disable the row being connected — not every row — so one
                         // stuck/slow connect can't lock out connecting to the other hosts.
                         disabled={connectingHostIds.has(option.hostId)}
@@ -767,7 +770,7 @@ function WorkspaceRunTargetCombobox({
                         <div className="truncate text-sm">
                           {translate(
                             'auto.components.NewWorkspaceComposerCard.addRemoteOrcaServer',
-                            'Add Remote Muster Server'
+                            'Add remote Muster server'
                           )}
                         </div>
                         <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
@@ -1209,7 +1212,7 @@ export default function NewWorkspaceComposerCard({
                     variant="ghost"
                     size="icon-xs"
                     onClick={handleAddRepo}
-                    className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
+                    className="hit-area size-5 shrink-0 text-muted-foreground hover:text-foreground"
                     aria-label={translate(
                       'auto.components.NewWorkspaceComposerCard.d6b0a96f32',
                       'Add project'
@@ -1235,7 +1238,7 @@ export default function NewWorkspaceComposerCard({
               translate('auto.components.NewWorkspaceComposerCard.dccd26d4e4', 'Choose project')
             }
             // Why: programmatic .focus() doesn't reliably trigger :focus-visible in Chromium, so mirror the Input ring onto :focus.
-            triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-[3px] focus:ring-ring/50"
+            triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-2 focus:ring-ring"
             invalid={Boolean(projectError)}
             describedBy={projectDescriptionId}
           />
@@ -1318,7 +1321,7 @@ export default function NewWorkspaceComposerCard({
             {selectedRepoIsGit
               ? translate(
                   'auto.components.NewWorkspaceComposerCard.ac3748dcda',
-                  "Name or 'Create From'"
+                  "Name or 'create from'"
                 )
               : translate(
                   'auto.components.NewWorkspaceComposerCard.0ee17638fe',
@@ -1364,7 +1367,7 @@ export default function NewWorkspaceComposerCard({
             }}
           />
           {forkPushWarning ? (
-            <p className="flex items-start gap-1.5 text-[11px] text-yellow-600 dark:text-yellow-500">
+            <p className="flex items-start gap-1.5 text-[11px] text-status-attention">
               <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
               <span>{forkPushWarning}</span>
             </p>
@@ -1384,7 +1387,7 @@ export default function NewWorkspaceComposerCard({
                     className={cn(
                       'flex size-4 items-center justify-center rounded-[3px] border shadow-sm transition',
                       reuseSelectedBranch
-                        ? 'border-emerald-500/60 bg-emerald-500 text-white'
+                        ? 'border-status-success/60 bg-status-success-solid text-white'
                         : 'border-foreground/20 bg-background dark:border-white/20 dark:bg-muted/10'
                     )}
                   >
@@ -1435,7 +1438,7 @@ export default function NewWorkspaceComposerCard({
                   onClick={onOpenAgentSettings}
                   // Why: keep Tab flow Name → Agent; tabIndex=-1 so this settings detour doesn't add a keystroke to every creation.
                   tabIndex={-1}
-                  className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
+                  className="hit-area size-5 shrink-0 text-muted-foreground hover:text-foreground"
                   aria-label={translate(
                     'auto.components.NewWorkspaceComposerCard.ab63f25397',
                     'Open agent settings'
@@ -1459,7 +1462,7 @@ export default function NewWorkspaceComposerCard({
             onOpenManageAgents={onOpenAgentSettings}
             defaultAgent={defaultTuiAgent}
             onSetDefault={handleSetDefaultAgent}
-            triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-[3px] focus:ring-ring/50"
+            triggerClassName="h-9 w-full border-input text-sm focus:border-ring focus:ring-2 focus:ring-ring"
             onTriggerEnter={createDisabled ? undefined : onCreate}
           />
         </div>
@@ -1507,7 +1510,7 @@ export default function NewWorkspaceComposerCard({
                   <label className="text-xs font-medium text-muted-foreground">
                     {translate('auto.components.NewWorkspaceComposerCard.2688050e4b', 'Name')}
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={name}
                     onChange={(event) => onNameValueChange(event.target.value)}
@@ -1515,7 +1518,7 @@ export default function NewWorkspaceComposerCard({
                       'auto.components.NewWorkspaceComposerCard.0ee17638fe',
                       'Workspace name'
                     )}
-                    className="w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="text-sm"
                   />
                 </div>
               ) : null}
@@ -1534,7 +1537,7 @@ export default function NewWorkspaceComposerCard({
                       'Branch name'
                     )}
                   </label>
-                  <input
+                  <Input
                     id={branchNameInputId}
                     type="text"
                     value={branchNameOverride ?? ''}
@@ -1543,7 +1546,7 @@ export default function NewWorkspaceComposerCard({
                       'auto.components.NewWorkspaceComposerCard.branchNamePlaceholder',
                       'feature/my-branch'
                     )}
-                    className="w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="text-sm"
                   />
                 </div>
               ) : null}
@@ -1552,7 +1555,7 @@ export default function NewWorkspaceComposerCard({
                 <label className="text-xs font-medium text-muted-foreground">
                   {translate('auto.components.NewWorkspaceComposerCard.f8728aa4f9', 'Note')}
                 </label>
-                <textarea
+                <Textarea
                   value={note}
                   onChange={(event) => onNoteChange(event.target.value)}
                   onPaste={handleNotePaste}
@@ -1567,7 +1570,7 @@ export default function NewWorkspaceComposerCard({
                     'Write a note'
                   )}
                   rows={1}
-                  className="w-full min-w-0 resize-none overflow-hidden rounded-xl bg-foreground/[0.05] px-3 py-1.5 text-sm transition-[color,box-shadow] placeholder:text-muted-foreground max-h-40 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="resize-none overflow-hidden py-1.5 max-h-40"
                 />
               </div>
 
@@ -1579,7 +1582,7 @@ export default function NewWorkspaceComposerCard({
                     </label>
                     {/* Why: a quiet monospace filename chip (not an uppercase tag) — orca.yaml is a
                         literal filename, so it reads as code, matching the app's path styling. */}
-                    <span className="rounded border border-border/50 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    <span className="rounded border border-border/50 bg-muted/30 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                       {setupConfig.source === 'yaml'
                         ? translate(
                             'auto.components.NewWorkspaceComposerCard.23bb365554',
@@ -1693,7 +1696,7 @@ export default function NewWorkspaceComposerCard({
                           {shouldWaitForSetupCheck
                             ? translate(
                                 'auto.components.NewWorkspaceComposerCard.803b7fe72f',
-                                'Checking setup configuration...'
+                                'Checking setup configuration…'
                               )
                             : translate(
                                 'auto.components.NewWorkspaceComposerCard.9a70e4859e',
@@ -1765,22 +1768,9 @@ export default function NewWorkspaceComposerCard({
             role="switch"
             aria-checked={createMultiple}
             onClick={() => onCreateMultipleChange?.(!createMultiple)}
-            className="group flex w-fit cursor-pointer items-center gap-2 rounded-md text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="group flex w-fit cursor-pointer items-center gap-2 rounded-md text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <span
-              aria-hidden
-              className={cn(
-                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent transition-colors',
-                createMultiple ? 'bg-foreground' : 'bg-muted-foreground/30'
-              )}
-            >
-              <span
-                className={cn(
-                  'pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform',
-                  createMultiple ? 'translate-x-4' : 'translate-x-0.5'
-                )}
-              />
-            </span>
+            <SwitchTrack checked={createMultiple} />
             <span className="text-muted-foreground transition-colors group-hover:text-foreground">
               {translate('auto.components.NewWorkspaceComposerCard.createMultiple', 'Create more')}
             </span>
@@ -1794,7 +1784,7 @@ export default function NewWorkspaceComposerCard({
         >
           {creating ? <LoaderCircle className="size-4 animate-spin" /> : null}
           {primaryActionLabel}
-          <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-white/20 px-1.5 py-0.5 text-[10px] font-medium leading-none text-current/80">
+          <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-white/20 px-1.5 py-0.5 text-[11px] font-medium leading-none text-current/80">
             <span>{submitShortcutModifierLabel}</span>
             <CornerDownLeft className="size-3" />
           </span>

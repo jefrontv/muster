@@ -71,7 +71,7 @@ function visit(node: unknown, cb: (node: ReactElementLike) => void): void {
 function findRefreshButton(node: unknown): ReactElementLike {
   let found: ReactElementLike | null = null
   visit(node, (entry) => {
-    if (entry.type === Button && entry.props['aria-label'] === 'Refresh Explorer') {
+    if (entry.type === Button && entry.props['aria-label'] === 'Refresh explorer') {
       found = entry
     }
   })
@@ -126,7 +126,7 @@ function findButtonByAriaLabel(node: unknown, ariaLabel: string): ReactElementLi
 function findCollapseAllButton(node: unknown): ReactElementLike {
   let found: ReactElementLike | null = null
   visit(node, (entry) => {
-    if (entry.type === Button && entry.props['aria-label'] === 'Collapse All') {
+    if (entry.type === Button && entry.props['aria-label'] === 'Collapse all') {
       found = entry
     }
   })
@@ -139,7 +139,7 @@ function findCollapseAllButton(node: unknown): ReactElementLike {
 function findMoreActionsButton(node: unknown): ReactElementLike {
   let found: ReactElementLike | null = null
   visit(node, (entry) => {
-    if (entry.type === Button && entry.props['aria-label'] === 'More Explorer Actions') {
+    if (entry.type === Button && entry.props['aria-label'] === 'More explorer actions') {
       found = entry
     }
   })
@@ -152,7 +152,7 @@ function findMoreActionsButton(node: unknown): ReactElementLike {
 function queryMoreActionsButton(node: unknown): ReactElementLike | null {
   let found: ReactElementLike | null = null
   visit(node, (entry) => {
-    if (entry.type === Button && entry.props['aria-label'] === 'More Explorer Actions') {
+    if (entry.type === Button && entry.props['aria-label'] === 'More explorer actions') {
       found = entry
     }
   })
@@ -164,7 +164,7 @@ function findGitIgnoredMenuItem(node: unknown): ReactElementLike {
   visit(node, (entry) => {
     if (
       entry.type === DropdownMenuCheckboxItem &&
-      entry.props.children === 'Show Git Ignored Files'
+      entry.props.children === 'Show Git ignored files'
     ) {
       found = entry
     }
@@ -178,7 +178,7 @@ function findGitIgnoredMenuItem(node: unknown): ReactElementLike {
 function findDotfilesMenuItem(node: unknown): ReactElementLike {
   let found: ReactElementLike | null = null
   visit(node, (entry) => {
-    if (entry.type === DropdownMenuCheckboxItem && entry.props.children === 'Show Dotfiles') {
+    if (entry.type === DropdownMenuCheckboxItem && entry.props.children === 'Show dotfiles') {
       found = entry
     }
   })
@@ -193,7 +193,7 @@ function queryGitIgnoredMenuItem(node: unknown): ReactElementLike | null {
   visit(node, (entry) => {
     if (
       entry.type === DropdownMenuCheckboxItem &&
-      entry.props.children === 'Show Git Ignored Files'
+      entry.props.children === 'Show Git ignored files'
     ) {
       found = entry
     }
@@ -451,9 +451,9 @@ describe('FileExplorerToolbar', () => {
     const element = makeToolbar()
 
     expect(getToolbarButtonLabels(element)).toEqual([
-      'Collapse All',
-      'Refresh Explorer',
-      'More Explorer Actions'
+      'Collapse all',
+      'Refresh explorer',
+      'More explorer actions'
     ])
   })
 

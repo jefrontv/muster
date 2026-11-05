@@ -43,7 +43,7 @@ export function getCronScheduleStatusLabel(
 
 export function getCronFieldValues(schedule: string): readonly string[] {
   const parts = getAutomationCronExpressionFields(schedule)
-  return AUTOMATION_CRON_FIELD_LABELS.map((_, index) => parts[index] ?? '...')
+  return AUTOMATION_CRON_FIELD_LABELS.map((_, index) => parts[index] ?? '…')
 }
 
 export function AutomationCustomCronPanel({
@@ -92,7 +92,7 @@ export function AutomationCustomCronPanel({
               key={label}
               className="min-w-0 rounded-md border border-border/70 bg-muted/25 px-1.5 py-1 text-center"
             >
-              <div className="truncate text-[10px] font-medium text-muted-foreground">{label}</div>
+              <div className="truncate text-[11px] font-medium text-muted-foreground">{label}</div>
               <div className="mt-0.5 truncate font-mono text-[11px] text-foreground">
                 {cronFieldValues[index]}
               </div>

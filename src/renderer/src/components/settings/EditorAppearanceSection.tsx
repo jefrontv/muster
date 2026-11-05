@@ -42,27 +42,31 @@ function ThemeSelect({
       label={label}
       control={
         <Select
-        value={known ? current : BUILTIN_VALUE}
-        onValueChange={(next) => {
-          const value = next === BUILTIN_VALUE ? undefined : next
-          updateSettings(mode === 'dark' ? { editorThemeDark: value } : { editorThemeLight: value })
-        }}
-      >
-        <SelectTrigger className="h-8 w-60 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem
-              key={option.value === '' ? BUILTIN_VALUE : option.value}
-              value={option.value === '' ? BUILTIN_VALUE : option.value}
-            >
-              <span className="truncate">{option.label}</span>
-              {option.sourceLabel ? (
-                <span className="ml-2 text-[11px] text-muted-foreground">{option.sourceLabel}</span>
-              ) : null}
-            </SelectItem>
-          ))}
+          value={known ? current : BUILTIN_VALUE}
+          onValueChange={(next) => {
+            const value = next === BUILTIN_VALUE ? undefined : next
+            updateSettings(
+              mode === 'dark' ? { editorThemeDark: value } : { editorThemeLight: value }
+            )
+          }}
+        >
+          <SelectTrigger className="w-60">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem
+                key={option.value === '' ? BUILTIN_VALUE : option.value}
+                value={option.value === '' ? BUILTIN_VALUE : option.value}
+              >
+                <span className="truncate">{option.label}</span>
+                {option.sourceLabel ? (
+                  <span className="ml-2 text-[11px] text-muted-foreground">
+                    {option.sourceLabel}
+                  </span>
+                ) : null}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       }

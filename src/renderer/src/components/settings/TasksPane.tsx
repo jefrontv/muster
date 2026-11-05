@@ -115,7 +115,7 @@ export function TasksPane({ settings, updateSettings }: TasksPaneProps): React.J
     <div className="space-y-6">
       <section className="space-y-3">
         <SettingsSubsectionHeader
-          title={translate('auto.components.settings.TasksPane.93e72ef659', 'Task Sources')}
+          title={translate('auto.components.settings.TasksPane.93e72ef659', 'Task sources')}
           description={translate(
             'auto.components.settings.TasksPane.71644aba56',
             'Choose which task providers appear in the Tasks page source picker and sidebar shortcuts. At least one provider must stay visible.'
@@ -123,7 +123,7 @@ export function TasksPane({ settings, updateSettings }: TasksPaneProps): React.J
         />
 
         <SearchableSetting
-          title={translate('auto.components.settings.TasksPane.f71d8a9dd3', 'Task Providers')}
+          title={translate('auto.components.settings.TasksPane.f71d8a9dd3', 'Task providers')}
           description={translate(
             'auto.components.settings.TasksPane.3a72b9745e',
             'Choose which task providers appear in the Tasks page and sidebar shortcuts.'
@@ -181,7 +181,7 @@ export function TasksPane({ settings, updateSettings }: TasksPaneProps): React.J
                 <span
                   aria-hidden
                   className={cn(
-                    'flex size-4 shrink-0 items-center justify-center rounded border text-[10px]',
+                    'flex size-4 shrink-0 items-center justify-center rounded border text-[11px]',
                     enabled
                       ? 'border-foreground/50 bg-foreground text-background'
                       : 'border-border bg-background'

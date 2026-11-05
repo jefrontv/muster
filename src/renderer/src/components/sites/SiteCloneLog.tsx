@@ -28,7 +28,7 @@ export function SiteCloneLog({ lines }: { lines: string[] }): React.JSX.Element 
   return (
     <div
       ref={ref}
-      className="scrollbar-sleek max-h-40 overflow-y-auto overflow-x-hidden rounded-md border border-border bg-muted/40 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-muted-foreground"
+      className="scrollbar-sleek max-h-40 overflow-y-auto overflow-x-hidden rounded-xl border border-border bg-muted/40 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-muted-foreground"
     >
       {lines.map((line, index) => (
         <div key={index} className="whitespace-pre-wrap break-all">

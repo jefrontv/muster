@@ -35,7 +35,7 @@ const DEFAULT_VIEW_MODE_METADATA: Record<EditorToggleValue, ViewModeMetadata> = 
   },
   rich: {
     get label() {
-      return translate('auto.components.editor.EditorViewToggle.aff15f94f5', 'Rich Editor')
+      return translate('auto.components.editor.EditorViewToggle.aff15f94f5', 'Rich editor')
     },
     icon: Pencil
   },
@@ -108,8 +108,8 @@ export default function EditorViewToggle({
       <ToggleGroup
         type="single"
         size="sm"
-        className="h-[23px] [&_[data-slot=toggle-group-item]]:h-[23px] [&_[data-slot=toggle-group-item]]:min-w-[24px] [&_[data-slot=toggle-group-item]]:px-2"
-        variant="outline"
+        className="h-6 w-auto"
+        variant="segmented"
         value={value}
         onValueChange={(v) => {
           if (v) {
@@ -129,7 +129,7 @@ export default function EditorViewToggle({
                 <ToggleGroupItem
                   value={viewMode}
                   aria-label={metadata.label}
-                  className="h-[23px] min-w-[24px] px-2 aria-[checked=true]:border-foreground/20 aria-[checked=true]:bg-foreground/10 aria-[checked=true]:text-foreground aria-[checked=true]:shadow-xs aria-[checked=true]:hover:bg-foreground/15 aria-[checked=true]:hover:text-foreground data-[state=on]:border-foreground/20 data-[state=on]:bg-foreground/10 data-[state=on]:text-foreground data-[state=on]:shadow-xs data-[state=on]:hover:bg-foreground/15 data-[state=on]:hover:text-foreground"
+                  className="min-w-7 flex-none basis-auto px-2"
                 >
                   <Icon className="size-3.5" />
                 </ToggleGroupItem>

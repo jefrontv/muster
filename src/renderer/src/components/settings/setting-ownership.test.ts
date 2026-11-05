@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getSettingOwnershipSummary } from './setting-ownership'
 
 describe('getSettingOwnershipSummary', () => {
-  it('documents Source Control AI as client defaults with host-scoped model choices', () => {
+  it('documents Source control AI as client defaults with host-scoped model choices', () => {
     const summary = getSettingOwnershipSummary('sourceControlAiDefaults')
 
     expect(summary.ownership).toBe('client-default')
@@ -10,7 +10,7 @@ describe('getSettingOwnershipSummary', () => {
     expect(summary.description).toContain('model choices and discovery stay scoped to the host')
   })
 
-  it('documents repository Source Control AI as project-host setup scoped', () => {
+  it('documents repository Source control AI as project-host setup scoped', () => {
     const summary = getSettingOwnershipSummary('repositorySourceControlAi')
 
     expect(summary.ownership).toBe('project-host-setup')

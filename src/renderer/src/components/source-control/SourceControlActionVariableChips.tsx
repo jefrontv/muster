@@ -38,7 +38,7 @@ function SourceControlVariableSample({
 }): React.JSX.Element {
   return (
     <div className="space-y-1">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
       <pre className="rounded-sm bg-background/60 p-2 whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed">
@@ -129,7 +129,7 @@ export function SourceControlActionVariableChips({
                   variant="ghost"
                   size="xs"
                   disabled={disabled}
-                  className="h-5 rounded px-1.5 font-mono text-[10px]"
+                  className="h-5 rounded px-1.5 font-mono text-[11px]"
                   onClick={() => onInsert(variable)}
                 >
                   {`{${variable}}`}

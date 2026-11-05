@@ -95,7 +95,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps): React
         <p className="onboarding-welcome-tagline mt-5 max-w-md text-[16px] leading-relaxed text-muted-foreground">
           {translate(
             'auto.components.onboarding.welcome.tagline',
-            'Run AI agents on your projects, chat through work, and manage client sites — in one place.'
+            'Run AI agents on your projects, chat through work, and manage client sites. In one place.'
           )}
         </p>
       </div>
@@ -109,7 +109,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps): React
           onClick={requestExit}
         >
           {translate('auto.components.onboarding.welcome.start', 'Get started')}
-          <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-medium leading-none text-current/80">
+          <span className="ml-1 inline-flex items-center gap-0.5 rounded border border-primary-foreground/20 px-1.5 py-0.5 text-[11px] font-medium leading-none text-current/80">
             <span>{shortcutModifierLabel}</span>
             <CornerDownLeft className="size-3" />
           </span>

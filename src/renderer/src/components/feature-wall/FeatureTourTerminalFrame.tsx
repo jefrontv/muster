@@ -5,7 +5,7 @@ import { translate } from '@/i18n/i18n'
 export function FeatureTourTerminalFrame(): JSX.Element {
   return (
     <div className="absolute inset-0 flex flex-col gap-5 bg-card px-4 py-4">
-      <div className="text-[14.5px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
+      <div className="text-[14px] font-semibold uppercase tracking-[0.07em] leading-none text-muted-foreground">
         {translate(
           'auto.components.feature.wall.FeatureTourPreview.1aa8a9a24a',
           'Splittable terminal'
@@ -16,14 +16,14 @@ export function FeatureTourTerminalFrame(): JSX.Element {
           <span className="size-1.5 rounded-full bg-foreground/15" />
           <span className="size-1.5 rounded-full bg-foreground/15" />
           <span className="size-1.5 rounded-full bg-foreground/15" />
-          <span className="ml-2 font-mono text-[13.5px] leading-none text-muted-foreground">
+          <span className="ml-2 font-mono text-[13px] leading-none text-muted-foreground">
             {translate(
               'auto.components.feature.wall.FeatureTourPreview.04d54d50ec',
               'muster · zsh'
             )}
           </span>
         </div>
-        <div className="grid flex-1 grid-cols-2 divide-x divide-border font-mono text-[14.5px] leading-[1.4] text-foreground">
+        <div className="grid flex-1 grid-cols-2 divide-x divide-border font-mono text-[14px] leading-[1.4] text-foreground">
           <div className="min-w-0 p-2">
             <div className="flex items-center gap-1">
               <span className="text-emerald-500">$</span>
@@ -48,7 +48,7 @@ export function FeatureTourTerminalFrame(): JSX.Element {
                 className="feature-tour-terminal-output flex min-w-0 items-center gap-1.5"
                 data-line="2"
               >
-                <span className="font-bold text-emerald-600">✓</span>
+                <span className="font-semibold text-emerald-600">✓</span>
                 <span className="truncate">
                   {translate(
                     'auto.components.feature.wall.FeatureTourPreview.24fedd5a52',
@@ -112,7 +112,7 @@ export function FeatureTourTerminalFrame(): JSX.Element {
                 <span className="truncate text-muted-foreground">
                   {translate(
                     'auto.components.feature.wall.FeatureTourPreview.304ad0dfc1',
-                    'Thinking...'
+                    'Thinking…'
                   )}
                 </span>
               </div>

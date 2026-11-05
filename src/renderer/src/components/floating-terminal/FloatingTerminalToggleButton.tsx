@@ -210,7 +210,7 @@ export function FloatingTerminalToggleButton({
             // pages a soft drop shadow lifts it; on near-black dark surfaces a
             // drop shadow vanishes, so use a distinctly lighter fill plus a
             // bright hairline ring to define the edge.
-            className="relative cursor-grab rounded-lg border-transparent text-foreground bg-card shadow-[0_4px_12px_rgb(0_0_0_/_0.22),0_0_0_1px_color-mix(in_srgb,var(--foreground)_12%,transparent)] hover:-translate-y-0.5 hover:bg-accent active:translate-y-0 active:cursor-grabbing dark:bg-accent dark:shadow-[0_6px_16px_rgb(0_0_0_/_0.55),0_0_0_1px_rgb(255_255_255_/_0.22)] dark:hover:bg-[color-mix(in_srgb,var(--accent)_82%,white)]"
+            className="relative cursor-grab rounded-full text-foreground bg-card border border-border/50 shadow-floating hover:-translate-y-0.5 hover:bg-accent active:translate-y-0 active:cursor-grabbing dark:bg-accent dark:hover:bg-[color-mix(in_srgb,var(--accent)_82%,white)]"
             data-floating-terminal-toggle
             aria-label={
               open
@@ -245,7 +245,7 @@ export function FloatingTerminalToggleButton({
               <span
                 aria-hidden
                 data-floating-terminal-attention
-                className="pointer-events-none absolute right-1 top-1 size-2 rounded-full bg-amber-500 ring-2 ring-card dark:ring-accent"
+                className="pointer-events-none absolute right-1 top-1 size-2 rounded-full bg-status-attention ring-2 ring-card dark:ring-accent"
               />
             ) : null}
           </Button>

@@ -127,7 +127,7 @@ export function PlanReviewNotePopover({
           {attachments.map((path) => (
             <span
               key={path}
-              className="flex min-w-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10.5px] text-muted-foreground"
+              className="flex min-w-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground"
             >
               <span className="max-w-[90px] truncate">{path.split(/[\\/]/).pop()}</span>
               <button

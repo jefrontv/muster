@@ -211,6 +211,17 @@ export function UntitledFileRenameDialog({
                         'Browse folders'
                       )
                 }
+                aria-label={
+                  disableBrowse
+                    ? translate(
+                        'auto.components.editor.UntitledFileRenameDialog.5e7f0d8a80',
+                        'Folder picker unavailable for remote files'
+                      )
+                    : translate(
+                        'auto.components.editor.UntitledFileRenameDialog.725868c75d',
+                        'Browse folders'
+                      )
+                }
               >
                 <FolderOpen className="size-3.5" />
               </Button>

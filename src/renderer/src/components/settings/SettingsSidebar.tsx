@@ -1,14 +1,15 @@
 import type { CSSProperties, RefObject } from 'react'
+import { SECTION_LABEL } from '../ui/section-label-classes'
+import { Badge } from '@/components/ui/badge'
 import { useMemo } from 'react'
-import { ArrowLeft, Search, Server } from 'lucide-react'
-import type { RepoIcon } from '../../../../shared/repo-icon'
+import { ArrowLeft, Search } from 'lucide-react'
 import type { SettingsNavIcon, SettingsNavInstallStatus } from '@/lib/settings-navigation-types'
-import type { GitHubRepositoryIdentity, GlobalSettings } from '../../../../shared/types'
+import type { GlobalSettings } from '../../../../shared/types'
 import { useShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutKeyCombo } from '../ShortcutKeyCombo'
 import { cn } from '@/lib/utils'
-import { RepoIconGlyph } from '../repo/repo-icon'
-import { RepoForkIndicator } from '../repo/repo-fork-indicator'
+import { SettingsProjectsNav } from './settings-projects-nav'
+import type { RepoNavSection } from './settings-projects-nav'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { SetupGuideProgressRing } from '../setup-guide/SetupGuideProgressRing'
@@ -30,13 +31,6 @@ type NavGroup = {
   id: string
   title: string
   sections: NavSection[]
-}
-
-type RepoNavSection = NavSection & {
-  badgeColor?: string
-  isRemote?: boolean
-  repoIcon?: RepoIcon | null
-  upstream?: GitHubRepositoryIdentity | null
 }
 
 type SettingsSidebarProps = {
@@ -94,7 +88,7 @@ function SettingsSetupGuideNavRow({
         })
       }
       className={cn(
-        'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-worktree-sidebar-ring/50',
+        'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring',
         setupActive
           ? 'bg-worktree-sidebar-accent font-medium text-worktree-sidebar-accent-foreground'
           : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8 hover:text-worktree-sidebar-foreground'
@@ -141,7 +135,7 @@ export function SettingsSidebar({
   const searchShortcutCombos = useShortcutKeyComboDetails('settings.search')
   const navItemClassName = (isActive: boolean): string =>
     cn(
-      'flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-[13px] outline-none transition-colors duration-150 focus-visible:ring-[3px] focus-visible:ring-worktree-sidebar-ring/50',
+      'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-[13px] outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-worktree-sidebar-ring',
       isActive
         ? 'bg-worktree-sidebar-accent font-medium text-worktree-sidebar-accent-foreground ring-1 ring-worktree-sidebar-ring/25'
         : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-accent/60 hover:text-worktree-sidebar-foreground'
@@ -168,20 +162,19 @@ export function SettingsSidebar({
           'Needs attention'
         )
       case 'checking':
-        return translate('auto.components.settings.AgentSkillSetupPanel.68a468752e', 'Checking...')
+        return translate('auto.components.settings.AgentSkillSetupPanel.68a468752e', 'Checking…')
     }
   }
-  const installStatusClassName = (status: SettingsNavInstallStatus): string =>
-    cn(
-      'ml-auto shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none',
-      status === 'installed' || status === 'up-to-date'
-        ? 'border-status-success-border bg-status-success-background text-status-success'
-        : status === 'update-available' || status === 'needs-attention'
-          ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-          : status === 'install'
-            ? 'border-foreground/15 bg-foreground/10 text-foreground'
-            : 'border-border/50 bg-muted/30 text-muted-foreground'
-    )
+  const installStatusVariant = (
+    status: SettingsNavInstallStatus
+  ): 'success' | 'attention' | 'secondary' | 'muted' =>
+    status === 'installed' || status === 'up-to-date'
+      ? 'success'
+      : status === 'update-available' || status === 'needs-attention'
+        ? 'attention'
+        : status === 'install'
+          ? 'secondary'
+          : 'muted'
 
   return (
     <aside
@@ -211,7 +204,7 @@ export function SettingsSidebar({
               'auto.components.settings.SettingsSidebar.dbceaa8840',
               'Search settings'
             )}
-            className="bg-background/60 pl-9 pr-14 text-[13px]"
+            className="pl-9 pr-14"
           />
           {searchQuery === '' ? (
             <span className="pointer-events-none absolute right-2 top-1/2 flex -translate-y-1/2 items-center">
@@ -221,7 +214,7 @@ export function SettingsSidebar({
                   keys={combo.keys}
                   doubleTap={combo.doubleTap}
                   className="inline-flex gap-0.5"
-                  separatorClassName="text-[10px] text-muted-foreground"
+                  separatorClassName="text-[11px] text-muted-foreground"
                 />
               ))}
             </span>
@@ -243,9 +236,7 @@ export function SettingsSidebar({
         <div className="space-y-5">
           {generalGroups.map((group) => (
             <div key={group.id} className="space-y-2">
-              <p className="px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                {group.title}
-              </p>
+              <p className={cn('px-3', SECTION_LABEL)}>{group.title}</p>
               <div className="space-y-1">
                 {group.sections
                   .filter((section) => section.id !== 'setup-guide')
@@ -271,13 +262,16 @@ export function SettingsSidebar({
                         <Icon className="size-4 shrink-0" />
                         <span className="truncate">{section.title}</span>
                         {section.installStatus ? (
-                          <span className={installStatusClassName(section.installStatus)}>
+                          <Badge
+                            variant={installStatusVariant(section.installStatus)}
+                            className="ml-auto"
+                          >
                             {installStatusLabel(section.installStatus)}
-                          </span>
+                          </Badge>
                         ) : section.badge ? (
-                          <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+                          <Badge variant="muted" className="ml-auto">
                             {section.badge}
-                          </span>
+                          </Badge>
                         ) : null}
                       </button>
                     )
@@ -286,63 +280,14 @@ export function SettingsSidebar({
             </div>
           ))}
 
-          <div className="space-y-2">
-            <p className="px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              {translate('auto.components.settings.SettingsSidebar.5c9669ff9c', 'Projects')}
-            </p>
-
-            {repoSections.length > 0 ? (
-              <div className="space-y-1">
-                {repoSections.map((section) => {
-                  const isActive = activeSectionId === section.id
-
-                  return (
-                    <button
-                      key={section.id}
-                      aria-current={isActive ? 'page' : undefined}
-                      data-current={isActive ? 'true' : undefined}
-                      onClick={(event) =>
-                        onSelectSection(section.id, {
-                          metaKey: event.metaKey,
-                          ctrlKey: event.ctrlKey,
-                          shiftKey: event.shiftKey,
-                          altKey: event.altKey
-                        })
-                      }
-                      className={navItemClassName(isActive)}
-                    >
-                      <RepoIconGlyph
-                        repoIcon={section.repoIcon}
-                        color={section.badgeColor}
-                        className="size-4 shrink-0 text-muted-foreground"
-                        iconClassName="size-3.5"
-                      />
-                      <span className="truncate">{section.title}</span>
-                      <RepoForkIndicator upstream={section.upstream} />
-                      {section.isRemote && (
-                        <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
-                          <Server className="size-3" />
-                          {translate('auto.components.settings.SettingsSidebar.e0900f83e7', 'SSH')}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="px-3 text-xs text-muted-foreground">
-                {hasRepos
-                  ? translate(
-                      'auto.components.settings.SettingsSidebar.3e483e256b',
-                      'No matching project settings.'
-                    )
-                  : translate(
-                      'auto.components.settings.SettingsSidebar.df38d612b7',
-                      'No projects added yet.'
-                    )}
-              </p>
-            )}
-          </div>
+          <SettingsProjectsNav
+            activeSectionId={activeSectionId}
+            repoSections={repoSections}
+            hasRepos={hasRepos}
+            searchQuery={searchQuery}
+            navItemClassName={navItemClassName}
+            onSelectSection={onSelectSection}
+          />
         </div>
       </div>
     </aside>

@@ -60,7 +60,7 @@ function DeleteWorktreeFailureToastBody({
         ) : null}
         {canForceDelete ? (
           <Button type="button" variant="destructive" size="sm" onClick={forceDelete}>
-            {translate('auto.components.sidebar.delete.worktree.flow.2b20ce87b3', 'Force Delete')}
+            {translate('auto.components.sidebar.delete.worktree.flow.2b20ce87b3', 'Force delete')}
           </Button>
         ) : null}
       </div>

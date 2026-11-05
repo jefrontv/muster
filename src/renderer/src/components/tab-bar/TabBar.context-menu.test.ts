@@ -480,9 +480,9 @@ describe('TabBar context menu wiring', () => {
     )
 
     expect(menuLabels[0]).toContain('New Markdown')
-    expect(menuLabels[1]).toContain('Open Markdown...')
-    expect(menuLabels[2]).toContain('New Terminal')
-    expect(menuLabels[3]).toContain('New Browser Tab')
+    expect(menuLabels[1]).toContain('Open Markdown…')
+    expect(menuLabels[2]).toContain('New terminal')
+    expect(menuLabels[3]).toContain('New browser tab')
   })
 
   it('cancels delayed menu focus when the tab bar root unmounts', async () => {

@@ -27,13 +27,13 @@ export function TerminalQuickCommandActionToggle({
       <ToggleGroupItem value="terminal-command" className={QUICK_COMMAND_TOGGLE_ITEM_CLASS}>
         {translate(
           'auto.components.terminal.quick.commands.TerminalQuickCommandActionToggle.b5ea4d64f6',
-          'Terminal Command'
+          'Terminal command'
         )}
       </ToggleGroupItem>
       <ToggleGroupItem value="agent-prompt" className={QUICK_COMMAND_TOGGLE_ITEM_CLASS}>
         {translate(
           'auto.components.terminal.quick.commands.TerminalQuickCommandActionToggle.b0d58e37ed',
-          'Agent Prompt'
+          'Agent prompt'
         )}
       </ToggleGroupItem>
     </ToggleGroup>

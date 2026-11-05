@@ -28,12 +28,12 @@ describe('AgentCombobox', () => {
         value={null}
         onValueChange={vi.fn()}
         allowBlankTerminal={false}
-        emptyLabel="Select an Agent"
+        emptyLabel="Select an agent"
       />
     )
 
-    expect(markup).toContain('Select an Agent')
-    expect(markup).not.toContain('Blank Terminal')
+    expect(markup).toContain('Select an agent')
+    expect(markup).not.toContain('Blank terminal')
   })
 
   it('uses the bundled OpenClaude favicon crop instead of Claude or GitHub artwork', () => {

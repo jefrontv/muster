@@ -65,7 +65,7 @@ export function buildTabCreateMenuOptions(
 
   if (context.windowsShellEntries && context.windowsShellEntries.length > 0) {
     for (const entry of context.windowsShellEntries) {
-      const label = `${translate('auto.components.tab.bar.TabBar.7c1313d237', 'New Terminal:')} ${entry.label}`
+      const label = `${translate('auto.components.tab.bar.TabBar.7c1313d237', 'New terminal:')} ${entry.label}`
       options.push({
         id: `new-terminal-shell:${entry.shell}`,
         kind: 'new-terminal-shell',
@@ -81,7 +81,7 @@ export function buildTabCreateMenuOptions(
       })
     }
   } else {
-    const label = translate('auto.components.tab.bar.TabBar.d364f3c8d4', 'New Terminal')
+    const label = translate('auto.components.tab.bar.TabBar.d364f3c8d4', 'New terminal')
     options.push({
       id: 'new-terminal',
       kind: 'new-terminal',
@@ -96,7 +96,7 @@ export function buildTabCreateMenuOptions(
   }
 
   if (context.hasNewBrowser) {
-    const label = translate('auto.components.tab.bar.TabBar.4833fb2cbe', 'New Browser Tab')
+    const label = translate('auto.components.tab.bar.TabBar.4833fb2cbe', 'New browser tab')
     options.push({
       id: 'new-browser',
       kind: 'new-browser',
@@ -127,7 +127,7 @@ export function buildTabCreateMenuOptions(
   }
 
   if (context.hasOpenMarkdown) {
-    const label = translate('auto.components.tab.bar.TabBar.4f327c8b3d', 'Open Markdown...')
+    const label = translate('auto.components.tab.bar.TabBar.4f327c8b3d', 'Open Markdown…')
     options.push({
       id: 'open-markdown',
       kind: 'open-markdown',

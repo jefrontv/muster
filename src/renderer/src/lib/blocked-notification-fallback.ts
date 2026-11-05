@@ -28,7 +28,7 @@ export function showBlockedNotificationFallbackToast(): void {
       action: {
         label: translate(
           'auto.components.onboarding.NotificationStep.4f6a1da718',
-          'Open System Settings'
+          'Open system settings'
         ),
         onClick: () => {
           void window.api.notifications.openSystemSettings()

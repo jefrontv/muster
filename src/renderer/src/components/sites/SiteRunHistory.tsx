@@ -93,7 +93,7 @@ export function SiteRunHistory({ siteId }: SiteRunHistoryProps): React.JSX.Eleme
               )}
         </p>
       ) : (
-        <ul className="max-h-96 overflow-y-auto scrollbar-sleek rounded-md border border-border">
+        <ul className="max-h-96 overflow-y-auto scrollbar-sleek rounded-xl border border-border">
           {runs.map((run) => (
             <SiteRunHistoryEntry
               key={run.id}

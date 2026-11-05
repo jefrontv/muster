@@ -1136,7 +1136,7 @@ function ProjectSearchInput({
         }
         className={cn(
           'h-7 rounded-md border-border/50 bg-background pl-8 pr-7 text-[11px]',
-          dirty && 'border-amber-500/50'
+          dirty && 'border-status-attention/50'
         )}
       />
       {value ? (
@@ -1198,7 +1198,7 @@ function ViewTabStrip({
                 ? v.name
                 : translate(
                     'auto.components.github.project.ProjectViewWrapper.2edf5e7e77',
-                    "{{value0}} — Muster doesn't support {{value1}} project views yet. File a feature request at {{value2}}.",
+                    "{{value0}}: Muster doesn't support {{value1}} project views yet. File a feature request at {{value2}}.",
                     { value0: v.name, value1: layoutLabel, value2: ORCA_FEATURE_REQUEST_URL }
                   )
             }
@@ -1229,7 +1229,7 @@ function ViewTabStrip({
                   '{{value0}}. {{value1}} File a feature request at {{value2}}.',
                   { value0: v.name, value1: unsupportedMessage, value2: ORCA_FEATURE_REQUEST_URL }
                 )}
-                className="inline-flex shrink-0 cursor-not-allowed rounded-t-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="inline-flex shrink-0 cursor-not-allowed rounded-t-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {tab}
               </span>
@@ -1340,7 +1340,7 @@ function ProjectTableSkeleton(): React.JSX.Element {
           }}
         >
           {Array.from({ length: headerCols }).map((_, i) => (
-            <div key={i} className="h-3 w-20 animate-pulse rounded bg-muted/70" />
+            <div key={i} className="h-3 w-20 animate-pulse rounded-full bg-foreground/[0.07]" />
           ))}
         </div>
       </div>
@@ -1351,11 +1351,11 @@ function ProjectTableSkeleton(): React.JSX.Element {
             className="grid min-h-10 items-center gap-3 px-3 py-2"
             style={{ gridTemplateColumns: `repeat(${bodyCols}, minmax(0, 1fr))` }}
           >
-            <div className="h-4 w-3/5 animate-pulse rounded bg-muted/70" />
-            <div className="h-4 w-4/5 animate-pulse rounded bg-muted/70" />
-            <div className="h-4 w-2/5 animate-pulse rounded-full bg-muted/60" />
-            <div className="h-4 w-3/5 animate-pulse rounded bg-muted/60" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-muted/60" />
+            <div className="h-4 w-3/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-4/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-2/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-3/5 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <div className="h-4 w-1/2 animate-pulse rounded-full bg-foreground/[0.07]" />
           </div>
         ))}
       </div>

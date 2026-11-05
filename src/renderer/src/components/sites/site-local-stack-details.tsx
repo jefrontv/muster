@@ -31,7 +31,7 @@ export function siteStackDatabaseLabel(
 // Matches a locked SiteEditableField's input, minus the pointer: these values come from the stack.
 const BOX =
   'flex h-9 min-w-0 items-center rounded-full bg-foreground/[0.05] px-3.5 text-sm text-muted-foreground'
-const SKELETON = 'h-3 animate-pulse rounded bg-muted/60'
+const SKELETON = 'h-3 animate-pulse rounded-full bg-foreground/[0.07]'
 
 export function SiteLocalStackField({
   label,
@@ -83,7 +83,7 @@ export function SiteLocalStackDetails({
         {siteUrl ? (
           <button
             type="button"
-            className="group flex min-w-0 items-center gap-1.5 rounded-sm text-foreground outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="group flex min-w-0 items-center gap-1.5 rounded-md text-foreground outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => void window.api.shell.openUrl(siteUrl)}
           >
             <span className="truncate">{servedDomain}</span>

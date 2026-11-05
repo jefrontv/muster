@@ -25,7 +25,7 @@ export function ActiveCollabNotificationDelivery({
         <Label className="text-xs font-normal text-muted-foreground">
           {translate(
             'auto.components.settings.ActiveCollabNotificationSection.soundLabel',
-            'ActiveCollab Sound'
+            'ActiveCollab sound'
           )}
         </Label>
         <NotificationSoundPicker
@@ -35,7 +35,7 @@ export function ActiveCollabNotificationDelivery({
           disabled={!notificationsEnabled}
           ariaLabel={translate(
             'auto.components.settings.ActiveCollabNotificationSection.soundLabel',
-            'ActiveCollab Sound'
+            'ActiveCollab sound'
           )}
           inherit={{
             soundId: notificationSettings.customSoundId,
@@ -55,7 +55,7 @@ export function ActiveCollabNotificationDelivery({
         <Label className="text-xs font-normal text-muted-foreground">
           {translate(
             'auto.components.settings.ActiveCollabNotificationSection.styleLabel',
-            'Banner Wording'
+            'Banner wording'
           )}
         </Label>
         <Select
@@ -69,10 +69,9 @@ export function ActiveCollabNotificationDelivery({
         >
           <SelectTrigger
             className="w-full max-w-[360px]"
-            size="sm"
             aria-label={translate(
               'auto.components.settings.ActiveCollabNotificationSection.styleLabel',
-              'Banner Wording'
+              'Banner wording'
             )}
           >
             <SelectValue />

@@ -42,7 +42,6 @@ type AutomationEditorDialogFooterProps = {
   visibleAgents: AgentCatalogEntry[]
   scheduleField: React.ReactNode
   pickerTriggerClassName: string
-  modeToggleItemClassName: string
   onProjectChange: (projectId: string) => void
   getRepoHostLabel?: (repo: Repo) => string | null | undefined
   onDraftChange: (updater: (current: AutomationDraft) => AutomationDraft) => void
@@ -69,7 +68,6 @@ export function AutomationEditorDialogFooter({
   visibleAgents,
   scheduleField,
   pickerTriggerClassName,
-  modeToggleItemClassName,
   onProjectChange,
   getRepoHostLabel,
   onDraftChange,
@@ -113,7 +111,7 @@ export function AutomationEditorDialogFooter({
                       'auto.components.automations.AutomationEditorDialog.2c3fd9bfa1',
                       'Workspace mode help'
                     )}
-                    className="rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                    className="rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Info className="size-3.5" />
                   </button>
@@ -151,17 +149,17 @@ export function AutomationEditorDialogFooter({
                     reuseSession: workspaceMode === 'existing' ? current.reuseSession : false
                   }))
                 }
-                variant="outline"
+                variant="segmented"
                 size="sm"
-                className="grid w-full grid-cols-2"
+                className="h-8"
               >
-                <ToggleGroupItem value="existing" className={modeToggleItemClassName}>
+                <ToggleGroupItem value="existing">
                   {translate(
                     'auto.components.automations.AutomationEditorDialog.a2e688226d',
                     'Worktree'
                   )}
                 </ToggleGroupItem>
-                <ToggleGroupItem value="new_per_run" className={modeToggleItemClassName}>
+                <ToggleGroupItem value="new_per_run">
                   {translate(
                     'auto.components.automations.AutomationEditorDialog.6ff66f9012',
                     'New run'
@@ -235,11 +233,7 @@ export function AutomationEditorDialogFooter({
                 allowNarrowTrigger
               />
             </Field>
-            <AutomationSessionField
-              draft={draft}
-              toggleItemClassName={modeToggleItemClassName}
-              onDraftChange={onDraftChange}
-            />
+            <AutomationSessionField draft={draft} onDraftChange={onDraftChange} />
             {isHermesTarget ? null : scheduleField}
             <AutomationMissedRunGraceField
               draft={draft}
@@ -278,7 +272,7 @@ export function AutomationEditorDialogFooter({
           {isEditing || isEditingExternal
             ? translate(
                 'auto.components.automations.AutomationEditorDialog.777548c2d6',
-                'Save Changes'
+                'Save changes'
               )
             : isSaving || isHermesCreate
               ? translate('auto.components.automations.AutomationEditorDialog.a9d9dccf77', 'Save')

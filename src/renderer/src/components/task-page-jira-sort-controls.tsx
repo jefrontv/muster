@@ -63,7 +63,7 @@ export function TaskPageJiraSortControls({
 
   return (
     <>
-      <div className="grid h-8 flex-none grid-cols-[90px_minmax(0,1fr)_128px_92px_80px_64px] items-center gap-3 border-b border-border/50 bg-muted/25 px-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground max-md:!hidden lg:grid-cols-[96px_minmax(0,1.25fr)_132px_120px_136px_96px_64px] xl:grid-cols-[104px_minmax(0,1.45fr)_144px_132px_160px_128px_72px]">
+      <div className="grid h-8 flex-none grid-cols-[90px_minmax(0,1fr)_128px_92px_80px_64px] items-center gap-3 border-b border-border/50 bg-muted/25 px-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground max-md:!hidden lg:grid-cols-[96px_minmax(0,1.25fr)_132px_120px_136px_96px_64px] xl:grid-cols-[104px_minmax(0,1.45fr)_144px_132px_160px_128px_72px]">
         {columns.map((column) => (
           <button
             key={column.id}
@@ -72,7 +72,7 @@ export function TaskPageJiraSortControls({
             aria-label={orderBy === column.id ? `${column.label}, ${directionLabel}` : column.label}
             aria-pressed={orderBy === column.id}
             className={cn(
-              'flex items-center gap-1 rounded-sm text-left text-[11px] font-semibold tracking-[0.08em] uppercase select-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
+              'flex items-center gap-1 rounded-sm text-left text-[11px] font-semibold tracking-[0.05em] uppercase select-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
               column.className
             )}
           >
@@ -96,11 +96,7 @@ export function TaskPageJiraSortControls({
           {sortByLabel}
         </span>
         <Select value={orderBy} onValueChange={(value) => onSort(value as JiraIssueSortColumn)}>
-          <SelectTrigger
-            size="sm"
-            aria-label={sortByLabel}
-            className="min-w-0 flex-1 border-border/50 bg-background text-xs shadow-none"
-          >
+          <SelectTrigger size="sm" aria-label={sortByLabel} className="min-w-0 flex-1 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

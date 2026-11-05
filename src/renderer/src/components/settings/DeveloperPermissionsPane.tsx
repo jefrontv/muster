@@ -65,7 +65,7 @@ const PERMISSIONS: PermissionDefinition[] = [
     get label() {
       return translate(
         'auto.components.settings.DeveloperPermissionsPane.f24f31a884',
-        'Screen Recording'
+        'Screen recording'
       )
     },
     get description() {
@@ -99,7 +99,7 @@ const PERMISSIONS: PermissionDefinition[] = [
     get label() {
       return translate(
         'auto.components.settings.DeveloperPermissionsPane.c566bca278',
-        'Full Disk Access'
+        'Full disk access'
       )
     },
     get description() {
@@ -144,7 +144,7 @@ const PERMISSIONS: PermissionDefinition[] = [
     get label() {
       return translate(
         'auto.components.settings.DeveloperPermissionsPane.bf51e4a542',
-        'USB Devices'
+        'USB devices'
       )
     },
     get description() {
@@ -194,7 +194,7 @@ function statusLabel(status: DeveloperPermissionStatus | undefined): string {
 
 function statusClass(status: DeveloperPermissionStatus | undefined): string {
   if (status === 'granted' || status === 'ready') {
-    return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+    return 'border-status-success-border bg-status-success-background text-status-success'
   }
   if (status === 'denied' || status === 'restricted') {
     return 'border-destructive/30 bg-destructive/10 text-destructive'
@@ -349,7 +349,7 @@ export function DeveloperPermissionsPane(): React.JSX.Element {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium">{permission.label}</span>
                     <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${statusClass(
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.05em] ${statusClass(
                         status
                       )}`}
                     >
@@ -370,7 +370,7 @@ export function DeveloperPermissionsPane(): React.JSX.Element {
                 {pending
                   ? translate(
                       'auto.components.settings.DeveloperPermissionsPane.dac08ec03e',
-                      'Working...'
+                      'Working…'
                     )
                   : permission.actionLabel}
               </Button>

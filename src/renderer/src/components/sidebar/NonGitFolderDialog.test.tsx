@@ -102,7 +102,7 @@ describe('NonGitFolderDialog', () => {
   it('confirms runtime folder imports on the checked host', () => {
     renderToStaticMarkup(<NonGitFolderDialog />)
 
-    const button = mocks.buttons.find((entry) => entry.label.includes('Open as Folder'))
+    const button = mocks.buttons.find((entry) => entry.label.includes('Open as folder'))
     button?.onClick?.()
 
     expect(mocks.state.addNonGitFolder).toHaveBeenCalledWith('/srv/non-git', {

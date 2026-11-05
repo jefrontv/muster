@@ -115,7 +115,7 @@ export function WarpThemeImportModal({
                 <FileUp className="size-4" />
                 {translate(
                   'auto.components.settings.WarpThemeImportModal.choose_file',
-                  'Choose File'
+                  'Choose file'
                 )}
               </Button>
               <Button
@@ -128,7 +128,7 @@ export function WarpThemeImportModal({
                 <FolderOpen className="size-4" />
                 {translate(
                   'auto.components.settings.WarpThemeImportModal.choose_folder',
-                  'Choose Folder'
+                  'Choose folder'
                 )}
               </Button>
             </div>
@@ -139,7 +139,7 @@ export function WarpThemeImportModal({
               <Loader2 className="size-4 animate-spin" />
               {translate(
                 'auto.components.settings.WarpThemeImportModal.loading',
-                'Loading Warp themes...'
+                'Loading Warp themes…'
               )}
             </div>
           ) : preview == null ? null : preview.found ? (
@@ -200,7 +200,7 @@ export function WarpThemeImportModal({
                           <span
                             aria-hidden="true"
                             className={cn(
-                              'flex size-4 shrink-0 items-center justify-center rounded-sm border text-[10px] leading-none',
+                              'flex size-4 shrink-0 items-center justify-center rounded-sm border text-[11px] leading-none',
                               selected
                                 ? 'border-accent-foreground bg-accent-foreground text-accent'
                                 : 'border-border bg-background'
@@ -319,17 +319,17 @@ export function WarpThemeImportModal({
             {selectedCount === 1
               ? translate(
                   'auto.components.settings.WarpThemeImportModal.import_theme_one',
-                  'Import 1 Theme'
+                  'Import 1 theme'
                 )
               : selectedCount > 0
                 ? translate(
                     'auto.components.settings.WarpThemeImportModal.import_theme_other',
-                    'Import {{value0}} Themes',
+                    'Import {{value0}} themes',
                     { value0: selectedCount }
                   )
                 : translate(
                     'auto.components.settings.WarpThemeImportModal.import_themes',
-                    'Import Themes'
+                    'Import themes'
                   )}
           </Button>
         </DialogFooter>

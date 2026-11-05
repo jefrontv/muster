@@ -13,7 +13,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 
-import { Input } from '@/components/ui/input'
+import { SEARCH_FIELD_INPUT, SEARCH_FIELD_SHELL } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import type { ActiveCollabLabel, ActiveCollabTask } from '../../../shared/activecollab-types'
@@ -115,17 +116,14 @@ export function ActiveCollabMyWorkFilterBar({
 
   return (
     <div className="flex items-center gap-1.5 border-b border-border/50 px-3 py-1.5">
-      <div className="relative min-w-0 flex-1">
-        <Search
-          aria-hidden="true"
-          className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
+      <div className={cn('min-w-0 flex-1', SEARCH_FIELD_SHELL)}>
+        <Search aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+        <input
           aria-label={textLabel}
           placeholder={textLabel}
           value={draft}
           onChange={(event) => handleDraft(event.target.value)}
-          className="h-7 pl-7 text-xs"
+          className={SEARCH_FIELD_INPUT}
         />
       </div>
 

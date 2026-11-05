@@ -231,7 +231,7 @@ export function ChatRichTable({ children }: { children?: React.ReactNode }): Rea
       <Dialog open={expanded} onOpenChange={setExpanded}>
         <DialogContent className="flex max-h-[94dvh] w-[min(96vw,1400px)] max-w-none flex-col gap-3 sm:max-w-none">
           <DialogTitle className="text-sm font-medium">{name}</DialogTitle>
-          <div className="min-h-0 overflow-auto">{expanded && surface(true)}</div>
+          <div className="scrollbar-sleek min-h-0 overflow-auto">{expanded && surface(true)}</div>
         </DialogContent>
       </Dialog>
     </div>

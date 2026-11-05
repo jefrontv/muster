@@ -6,7 +6,7 @@ export const getDeveloperPermissionsPaneSearchEntries = createLocalizedCatalog((
   {
     title: translate(
       'auto.components.settings.developer.permissions.search.e92cb0896d',
-      'Developer Permissions'
+      'Developer permissions'
     ),
     description: translate(
       'auto.components.settings.developer.permissions.search.bc8ac95310',
@@ -38,7 +38,7 @@ export const getDeveloperPermissionsPaneSearchEntries = createLocalizedCatalog((
   {
     title: translate(
       'auto.components.settings.developer.permissions.search.302c0c42f9',
-      'Microphone and Camera'
+      'Microphone and camera'
     ),
     description: translate(
       'auto.components.settings.developer.permissions.search.6eca1636b7',
@@ -82,7 +82,7 @@ export const getDeveloperPermissionsPaneSearchEntries = createLocalizedCatalog((
   {
     title: translate(
       'auto.components.settings.developer.permissions.search.39bb49e662',
-      'Screen Recording and Accessibility'
+      'Screen recording and accessibility'
     ),
     description: translate(
       'auto.components.settings.developer.permissions.search.2e5d98ab56',
@@ -114,7 +114,7 @@ export const getDeveloperPermissionsPaneSearchEntries = createLocalizedCatalog((
   {
     title: translate(
       'auto.components.settings.developer.permissions.search.bbf543a3a1',
-      'Full Disk Access'
+      'Full disk access'
     ),
     description: translate(
       'auto.components.settings.developer.permissions.search.05ab708ee5',

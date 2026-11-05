@@ -37,7 +37,7 @@ export function NotificationSoundSection({
           <Label>
             {translate(
               'auto.components.settings.NotificationsPane.88686e6ca8',
-              'Notification Sound'
+              'Notification sound'
             )}
           </Label>
         </div>

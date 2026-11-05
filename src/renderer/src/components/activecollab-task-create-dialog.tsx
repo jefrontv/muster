@@ -90,7 +90,7 @@ export function ActiveCollabTaskCreateDialog({
     dropTarget: NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate,
     orphanMessage: translate(
       'auto.components.activecollab.create_task.orphaned_upload',
-      'The files uploaded but the task was not created, so nothing was attached. Your draft is still here — try again.'
+      'The files uploaded but the task was not created, so nothing was attached. Your draft is still here. Try again.'
     )
   })
 
@@ -243,7 +243,7 @@ export function ActiveCollabTaskCreateDialog({
                     <Paperclip className="size-3.5" />
                     {translate(
                       'auto.components.activecollab.comment_attachments.attach',
-                      'Attach Files'
+                      'Attach files'
                     )}
                   </Button>
                 </div>

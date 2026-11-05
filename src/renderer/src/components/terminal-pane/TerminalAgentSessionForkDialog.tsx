@@ -76,7 +76,7 @@ export function TerminalAgentSessionForkDialog({
           <DialogTitle className="text-base">
             {translate(
               'auto.components.terminal.pane.TerminalAgentSessionForkDialog.64e292e8e3',
-              'Fork Agent Session'
+              'Fork agent session'
             )}
           </DialogTitle>
           <DialogDescription>
@@ -118,7 +118,7 @@ export function TerminalAgentSessionForkDialog({
             {busy
               ? translate(
                   'auto.components.terminal.pane.TerminalAgentSessionForkDialog.2b10412cfc',
-                  'Creating...'
+                  'Creating…'
                 )
               : translate(
                   'auto.components.terminal.pane.TerminalAgentSessionForkDialog.9d25de2920',

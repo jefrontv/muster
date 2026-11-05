@@ -1,4 +1,5 @@
 // One row of the assigned-task list. Split out of the list so the container keeps only its load
+import { Badge } from '@/components/ui/badge'
 // states and the project sections.
 //
 // Hierarchy: the task name is the single primary line; labels and the due date are secondary and
@@ -104,21 +105,16 @@ function taskRowAccessibleName(
 function ActiveCollabLabelChip({ label }: { label: ActiveCollabLabel }): React.JSX.Element {
   const style = activeCollabLabelChipStyle(label.color)
   return (
-    <span
+    <Badge
       data-testid="activecollab-task-label"
-      className={cn(
-        'max-w-[140px] shrink-0 truncate rounded-full border px-1.5 py-0.5 text-[10px] font-medium',
-        !style && 'border-border/50 bg-muted/35 text-muted-foreground'
-      )}
+      variant={style ? 'outline' : 'muted'}
+      className="max-w-[200px]"
       style={style ?? undefined}
     >
-      {label.name}
-    </span>
+      <span className="min-w-0 truncate">{label.name}</span>
+    </Badge>
   )
 }
-
-const DUE_BADGE_CLASS =
-  'rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide'
 
 function ActiveCollabTaskDue({
   due,
@@ -129,7 +125,7 @@ function ActiveCollabTaskDue({
 }): React.JSX.Element {
   if (!due || !status) {
     return (
-      <span className="shrink-0 text-[11px] text-muted-foreground/70">
+      <span className="shrink-0 text-xs text-muted-foreground">
         {translate('auto.components.activecollab.task_list.no_due_date', 'No due date')}
       </span>
     )
@@ -138,19 +134,14 @@ function ActiveCollabTaskDue({
   return (
     <span className="flex shrink-0 items-center gap-1.5">
       {status === 'overdue' ? (
-        <span
-          className={cn(
-            DUE_BADGE_CLASS,
-            'border-destructive/40 bg-destructive/10 text-destructive'
-          )}
-        >
+        <Badge variant="danger">
           {translate('auto.components.activecollab.task_list.due_overdue', 'Overdue')}
-        </span>
+        </Badge>
       ) : null}
       {status === 'today' ? (
-        <span className={cn(DUE_BADGE_CLASS, 'border-border/60 bg-muted/50 text-foreground')}>
+        <Badge variant="secondary">
           {translate('auto.components.activecollab.task_list.due_today', 'Today')}
-        </span>
+        </Badge>
       ) : null}
       <time dateTime={due.iso} className={cn('text-[12px] tabular-nums', DUE_TONE_CLASS[status])}>
         {due.label}
@@ -212,7 +203,7 @@ export function ActiveCollabTaskRow({
         className={cn(
           // Why a FIXED height rather than a minimum: labels used to wrap onto a second line, so a
           // labelled row stood taller than a bare one and the list scanned as an uneven stack.
-          'grid h-12 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
+          'grid h-12 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
           // Selected outranks hover instead of matching it, so pointing at a row never looks like
           // selecting one.
           selected ? 'bg-accent hover:bg-accent' : 'hover:bg-accent/40'
@@ -236,7 +227,7 @@ export function ActiveCollabTaskRow({
                 <span
                   aria-hidden="true"
                   title={hiddenLabelNames}
-                  className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+                  className="shrink-0 text-2xs tabular-nums text-muted-foreground"
                 >
                   +{hiddenLabelCount}
                 </span>
@@ -292,7 +283,7 @@ export function ActiveCollabTaskRow({
           aria-label={startWorkLabel}
           title={startWorkLabel}
           onClick={() => startWork(task)}
-          className="mr-2 flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
+          className="mr-2 flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-foreground/[0.07] hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
         >
           <Play aria-hidden="true" className="size-3.5" />
         </button>

@@ -4,6 +4,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 export type SparsePresetDraft = {
   mode: 'new' | 'edit'
@@ -39,11 +40,11 @@ export function SparsePresetDraftEditor({
             {draft.mode === 'new'
               ? translate(
                   'auto.components.settings.SparsePresetSettingsSection.d7565029a9',
-                  'New Preset'
+                  'New preset'
                 )
               : translate(
                   'auto.components.settings.SparsePresetSettingsSection.623b4cf910',
-                  'Edit Preset'
+                  'Edit preset'
                 )}
           </h5>
           <p className="text-xs text-muted-foreground">
@@ -96,7 +97,7 @@ export function SparsePresetDraftEditor({
               'Directories'
             )}
           </Label>
-          <textarea
+          <Textarea
             id="sparse-preset-settings-directories"
             value={draft.directoriesText}
             onChange={(event) => setDraft({ ...draft, directoriesText: event.target.value })}
@@ -106,7 +107,7 @@ export function SparsePresetDraftEditor({
             )}
             rows={5}
             spellCheck={false}
-            className="w-full min-w-0 resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs transition-[color,box-shadow] placeholder:text-muted-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="resize-y font-mono text-xs"
           />
           {parsedDirectories?.error ? (
             <p className="text-xs text-destructive">{parsedDirectories.error}</p>
@@ -149,7 +150,7 @@ export function SparsePresetDraftEditor({
           )}
           {translate(
             'auto.components.settings.SparsePresetSettingsSection.a05bc9183f',
-            'Save Preset'
+            'Save preset'
           )}
         </Button>
       </div>

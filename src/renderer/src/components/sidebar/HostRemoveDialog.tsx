@@ -21,6 +21,7 @@ import { clearHostRename } from './host-rename-remove'
 import type { HostRemovalTarget } from './host-rename-remove'
 import { resolveSshHostRemoval } from './ssh-host-remove-resolution'
 import { clearSshHostWorkspaces } from './ssh-host-remove-workspaces'
+import { Switch } from '@/components/ui/switch'
 
 type HostRemoveDialogProps = {
   open: boolean
@@ -169,7 +170,7 @@ export function HostRemoveDialog({
       : hasWorkspaces
         ? translate(
             'auto.components.sidebar.HostRemoveDialog.hostHasWorkspacesDefault',
-            'Removes {{value0}} and its credentials from this computer. Its {{value1}} stay in Muster — remote files are not touched.',
+            'Removes {{value0}} and its credentials from this computer. Its {{value1}} stay in Muster. Remote files are not touched.',
             { value0: label, value1: workspaceCountLabel }
           )
         : translate(
@@ -234,28 +235,11 @@ export function HostRemoveDialog({
             >
               <div className="min-h-0">
                 <div className="flex items-start gap-3 px-1 pt-1">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={deleteWorkspaces}
+                  <Switch
+                    checked={deleteWorkspaces}
                     onClick={() => setDeleteWorkspaces((v) => !v)}
-                    className="group mt-0.5 flex shrink-0 cursor-pointer items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  >
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent transition-colors',
-                        deleteWorkspaces ? 'bg-foreground' : 'bg-muted-foreground/30'
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform',
-                          deleteWorkspaces ? 'translate-x-4' : 'translate-x-0.5'
-                        )}
-                      />
-                    </span>
-                  </button>
+                    className="mt-0.5 shrink-0"
+                  />
                   <span className="min-w-0 flex-1 text-xs leading-snug">
                     <span className="font-medium text-foreground">{deleteOptionLabel}</span>
                     <span className="mt-0.5 block text-muted-foreground">

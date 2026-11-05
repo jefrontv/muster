@@ -245,7 +245,7 @@ function PaletteState({ title, subtitle }: { title: string; subtitle: string }):
 
 function FooterKey({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <span className="rounded-full bg-foreground/[0.07] px-2 py-0.5 text-[10px] font-medium text-foreground/85">
+    <span className="rounded-full bg-foreground/[0.07] px-2 py-0.5 text-[11px] font-medium text-foreground/85">
       {children}
     </span>
   )
@@ -267,7 +267,7 @@ function PaletteHostBadgeChip({
         'Host: {{value0}}',
         { value0: badge.label }
       )}
-      className="max-w-[140px] truncate rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88"
+      className="max-w-[140px] truncate rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88"
     >
       {badge.label}
     </span>
@@ -965,7 +965,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
           type: 'section-header',
           label: translate(
             'auto.components.WorktreeJumpPalette.projectsGroupsHeader',
-            'Projects & Groups'
+            'Projects & groups'
           )
         })
       }
@@ -977,10 +977,10 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
           id: '__header_worktrees__',
           type: 'section-header',
           label: hasQuery
-            ? translate('auto.components.WorktreeJumpPalette.worktreesHeader', 'Worktrees')
+            ? translate('auto.components.WorktreeJumpPalette.worktreesHeader', 'Workspaces')
             : translate(
                 'auto.components.WorktreeJumpPalette.recentWorktreesHeader',
-                'Recent Worktrees'
+                'Recent workspaces'
               )
         })
       }
@@ -1007,7 +1007,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
         entries.push({
           id: '__header_actions_settings__',
           type: 'section-header',
-          label: translate('auto.components.WorktreeJumpPalette.088d66d980', 'Actions & Settings')
+          label: translate('auto.components.WorktreeJumpPalette.088d66d980', 'Actions & settings')
         })
       }
       appendPaletteListEntries(entries, visibleMiddleItems)
@@ -1017,7 +1017,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
         entries.push({
           id: '__header_open_tabs__',
           type: 'section-header',
-          label: translate('auto.components.WorktreeJumpPalette.50a1d11d5b', 'Open Tabs')
+          label: translate('auto.components.WorktreeJumpPalette.50a1d11d5b', 'Open tabs')
         })
       }
       appendPaletteListEntries(entries, visibleOpenTabItems)
@@ -1568,13 +1568,13 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
       shouldFilter={false}
       onOpenAutoFocus={handleOpenAutoFocus}
       onCloseAutoFocus={handleCloseAutoFocus}
-      title={translate('auto.components.WorktreeJumpPalette.4ee378034d', 'Jump to...')}
+      title={translate('auto.components.WorktreeJumpPalette.4ee378034d', 'Jump to…')}
       description={translate(
         'auto.components.WorktreeJumpPalette.4e4ff044d5',
-        'Search worktrees, settings, tabs, and actions'
+        'Search workspaces, settings, tabs, and actions'
       )}
       overlayClassName="bg-black/55 backdrop-blur-[2px]"
-      contentClassName="top-[13%] w-[736px] max-w-[94vw] overflow-hidden rounded-[16px] border border-foreground/10 bg-popover-solid shadow-[0_26px_84px_rgba(0,0,0,0.32)]"
+      contentClassName="w-[736px]"
       commandProps={{
         loop: true,
         value: commandSelectedItemId,
@@ -1585,13 +1585,13 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
       <CommandInput
         placeholder={translate(
           'auto.components.WorktreeJumpPalette.1ebe225fee',
-          'Search worktrees, settings, tabs, and actions...'
+          'Search workspaces, settings, tabs, and actions…'
         )}
         value={query}
         onValueChange={handleQueryChange}
         wrapperClassName="mx-3 mt-3 rounded-full border-0 bg-foreground/[0.05] px-4"
-        iconClassName="mr-2.5 h-4 w-4 text-muted-foreground/60"
-        className="h-11 text-[14px] placeholder:text-muted-foreground/75"
+        iconClassName="mr-2.5 h-4 w-4 text-muted-foreground"
+        className="h-11 text-[14px] placeholder:text-muted-foreground"
       />
       <CommandList ref={listRef} className="max-h-[min(460px,62vh)] px-2.5 pb-2.5 pt-2">
         {isLoading && selectableItems.length === 0 && !showCreateAction ? (
@@ -1616,7 +1616,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                 return (
                   <div
                     key={entry.id}
-                    className="mx-0.5 mt-3 mb-1 px-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70"
+                    className="mx-0.5 mt-3 mb-1 px-3 text-[12px] leading-4 font-medium text-muted-foreground"
                   >
                     {entry.label}
                   </div>
@@ -1650,7 +1650,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                       <div className="text-[14px] font-semibold tracking-[-0.01em] text-foreground">
                         {translate(
                           'auto.components.WorktreeJumpPalette.95be6587d3',
-                          'Create worktree "{{value0}}"',
+                          'Create workspace "{{value0}}"',
                           { value0: createWorktreeName }
                         )}
                       </div>
@@ -1719,7 +1719,10 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                                 className="shrink-0 inline-flex items-center"
                               >
                                 {isSshDisconnected ? (
-                                  <ServerOff className="size-3.5 text-red-400" aria-hidden="true" />
+                                  <ServerOff
+                                    className="size-3.5 text-status-danger"
+                                    aria-hidden="true"
+                                  />
                                 ) : (
                                   <Server
                                     className="size-3.5 text-muted-foreground"
@@ -1739,7 +1742,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                               )}
                             </span>
                             {isCurrentWorktree && (
-                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88">
+                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88">
                                 {translate(
                                   'auto.components.WorktreeJumpPalette.556e7232ca',
                                   'Current'
@@ -1747,7 +1750,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                               </span>
                             )}
                             {worktree.isMainWorktree && (
-                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground">
+                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground">
                                 {translate(
                                   'auto.components.WorktreeJumpPalette.739bda980c',
                                   'primary'
@@ -1768,7 +1771,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                           </div>
                           {entry.match.supportingText && (
                             <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[12px] leading-5 text-muted-foreground/88">
-                              <span className="inline-flex h-[18px] shrink-0 items-center rounded-full bg-foreground/[0.07] px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              <span className="inline-flex h-[18px] shrink-0 items-center rounded-full bg-foreground/[0.07] px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                                 {getPaletteSupportingTextLabel(
                                   entry.match.supportingText.labelKind
                                 )}
@@ -1842,7 +1845,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                             <span className="truncate text-[14px] font-semibold text-foreground">
                               {result.title}
                             </span>
-                            <span className="shrink-0 rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88">
+                            <span className="shrink-0 rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88">
                               {badgeLabel}
                             </span>
                           </div>
@@ -1887,7 +1890,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                         <span className="truncate text-[14px] font-semibold tracking-[-0.01em] text-foreground">
                           {result.title}
                         </span>
-                        <span className="shrink-0 rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88">
+                        <span className="shrink-0 rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88">
                           {kindLabel}
                         </span>
                       </div>
@@ -1931,18 +1934,18 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                               <HighlightedText text={result.title} matchRange={result.titleRange} />
                             </span>
                             {result.isCurrentTab && (
-                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88">
+                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88">
                                 {translate(
                                   'auto.components.WorktreeJumpPalette.52404f8096',
-                                  'Current Tab'
+                                  'Current tab'
                                 )}
                               </span>
                             )}
                             {!result.isCurrentTab && result.isCurrentWorktree && (
-                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88">
+                              <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88">
                                 {translate(
                                   'auto.components.WorktreeJumpPalette.c5081f2814',
-                                  'Current Worktree'
+                                  'Current worktree'
                                 )}
                               </span>
                             )}
@@ -2009,18 +2012,18 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                             <HighlightedText text={result.title} matchRange={result.titleRange} />
                           </span>
                           {result.isCurrentPage && (
-                            <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88">
+                            <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88">
                               {translate(
                                 'auto.components.WorktreeJumpPalette.52404f8096',
-                                'Current Tab'
+                                'Current tab'
                               )}
                             </span>
                           )}
                           {!result.isCurrentPage && result.isCurrentWorktree && (
-                            <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[10px] font-medium leading-normal text-muted-foreground/88">
+                            <span className="shrink-0 self-center rounded-full bg-foreground/[0.07] px-2 py-px text-[11px] font-medium leading-normal text-muted-foreground/88">
                               {translate(
                                 'auto.components.WorktreeJumpPalette.c5081f2814',
-                                'Current Worktree'
+                                'Current worktree'
                               )}
                             </span>
                           )}

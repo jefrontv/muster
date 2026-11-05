@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- Why: prototype keeps the real-data adapter and visual skeleton together until a refinement pass splits them into modules. */
+import { Badge } from '@/components/ui/badge'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import {
@@ -848,7 +849,7 @@ function EventTime({ timestamp }: { timestamp: number }): React.JSX.Element {
       <TooltipTrigger asChild>
         <button
           type="button"
-          className="rounded px-1 py-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+          className="rounded px-1 py-0.5 text-xs text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label={absolute}
           onClick={(event) => event.stopPropagation()}
         >
@@ -940,7 +941,7 @@ function EventRepoBadge({ repo }: { repo: Repo | null }): React.JSX.Element | nu
   return (
     <div className="flex min-w-0 shrink-0 items-center gap-1.5 rounded-[4px] border border-border bg-accent px-1.5 py-0.5 dark:border-border/60 dark:bg-accent/50">
       <RepoBadgeMark color={repo.badgeColor} />
-      <span className="max-w-[6rem] truncate text-[10px] font-semibold leading-none text-foreground lowercase">
+      <span className="max-w-[6rem] truncate text-[11px] font-semibold leading-none text-foreground lowercase">
         {repo.displayName}
       </span>
     </div>
@@ -1178,9 +1179,9 @@ function ActivityStatusGroupHeader({ group }: { group: ActivityThreadGroup }): R
       <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
         {group.label}
       </span>
-      <span className="rounded-full border border-border bg-accent px-1.5 py-0.5 text-[10px] font-semibold leading-none text-muted-foreground">
+      <Badge variant="muted" className="tabular-nums">
         {group.threads.length}
-      </span>
+      </Badge>
     </div>
   )
 }
@@ -1251,7 +1252,7 @@ function ThreadRow({
         // Why (asymmetric padding): title leading-snug adds ~3px above cap-height; smaller top pad evens the row.
         'group relative flex w-full cursor-pointer flex-col gap-1 border-b border-border px-3 pt-2.5 pb-3 text-left transition-colors',
         selected
-          ? 'bg-black/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:bg-white/[0.10] dark:shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
+          ? 'bg-black/[0.08] shadow-xs dark:bg-white/[0.10] dark:shadow-xs'
           : 'hover:bg-accent/40'
       )}
     >
@@ -1301,7 +1302,7 @@ function ThreadRow({
                 />
               ) : null}
               <div className="flex min-w-0 items-center gap-1.5 pt-0.5">
-                <span className="shrink-0 text-[10px] text-muted-foreground/80">{agentLabel}</span>
+                <span className="shrink-0 text-[11px] text-muted-foreground/80">{agentLabel}</span>
                 {canJump ? (
                   <span
                     className={cn(
@@ -1344,7 +1345,7 @@ function ThreadRow({
               <span className="inline-flex size-4 shrink-0 items-center justify-center">
                 {thread.unread ? (
                   <FilledBellIcon
-                    className="size-[13px] shrink-0 text-amber-500 drop-shadow-sm"
+                    className="size-[13px] shrink-0 text-status-attention drop-shadow-sm"
                     aria-label={translate(
                       'auto.components.activity.ActivityPrototypePage.beb2c19173',
                       'Unread'
@@ -1361,16 +1362,16 @@ function ThreadRow({
                         }}
                         onMouseDown={(event) => event.stopPropagation()}
                         className={cn(
-                          'group/unread flex size-4 shrink-0 cursor-pointer items-center justify-center rounded transition-all',
+                          'hit-area group/unread flex size-4 shrink-0 cursor-pointer items-center justify-center rounded transition-all',
                           'hover:bg-accent/80 active:scale-95',
-                          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                         )}
                         aria-label={translate(
                           'auto.components.activity.ActivityPrototypePage.59b131fbd9',
                           'Mark thread unread'
                         )}
                       >
-                        <Bell className="size-3 text-muted-foreground/40 can-hover:opacity-0 transition-opacity group-hover:opacity-100 group-hover/unread:opacity-100" />
+                        <Bell className="size-3 text-muted-foreground can-hover:opacity-0 transition-opacity group-hover:opacity-100 group-hover/unread:opacity-100" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="left">
@@ -1761,7 +1762,7 @@ export default function ActivityPrototypePage(): React.JSX.Element {
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={translate(
                     'auto.components.activity.ActivityPrototypePage.795cbf26e2',
-                    'Filter...'
+                    'Filter…'
                   )}
                   className="h-8 w-full pl-7 text-xs"
                 />
@@ -1772,7 +1773,7 @@ export default function ActivityPrototypePage(): React.JSX.Element {
               >
                 <SelectTrigger
                   size="sm"
-                  className="h-8 w-[128px] shrink-0 px-2 text-xs"
+                  className="w-[128px] shrink-0 text-xs"
                   aria-label={translate(
                     'auto.components.activity.ActivityPrototypePage.770d458144',
                     'Group agent activity by'
@@ -1991,11 +1992,11 @@ export default function ActivityPrototypePage(): React.JSX.Element {
                           </div>
                         ) : showTerminalLoadingLabel ? (
                           <div className="ml-3 mt-3 inline-flex items-center gap-2 rounded-md border border-border bg-background/85 px-2 py-1 text-xs text-muted-foreground shadow-xs">
-                            <span className="h-3 w-1.5 animate-pulse rounded-sm bg-muted-foreground/70" />
+                            <span className="h-3 w-1.5 animate-pulse rounded-full bg-muted-foreground/70" />
                             <span>
                               {translate(
                                 'auto.components.activity.ActivityPrototypePage.1b633f5c1e',
-                                'Connecting terminal...'
+                                'Connecting terminal…'
                               )}
                             </span>
                           </div>

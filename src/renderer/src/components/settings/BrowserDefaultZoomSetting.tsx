@@ -23,7 +23,7 @@ export function BrowserDefaultZoomSetting({
     <SearchableSetting
       title={translate(
         'auto.components.settings.BrowserDefaultZoomSetting.265597101f',
-        'Default Zoom'
+        'Default zoom'
       )}
       description={translate(
         'auto.components.settings.BrowserDefaultZoomSetting.2622126877',
@@ -36,7 +36,7 @@ export function BrowserDefaultZoomSetting({
         <Label>
           {translate(
             'auto.components.settings.BrowserDefaultZoomSetting.265597101f',
-            'Default Zoom'
+            'Default zoom'
           )}
         </Label>
         <p className="text-xs text-muted-foreground">
@@ -47,7 +47,7 @@ export function BrowserDefaultZoomSetting({
         </p>
       </div>
       <Select value={String(selectedZoomLevel)} onValueChange={(next) => onChange(Number(next))}>
-        <SelectTrigger className="h-7 w-28 text-xs">
+        <SelectTrigger className="w-28">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { markdownPreviewText } from '@/lib/markdown-preview-text'
 import type React from 'react'
 import { Bot, FileJson } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -128,13 +129,10 @@ function SubagentSessionLine({ session }: { session: AiVaultSession }): React.JS
         className="min-w-0 flex-1 truncate text-[12px] leading-[1.35] text-foreground/90"
         title={session.title}
       >
-        {session.title}
+        {markdownPreviewText(session.title)}
       </span>
       {session.subagent?.agentType ? (
-        <Badge
-          variant="outline"
-          className="h-5 shrink-0 border-border/70 bg-background px-1.5 py-0 text-[10px] font-medium"
-        >
+        <Badge variant="outline" className="shrink-0 border-border/70 bg-background">
           {session.subagent.agentType}
         </Badge>
       ) : null}
@@ -153,7 +151,11 @@ function SubagentSessionLine({ session }: { session: AiVaultSession }): React.JS
           draggable={false}
           title={translate(
             'auto.components.right.sidebar.AiVaultSessionSubagents.viewLog',
-            'View Log'
+            'View log'
+          )}
+          aria-label={translate(
+            'auto.components.right.sidebar.AiVaultSessionSubagents.viewLog',
+            'View log'
           )}
           onClick={(event) => {
             event.stopPropagation()

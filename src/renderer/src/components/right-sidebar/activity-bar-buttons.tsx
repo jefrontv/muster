@@ -1,4 +1,5 @@
 import React from 'react'
+import { CONTROL_HOVER } from '@/components/ui/hover-fill-classes'
 import { MoreHorizontal } from 'lucide-react'
 import type { ActiveRightSidebarTab } from '@/store/slices/editor'
 import type { CheckStatus } from '../../../../shared/types'
@@ -30,11 +31,15 @@ export type ActivityBarItem = {
 }
 
 const STATUS_DOT_COLOR: Record<CheckStatus, string> = {
-  success: 'bg-emerald-500',
-  failure: 'bg-rose-500',
-  pending: 'bg-amber-500',
+  success: 'bg-status-success',
+  failure: 'bg-status-danger',
+  pending: 'bg-status-attention',
   neutral: 'bg-muted-foreground'
 }
+
+// Matches the round 28px icon buttons used across app chrome; selection is a fill, like other selectors.
+const ACTIVITY_BUTTON_CLASS =
+  'relative flex size-7 shrink-0 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 export function TopActivityOverflowMenu({
   items,
@@ -58,7 +63,9 @@ export function TopActivityOverflowMenu({
         <button
           type="button"
           className={cn(
-            'relative flex h-[36px] w-8 shrink-0 items-center justify-center text-muted-foreground/60 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+            ACTIVITY_BUTTON_CLASS,
+            CONTROL_HOVER,
+            'text-muted-foreground hover:text-foreground',
             RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME
           )}
           aria-label={translate(
@@ -66,11 +73,11 @@ export function TopActivityOverflowMenu({
             'More sidebar tabs'
           )}
         >
-          <MoreHorizontal size={16} />
+          <MoreHorizontal size={14} />
           {hiddenChecksStatus && (
             <div
               className={cn(
-                'absolute top-[8px] right-[4px] size-[7px] rounded-full ring-1 ring-sidebar',
+                'absolute top-[3px] right-[3px] size-[7px] rounded-full ring-1 ring-sidebar',
                 STATUS_DOT_COLOR[hiddenChecksStatus] ?? 'bg-muted-foreground'
               )}
             />
@@ -121,31 +128,26 @@ export function ActivityBarButton({
         <button
           type="button"
           className={cn(
-            'relative flex shrink-0 items-center justify-center transition-colors',
+            ACTIVITY_BUTTON_CLASS,
             RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME,
-            isTop ? 'h-[36px] w-9' : 'w-10 h-10',
-            active ? 'text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'
+            active
+              ? // A step above the hover fill, so the selected tab still reads while another is hovered.
+                'bg-foreground/[0.1] text-foreground'
+              : cn(CONTROL_HOVER, 'text-muted-foreground hover:text-foreground')
           )}
+          aria-pressed={active}
           onClick={onClick}
           aria-label={item.shortcut ? `${item.title} (${item.shortcut})` : item.title}
         >
-          <Icon size={isTop ? 16 : 18} />
+          <Icon size={14} />
 
           {statusIndicator && statusIndicator !== 'neutral' && (
             <div
               className={cn(
-                'absolute rounded-full size-[7px] ring-1 ring-sidebar',
-                isTop ? 'top-[8px] right-[5px]' : 'top-[7px] right-[7px]',
+                'absolute top-[3px] right-[3px] size-[7px] rounded-full ring-1 ring-sidebar',
                 STATUS_DOT_COLOR[statusIndicator] ?? 'bg-muted-foreground'
               )}
             />
-          )}
-
-          {active && isTop && (
-            <div className="absolute bottom-0 left-[25%] right-[25%] h-[2px] bg-foreground rounded-t" />
-          )}
-          {active && !isTop && (
-            <div className="absolute right-0 top-[25%] bottom-[25%] w-[2px] bg-foreground rounded-l" />
           )}
         </button>
       </TooltipTrigger>

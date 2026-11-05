@@ -467,7 +467,7 @@ describe('SourceControl preview row opens', () => {
     expect(row?.textContent).toContain('Stage inside submodule')
 
     const stageAllButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
-      (button) => button.textContent?.trim() === 'Stage All'
+      (button) => button.textContent?.trim() === 'Stage all'
     )
     expect(stageAllButton).toBeUndefined()
 
@@ -497,7 +497,7 @@ describe('SourceControl preview row opens', () => {
     renderSourceControl()
 
     const stageAllButton = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
-      (button) => button.textContent?.trim() === 'Stage All'
+      (button) => button.textContent?.trim() === 'Stage all'
     )
     expect(stageAllButton).toBeDefined()
     expect(stageAllButton?.disabled).toBe(false)

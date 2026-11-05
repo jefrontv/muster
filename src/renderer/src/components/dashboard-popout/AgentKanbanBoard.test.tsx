@@ -91,8 +91,8 @@ describe('AgentKanbanBoard', () => {
 
   it('renders the three fixed columns in order', () => {
     renderBoard([])
-    const headers = screen.getAllByText(/Needs You|Working|Idle/)
-    expect(headers.map((h) => h.textContent)).toEqual(['Needs You', 'Working', 'Idle'])
+    const headers = screen.getAllByText(/Needs you|Working|Idle/)
+    expect(headers.map((h) => h.textContent)).toEqual(['Needs you', 'Working', 'Idle'])
   })
 
   it('places cards in their bucket column and counts them', () => {

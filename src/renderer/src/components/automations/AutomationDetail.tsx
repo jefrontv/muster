@@ -161,7 +161,7 @@ export function AutomationDetail({
                   disabled={runNowDisabled}
                 >
                   <Play className="size-4" />
-                  {translate('auto.components.automations.AutomationDetail.2fb1605beb', 'Run Now')}
+                  {translate('auto.components.automations.AutomationDetail.2fb1605beb', 'Run now')}
                 </Button>
               </span>
             </TooltipTrigger>

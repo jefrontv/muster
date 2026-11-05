@@ -1,8 +1,8 @@
 import type { JSX } from 'react'
-import { cn } from '@/lib/utils'
 import { getAgentAwakeDescription, getAgentAwakeTitle } from '../settings/agent-awake-copy'
 import type { GlobalSettings } from '../../../../shared/types'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
 
 export function KeepAwakeCard(props: {
   settings: GlobalSettings
@@ -25,23 +25,12 @@ export function KeepAwakeCard(props: {
             {getAgentAwakeDescription()}
           </p>
         </div>
-        <button
-          role="switch"
+        <Switch
+          checked={enabled}
           aria-label={title}
-          aria-checked={enabled}
           onClick={() => updateSettings({ keepComputerAwakeWhileAgentsRun: !enabled })}
-          className={cn(
-            'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors',
-            enabled ? 'bg-foreground' : 'bg-muted-foreground/30'
-          )}
-        >
-          <span
-            className={cn(
-              'pointer-events-none block size-3.5 rounded-full bg-background shadow-sm transition-transform',
-              enabled ? 'translate-x-4' : 'translate-x-0.5'
-            )}
-          />
-        </button>
+          className="shrink-0"
+        />
       </div>
     </div>
   )

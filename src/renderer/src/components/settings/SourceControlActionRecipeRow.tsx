@@ -22,6 +22,7 @@ import {
   getSourceControlAgentArgsPlaceholder
 } from './source-control-action-recipe-options'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 const DEFAULT_AGENT_VALUE = '__default_agent__'
 
@@ -88,7 +89,7 @@ export function SourceControlActionRecipeRow({
             value={selectedAgent ?? DEFAULT_AGENT_VALUE}
             onValueChange={(value) => onAgentChange(actionId, value)}
           >
-            <SelectTrigger size="sm" className="h-8 w-full text-xs">
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -152,12 +153,12 @@ export function SourceControlActionRecipeRow({
               'Command template'
             )}
           </Label>
-          <textarea
+          <Textarea
             value={draftValue.commandInputTemplate}
             rows={3}
             spellCheck={false}
             onChange={(event) => onTemplateChange(actionId, event.target.value)}
-            className="w-full resize-y rounded-xl bg-foreground/[0.05] px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/70 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="resize-y font-mono text-xs"
           />
           <SourceControlActionVariableChips
             actionId={actionId}
@@ -204,7 +205,7 @@ export function SourceControlActionRecipeRow({
               {isSavingTemplate
                 ? translate(
                     'auto.components.settings.SourceControlAiActionRecipeDefaults.4f549a5fa8',
-                    'Saving...'
+                    'Saving…'
                   )
                 : translate(
                     'auto.components.settings.SourceControlAiActionRecipeDefaults.d18d665e12',

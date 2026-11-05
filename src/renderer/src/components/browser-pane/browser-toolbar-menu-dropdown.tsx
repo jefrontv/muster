@@ -68,6 +68,10 @@ export function BrowserToolbarMenuDropdown({
             'auto.components.browser.pane.BrowserToolbarMenu.7b838540c7',
             'Browser menu'
           )}
+          aria-label={translate(
+            'auto.components.browser.pane.BrowserToolbarMenu.7b838540c7',
+            'Browser menu'
+          )}
         >
           <Ellipsis className="size-4" />
         </Button>
@@ -98,7 +102,7 @@ export function BrowserToolbarMenuDropdown({
 
         <DropdownMenuItem onSelect={onNewProfile}>
           <Plus className="mr-2 size-3.5" />
-          {translate('auto.components.browser.pane.BrowserToolbarMenu.cf7cdc67ef', 'New Profile…')}
+          {translate('auto.components.browser.pane.BrowserToolbarMenu.cf7cdc67ef', 'New profile…')}
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
@@ -122,7 +126,7 @@ export function BrowserToolbarMenuDropdown({
             <Import className="mr-2 size-3.5" />
             {translate(
               'auto.components.browser.pane.BrowserToolbarMenu.2293adf620',
-              'Import Cookies'
+              'Import cookies'
             )}
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
@@ -167,7 +171,7 @@ export function BrowserToolbarMenuDropdown({
               <DropdownMenuItem onSelect={onImportFromFile}>
                 {translate(
                   'auto.components.browser.pane.BrowserToolbarMenu.56f94f4ffa',
-                  'From File…'
+                  'From file…'
                 )}
               </DropdownMenuItem>
             </DropdownMenuSubContent>
@@ -181,7 +185,7 @@ export function BrowserToolbarMenuDropdown({
             <Monitor className="mr-2 size-3.5" />
             {translate(
               'auto.components.browser.pane.BrowserToolbarMenu.e5d31de1a9',
-              'Viewport Size'
+              'Viewport size'
             )}
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
@@ -225,7 +229,7 @@ export function BrowserToolbarMenuDropdown({
           <Settings className="mr-2 size-3.5" />
           {translate(
             'auto.components.browser.pane.BrowserToolbarMenu.a771c2b6c8',
-            'Browser Settings…'
+            'Browser settings…'
           )}
         </DropdownMenuItem>
       </DropdownMenuContent>

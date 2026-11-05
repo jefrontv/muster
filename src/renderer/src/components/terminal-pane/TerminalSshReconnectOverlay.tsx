@@ -176,7 +176,7 @@ export function TerminalSshReconnectOverlay({
             {targetRemoved
               ? translate(
                   'auto.components.terminal.pane.TerminalSshReconnectOverlay.removedBody',
-                  'The SSH host for this workspace was removed, so it can no longer connect. Remove the workspace to clear it — remote files are left untouched.'
+                  'The SSH host for this workspace was removed, so it can no longer connect. Remove the workspace to clear it. Remote files are left untouched.'
                 )
               : messageForStatus(status, targetLabel)}
           </div>
@@ -206,7 +206,7 @@ export function TerminalSshReconnectOverlay({
                 <Loader2 className="size-3.5 animate-spin" />
                 {translate(
                   'auto.components.terminal.pane.TerminalSshReconnectOverlay.connectingButton',
-                  'Connecting...'
+                  'Connecting…'
                 )}
               </>
             ) : (

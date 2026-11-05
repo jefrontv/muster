@@ -6,10 +6,10 @@ export type DropIndicator = 'left' | 'right' | null
 // own border so the indicator does not shift layout.
 export function getDropIndicatorClasses(dropIndicator: DropIndicator): string {
   if (dropIndicator === 'left') {
-    return "before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-blue-500 before:z-10 before:content-['']"
+    return "before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-status-info before:z-10 before:content-['']"
   }
   if (dropIndicator === 'right') {
-    return "after:absolute after:inset-y-0 after:right-0 after:w-[2px] after:bg-blue-500 after:z-10 after:content-['']"
+    return "after:absolute after:inset-y-0 after:right-0 after:w-[2px] after:bg-status-info after:z-10 after:content-['']"
   }
   return ''
 }

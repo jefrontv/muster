@@ -106,7 +106,7 @@ export function ChatWorkspaceUrlList({
                     'auto.components.chat.workspaceDialog.reorderUrl',
                     'Reorder website'
                   )}
-                  className="flex size-7 shrink-0 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent active:cursor-grabbing"
+                  className="flex size-7 shrink-0 cursor-grab items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/[0.07] active:cursor-grabbing"
                   onDragStart={(event) => {
                     setDragKey(draft.key)
                     event.dataTransfer.setData(ORCA_INTERNAL_FILE_DRAG_TYPE, draft.key)
@@ -148,7 +148,7 @@ export function ChatWorkspaceUrlList({
                   }}
                 />
                 {draft.key === primaryKey ? (
-                  <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                     {translate('auto.components.chat.workspaceDialog.primary', 'primary')}
                   </span>
                 ) : null}

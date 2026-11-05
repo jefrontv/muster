@@ -1279,7 +1279,7 @@ export function useIpcEvents(): void {
             // Why: main emits this recovery path once per session, so it must remain visible until acted on or dismissed.
             duration: Infinity,
             action: {
-              label: translate('auto.hooks.useIpcEvents.6573cfe955', 'Open Mobile Settings'),
+              label: translate('auto.hooks.useIpcEvents.6573cfe955', 'Open mobile settings'),
               onClick: () => {
                 const store = useAppStore.getState()
                 store.openSettingsTarget({ pane: 'mobile', repoId: null })
@@ -2264,7 +2264,7 @@ export function useIpcEvents(): void {
           if (environmentId) {
             if (!isWebRuntimeSessionActive(environmentId)) {
               store.createBrowserTab(worktreeId, store.browserDefaultUrl ?? 'about:blank', {
-                title: translate('auto.hooks.useIpcEvents.f6300deb8b', 'New Browser Tab'),
+                title: translate('auto.hooks.useIpcEvents.f6300deb8b', 'New browser tab'),
                 focusAddressBar: true
               })
               return
@@ -2280,7 +2280,7 @@ export function useIpcEvents(): void {
             return
           }
           store.createBrowserTab(worktreeId, store.browserDefaultUrl ?? 'about:blank', {
-            title: translate('auto.hooks.useIpcEvents.f6300deb8b', 'New Browser Tab'),
+            title: translate('auto.hooks.useIpcEvents.f6300deb8b', 'New browser tab'),
             focusAddressBar: true
           })
         }

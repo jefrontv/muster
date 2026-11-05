@@ -129,7 +129,7 @@ export default function ProjectRow({
                   'auto.components.github.project.ProjectRow.e12be8b4d4',
                   'Open in GitHub'
                 )}
-                className="rounded p-1 hover:bg-muted"
+                className="rounded-full p-1 hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <ExternalLink className="size-3.5" />
               </button>
@@ -149,7 +149,7 @@ export default function ProjectRow({
                   'auto.components.github.project.ProjectRow.75b5d816e3',
                   'Start work'
                 )}
-                className="rounded p-1 hover:bg-muted"
+                className="rounded-full p-1 hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Play className="size-3.5" />
               </button>

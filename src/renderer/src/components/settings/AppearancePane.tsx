@@ -125,7 +125,7 @@ export function AppearancePane({
   )
   const windowSidebarTitle = translate(
     'auto.components.settings.AppearancePane.windowSidebarTitle',
-    'Window & Sidebar'
+    'Window & sidebar'
   )
   const windowSidebarSummary = translate(
     'auto.components.settings.AppearancePane.windowSidebarSummary',
@@ -288,7 +288,7 @@ export function AppearancePane({
           matching production — not buried inside Interface advanced. */}
       {appIconMatches ? (
         <SearchableSetting
-          title={translate('auto.components.settings.AppearancePane.ca1590d42f', 'App Icon')}
+          title={translate('auto.components.settings.AppearancePane.ca1590d42f', 'App icon')}
           description={translate(
             'auto.components.settings.AppearancePane.0cd9b8228f',
             'Choose the app icon shown in the Dock and window switcher.'

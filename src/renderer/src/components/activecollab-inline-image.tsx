@@ -102,7 +102,7 @@ function ActiveCollabInlineImageSurface({
           'Open {{value0}}',
           { value0: name }
         )}
-        className="my-1 block max-w-full cursor-zoom-in overflow-hidden rounded-md border border-border/50 bg-muted/20 transition-colors hover:border-border focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        className="my-1 block max-w-full cursor-zoom-in overflow-hidden rounded-md border border-border/50 bg-muted/20 transition-colors hover:border-border focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <img src={state.dataUrl} alt={name} className="block h-auto max-w-full" />
       </button>

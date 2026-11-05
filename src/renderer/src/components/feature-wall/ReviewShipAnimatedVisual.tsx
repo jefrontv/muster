@@ -331,7 +331,7 @@ export function ReviewShipAnimatedVisual(props: { reducedMotion: boolean }): JSX
             <div className="ravs-pr-title-text">
               {translate(
                 'auto.components.feature.wall.ReviewShipAnimatedVisual.c30cd930ff',
-                'Create Pull Request'
+                'Create pull request'
               )}
             </div>
             <button

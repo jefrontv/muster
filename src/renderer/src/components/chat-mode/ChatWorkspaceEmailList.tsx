@@ -95,7 +95,7 @@ export function ChatWorkspaceEmailList({
                 }}
               />
               {draft.key === primaryKey ? (
-                <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   {translate('auto.components.chat.workspaceDialog.primary', 'primary')}
                 </span>
               ) : null}

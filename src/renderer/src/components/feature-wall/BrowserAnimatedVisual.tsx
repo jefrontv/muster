@@ -17,7 +17,7 @@ const PROMPT_TEXT = 'Make Starter card stand out'
 // Why: these hand-rolled tour popovers need the same dark-mode separation as
 // Orca's dropdown/popover primitives while staying inside the storyboard DOM.
 const TOUR_FLOATING_SURFACE_CLASS =
-  'border border-black/14 bg-[rgba(255,255,255,0.82)] text-popover-foreground shadow-[0_16px_36px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl dark:border-white/14 dark:bg-[rgba(0,0,0,0.72)] dark:shadow-[0_20px_44px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.04)]'
+  'border border-black/14 bg-[rgba(255,255,255,0.82)] text-popover-foreground shadow-floating backdrop-blur-2xl dark:border-white/14 dark:bg-[rgba(0,0,0,0.72)] dark:shadow-floating'
 
 const PRE_INTRO_MS = 600
 const NEWTAB_APPROACH_MS = 700
@@ -166,7 +166,7 @@ const TERM_ENTRIES: readonly { entry: TermEntry; minPhase: Phase }[] = [
           <>
             {translate(
               'auto.components.feature.wall.BrowserAnimatedVisual.eb88125c6f',
-              '✓ Verified — Try free still works.'
+              '✓ Verified: Try free still works.'
             )}
           </>
         )
@@ -543,7 +543,7 @@ export function BrowserAnimatedVisual(props: {
               <div
                 aria-hidden={!dropdownVisible}
                 className={cn(
-                  'absolute z-40 origin-top-left rounded-[10px] p-1 text-[11.5px] transition-[opacity,transform] duration-150',
+                  'absolute z-40 origin-top-left rounded-[10px] p-1 text-[11px] transition-[opacity,transform] duration-150',
                   TOUR_FLOATING_SURFACE_CLASS,
                   dropdownVisible
                     ? 'translate-y-0 scale-100 opacity-100'
@@ -567,13 +567,13 @@ export function BrowserAnimatedVisual(props: {
                   <span className="inline-flex size-[13px] items-center justify-center text-popover-foreground">
                     <GlobeGlyph />
                   </span>
-                  <span className="text-[11.5px] text-popover-foreground">
+                  <span className="text-[11px] text-popover-foreground">
                     {translate(
                       'auto.components.feature.wall.BrowserAnimatedVisual.0a2bd01c02',
-                      'New Browser Tab'
+                      'New browser tab'
                     )}
                   </span>
-                  <span className="font-mono text-[10.5px] text-muted-foreground">
+                  <span className="font-mono text-[11px] text-muted-foreground">
                     {newBrowserShortcutLabel}
                   </span>
                 </div>
@@ -651,20 +651,20 @@ export function BrowserAnimatedVisual(props: {
                 <div
                   aria-hidden={!annotateOpen}
                   className={cn(
-                    'pointer-events-none absolute z-30 flex origin-top-left flex-col gap-1.5 rounded-md px-[9px] pb-[7px] pt-2 text-[10px] transition-[opacity,transform] duration-200',
+                    'pointer-events-none absolute z-30 flex origin-top-left flex-col gap-1.5 rounded-md px-[9px] pb-[7px] pt-2 text-[11px] transition-[opacity,transform] duration-200',
                     TOUR_FLOATING_SURFACE_CLASS,
                     annotateOpen ? 'scale-100 opacity-100' : 'scale-[0.96] opacity-0'
                   )}
                   style={{ left: annotateAnchor.left, top: annotateAnchor.top, width: 188 }}
                 >
-                  <span className="block w-full shrink-0 truncate font-mono text-[9.5px] leading-none text-muted-foreground">
+                  <span className="block w-full shrink-0 truncate font-mono text-[11px] leading-none text-muted-foreground">
                     {translate(
                       'auto.components.feature.wall.BrowserAnimatedVisual.d8856b604a',
                       'div.pricing-grid > div.card.starter:nth-of-type(1) > a.cta'
                     )}
                   </span>
                   <span aria-hidden className="h-px w-full shrink-0 bg-popover-foreground/10" />
-                  <div className="min-h-[28px] flex-1 break-words font-sans text-[10px] leading-[1.35] text-popover-foreground">
+                  <div className="min-h-[28px] flex-1 break-words font-sans text-[11px] leading-[1.35] text-popover-foreground">
                     {typedChars > 0 ? (
                       <>
                         {PROMPT_TEXT.slice(0, typedChars)}
@@ -723,11 +723,11 @@ export function BrowserAnimatedVisual(props: {
 
           <div
             className={cn(
-              'flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card font-mono text-[10px] text-card-foreground shadow-xs transition-[opacity,transform] duration-500',
+              'flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card font-mono text-[11px] text-card-foreground shadow-xs transition-[opacity,transform] duration-500',
               isSplit ? 'translate-x-0 opacity-100' : 'translate-x-2 opacity-0'
             )}
           >
-            <div className="flex h-5 shrink-0 items-center gap-1.5 border-b border-border bg-muted/40 px-2 text-[9.5px] font-medium text-foreground">
+            <div className="flex h-5 shrink-0 items-center gap-1.5 border-b border-border bg-muted/40 px-2 text-[11px] font-medium text-foreground">
               <ClaudeIcon size={11} />
               <span>
                 {translate(
@@ -855,7 +855,7 @@ function PricingView(props: {
 }): JSX.Element {
   return (
     <>
-      <div className="text-[15px] font-bold leading-tight">
+      <div className="text-[15px] font-semibold leading-tight">
         {translate('auto.components.feature.wall.BrowserAnimatedVisual.9e0f530390', 'Pricing')}
       </div>
       <div className="h-2 w-4/5 rounded bg-foreground/10" />
@@ -886,7 +886,7 @@ function PricingView(props: {
 function SignupView(): JSX.Element {
   return (
     <div className="flex animate-[browserViewIn_360ms_cubic-bezier(.2,.8,.2,1)_both] flex-col gap-3">
-      <div className="text-[15px] font-bold leading-tight">
+      <div className="text-[15px] font-semibold leading-tight">
         {translate(
           'auto.components.feature.wall.BrowserAnimatedVisual.46df009982',
           'Start your free trial'
@@ -935,7 +935,7 @@ function PricingCard(props: {
           )}
         />
       ) : null}
-      <span className="text-[11.5px] font-semibold">{label}</span>
+      <span className="text-[11px] font-semibold">{label}</span>
       <div className="h-1.5 w-3/5 rounded bg-foreground/10" />
       <div className="h-1.5 w-4/5 rounded bg-foreground/10" />
       <span
@@ -1025,7 +1025,7 @@ function CursorIcon(): JSX.Element {
       viewBox="0 0 16 16"
       aria-hidden
       focusable="false"
-      className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]"
+      className="drop-shadow-xs"
     >
       <path
         d="M2 1.5 L2 12 L5 9 L7.2 14.5 L9.5 13.6 L7.3 8 L11.5 8 Z"

@@ -13,7 +13,7 @@ function createShortcutRow(): ShortcutRowModel {
   return {
     item: {
       id: 'settings.open' as KeybindingActionId,
-      title: 'Open Settings',
+      title: 'Open settings',
       group: 'settings',
       scope: 'settings',
       searchKeywords: ['preferences', 'configuration'],

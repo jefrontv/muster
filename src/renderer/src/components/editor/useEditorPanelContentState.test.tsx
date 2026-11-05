@@ -813,7 +813,7 @@ describe('useEditorPanelContentState', () => {
   })
 
   it('routes reloadContent for a diff tab to a forced diff refetch, not a file read', async () => {
-    // Why: the changed-on-disk banner's "Reload from Disk" on an unstaged
+    // Why: the changed-on-disk banner's "Reload from disk" on an unstaged
     // diff tab must refetch the diff body — routing it to the file store
     // would leave the visible diff stale (and vice versa for edit tabs).
     const activeFile = createOpenFile({

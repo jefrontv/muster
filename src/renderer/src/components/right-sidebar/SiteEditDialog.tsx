@@ -38,7 +38,7 @@ export function SiteEditDialog({
             }}
           >
             <ArrowUpRight className="size-3.5" />
-            {translate('auto.components.right.sidebar.SitePanel.openInSites', 'Open in Sites')}
+            {translate('auto.components.right.sidebar.SitePanel.openInSites', 'Open in sites')}
           </Button>
         </footer>
       </DialogContent>

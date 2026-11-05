@@ -36,7 +36,7 @@ export function ExtensionTile({
       data-extension-status={state.status}
       className={cn(
         'group flex h-full flex-col gap-2 rounded-xl border border-border bg-card p-3.5 text-left shadow-xs transition-colors',
-        'hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         dimmed && 'opacity-60'
       )}
     >
@@ -53,7 +53,13 @@ export function ExtensionTile({
 
       <div className="mt-auto flex items-center justify-between gap-2 pt-0.5">
         <IntegrationStatusPill
-          tone={status.tone === 'connected' ? 'connected' : status.tone === 'attention' ? 'attention' : 'neutral'}
+          tone={
+            status.tone === 'connected'
+              ? 'connected'
+              : status.tone === 'attention'
+                ? 'attention'
+                : 'neutral'
+          }
         >
           {status.label}
         </IntegrationStatusPill>

@@ -47,7 +47,7 @@ export function ActiveCollabMentionMenu({
   }, [activeIndex, users])
 
   return (
-    <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-border bg-popover text-popover-foreground shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
+    <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-border bg-popover text-popover-foreground shadow-floating">
       <div
         id={listboxId}
         role="listbox"
@@ -89,11 +89,11 @@ export function ActiveCollabMentionMenu({
           {widened
             ? translate(
                 'auto.components.activecollab.task_workspace.mention_menu_widened',
-                'No one on this project matches — showing everyone'
+                'No one on this project matches. Showing everyone'
               )
             : translate(
                 'auto.components.activecollab.task_workspace.mention_menu_unscoped',
-                'All people — project members unavailable'
+                'All people: project members unavailable'
               )}
         </p>
       )}

@@ -22,7 +22,7 @@ describe('getAccountsMiniMaxSearchEntries', () => {
     const entries = getAccountsMiniMaxSearchEntries()
     expect(entries).toHaveLength(1)
     const [entry] = entries
-    expect(entry.title).toBe('MiniMax Usage')
+    expect(entry.title).toBe('MiniMax usage')
     expect(entry.description).toContain('platform.minimax.io')
     expect(entry.description.toLowerCase()).toContain('cookie')
   })
@@ -39,6 +39,6 @@ describe('getAccountsMiniMaxSearchEntries', () => {
   it('is included in the rolled-up pane search entries', () => {
     const allEntries = getAccountsPaneSearchEntries()
     const titles = allEntries.map((entry) => entry.title)
-    expect(titles).toContain('MiniMax Usage')
+    expect(titles).toContain('MiniMax usage')
   })
 })

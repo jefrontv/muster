@@ -140,7 +140,7 @@ function ContextMenuCheckboxItem({
   return (
     <ContextMenuPrimitive.CheckboxItem
       data-slot="context-menu-checkbox-item"
-      className={cn(MENU_ROW, MENU_ROW_DESTRUCTIVE, 'data-[inset]:pl-8', className)}
+      className={cn(MENU_ROW, MENU_ROW_DESTRUCTIVE, 'pr-2 pl-8', className)}
       checked={checked}
       {...props}
     >
@@ -162,7 +162,7 @@ function ContextMenuRadioItem({
   return (
     <ContextMenuPrimitive.RadioItem
       data-slot="context-menu-radio-item"
-      className={cn(MENU_ROW, MENU_ROW_DESTRUCTIVE, 'data-[inset]:pl-8', className)}
+      className={cn(MENU_ROW, MENU_ROW_DESTRUCTIVE, 'pr-2 pl-8', className)}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">

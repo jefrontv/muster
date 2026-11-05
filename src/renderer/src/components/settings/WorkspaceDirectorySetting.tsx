@@ -147,7 +147,7 @@ export function WorkspaceDirectorySetting({
     <SearchableSetting
       title={translate(
         'auto.components.settings.GeneralWorkspaceSettingsSection.0e9fc0eadc',
-        'Workspace Directory'
+        'Workspace directory'
       )}
       description={translate(
         'auto.components.settings.GeneralWorkspaceSettingsSection.a246f5ce6f',
@@ -160,7 +160,7 @@ export function WorkspaceDirectorySetting({
         <Label htmlFor={inputId}>
           {translate(
             'auto.components.settings.GeneralWorkspaceSettingsSection.0e9fc0eadc',
-            'Workspace Directory'
+            'Workspace directory'
           )}
         </Label>
         {showScopePicker && (
@@ -175,7 +175,7 @@ export function WorkspaceDirectorySetting({
               value={activeScope}
               onValueChange={(next) => setScope(next as HostSettingScope)}
             >
-              <SelectTrigger size="sm" className="h-7 w-44 text-xs">
+              <SelectTrigger className="w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -219,7 +219,7 @@ export function WorkspaceDirectorySetting({
         />
         <Button
           variant="outline"
-          size="sm"
+          size="default"
           onPointerDown={() => {
             skipNextBlurCommitRef.current = true
           }}

@@ -36,7 +36,7 @@ describe('tab create menu options', () => {
       hasOpenMarkdown: false,
       windowsShellEntries: [
         { label: 'PowerShell', shell: 'powershell.exe' },
-        { label: 'CMD Prompt', shell: 'cmd.exe' }
+        { label: 'CMD prompt', shell: 'cmd.exe' }
       ]
     })
 

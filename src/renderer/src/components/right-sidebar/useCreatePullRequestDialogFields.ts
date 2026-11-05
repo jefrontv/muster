@@ -449,7 +449,7 @@ export function useCreatePullRequestDialogFields({
     generateDisabledReason = 'Create PR in progress...'
   } else if (!resolvedPullRequestAi?.ok) {
     generateDisabledReason =
-      resolvedPullRequestAi?.error ?? 'Enable Source Control AI in Settings -> Git.'
+      resolvedPullRequestAi?.error ?? 'Enable Source control AI in Settings -> Git.'
   } else if (!base.trim()) {
     generateDisabledReason = 'Choose a base branch before generating.'
   }

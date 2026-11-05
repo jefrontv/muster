@@ -145,7 +145,7 @@ export default function BrowserFind({
 
   return (
     <div
-      className="absolute top-2 right-2 z-50 flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-800/95 px-2 py-1 shadow-lg backdrop-blur-sm"
+      className="absolute top-2 right-2 z-50 flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-800/95 px-2 py-1 shadow-floating backdrop-blur-sm"
       style={{ width: 300 }}
       onKeyDown={handleKeyDown}
     >
@@ -156,7 +156,7 @@ export default function BrowserFind({
         onChange={(e) => setQuery(e.target.value)}
         placeholder={translate(
           'auto.components.browser.pane.BrowserFind.636a69cd66',
-          'Find in page...'
+          'Find in page…'
         )}
         className="min-w-0 flex-1 border-none bg-transparent text-sm text-white outline-none placeholder:text-zinc-500"
       />
@@ -182,6 +182,10 @@ export default function BrowserFind({
         onClick={findPrevious}
         className="flex size-6 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-200"
         title={translate('auto.components.browser.pane.BrowserFind.ca7aebbd7f', 'Previous match')}
+        aria-label={translate(
+          'auto.components.browser.pane.BrowserFind.ca7aebbd7f',
+          'Previous match'
+        )}
       >
         <ChevronUp size={14} />
       </Button>
@@ -193,6 +197,7 @@ export default function BrowserFind({
         onClick={findNext}
         className="flex size-6 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-200"
         title={translate('auto.components.browser.pane.BrowserFind.5c0c02ae76', 'Next match')}
+        aria-label={translate('auto.components.browser.pane.BrowserFind.5c0c02ae76', 'Next match')}
       >
         <ChevronDown size={14} />
       </Button>
@@ -206,6 +211,7 @@ export default function BrowserFind({
         onClick={onClose}
         className="flex size-6 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-200"
         title={translate('auto.components.browser.pane.BrowserFind.c9d5f63fdc', 'Close')}
+        aria-label={translate('auto.components.browser.pane.BrowserFind.c9d5f63fdc', 'Close')}
       >
         <X size={14} />
       </Button>

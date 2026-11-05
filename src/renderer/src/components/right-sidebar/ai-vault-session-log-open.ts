@@ -67,7 +67,7 @@ export async function openAiVaultSessionLogInOrca(session: AiVaultLogSession): P
       toast.error(
         translate(
           'auto.components.right.sidebar.aiVaultSessionLogOpen.workspaceGone',
-          "Couldn't open log — workspace is no longer available."
+          "Couldn't open log: workspace is no longer available."
         )
       )
       return
@@ -93,7 +93,7 @@ export async function openAiVaultSessionLogInOrca(session: AiVaultLogSession): P
       toast.error(
         translate(
           'auto.components.right.sidebar.aiVaultSessionLogOpen.notAuthorized',
-          "Couldn't open log — path not authorized."
+          "Couldn't open log: path not authorized."
         )
       )
       return
@@ -104,7 +104,7 @@ export async function openAiVaultSessionLogInOrca(session: AiVaultLogSession): P
       toast.error(
         translate(
           'auto.components.right.sidebar.aiVaultSessionLogOpen.workspaceGone',
-          "Couldn't open log — workspace is no longer available."
+          "Couldn't open log: workspace is no longer available."
         )
       )
       return

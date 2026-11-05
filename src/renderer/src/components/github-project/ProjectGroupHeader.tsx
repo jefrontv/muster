@@ -33,12 +33,12 @@ export default function ProjectGroupHeader({
         {group.label ||
           translate('auto.components.github.project.ProjectGroupHeader.244c9e7d06', 'All')}
       </span>
-      <span className="rounded-full border border-border/50 bg-background px-1.5 text-[10px] text-muted-foreground">
+      <span className="rounded-full border border-border/50 bg-background px-1.5 text-[11px] text-muted-foreground">
         {group.rows.length}
       </span>
-      {dateRange ? <span className="text-[10px] text-muted-foreground">{dateRange}</span> : null}
+      {dateRange ? <span className="text-[11px] text-muted-foreground">{dateRange}</span> : null}
       {isCurrent ? (
-        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-300">
+        <span className="rounded-full border border-status-success-border bg-status-success-background px-1.5 text-[11px] text-status-success">
           {translate('auto.components.github.project.ProjectGroupHeader.82a22d2079', 'Current')}
         </span>
       ) : null}

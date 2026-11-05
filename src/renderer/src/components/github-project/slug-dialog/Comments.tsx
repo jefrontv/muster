@@ -18,6 +18,7 @@ import type {
   GitHubProjectMutationResult
 } from '../../../../../shared/github-project-types'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 function getRuntimeTarget(settings: Parameters<typeof getActiveRuntimeTarget>[0]) {
   const target = getActiveRuntimeTarget(settings)
@@ -157,11 +158,11 @@ function CommentRow({
       </div>
       {editing ? (
         <div className="flex flex-col gap-2">
-          <textarea
+          <Textarea
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="min-h-[80px] w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="min-h-[80px]"
           />
           <div className="flex gap-2">
             <Button
@@ -210,14 +211,14 @@ export function NewCommentForm({
   const canSubmitComment = hasBoundedCommentBodyText(draft)
   return (
     <div className="flex flex-col gap-2">
-      <textarea
+      <Textarea
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder={translate(
           'auto.components.github.project.slug.dialog.Comments.1c95937c8b',
           'Write a comment…'
         )}
-        className="min-h-[80px] w-full rounded-xl bg-foreground/[0.05] px-3 py-2 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="min-h-[80px]"
       />
       <div className="flex justify-end">
         <Button

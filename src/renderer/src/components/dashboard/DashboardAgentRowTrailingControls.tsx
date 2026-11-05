@@ -74,7 +74,7 @@ export function DashboardAgentRowTrailingControls({
           onKeyDown={stopKeyDown}
           disabled={sendTargetStatus === 'sending'}
           className={cn(
-            'worktree-agent-send-target-button absolute right-0 top-1/2 z-10 inline-flex h-5 -translate-y-1/2 items-center gap-1 rounded-md border px-1.5 text-[10px] font-medium leading-none transition-[background-color,border-color,color,opacity]',
+            'worktree-agent-send-target-button absolute right-0 top-1/2 z-10 inline-flex h-5 -translate-y-1/2 items-center gap-1 rounded-md border px-1.5 text-[11px] font-medium leading-none transition-[background-color,border-color,color,opacity]',
             sendTargetStatus === 'sending' && 'cursor-progress opacity-75'
           )}
           aria-label={translate(
@@ -92,7 +92,7 @@ export function DashboardAgentRowTrailingControls({
       )}
       {!sendTargetStatus && hideDismiss && relativeTimestamp !== null && (
         <span
-          className="pointer-events-none shrink-0 text-[10px] leading-none text-muted-foreground/60"
+          className="pointer-events-none shrink-0 text-[11px] leading-none text-muted-foreground"
           aria-hidden
         >
           {relativeTimestamp}
@@ -104,7 +104,7 @@ export function DashboardAgentRowTrailingControls({
         <span className="relative grid grid-cols-1 grid-rows-1 shrink-0 items-center justify-items-end">
           <span
             className={cn(
-              '[grid-area:1/1] pointer-events-none text-[10px] leading-none text-muted-foreground/60',
+              '[grid-area:1/1] pointer-events-none text-[11px] leading-none text-muted-foreground',
               'transition-opacity duration-150',
               'group-hover/agent-row:opacity-0 [@media(hover:none)]:opacity-0'
             )}
@@ -158,7 +158,7 @@ export function DashboardAgentRowTrailingControls({
           onClick={handleToggleExpand}
           onMouseDown={stopMouseDown}
           onKeyDown={stopKeyDown}
-          className="inline-flex shrink-0 items-center justify-center text-muted-foreground/60 hover:text-foreground"
+          className="inline-flex shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
           aria-label={
             expanded
               ? translate(

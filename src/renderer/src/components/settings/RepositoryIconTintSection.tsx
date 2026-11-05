@@ -16,7 +16,7 @@ import { translate } from '@/i18n/i18n'
 const ICON_TINT_COLORS = ['#ffffff', ...REPO_COLORS.slice(1)] as const
 
 const SWATCH_BASE =
-  'size-7 rounded-[4px] border border-border/60 outline-none transition-all focus-visible:ring-[3px] focus-visible:ring-ring/50'
+  'size-7 rounded-[4px] border border-border/60 outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring'
 
 function swatchRing(selected: boolean): string {
   return selected

@@ -113,7 +113,7 @@ export function AddRepoHostSelector({
                     {onAddSshHost ? (
                       <button
                         type="button"
-                        className="flex w-full flex-col rounded-sm px-2.5 py-2 text-left hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        className="flex w-full flex-col rounded-md px-2.5 py-2 text-left hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => {
                           setAddHostOpen(false)
                           onOpenChange(false)
@@ -137,7 +137,7 @@ export function AddRepoHostSelector({
                     {onAddRemoteServer ? (
                       <button
                         type="button"
-                        className="flex w-full flex-col rounded-sm px-2.5 py-2 text-left hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        className="flex w-full flex-col rounded-md px-2.5 py-2 text-left hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => {
                           setAddHostOpen(false)
                           onOpenChange(false)

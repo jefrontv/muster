@@ -43,6 +43,7 @@ import { makeWorkspaceStatusId } from '../../../../shared/workspace-statuses'
 import { STATUS_BAR_RESERVE_HEIGHT, WORKSPACE_TOP_CHROME_HEIGHT } from './workspace-chrome-metrics'
 import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
 import { translate } from '@/i18n/i18n'
+import { useRenderedLeftSidebarWidth } from './side-panel-room'
 
 type WorkspaceKanbanDrawerProps = {
   leftSidebarStyle?: React.CSSProperties
@@ -153,7 +154,7 @@ export default function WorkspaceKanbanDrawer({
   const sortBy = useAppStore((s) => s.sortBy)
   const setSortBy = useAppStore((s) => s.setSortBy)
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
-  const sidebarWidth = useAppStore((s) => s.sidebarWidth)
+  const sidebarWidth = useRenderedLeftSidebarWidth()
   const boardRef = useRef<HTMLDivElement>(null)
   const laneScrollerRef = useRef<HTMLDivElement>(null)
   const areaSelectionOverlayRef = useRef<HTMLDivElement>(null)

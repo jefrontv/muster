@@ -1,4 +1,5 @@
 // Choose which of the editor's themes to bring across.
+import { Badge } from '@/components/ui/badge'
 //
 // A swatch per row rather than a name alone, because "Winter is Coming (Dark Blue - No Italics)"
 // and "Winter is Coming (Dark Black - No Italics)" are the same words to a reader scanning a list
@@ -82,10 +83,7 @@ export function EditorThemeImportModal({
     )
   }, [themes, query])
 
-  const chosen = useMemo(
-    () => themes.filter((theme) => selected.has(theme.id)),
-    [themes, selected]
-  )
+  const chosen = useMemo(() => themes.filter((theme) => selected.has(theme.id)), [themes, selected])
   // Offered only when something chosen can actually dress a terminal, rather than as a checkbox
   // that silently does nothing for a theme with no ANSI colours.
   const terminalAvailable = chosen.some((theme) => theme.terminal !== null)
@@ -168,10 +166,10 @@ export function EditorThemeImportModal({
                     </span>
                   </span>
                   {theme.active ? (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    <Badge variant="muted" className="flex shrink-0 gap-1">
                       <Check className="size-2.5" />
                       {translate('auto.components.settings.editor_theme_import.in_use', 'In use')}
-                    </span>
+                    </Badge>
                   ) : null}
                 </label>
               ))}
@@ -201,9 +199,15 @@ export function EditorThemeImportModal({
           <Button variant="ghost" size="sm" className="ml-auto" onClick={onClose}>
             {translate('auto.components.settings.editor_theme_import.cancel', 'Cancel')}
           </Button>
-          <Button size="sm" disabled={chosen.length === 0} onClick={() => onSave(chosen, useForTerminal)}>
-            {translate('auto.components.settings.editor_theme_import.confirm', 'Import {{count}}')
-              .replace('{{count}}', String(chosen.length))}
+          <Button
+            size="sm"
+            disabled={chosen.length === 0}
+            onClick={() => onSave(chosen, useForTerminal)}
+          >
+            {translate(
+              'auto.components.settings.editor_theme_import.confirm',
+              'Import {{count}}'
+            ).replace('{{count}}', String(chosen.length))}
           </Button>
         </div>
       </DialogContent>

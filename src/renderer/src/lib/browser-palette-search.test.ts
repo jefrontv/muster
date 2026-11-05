@@ -237,8 +237,8 @@ describe('browser-palette-search', () => {
   })
 
   it('formats blank URLs as New Tab', () => {
-    expect(formatBrowserPaletteUrl('about:blank')).toBe('New Tab')
-    expect(formatBrowserPaletteUrl('data:text/html,')).toBe('New Tab')
+    expect(formatBrowserPaletteUrl('about:blank')).toBe('New tab')
+    expect(formatBrowserPaletteUrl('data:text/html,')).toBe('New tab')
   })
 
   it('identifies blank browser URLs', () => {

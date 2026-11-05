@@ -83,7 +83,7 @@ describe('showDeleteWorktreeFailureToast', () => {
     expect(toast.dismiss).toHaveBeenCalledWith('delete-worktree-failure:wt-1')
     expect(onViewChanges).toHaveBeenCalled()
 
-    clickButton(body, 'Force Delete')
+    clickButton(body, 'Force delete')
     expect(toast.dismiss).toHaveBeenCalledWith('delete-worktree-failure:wt-1')
     expect(onForceDelete).toHaveBeenCalled()
   })
@@ -112,7 +112,7 @@ describe('showDeleteWorktreeFailureToast', () => {
 
     const body = renderToastBody('error')
     expect(body.textContent).toContain('permission denied')
-    expect(body.textContent).not.toContain('Force Delete')
+    expect(body.textContent).not.toContain('Force delete')
 
     clickButton(body, 'View')
     expect(toast.dismiss).toHaveBeenCalledWith('delete-worktree-failure:wt-2')
@@ -137,7 +137,7 @@ describe('showDeleteWorktreeFailureToast', () => {
     expect(body.textContent).toContain(
       'Run git worktree unlock <worktree-path> from its repository, then retry deletion'
     )
-    expect(body.textContent).not.toContain('Force Delete')
+    expect(body.textContent).not.toContain('Force delete')
     expect(body.textContent).not.toContain('View')
     expect(onViewChanges).not.toHaveBeenCalled()
   })

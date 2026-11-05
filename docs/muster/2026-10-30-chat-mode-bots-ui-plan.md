@@ -1,6 +1,6 @@
 # Chat mode on the Bots chat UI
 
-Status: draft for review, 2026-10-30. Plan only; no code has changed.
+Status: approved 2026-10-30. Amended 2026-11-05 to bring the Code panel's chat view onto the same look (section 11). Phases 0 to 2 have landed (`986c2b189e`, `8f64d10a78`, `9a3781044b`).
 
 Goal: Chat mode looks and behaves like the chat in the Bots tab: its layout, bubbles, activity pills, live turn presence, composer and sidebar, plus the conversation behaviours behind them.
 
@@ -84,7 +84,9 @@ What (b) ports from the Bots conversation model:
 
 What it leaves out: edit-and-branch of past messages (the engine has no branching; the Bots server builds it on its own checkpoint store, `server/checkpoints.ts`), reactions, read-aloud, pinned message banner, find bar, bot avatars and the mascot, rooms and teammates, the run card (see section 9).
 
-## 3. Keeping Code mode untouched
+## 3. Keeping Code mode untouched until phase 9
+
+The isolation below holds through phase 8, so the Code panel never shows a half-built look. Phase 9 (section 11) then moves the Code panel onto the finished surface in one step and removes the scoping.
 
 1. All new transcript components go in `src/renderer/src/components/chat-conversation/`. Code mode never imports from it.
 2. `chat-thread/` files change only to export something that already exists (a hook or model), with no behaviour change. Each phase's diff check lists them.
@@ -195,7 +197,7 @@ Every phase runs these checks before review:
 2. `pnpm exec oxlint` on changed paths, then `pnpm lint` at the end of the phase (max-lines ratchet, styled scrollbars, locale catalog and coverage)
 3. `pnpm exec oxfmt --check` on changed files (oxfmt only; never prettier)
 4. `pnpm exec vitest run --config config/vitest.config.ts src/renderer/src/components/chat-conversation src/renderer/src/components/chat-mode src/renderer/src/components/chat-thread src/renderer/src/components/native-chat src/main/chat-mode` (targeted; the full suite has known hangs)
-5. Code-mode guard: `git diff --stat muster -- src/renderer/src/components/chat-thread src/renderer/src/components/native-chat` lists only the files the phase names, and a Code mode agent chat in `pnpm dev` looks the same as before (light and dark)
+5. Code-mode guard (phases 3 to 8 only): `git diff --stat muster -- src/renderer/src/components/chat-thread src/renderer/src/components/native-chat` lists only the files the phase names, and a Code mode agent chat in `pnpm dev` looks the same as before (light and dark)
 6. Trademark grep from section 4
 7. Live check in `pnpm dev`, light and dark, as listed per phase. Say which build ran and whether caches were cleared
 
@@ -313,11 +315,47 @@ Kept as DSH had it: motion at 160ms or less on `ease-chat` (Bots' 180ms message 
 - Edit and branch past messages (needs an engine branching design; the Bots server's `server/checkpoints.ts` is the reference).
 - The run card that saves a command run as a skill (`VerifyCard.tsx`). It could write a Claude Code skill into the workspace later.
 - Reactions, read-aloud, pinned message banner, find bar, citations, rooms, teammates, routines, computers.
-- SSH and Windows for Chat mode (unchanged from the DSH plan).
-- Code mode and mobile.
+- SSH and Windows for Chat mode (unchanged from the DSH plan). The Code panel's chat view already runs on both, and phase 9 keeps that.
+- Mobile.
 
 ## 10. Points to confirm in review
 
 1. Target look is Bots Advanced mode, the default inside Muster. If the user has been using Simple mode, phases 2 and 5 change shape.
 2. The turn navigator rail leaves Chat mode.
 3. Undo changes ships in phase 7, or waits for edit and branch.
+
+## 11. Amendment, 2026-11-05: the Code panel takes the same look
+
+The Code panel's chat view (`native-chat/NativeChatView.tsx`, shown when a Claude Code terminal switches to chat) moves onto the conversation surface, so Chat mode and the Code panel look and behave the same. It keeps its own runtime: the Code panel mirrors an interactive Claude Code session in a terminal, and neither view runs on the Bots server.
+
+Both views already share the engine thread (`use-native-chat-engine-thread`). They differ only in the surface: Chat renders `ChatConversationSurface`, the Code panel renders `ChatThreadSurface` (`NativeChatView.tsx:316`). The swap is a surface change plus the Code panel's own extras.
+
+### Phase 9: Code panel on the conversation surface (3.5 days)
+
+Runs after phase 8 is signed off, so the Code panel switches once to a finished look.
+
+1. `ChatConversationSurface` takes the three props the Code panel passes today: `onLinkClick` (file links open in the editor), `earlier` (history paging) and `placeholder` (the loading and error states from `NativeChatEmptyState`). `NativeChatView` renders it in place of `ChatThreadSurface`, with no conversation header; the pane tab already names the session.
+2. Narrow panes. A Code pane can be about 320px wide. The column uses a container query instead of the 60rem page column: gutters drop to 12px below 480px, bubbles go full width, and tables scroll inside `ChatTableViewport`. Font zoom (`use-native-chat-font-scale`) stays on the wrapper.
+3. Composer. The conversation variants in `chat-seat-composer-classes.ts` and `chat-seat-takeover-classes.ts` become the only variants. `data-chat-look` and the section 3 guard test are removed. The Code panel's footer extras (switch to terminal, slash commands, subagent tabs, question and approval cards in `NativeChatViewInput`) take the conversation look.
+4. Behaviour that stays on the Code panel's root: the context menu, selection capture, paste bridge, root focus capture and the turn navigator rail decision below.
+5. Features that do not apply to the Code panel:
+   - Reply style (phase 7): the Code panel drives the user's own CLI in a terminal, so Muster cannot add a system prompt line. Replies always use the default style.
+   - Undo changes (phase 7): shown only when the session runs locally. A remote runtime (`runtimeEnvironmentId` set, SSH or relay) hides it, since `rewind` there is untested.
+6. Cleanup: delete the `chat-thread/` row and surface components that no longer have importers, keeping the hooks and models both views use (scroll, paging, markdown pipeline, tool bodies). Run a grep for importers before each deletion.
+7. STYLEGUIDE: the chat surface section describes one conversation look for Chat mode and the Code panel, and drops the document-look rules for Code mode.
+
+Tests: `native-chat/` tests that pin `ChatThreadSurface` structure move to the new surface; link click, earlier paging and placeholder states each get a test on `ChatConversationSurface`; undo is hidden when `runtimeEnvironmentId` is set; `pnpm lint` and the targeted suites from section 6 pass.
+
+Live check in `pnpm dev`, light and dark, with the Code pane at about 360px and about 900px: send a message, fold a tool pill, approve and reject a Bash call, answer an AskUserQuestion, open a subagent tab, click a file link, page earlier history, switch to the terminal and back, zoom the font, and confirm Chat mode is unchanged. Repeat the send and approve steps on an SSH workspace if one is available.
+
+### What this changes elsewhere in the plan
+
+- Section 3's isolation and the section 6 guard (check 5) apply to phases 3 to 8 only.
+- Section 7, item 7: the turn navigator rail. Chat mode drops it; for the Code panel see the point to confirm below.
+- Section 8, risk 1 shrinks to phases 3 to 8. A new risk replaces it for phase 9: Code panel users see a large visual change at once. Phase 9 ships behind the existing chat view toggle, so the terminal view stays one click away.
+- Estimate: phases 3 to 8 are about 8.5 days, and phase 9 adds 3.5, so about 12 working days remain.
+
+### Points to confirm in review
+
+1. The turn navigator rail leaves the Code panel too, so both views match. Recommended; it is one line to remount if missed.
+2. Work continues on `feature/muster-bots` once the uncommitted UX round 5 changes are committed, rather than on a new branch.

@@ -123,7 +123,7 @@ function PetStatusSegmentInner(): React.JSX.Element {
           )}
         >
           <span
-            className={`rounded px-1 py-0.5 text-[11px] font-medium text-muted-foreground group-hover:bg-accent/70 group-hover:text-foreground ${petVisible ? '' : 'opacity-50'}`}
+            className={`rounded-full px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground group-hover:bg-foreground/[0.07] group-hover:text-foreground ${petVisible ? '' : 'opacity-50'}`}
           >
             {label}
           </span>
@@ -225,7 +225,7 @@ function PetStatusSegmentInner(): React.JSX.Element {
                     <span className="flex-1 truncate">{model.label}</span>
                     <button
                       type="button"
-                      className="ml-2 flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                      className="hit-area ml-2 flex size-5 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
                       aria-label={translate(
                         'auto.components.status.bar.PetStatusSegment.3668339495',
                         'Remove {{value0}}',

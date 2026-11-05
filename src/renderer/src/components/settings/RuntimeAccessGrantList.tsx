@@ -38,7 +38,7 @@ export function RuntimeAccessGrantList({
         <h3 className="text-sm font-medium">
           {translate(
             'auto.components.settings.RuntimeAccessGrantList.f031182867',
-            'Shared Server Access'
+            'Shared server access'
           )}
         </h3>
         <Tooltip>

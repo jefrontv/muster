@@ -263,7 +263,7 @@ export function ChatThreadStartAction(props: { done: boolean }): React.JSX.Eleme
       <ArrowUpRight className="size-3.5" />
       {translate(
         'auto.components.feature.wall.FeatureWallSetupWorkflowActions.openChat',
-        'Open Chat'
+        'Open chat'
       )}
     </Button>
   )

@@ -29,6 +29,7 @@ import { ShareUsageButton } from './ShareUsageButton'
 import { StatCard } from './StatCard'
 import { formatCost, formatTokens, formatUpdatedAt } from './usage-formatters'
 import { translate } from '@/i18n/i18n'
+import { Switch } from '@/components/ui/switch'
 
 const RANGE_OPTIONS: ClaudeUsageRange[] = ['7d', '30d', '90d', 'all']
 const SCOPE_OPTIONS: { value: ClaudeUsageScope; label: string }[] = [
@@ -93,7 +94,7 @@ export function ClaudeUsagePane(): React.JSX.Element {
             <h3 className="text-sm font-semibold text-foreground">
               {translate(
                 'auto.components.stats.ClaudeUsagePane.6afacbee37',
-                'Claude Usage Tracking'
+                'Claude usage tracking'
               )}
             </h3>
             <p className="text-sm text-muted-foreground">
@@ -103,19 +104,15 @@ export function ClaudeUsagePane(): React.JSX.Element {
               )}
             </p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={false}
+          <Switch
+            checked={false}
             aria-label={translate(
               'auto.components.stats.ClaudeUsagePane.424cd50412',
               'Enable Claude usage analytics'
             )}
             onClick={() => handleSetEnabled(true)}
-            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-muted-foreground/30 transition-colors"
-          >
-            <span className="pointer-events-none block size-3.5 translate-x-0.5 rounded-full bg-background shadow-sm transition-transform" />
-          </button>
+            className="shrink-0"
+          />
         </div>
       </div>
     )
@@ -132,7 +129,7 @@ export function ClaudeUsagePane(): React.JSX.Element {
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold text-foreground">
-            {translate('auto.components.stats.ClaudeUsagePane.6afacbee37', 'Claude Usage Tracking')}
+            {translate('auto.components.stats.ClaudeUsagePane.6afacbee37', 'Claude usage tracking')}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {formatUpdatedAt(scanState.lastScanCompletedAt)}
@@ -222,19 +219,15 @@ export function ClaudeUsagePane(): React.JSX.Element {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={true}
+          <Switch
+            checked={true}
             aria-label={translate(
               'auto.components.stats.ClaudeUsagePane.424cd50412',
               'Enable Claude usage analytics'
             )}
             onClick={() => handleSetEnabled(false)}
-            className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-foreground transition-colors"
-          >
-            <span className="pointer-events-none block size-3.5 translate-x-4 rounded-full bg-background shadow-sm transition-transform" />
-          </button>
+            className="shrink-0"
+          />
         </div>
       </div>
 

@@ -6,6 +6,8 @@ import { Blocks, RefreshCw, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { toggleVariants } from '@/components/ui/toggle'
+import { SEGMENTED_TRACK } from '@/components/ui/toggle-group'
 import {
   Select,
   SelectContent,
@@ -30,6 +32,7 @@ import {
 import { ExtensionTile } from './extension-tile'
 import { ExtensionDetailDialog } from './extension-detail-dialog'
 import { SettingsSwitchRow } from './SettingsFormControls'
+import { handleTablistKeyDown } from '@/lib/tablist-keyboard'
 export { getExtensionsPaneSearchEntries } from './extensions-search'
 
 const TAB_ORDER: ExtensionTab[] = ['tools', 'skills']
@@ -110,29 +113,35 @@ export function ExtensionsPane(): React.JSX.Element {
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
         <div
-          className="inline-flex shrink-0 rounded-md border border-border p-0.5"
+          className={cn(
+            'inline-flex h-9 shrink-0 items-center gap-0.5 rounded-full',
+            SEGMENTED_TRACK
+          )}
           role="tablist"
           aria-label={translate('auto.components.settings.extensions.tabs_label', 'Extension kind')}
+          onKeyDown={(event) => handleTablistKeyDown(event)}
         >
           {TAB_ORDER.map((tab) => (
-            <Button
+            <button
               key={tab}
               type="button"
               role="tab"
               aria-selected={filter.tab === tab}
-              size="xs"
-              variant={filter.tab === tab ? 'secondary' : 'ghost'}
-              className="gap-1.5 px-2.5"
+              tabIndex={filter.tab === tab ? 0 : -1}
+              className={cn(
+                toggleVariants({ variant: 'segmented' }),
+                'flex-none basis-auto gap-1.5 px-3 text-xs aria-selected:bg-foreground aria-selected:text-background aria-selected:hover:bg-foreground'
+              )}
               onClick={() => setFilter((next) => ({ ...next, tab }))}
             >
               {tabLabel(tab)}
-              <span className="text-[11px] tabular-nums text-muted-foreground">{counts[tab]}</span>
-            </Button>
+              <span className="text-[11px] tabular-nums opacity-60">{counts[tab]}</span>
+            </button>
           ))}
         </div>
 
         <div className="relative min-w-[10rem] flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={filter.query}
             onChange={(event) => setFilter((next) => ({ ...next, query: event.target.value }))}
@@ -140,7 +149,7 @@ export function ExtensionsPane(): React.JSX.Element {
               'auto.components.settings.extensions.search_placeholder',
               'Search extensions'
             )}
-            className="h-8 pl-8 text-sm"
+            className="pl-9"
           />
         </div>
 
@@ -150,7 +159,7 @@ export function ExtensionsPane(): React.JSX.Element {
             setFilter((next) => ({ ...next, status: value as ExtensionFilterState['status'] }))
           }
         >
-          <SelectTrigger className="h-8 w-[9.5rem] shrink-0">
+          <SelectTrigger className="w-[9.5rem] shrink-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -174,7 +183,7 @@ export function ExtensionsPane(): React.JSX.Element {
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               className="shrink-0"
               disabled={loading}
               aria-label={translate('auto.components.settings.extensions.refresh', 'Check again')}

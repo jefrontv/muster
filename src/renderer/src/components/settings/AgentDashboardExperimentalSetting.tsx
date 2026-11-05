@@ -21,7 +21,7 @@ export function AgentDashboardExperimentalSetting({
     <SearchableSetting
       title={translate(
         'auto.components.settings.ExperimentalPane.agentDashboard.title',
-        'Agent Dashboard'
+        'Agent dashboard'
       )}
       description={translate(
         'auto.components.settings.ExperimentalPane.agentDashboard.description',
@@ -36,7 +36,7 @@ export function AgentDashboardExperimentalSetting({
           <Label>
             {translate(
               'auto.components.settings.ExperimentalPane.agentDashboard.title',
-              'Agent Dashboard'
+              'Agent dashboard'
             )}
           </Label>
           <p className="text-xs text-muted-foreground">
@@ -50,7 +50,7 @@ export function AgentDashboardExperimentalSetting({
           checked={enabled}
           ariaLabel={translate(
             'auto.components.settings.ExperimentalPane.agentDashboard.toggleLabel',
-            'Toggle Agent Dashboard'
+            'Toggle agent dashboard'
           )}
           onChange={() => updateSettings({ experimentalAgentDashboardPopout: !enabled })}
         />
@@ -79,7 +79,7 @@ export function AgentDashboardExperimentalSetting({
                 'auto.components.settings.ExperimentalPane.agentDashboard.modeAriaLabel',
                 'Agent Dashboard open mode'
               )}
-              size="sm"
+              size="md"
               options={[
                 {
                   value: 'in-window',

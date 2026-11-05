@@ -141,10 +141,10 @@ describe('ExperimentalPane', () => {
     )
 
     expect(settings.experimentalAgentDashboardPopout).toBe(false)
-    expect(markup).toContain('Agent Dashboard')
+    expect(markup).toContain('Agent dashboard')
     expect(markup).toContain('monitor attention, working, and idle agents')
     expect(getExperimentalPaneSearchEntries().map((entry) => entry.title)).toContain(
-      'Agent Dashboard'
+      'Agent dashboard'
     )
   })
 
@@ -172,11 +172,11 @@ describe('ExperimentalPane', () => {
       <ExperimentalPane settings={settings} updateSettings={vi.fn()} />
     )
     const entry = getExperimentalPaneSearchEntries().find(
-      (searchEntry) => searchEntry.title === 'Per-Workspace Environments'
+      (searchEntry) => searchEntry.title === 'Per-workspace environments'
     )
 
     expect(settings.experimentalEphemeralVms).toBe(false)
-    expect(markup).toContain('Per-Workspace Environments')
+    expect(markup).toContain('Per-workspace environments')
     expect(markup).toContain('aria-checked="false"')
     expect(markup).not.toContain('Per-Workspace Environments pane')
     expect(entry?.targetSectionId).toBe('ephemeral-vms')

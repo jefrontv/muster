@@ -30,12 +30,12 @@ describe('usageTextColorClass', () => {
   })
 
   it('turns amber in the 60–79% caution band', () => {
-    expect(usageTextColorClass(60)).toBe('text-yellow-500')
-    expect(usageTextColorClass(79)).toBe('text-yellow-500')
+    expect(usageTextColorClass(60)).toBe('text-status-attention')
+    expect(usageTextColorClass(79)).toBe('text-status-attention')
   })
 
   it('turns red at the 80% critical line and above', () => {
-    expect(usageTextColorClass(80)).toBe('text-red-500')
-    expect(usageTextColorClass(100)).toBe('text-red-500')
+    expect(usageTextColorClass(80)).toBe('text-status-danger')
+    expect(usageTextColorClass(100)).toBe('text-status-danger')
   })
 })

@@ -37,13 +37,13 @@ export function RepositorySourceControlAiEnablement({
         <Label className="text-xs font-medium">
           {translate(
             'auto.components.settings.RepositorySourceControlAiEnablement.showActionsLabel',
-            'Show Source Control AI actions'
+            'Show Source control AI actions'
           )}
         </Label>
         <p className="text-[11px] text-muted-foreground">
           {translate(
             'auto.components.settings.RepositorySourceControlAiEnablement.visibilityHelper',
-            "Controls whether Source Control AI buttons are shown for this repository. Generation used by separate features follows those features' settings. Global default is {{value0}}.",
+            "Controls whether Source control AI buttons are shown for this repository. Generation used by separate features follows those features' settings. Global default is {{value0}}.",
             { value0: visibilityLabel(source.enabled) }
           )}
         </p>
@@ -54,7 +54,7 @@ export function RepositorySourceControlAiEnablement({
           onChange(nextValue === 'inherit' ? undefined : nextValue === 'on')
         }}
       >
-        <SelectTrigger size="sm" className="h-8 w-full text-xs sm:w-[150px]">
+        <SelectTrigger className="w-full sm:w-[150px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

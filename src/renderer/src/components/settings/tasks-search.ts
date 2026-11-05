@@ -4,7 +4,7 @@ import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export const getTasksPaneSearchEntries = createLocalizedCatalog(() => [
   {
-    title: translate('auto.components.settings.tasks.search.5b8e4aace5', 'Task Providers'),
+    title: translate('auto.components.settings.tasks.search.5b8e4aace5', 'Task providers'),
     description: translate(
       'auto.components.settings.tasks.search.765f0c544d',
       'Choose which task providers appear in the Tasks page and sidebar shortcuts.'

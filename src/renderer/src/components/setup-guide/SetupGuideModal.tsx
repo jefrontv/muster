@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react'
-import { EyeOff } from 'lucide-react'
+import { EyeOff, School, Sparkles, X } from 'lucide-react'
 import {
   getFirstIncompleteFeatureWallSetupStepId,
   getFeatureWallSetupSteps
@@ -7,6 +7,7 @@ import {
 import type { FeatureWallSetupStepId } from '../../../../shared/feature-wall-setup-steps'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAppStore } from '@/store'
 import { useModalData } from '@/hooks/use-modal-data'
+import { showOnboardingFromRenderer } from '../onboarding/show-onboarding-event'
 import { FeatureWallSetupChecklist } from '../feature-wall/FeatureWallSetupChecklist'
 import { SetupGuideProgressRing } from './SetupGuideProgressRing'
 import { useSetupGuideProgress } from './use-setup-guide-progress'
@@ -25,6 +27,7 @@ import { translate } from '@/i18n/i18n'
 export default function SetupGuideModal(): JSX.Element | null {
   const modalData = useModalData('setup-guide')
   const closeModal = useAppStore((s) => s.closeModal)
+  const openModal = useAppStore((s) => s.openModal)
   const setSetupGuideSidebarDismissed = useAppStore((s) => s.setSetupGuideSidebarDismissed)
   const isOpen = modalData !== null
   const [userSelectedStep, setUserSelectedStep] = useState(false)
@@ -106,30 +109,54 @@ export default function SetupGuideModal(): JSX.Element | null {
       <DialogContent
         className="grid h-[min(780px,calc(100vh-2rem))] w-[min(1080px,calc(100vw-2rem))] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 p-0 sm:max-w-none"
         tabIndex={-1}
+        showCloseButton={false}
+        onOpenAutoFocus={(event) => {
+          // Start on the current step; the header actions are the least likely first move.
+          const step = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
+            '[aria-current="step"]'
+          )
+          if (step) {
+            event.preventDefault()
+            step.focus()
+          }
+        }}
       >
-        <Tooltip>
-          <TooltipTrigger asChild>
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label={translate(
+                  'auto.components.setup.guide.SetupGuideModal.f3b5ffb2a6',
+                  'Hide checklist from sidebar'
+                )}
+                onClick={handleHideFromSidebar}
+                className="size-7 rounded-full text-muted-foreground"
+              >
+                <EyeOff className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={4}>
+              {translate(
+                'auto.components.setup.guide.SetupGuideModal.28cf59fcb4',
+                'This will hide the checklist from the sidebar'
+              )}
+            </TooltipContent>
+          </Tooltip>
+          <DialogClose asChild>
             <Button
               type="button"
               variant="ghost"
               size="icon-xs"
-              aria-label={translate(
-                'auto.components.setup.guide.SetupGuideModal.f3b5ffb2a6',
-                'Hide checklist from sidebar'
-              )}
-              onClick={handleHideFromSidebar}
-              className="absolute right-10 top-3.5 text-muted-foreground"
+              aria-label={translate('auto.components.ui.dialog.f26c4baeda', 'Close')}
+              className="size-7 rounded-full text-muted-foreground"
             >
-              <EyeOff className="size-4" />
+              <X className="size-3.5" />
             </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={4}>
-            {translate(
-              'auto.components.setup.guide.SetupGuideModal.28cf59fcb4',
-              'This will hide the checklist from the sidebar'
-            )}
-          </TooltipContent>
-        </Tooltip>
+          </DialogClose>
+        </div>
         <DialogHeader className="gap-1 border-b border-border px-7 py-4">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-lg">
@@ -141,9 +168,40 @@ export default function SetupGuideModal(): JSX.Element | null {
             <SetupGuideProgressRing
               done={progress.coreDoneCount}
               total={progress.coreTotal}
-              className="text-green-600 dark:text-green-300"
+              className="text-status-success"
               sizeClassName="size-5"
             />
+            {/* The Help menu's only onboarding entry, so the tour and replay live here. */}
+            <div className="mr-14 ml-auto flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                // Telemetry enum has no setup-guide source; this replaces the Help menu item.
+                onClick={() => openModal('feature-wall', { source: 'help_menu' })}
+              >
+                <Sparkles />
+                {translate(
+                  'auto.components.sidebar.SidebarSettingsHelpMenu.exploreMuster',
+                  'Explore Muster'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={() => {
+                  closeModal()
+                  void showOnboardingFromRenderer()
+                }}
+              >
+                <School />
+                {translate(
+                  'auto.components.sidebar.SidebarSettingsHelpMenu.replayOnboarding',
+                  'Replay onboarding'
+                )}
+              </Button>
+            </div>
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
             {translate(

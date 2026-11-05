@@ -27,7 +27,7 @@ export function ShortcutHintList({
         keys={primaryCombo.keys}
         doubleTap={primaryCombo.doubleTap}
         className="inline-flex gap-0.5"
-        separatorClassName="text-[10px] text-muted-foreground"
+        separatorClassName="text-[11px] text-muted-foreground"
       />
     </span>
   )

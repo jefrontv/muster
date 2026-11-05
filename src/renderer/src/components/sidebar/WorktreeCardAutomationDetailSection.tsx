@@ -110,14 +110,14 @@ export function WorktreeCardAutomationDetailSection({
         <div className="text-[13px] font-semibold leading-snug text-foreground break-words">
           {provenance.automationNameSnapshot}
         </div>
-        <div className="text-[11.5px] leading-snug text-muted-foreground break-words">
+        <div className="text-[11px] leading-snug text-muted-foreground break-words">
           {provenance.automationRunTitleSnapshot}
         </div>
         {availability.status === 'checking' ? (
           <div className="text-[11px] leading-snug text-muted-foreground">
             {translate(
               'auto.components.sidebar.WorktreeCardMeta.checkingAutomationAvailability',
-              'Checking automation availability...'
+              'Checking automation availability…'
             )}
           </div>
         ) : null}

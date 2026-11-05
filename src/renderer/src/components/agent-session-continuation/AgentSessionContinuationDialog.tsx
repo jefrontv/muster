@@ -165,7 +165,7 @@ export function AgentSessionContinuationDialog({
             <MessageSquarePlus className="size-4" />
             {translate(
               'components.agentSessionContinuation.dialogTitle',
-              'Continue in New Session'
+              'Continue in new session'
             )}
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -186,7 +186,7 @@ export function AgentSessionContinuationDialog({
               <div className="mt-0.5 text-[11px] text-muted-foreground">
                 {translate(
                   'components.agentSessionContinuation.originalAgent',
-                  'Original Agent: {{agent}}',
+                  'Original agent: {{agent}}',
                   { agent: sourceAgentLabel }
                 )}
               </div>
@@ -205,7 +205,7 @@ export function AgentSessionContinuationDialog({
               allowNarrowTrigger
               emptyLabel={translate(
                 'components.agentSessionContinuation.selectAgent',
-                'Select an Agent'
+                'Select an agent'
               )}
               triggerClassName="min-w-0 w-full"
             />
@@ -300,7 +300,7 @@ export function AgentSessionContinuationDialog({
             {showStarting ? <Loader2 className="size-3.5 animate-spin" /> : null}
             {starting
               ? translate('components.agentSessionContinuation.starting', 'Starting…')
-              : translate('components.agentSessionContinuation.startSession', 'Start New Session')}
+              : translate('components.agentSessionContinuation.startSession', 'Start new session')}
           </Button>
         </DialogFooter>
       </DialogContent>

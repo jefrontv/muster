@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { githubAvatarIcon, sanitizeRepoIcon } from './repo-icon'
+import {
+  getRepoIconImageSrcCacheSizeForTests,
+  githubAvatarIcon,
+  resetRepoIconImageSrcCacheForTests,
+  sanitizeRepoIcon
+} from './repo-icon'
 
 const PNG_1X1_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
@@ -196,5 +201,44 @@ describe('sanitizeRepoIcon', () => {
       type: 'image'
     })
     expect(sanitizeRepoIcon(base)).not.toHaveProperty('tint')
+  })
+})
+
+describe('sanitizeRepoIcon image verdict cache', () => {
+  it('caches a data-url verdict per source without changing the result', () => {
+    resetRepoIconImageSrcCacheForTests()
+    const src = `data:image/png;base64,${PNG_1X1_BASE64}`
+    const upload = { type: 'image', src, source: 'upload' }
+    expect(sanitizeRepoIcon(upload)).toEqual(upload)
+    expect(sanitizeRepoIcon(upload)).toEqual(upload)
+    expect(getRepoIconImageSrcCacheSizeForTests()).toBe(1)
+    // Same bytes under a source with different rules must not reuse the upload verdict.
+    expect(sanitizeRepoIcon({ type: 'image', src, source: 'github' })).toBeUndefined()
+    expect(sanitizeRepoIcon(upload)).toEqual(upload)
+  })
+
+  it('caches rejections and keeps the cache bounded', () => {
+    resetRepoIconImageSrcCacheForTests()
+    const broken = { type: 'image', src: 'data:image/png;base64,AAAA', source: 'upload' }
+    expect(sanitizeRepoIcon(broken)).toBeUndefined()
+    expect(sanitizeRepoIcon(broken)).toBeUndefined()
+    for (let i = 0; i < 600; i++) {
+      sanitizeRepoIcon({
+        type: 'image',
+        src: `data:image/png;base64,${pngBase64(i + 1, 1)}`,
+        source: 'upload'
+      })
+    }
+    expect(getRepoIconImageSrcCacheSizeForTests()).toBeLessThanOrEqual(512)
+  })
+
+  it('does not cache remote urls', () => {
+    resetRepoIconImageSrcCacheForTests()
+    sanitizeRepoIcon({
+      type: 'image',
+      src: 'https://github.com/stablyai.png?size=64',
+      source: 'github'
+    })
+    expect(getRepoIconImageSrcCacheSizeForTests()).toBe(0)
   })
 })

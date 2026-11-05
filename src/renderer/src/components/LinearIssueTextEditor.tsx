@@ -219,12 +219,12 @@ export function LinearIssueTextEditor({
               'Issue title'
             )}
             className={cn(
-              'peer scrollbar-sleek block w-full resize-none overflow-hidden rounded-md border border-transparent bg-transparent px-1 py-0 text-foreground outline-none transition hover:border-border/50 hover:bg-accent/40 focus-visible:border-border focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-80',
+              'peer scrollbar-sleek block w-full resize-none overflow-hidden rounded-lg bg-transparent px-1 py-0 text-foreground outline-none transition hover:bg-foreground/[0.05] focus-visible:bg-foreground/[0.05] focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-80',
               titleClass
             )}
           />
-          <div className="pointer-events-none absolute bottom-1.5 right-2 z-10 flex items-center gap-1 text-[10px] text-muted-foreground/75 opacity-0 transition-opacity peer-focus:opacity-100">
-            <kbd className="inline-flex h-4 min-w-4 select-none items-center justify-center rounded border border-border bg-muted/70 px-1 font-mono text-[9px] font-medium shadow-xs">
+          <div className="pointer-events-none absolute bottom-1.5 right-2 z-10 flex items-center gap-1 text-[11px] text-muted-foreground/75 opacity-0 transition-opacity peer-focus:opacity-100">
+            <kbd className="inline-flex h-4 min-w-4 select-none items-center justify-center rounded border border-border bg-muted/70 px-1 font-mono text-[11px] font-medium shadow-xs">
               ↵
             </kbd>
             <span>{translate('auto.components.LinearIssueTextEditor.947ba2d6f4', 'to save')}</span>

@@ -41,7 +41,7 @@ export function UpdateStatusSegment({
     }
     if (status.state === 'downloaded') {
       return {
-        icon: <CheckCircle2 className="size-3 text-emerald-500" />,
+        icon: <CheckCircle2 className="size-3 text-status-success" />,
         label: translate(
           'auto.components.status.bar.UpdateStatusSegment.57a29c3b0e',
           'Update ready'
@@ -58,14 +58,14 @@ export function UpdateStatusSegment({
       }
     }
     return {
-      icon: <AlertCircle className="size-3 text-yellow-500" />,
+      icon: <AlertCircle className="size-3 text-status-attention" />,
       label: translate(
         'auto.components.status.bar.UpdateStatusSegment.8533c12c3c',
         'Update failed'
       ),
       tooltip: translate(
         'auto.components.status.bar.UpdateStatusSegment.2201df6987',
-        'Update failed — click to see details'
+        'Update failed: click to see details'
       ),
       ariaLabel: translate(
         'auto.components.status.bar.UpdateStatusSegment.5cd13105a3',
@@ -84,7 +84,7 @@ export function UpdateStatusSegment({
         <button
           type="button"
           onClick={handleClick}
-          className="inline-flex items-center gap-1.5 cursor-pointer rounded px-1 py-0.5 hover:bg-accent/70"
+          className="inline-flex items-center gap-1.5 cursor-pointer rounded-full px-1.5 py-0.5 hover:bg-foreground/[0.07] outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={segment.ariaLabel}
           aria-expanded={!collapsed}
         >

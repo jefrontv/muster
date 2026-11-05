@@ -299,7 +299,7 @@ function Metric({
 }): React.JSX.Element {
   return (
     <div className="min-w-0 px-4 py-3">
-      <div className="truncate text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+      <div className="truncate text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
         {label}
       </div>
       <div className="mt-1 truncate text-lg font-semibold tabular-nums" title={title}>
@@ -520,7 +520,7 @@ function StatusBadge({
   return (
     <Badge
       variant="outline"
-      className="border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+      className="border-status-success-border bg-status-success-background text-status-success"
     >
       {translate('auto.components.status.bar.WorkspaceSpaceManagerPanel.7d7745bb8f', 'Can delete')}
     </Badge>
@@ -1573,7 +1573,7 @@ export function WorkspaceSpaceManagerPanel(): React.JSX.Element {
         {
           description: translate(
             'auto.components.status.bar.WorkspaceSpaceManagerPanel.63efebe0e6',
-            '{{value0}} {{value1}} removed from Space.',
+            '{{value0}} {{value1}} removed from space.',
             {
               value0: deletedIds.length,
               value1: deletedIds.length === 1 ? 'workspace' : 'workspaces'
@@ -1942,7 +1942,7 @@ export function WorkspaceSpaceManagerPanel(): React.JSX.Element {
       {hasRows || isInitialScan ? (
         <div className="overflow-x-auto rounded-lg border border-border/70 bg-background/30">
           <div className="min-w-[46rem]">
-            <div className="grid grid-cols-[1.75rem_minmax(0,1.25fr)_minmax(9rem,0.55fr)_8rem_9.5rem] gap-3 border-b border-border/60 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            <div className="grid grid-cols-[1.75rem_minmax(0,1.25fr)_minmax(9rem,0.55fr)_8rem_9.5rem] gap-3 border-b border-border/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
               <div className="flex items-center">
                 <CheckButton
                   checked={visibleSelectionState}

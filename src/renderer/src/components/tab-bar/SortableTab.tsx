@@ -258,7 +258,10 @@ export default function SortableTab({
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       {showUnreadActivity && (
         // Why: a real DOM child keeps both drop-indicator pseudo-elements free and pointer events reaching the tab.
-        <span aria-hidden className="pointer-events-none absolute inset-0 bg-amber-500/10" />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-status-attention-background"
+        />
       )}
       <TerminalTabLeadingIcon
         agent={tabAgent}
@@ -335,7 +338,7 @@ export default function SortableTab({
       )}
       {isExpanded && !isEditing && (
         <button
-          className={`mr-1 flex items-center justify-center w-4 h-4 rounded-sm shrink-0 ${
+          className={`hit-area mr-1 flex items-center justify-center w-4 h-4 rounded-full shrink-0 ${
             isActive
               ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
               : 'text-transparent group-hover:text-muted-foreground hover:!text-foreground hover:!bg-muted'
@@ -355,7 +358,7 @@ export default function SortableTab({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className={`relative z-10 flex items-center justify-center w-4 h-4 rounded-sm shrink-0 ${
+              className={`hit-area z-10 flex items-center justify-center w-4 h-4 rounded-full shrink-0 ${
                 isActive
                   ? 'text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:text-foreground focus-visible:bg-muted'
                   : 'text-transparent group-hover:text-muted-foreground hover:!text-foreground hover:!bg-muted focus-visible:!text-foreground focus-visible:!bg-muted'

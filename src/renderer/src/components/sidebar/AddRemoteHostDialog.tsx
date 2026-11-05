@@ -283,7 +283,7 @@ export function AddRemoteHostDialog({
               disabled={isSaving || isImporting}
             >
               {isImporting
-                ? translate('auto.components.sidebar.AddRemoteHostDialog.importing', 'Importing...')
+                ? translate('auto.components.sidebar.AddRemoteHostDialog.importing', 'Importing…')
                 : translate(
                     'auto.components.sidebar.AddRemoteHostDialog.importSshConfig',
                     'or import ~/.ssh/config'
@@ -309,7 +309,7 @@ export function AddRemoteHostDialog({
               disabled={isSaving || isImporting}
             >
               {isSaving
-                ? translate('auto.components.sidebar.AddRemoteHostDialog.saving', 'Saving...')
+                ? translate('auto.components.sidebar.AddRemoteHostDialog.saving', 'Saving…')
                 : translate('auto.components.sidebar.AddRemoteHostDialog.save', 'Save')}
             </Button>
           </div>

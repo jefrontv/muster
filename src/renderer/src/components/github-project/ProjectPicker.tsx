@@ -660,7 +660,7 @@ function Section({
 }): React.JSX.Element {
   return (
     <div className="py-1">
-      <div className="px-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+      <div className="px-2 pb-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
       {children}
@@ -689,14 +689,14 @@ function PickerRow({
     <div className="group flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/50">
       <button type="button" onClick={onClick} className="flex flex-1 min-w-0 flex-col text-left">
         <span className="truncate text-sm">{title}</span>
-        <span className="truncate text-[10px] text-muted-foreground">{subtitle}</span>
+        <span className="truncate text-[11px] text-muted-foreground">{subtitle}</span>
       </button>
       {zombie ? (
         <div className="flex items-center gap-1">
-          <AlertTriangle className="size-3.5 text-amber-500" />
+          <AlertTriangle className="size-3.5 text-status-attention" />
           <button
             type="button"
-            className="text-[10px] text-muted-foreground hover:text-foreground"
+            className="text-[11px] text-muted-foreground hover:text-foreground"
             onClick={onRemovePin}
           >
             {translate('auto.components.github.project.ProjectPicker.5009ffc2f3', 'Remove pin')}
@@ -771,7 +771,7 @@ function ViewPickStep({
                 )}
               >
                 <span className="text-sm">{v.name}</span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground">
                   {v.layout === 'TABLE_LAYOUT'
                     ? translate('auto.components.github.project.ProjectPicker.1a2b8e512e', 'Table')
                     : v.layout === 'BOARD_LAYOUT'
@@ -811,7 +811,7 @@ function PartialFailuresBanner({
     .join('\n')
   return (
     <div
-      className="border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
+      className="border-b border-status-attention-border bg-status-attention-background px-3 py-2 text-xs text-status-attention"
       title={detail}
     >
       <div className="flex items-start gap-1.5">
@@ -848,7 +848,7 @@ function AuthErrorBanner({
   }
   // Non-auth errors keep the legacy single-line banner.
   return (
-    <div className="border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+    <div className="border-b border-status-attention-border bg-status-attention-background px-3 py-2 text-xs text-status-attention">
       <div>{error.message}</div>
     </div>
   )

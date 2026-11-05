@@ -2339,7 +2339,7 @@ export const createGitHubSlice: StateCreator<AppState, [], [], GitHubSlice> = (s
           type: 'validation_error',
           message: translate(
             'auto.store.slices.github.87020f6605',
-            'Row has no owner/repo/number — cannot patch underlying item'
+            'Row has no owner/repo/number. Cannot patch underlying item'
           )
         }
       }

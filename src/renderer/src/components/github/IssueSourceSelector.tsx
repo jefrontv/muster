@@ -1,4 +1,5 @@
 import React from 'react'
+import { badgeVariants } from '@/components/ui/badge'
 import type { GitHubOwnerRepo, IssueSourcePreference } from '../../../../shared/types'
 import { sameGitHubOwnerRepo } from '@/components/github/IssueSourceIndicator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -46,7 +47,7 @@ function segmentClass(state: PillState, disabled: boolean | undefined): string {
     // here would double-stroke the chip outline and look heavy. Active state
     // is expressed by a slightly darker inner background that sits one step
     // above the chip's own `bg-muted/40`.
-    'inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium transition',
+    'inline-flex items-center px-1.5 py-0.5 text-[11px] font-medium transition',
     state === 'active'
       ? 'bg-foreground/10 text-foreground'
       : 'bg-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
@@ -58,8 +59,7 @@ function segmentClass(state: PillState, disabled: boolean | undefined): string {
 // optional per-repo badge label prefix) in the same pill shape used by the
 // static `IssueSourceIndicator`. Keeping the styling here means the chip
 // and its segments stay visually consistent.
-export const issueSourceChipClass =
-  'inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground'
+export const issueSourceChipClass = badgeVariants({ variant: 'muted' })
 
 /**
  * Two-pill segmented control: `Upstream | Origin`.

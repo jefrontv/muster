@@ -20,7 +20,7 @@ import type { useSiteStackActions } from './use-site-stack-actions'
 
 type StackActions = ReturnType<typeof useSiteStackActions>
 
-const SKELETON = 'animate-pulse rounded-md bg-muted/60'
+const SKELETON = 'animate-pulse rounded-full bg-foreground/[0.07]'
 
 /** The header buttons at their final size, held while detection is pending. */
 export function SiteLocalStackActionsLoading(): React.JSX.Element {

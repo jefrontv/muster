@@ -70,7 +70,7 @@ describe('AutomationSchedulePicker', () => {
 
   it('splits cron expressions into labeled field values', () => {
     expect(getCronFieldValues('0 9 * * 1-5')).toEqual(['0', '9', '*', '*', '1-5'])
-    expect(getCronFieldValues('0 9')).toEqual(['0', '9', '...', '...', '...'])
+    expect(getCronFieldValues('0 9')).toEqual(['0', '9', '…', '…', '…'])
   })
 
   it('renders the cron expression field without quick starts', () => {

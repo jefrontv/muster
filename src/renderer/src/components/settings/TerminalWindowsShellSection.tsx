@@ -36,7 +36,7 @@ export function TerminalWindowsShellSection({
   return (
     <section key="windows-shell" className="space-y-3">
       <SettingsSubsectionHeader
-        title={translate('auto.components.settings.TerminalPane.87e678a8af', 'Windows Shell')}
+        title={translate('auto.components.settings.TerminalPane.87e678a8af', 'Windows shell')}
         description={translate(
           'auto.components.settings.TerminalPane.a55eee649f',
           'Default shell for new terminal panes on Windows.'
@@ -45,7 +45,7 @@ export function TerminalWindowsShellSection({
 
       <div className="divide-y divide-border/40">
         <SearchableSetting
-          title={translate('auto.components.settings.TerminalPane.27e301f22c', 'Default Shell')}
+          title={translate('auto.components.settings.TerminalPane.27e301f22c', 'Default shell')}
           description={translate(
             'auto.components.settings.TerminalPane.bd68f3170d',
             'Choose the default shell for new terminal panes on Windows.'
@@ -63,7 +63,7 @@ export function TerminalWindowsShellSection({
           ]}
         >
           <SettingsRow
-            label={translate('auto.components.settings.TerminalPane.27e301f22c', 'Default Shell')}
+            label={translate('auto.components.settings.TerminalPane.27e301f22c', 'Default shell')}
             description={translate(
               'auto.components.settings.TerminalPane.09bf02de9a',
               'Shell used when opening a new terminal pane. Takes effect for new terminals.'
@@ -72,7 +72,7 @@ export function TerminalWindowsShellSection({
               <SettingsSegmentedControl
                 ariaLabel={translate(
                   'auto.components.settings.TerminalPane.27e301f22c',
-                  'Default Shell'
+                  'Default shell'
                 )}
                 value={windowsShell}
                 onChange={(value) => updateSettings({ terminalWindowsShell: value })}

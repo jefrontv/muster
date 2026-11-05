@@ -204,9 +204,9 @@ export function TabBarQuickCommandsMenu({
     'More quick commands'
   )
   const splitButtonClass =
-    'my-auto flex h-7 shrink-0 items-stretch overflow-hidden rounded-md border border-border/60 text-muted-foreground'
+    'my-auto flex h-7 shrink-0 items-stretch overflow-hidden rounded-full border border-border/60 text-muted-foreground'
   const innerButtonBase =
-    'flex items-center bg-transparent leading-none text-muted-foreground hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
+    'flex items-center bg-transparent leading-none text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
   return (
     <div className={splitButtonClass}>
       <Tooltip>
@@ -215,7 +215,7 @@ export function TabBarQuickCommandsMenu({
             type="button"
             onClick={() => mostRecent && runAndClose(mostRecent)}
             disabled={!mostRecent}
-            className={cn(innerButtonBase, 'gap-1.5 rounded-l-md rounded-r-none px-1.5')}
+            className={cn(innerButtonBase, 'gap-1.5 rounded-l-full rounded-r-none pr-1.5 pl-2.5')}
             aria-label={
               mostRecent
                 ? translate(
@@ -266,13 +266,13 @@ export function TabBarQuickCommandsMenu({
                 type="button"
                 className={cn(
                   innerButtonBase,
-                  'justify-center rounded-l-none rounded-r-md border-l border-border/60 px-1'
+                  'justify-center rounded-l-none rounded-r-full border-l border-border/60 pr-1.5 pl-1'
                 )}
                 aria-label={moreCommandsLabel}
                 onPointerEnter={allowMoreCommandsTooltip}
                 onBlur={allowMoreCommandsTooltip}
               >
-                <ChevronDown className="size-3" strokeWidth={2.5} />
+                <ChevronDown className="size-3" />
               </button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
@@ -285,8 +285,8 @@ export function TabBarQuickCommandsMenu({
                   keys={shortcut.keys}
                   doubleTap={shortcut.doubleTap}
                   className="gap-0.5"
-                  keyCapClassName="min-w-0 border-background/30 bg-background/10 px-1 py-0 text-[10px] text-background shadow-none"
-                  separatorClassName="mx-0 text-[10px] text-background/70"
+                  keyCapClassName="min-w-0 border-background/30 bg-background/10 px-1 py-0 text-[11px] text-background shadow-none"
+                  separatorClassName="mx-0 text-[11px] text-background/70"
                 />
               ))}
             </span>
@@ -318,7 +318,7 @@ export function TabBarQuickCommandsMenu({
                 autoFocus
                 placeholder={translate(
                   'auto.components.tab.bar.TabBarQuickCommandsButton.f3a8c2d1e7',
-                  'Search quick commands...'
+                  'Search quick commands…'
                 )}
                 value={query}
                 onValueChange={(nextQuery) => {
@@ -328,9 +328,6 @@ export function TabBarQuickCommandsMenu({
                   setQuery(nextQuery)
                 }}
                 onKeyDown={handleSearchKeyDown}
-                className="h-9 py-2 text-[12px]"
-                wrapperClassName="border-b border-border/50 px-2"
-                iconClassName="h-3.5 w-3.5"
               />
             ) : null}
             <CommandList ref={commandListRef} className="max-h-72 py-1">
@@ -388,7 +385,7 @@ export function TabBarQuickCommandsMenu({
                   closeMenu()
                   onAddCommand()
                 }}
-                className="flex w-full items-center gap-2 rounded-[5px] px-2 py-1.5 text-[12px] text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex min-h-[30px] w-full items-center gap-2 rounded-md px-2 py-1.5 text-[14px] leading-[18px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Play className="size-3.5" />
                 {translate(

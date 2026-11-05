@@ -43,7 +43,7 @@ function IconButton({
           aria-label={label}
           disabled={disabled}
           onClick={onClick}
-          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
+          className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {children}
         </button>

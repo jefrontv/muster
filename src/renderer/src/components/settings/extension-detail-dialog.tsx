@@ -180,8 +180,7 @@ export function ExtensionDetailDialog({
                     <span aria-hidden> → </span>
                     <span
                       className={cn(
-                        state.status === 'outdated' &&
-                          'font-medium text-amber-600 dark:text-amber-400'
+                        state.status === 'outdated' && 'font-medium text-status-attention'
                       )}
                     >
                       {state.latestVersion}

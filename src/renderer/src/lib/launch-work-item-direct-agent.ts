@@ -169,7 +169,7 @@ export async function pasteDirectWorkItemDraftWhenAgentReady(args: {
       toast.message(
         translate(
           'auto.lib.launch.work.item.direct.agent.ceeeb509b5',
-          'Agent took too long to start. The workspace is ready — paste the {{value0}} when the agent is idle.',
+          'Agent took too long to start. The workspace is ready. Paste the {{value0}} when the agent is idle.',
           { value0: label }
         )
       )

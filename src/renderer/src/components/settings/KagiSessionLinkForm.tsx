@@ -63,7 +63,7 @@ export function KagiSessionLinkForm(): React.JSX.Element {
       toast.error(
         translate(
           'auto.components.settings.KagiSessionLinkForm.0911d5fa4c',
-          'Enter a Kagi private session link from https://kagi.com/search?token=...'
+          'Enter a Kagi private session link from https://kagi.com/search?token=…'
         )
       )
       return
@@ -99,7 +99,7 @@ export function KagiSessionLinkForm(): React.JSX.Element {
           onChange={(e) => setDraft(e.target.value)}
           placeholder={translate(
             'auto.components.settings.KagiSessionLinkForm.e383683485',
-            'https://kagi.com/search?token=...'
+            'https://kagi.com/search?token=…'
           )}
           spellCheck={false}
           autoCapitalize="none"

@@ -1269,7 +1269,7 @@ function Terminal(): React.JSX.Element | null {
       return
     }
     createBrowserTab(activeWorktreeId, defaultUrl, {
-      title: translate('auto.components.Terminal.37da0d736f', 'New Browser Tab'),
+      title: translate('auto.components.Terminal.37da0d736f', 'New browser tab'),
       focusAddressBar: true
     })
   }, [activeWorktreeId, createBrowserTab, openNewBrowserTabInActiveWorkspace])
@@ -1687,7 +1687,7 @@ function Terminal(): React.JSX.Element | null {
             toast.message(
               translate(
                 'auto.components.Terminal.5b2c1a9e44',
-                'No agent CLI detected — install one or pick a default agent in Settings.'
+                'No agent CLI detected. Install one or pick a default agent in Settings.'
               )
             )
           }
@@ -2227,7 +2227,7 @@ function Terminal(): React.JSX.Element | null {
             <Suspense
               fallback={
                 <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                  {translate('auto.components.Terminal.5c1d2a32bb', 'Loading editor...')}
+                  {translate('auto.components.Terminal.5c1d2a32bb', 'Loading editor…')}
                 </div>
               }
             >
@@ -2249,7 +2249,7 @@ function Terminal(): React.JSX.Element | null {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-sm">
-              {translate('auto.components.Terminal.21295c6b8c', 'Unsaved Changes')}
+              {translate('auto.components.Terminal.21295c6b8c', 'Unsaved changes')}
             </DialogTitle>
             <DialogDescription className="text-xs">
               {saveDialogFile
@@ -2269,7 +2269,7 @@ function Terminal(): React.JSX.Element | null {
               {translate('auto.components.Terminal.f82e9f02df', 'Cancel')}
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={handleSaveDialogDiscard}>
-              {translate('auto.components.Terminal.0037b21794', "Don't Save")}
+              {translate('auto.components.Terminal.0037b21794', "Don't save")}
             </Button>
             <Button type="button" size="sm" onClick={handleSaveDialogSave}>
               {translate('auto.components.Terminal.cd51e28d8b', 'Save')}
@@ -2290,7 +2290,7 @@ function Terminal(): React.JSX.Element | null {
         <DialogContent className="max-w-sm" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="text-sm">
-              {translate('auto.components.Terminal.2fa9c69ff3', 'Close Window?')}
+              {translate('auto.components.Terminal.2fa9c69ff3', 'Close window?')}
             </DialogTitle>
             <DialogDescription className="text-xs">
               {translate(

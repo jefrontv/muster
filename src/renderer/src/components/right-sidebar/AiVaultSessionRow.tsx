@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import type React from 'react'
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { cn } from '@/lib/utils'
+import { markdownPreviewText } from '@/lib/markdown-preview-text'
 import {
   AI_VAULT_SESSION_DRAG_END_EVENT,
   AI_VAULT_SESSION_DRAG_START_EVENT,
@@ -82,8 +83,8 @@ export function VaultSessionRow({
   const detailsId = getSessionDetailsId(session.id)
   const latestTurn = latestSessionConversationTurn(session)
   const detailsTooltip = detailsExpanded
-    ? translate('auto.components.right.sidebar.AiVaultSessionRow.hideDetails', 'Hide Details')
-    : translate('auto.components.right.sidebar.AiVaultSessionRow.showDetails', 'Show Details')
+    ? translate('auto.components.right.sidebar.AiVaultSessionRow.hideDetails', 'Hide details')
+    : translate('auto.components.right.sidebar.AiVaultSessionRow.showDetails', 'Show details')
   const startResumeDrag = useCallback(
     (event: React.DragEvent<HTMLElement>): void => {
       event.stopPropagation()
@@ -141,7 +142,7 @@ export function VaultSessionRow({
                 detailsExpanded ? 'line-clamp-2 [overflow-wrap:anywhere]' : 'line-clamp-1'
               )}
             >
-              {session.title}
+              {markdownPreviewText(session.title)}
             </div>
             <SessionRowTrailingActions
               session={session}
@@ -178,7 +179,7 @@ export function VaultSessionRow({
                     <span className="font-medium text-foreground/80">
                       {conversationRoleLabel(latestTurn.role)}
                     </span>
-                    <span>: {latestTurn.text}</span>
+                    <span>: {markdownPreviewText(latestTurn.text)}</span>
                   </>
                 ) : (
                   translate(

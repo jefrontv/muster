@@ -168,7 +168,7 @@ describe('AgentSkillSetupPanel', () => {
   it('keeps update copy until the installed panel checks CLI prerequisites', () => {
     const html = renderPanel({
       installed: true,
-      installLabel: 'Install CLI & Skill',
+      installLabel: 'Install CLI & skill',
       preInstallNotice: 'Install the Muster CLI before running agent skill setup.'
     })
 
@@ -181,7 +181,7 @@ describe('AgentSkillSetupPanel', () => {
     await renderInteractivePanel({
       installed: true,
       installedCommand: UPDATE_COMMAND,
-      installLabel: 'Install CLI & Skill',
+      installLabel: 'Install CLI & skill',
       preInstallNotice: 'Install the Muster CLI before running agent skill setup.',
       getPrerequisiteStatus: vi.fn(
         async () =>
@@ -193,7 +193,7 @@ describe('AgentSkillSetupPanel', () => {
     })
 
     expect(findButton('Update').disabled).toBe(false)
-    expect(container?.textContent).not.toContain('Install CLI & Skill')
+    expect(container?.textContent).not.toContain('Install CLI & skill')
   })
 
   it('can hide install after the skill is detected', () => {
@@ -250,7 +250,7 @@ describe('AgentSkillSetupPanel', () => {
 
     await clickButton('Install')
 
-    expect(findButton('Preparing...').disabled).toBe(true)
+    expect(findButton('Preparing…').disabled).toBe(true)
     expect(container?.textContent).toContain('Preparing setup terminal.')
     expect(container?.textContent).not.toContain(INSTALL_COMMAND)
 

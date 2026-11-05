@@ -195,7 +195,7 @@ export function UsagePercentageDisplayChangeNotice({
               <Button variant="default" size="sm" className="min-w-0 flex-1" onClick={openSettings}>
                 {translate(
                   'auto.components.status.bar.UsagePercentageDisplayChangeNotice.openSettings',
-                  'Open Settings'
+                  'Open settings'
                 )}
               </Button>
               <Button variant="secondary" size="sm" className="w-[84px]" onClick={dismiss}>

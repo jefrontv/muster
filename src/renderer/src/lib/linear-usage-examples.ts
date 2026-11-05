@@ -70,7 +70,7 @@ export const getLinearUsageExamples = createLocalizedCatalog((): SkillUsageExamp
     ),
     prompt: translate(
       'auto.lib.linear.usage.examples.triageFollowupsPrompt',
-      'Use {{value0}} to triage the linked Linear issue — set priority and estimate — and create a parented follow-up ticket for the deferred cleanup.',
+      'Use {{value0}} to triage the linked Linear issue, set priority and estimate, and create a parented follow-up ticket for the deferred cleanup.',
       { value0: LINEAR_SLASH_COMMAND }
     )
   }

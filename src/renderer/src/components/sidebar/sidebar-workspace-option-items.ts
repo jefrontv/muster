@@ -208,7 +208,7 @@ export const SORT_OPTIONS = [
     get label() {
       return translate(
         'auto.components.sidebar.SidebarWorkspaceOptionsMenu.503462f2b4',
-        'Agent Activity'
+        'Agent activity'
       )
     },
     get description() {

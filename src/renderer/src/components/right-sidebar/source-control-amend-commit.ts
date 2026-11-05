@@ -42,7 +42,7 @@ export function resolveAmendCommitItem(inputs: AmendCommitItemInputs): DropdownI
     kind: 'commit_amend',
     label: translate(
       'auto.components.right.sidebar.source.control.amend.commit.label',
-      'Commit (Amend)'
+      'Commit (amend)'
     ),
     title,
     disabled:
@@ -53,7 +53,7 @@ export function resolveAmendCommitItem(inputs: AmendCommitItemInputs): DropdownI
   }
 }
 
-// Why: amending a local-only commit is harmless; rewriting one the remote already has forces a later Force Push.
+// Why: amending a local-only commit is harmless; rewriting one the remote already has forces a later Force push.
 export function resolveAmendCommitConfirmation(
   upstreamStatus: GitUpstreamStatus | undefined
 ): UndoCommitConfirmation | null {
@@ -73,12 +73,12 @@ export function resolveAmendCommitConfirmation(
     ),
     description: translate(
       'auto.components.right.sidebar.source.control.amend.commit.confirm_description',
-      'This commit is already on {{value0}}. Amending it only changes your local branch, and your next push will need Force Push.',
+      'This commit is already on {{value0}}. Amending it only changes your local branch, and your next push will need a force push.',
       { value0: remote }
     ),
     confirmLabel: translate(
       'auto.components.right.sidebar.source.control.amend.commit.confirm_label',
-      'Amend Commit'
+      'Amend commit'
     )
   }
 }

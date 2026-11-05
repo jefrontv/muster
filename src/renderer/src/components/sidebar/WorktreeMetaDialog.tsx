@@ -21,6 +21,7 @@ import { getScreenSubmitShortcutLabel, isScreenSubmitShortcut } from '@/lib/scre
 import { ExternalLink, LoaderCircle } from 'lucide-react'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
+import { Textarea } from '@/components/ui/textarea'
 
 function resizeCommentTextarea(textarea: HTMLTextAreaElement): void {
   textarea.style.height = 'auto'
@@ -193,7 +194,7 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
           <DialogTitle className="text-sm">
             {translate(
               'auto.components.sidebar.WorktreeMetaDialog.382fd11a3e',
-              'Edit Worktree Details'
+              'Edit worktree details'
             )}
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -207,7 +208,7 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
         <div className="space-y-4">
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-muted-foreground">
-              {translate('auto.components.sidebar.WorktreeMetaDialog.ad5e4e514f', 'Display Name')}
+              {translate('auto.components.sidebar.WorktreeMetaDialog.ad5e4e514f', 'Display name')}
             </label>
             <Input
               ref={displayNameInputRef}
@@ -216,21 +217,21 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
               onKeyDown={handleIssueKeyDown}
               placeholder={translate(
                 'auto.components.sidebar.WorktreeMetaDialog.7f21e0464f',
-                'Custom display name...'
+                'Custom display name…'
               )}
               className="h-8 text-xs"
             />
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.sidebar.WorktreeMetaDialog.459ad7f650',
-                'Only changes the name shown in the sidebar — the folder on disk stays the same. Leave blank to use the branch or folder name.'
+                'Only changes the name shown in the sidebar. The folder on disk stays the same. Leave blank to use the branch or folder name.'
               )}
             </p>
           </div>
 
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-muted-foreground">
-              {translate('auto.components.sidebar.WorktreeMetaDialog.645fa4a0fd', 'GH Issue')}
+              {translate('auto.components.sidebar.WorktreeMetaDialog.645fa4a0fd', 'GH issue')}
             </label>
             <div className="relative">
               <Input
@@ -273,7 +274,7 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.sidebar.WorktreeMetaDialog.7c454be4c5',
                 'Paste an issue URL, or enter a number. Leave blank to remove the link.'
@@ -296,7 +297,7 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
               )}
               className="h-8 text-xs"
             />
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.sidebar.WorktreeMetaDialog.5ae06f40fd',
                 'Paste a pull request URL, or enter a number. Leave blank to remove the link.'
@@ -308,22 +309,22 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
             <label className="text-[11px] font-medium text-muted-foreground">
               {translate('auto.components.sidebar.WorktreeMetaDialog.9c1d1e9b71', 'Comment')}
             </label>
-            <textarea
+            <Textarea
               ref={setCommentTextareaRef}
               value={commentInput}
               onChange={handleCommentChange}
               onKeyDown={handleCommentKeyDown}
               placeholder={translate(
                 'auto.components.sidebar.WorktreeMetaDialog.030d484fc0',
-                'Notes about this worktree...'
+                'Notes about this worktree…'
               )}
               rows={3}
-              className="w-full min-w-0 rounded-xl bg-foreground/[0.05] px-3 py-2 text-xs transition-[color,box-shadow] placeholder:text-muted-foreground resize-none max-h-60 overflow-y-auto scrollbar-sleek outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="text-xs resize-none max-h-60 overflow-y-auto scrollbar-sleek"
             />
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.sidebar.WorktreeMetaDialog.7f0be5e9a6',
-                'Supports **markdown** — bold, lists, `code`, links. Press Enter or'
+                'Supports **markdown**: bold, lists, `code`, links. Press Enter or'
               )}{' '}
               {submitShortcutLabel}{' '}
               {translate(
@@ -345,7 +346,7 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
           </Button>
           <Button size="sm" onClick={handleSave} disabled={!canSave || saving} className="text-xs">
             {saving
-              ? translate('auto.components.sidebar.WorktreeMetaDialog.61d6f612cf', 'Saving...')
+              ? translate('auto.components.sidebar.WorktreeMetaDialog.61d6f612cf', 'Saving…')
               : translate('auto.components.sidebar.WorktreeMetaDialog.2174f17011', 'Save')}
           </Button>
         </DialogFooter>

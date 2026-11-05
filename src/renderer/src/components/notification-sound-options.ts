@@ -27,12 +27,12 @@ export const getBuiltInNotificationSoundOptions = createLocalizedCatalog(
   (): NotificationSoundOption[] => [
     {
       id: 'system',
-      title: translate('auto.components.notification.sound.options.017abebfa6', 'System Default'),
+      title: translate('auto.components.notification.sound.options.017abebfa6', 'System default'),
       icon: Bell
     },
     {
       id: 'two-tone',
-      title: translate('auto.components.notification.sound.options.80f7cc95b3', 'Two Tone'),
+      title: translate('auto.components.notification.sound.options.80f7cc95b3', 'Two tone'),
       icon: AudioWaveform
     },
     {

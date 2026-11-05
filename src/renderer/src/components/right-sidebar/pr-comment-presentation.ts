@@ -172,8 +172,8 @@ export function getPRCommentPresentationClasses(
       avatar: `size-4 ${COMMENT_AVATAR}`,
       avatarReply: `size-3.5 ${COMMENT_AVATAR}`,
       botBadge:
-        'shrink-0 rounded border border-border bg-accent/40 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-muted-foreground',
-      pathBadge: 'min-w-0 flex-1 truncate text-[10px] font-mono text-muted-foreground/60',
+        'shrink-0 rounded border border-border bg-accent/40 px-1 py-px text-[11px] font-medium uppercase tracking-wide text-muted-foreground',
+      pathBadge: 'min-w-0 flex-1 truncate text-[11px] font-mono text-muted-foreground',
       time: 'hidden',
       resolvedContainer: 'opacity-50',
       repliesContainer: 'ml-3 border-l-2 border-border/50',
@@ -182,16 +182,16 @@ export function getPRCommentPresentationClasses(
       resolvedSectionContent: 'flex flex-col gap-2 pb-1 pt-1',
       sectionHeader: 'flex flex-col gap-2.5 border-b border-border px-3 py-2.5',
       sectionHeaderLabel: 'text-[11px] font-medium text-foreground',
-      sectionCount: 'text-[10px] text-muted-foreground',
+      sectionCount: 'text-[11px] text-muted-foreground',
       audienceTabs: 'grid grid-cols-3 rounded-md border border-border bg-background p-0.5',
       audienceTab:
         'flex h-7 items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground transition-colors',
       audienceTabActive: 'bg-muted text-foreground',
       sectionTriageLabel: cn('px-3 pt-2', RESOLVED_SECTION_LABEL),
       statusBadgeResolved:
-        'shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
+        'shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground',
       statusBadgeQueued:
-        'shrink-0 rounded border border-ring/40 bg-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground',
+        'shrink-0 rounded border border-ring/40 bg-accent px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground',
       commentHeaderPrimary: 'flex min-w-0 items-center gap-1.5',
       commentHeaderMeta: '',
       commentHeaderMetaWithSelection: '',
@@ -220,7 +220,7 @@ export function getPRCommentPresentationClasses(
     avatar: `size-5 ${COMMENT_AVATAR}`,
     avatarReply: `size-4 ${COMMENT_AVATAR}`,
     botBadge:
-      'shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
+      'shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground',
     pathBadge: 'min-w-0 max-w-full truncate font-mono text-muted-foreground',
     time: 'shrink-0 text-[11px] text-muted-foreground',
     resolvedContainer: 'opacity-60',
@@ -231,16 +231,16 @@ export function getPRCommentPresentationClasses(
     sectionHeader: 'flex flex-col gap-2.5 border-b border-border px-3 py-2.5',
     sectionHeaderLabel: 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
     sectionCount:
-      'rounded-full border border-border bg-muted px-1.5 py-px text-[10px] font-semibold tabular-nums text-muted-foreground',
+      'rounded-full border border-border bg-muted px-1.5 py-px text-2xs font-semibold tabular-nums text-muted-foreground',
     audienceTabs: 'grid grid-cols-3 rounded-md border border-border bg-background p-0.5',
     audienceTab:
       'flex h-7 items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground transition-colors',
     audienceTabActive: 'bg-muted text-foreground shadow-xs',
     sectionTriageLabel: cn('px-3 pt-1', RESOLVED_SECTION_LABEL),
     statusBadgeResolved:
-      'shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
+      'shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground',
     statusBadgeQueued:
-      'shrink-0 rounded border border-ring/40 bg-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground',
+      'shrink-0 rounded border border-ring/40 bg-accent px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-foreground',
     commentHeaderPrimary: 'flex min-w-0 items-center gap-2',
     commentHeaderMeta: cn(
       CARD_COMMENT_META_INDENT,

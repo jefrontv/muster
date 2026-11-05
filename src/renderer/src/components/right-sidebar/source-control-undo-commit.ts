@@ -27,12 +27,12 @@ export function resolveUndoCommitConfirmation(
     ),
     description: translate(
       'auto.components.right.sidebar.source.control.undo.commit.confirm_description',
-      'This commit is already on {{value0}}. Undoing it only changes your local branch, and your next push will need Force Push.',
+      'This commit is already on {{value0}}. Undoing it only changes your local branch, and your next push will need a force push.',
       { value0: remote }
     ),
     confirmLabel: translate(
       'auto.components.right.sidebar.source.control.undo.commit.confirm_label',
-      'Undo Commit'
+      'Undo commit'
     )
   }
 }

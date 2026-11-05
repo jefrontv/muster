@@ -23,7 +23,14 @@ const HOST_THEME_TOKENS = [
   'app-font-family'
 ] as const
 
-export type BotsHostTheme = { dark: boolean; tokens: Record<string, string> }
+/** Muster's sidebar width and the room its mode toggle needs above the guest's sidebar. */
+export type BotsHostLayout = { sidebarWidth: number; chromeTop: number }
+
+export type BotsHostTheme = {
+  dark: boolean
+  tokens: Record<string, string>
+  layout?: BotsHostLayout
+}
 
 export function readBotsHostTheme(root: HTMLElement = document.documentElement): BotsHostTheme {
   const computed = getComputedStyle(root)
@@ -43,12 +50,16 @@ export function botsHostThemeScript(theme: BotsHostTheme): string {
 }
 
 /** Pushes now and whenever Muster's theme changes (the .dark class or inline token overrides on <html>). */
-export function syncBotsHostTheme(webview: Electron.WebviewTag): () => void {
+export function syncBotsHostTheme(
+  webview: Electron.WebviewTag,
+  layout?: { get: () => BotsHostLayout; subscribe: (onChange: () => void) => () => void }
+): () => void {
   let last = ''
   let frame = 0
   const push = (): void => {
     frame = 0
-    const script = botsHostThemeScript(readBotsHostTheme())
+    const theme = readBotsHostTheme()
+    const script = botsHostThemeScript(layout ? { ...theme, layout: layout.get() } : theme)
     if (script === last) {
       return
     }
@@ -71,7 +82,9 @@ export function syncBotsHostTheme(webview: Electron.WebviewTag): () => void {
     attributes: true,
     attributeFilter: ['class', 'style']
   })
+  const stopLayout = layout?.subscribe(schedule)
   return () => {
+    stopLayout?.()
     observer.disconnect()
     webview.removeEventListener('dom-ready', onDomReady)
     cancelAnimationFrame(frame)

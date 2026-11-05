@@ -128,8 +128,8 @@ export function ActiveCollabRichBodyFrame({
       data-slot="activecollab-rich-body"
       ref={rootRef}
       className={cn(
-        'relative rounded-md border border-input bg-transparent transition-colors focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
-        dragging && 'border-ring ring-[3px] ring-ring/30',
+        'relative rounded-xl bg-foreground/[0.05] transition-[color,box-shadow] focus-within:ring-2 focus-within:ring-ring',
+        dragging && 'ring-2 ring-ring/30',
         disabled && 'pointer-events-none opacity-50'
       )}
     >

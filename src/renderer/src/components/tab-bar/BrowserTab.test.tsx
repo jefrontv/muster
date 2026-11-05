@@ -265,7 +265,7 @@ describe('BrowserTab favicon', { timeout: 30_000 }, () => {
     const globes = findElementsByType(element, 'Globe')
     expect(globes).toHaveLength(1)
     expect(globes[0].props.className).toContain('size-3 mr-1 shrink-0')
-    expect(globes[0].props.className).toContain('text-blue-500')
+    expect(globes[0].props.className).toContain('text-status-info')
   })
 
   it('falls back to the globe after the favicon image errors', async () => {

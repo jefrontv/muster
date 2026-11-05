@@ -114,7 +114,7 @@ function workspacePortAsExternal(port: WorkspacePort & { kind: 'workspace' }): W
 }
 
 const LOCAL_PORT_MENU_CONTENT_CLASS =
-  '!rounded-md !border-border/60 !bg-popover !text-popover-foreground !shadow-[0_10px_24px_rgba(0,0,0,0.18)] !backdrop-blur-none'
+  '!rounded-md !border-border/60 !bg-popover !text-popover-foreground !shadow-floating !backdrop-blur-none'
 const LOCAL_PORT_MENU_ITEM_CLASS =
   'rounded-md focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent'
 const LOCAL_PORT_MENU_LABEL_CLASS = 'px-2 py-1 text-[11px] font-semibold text-muted-foreground'
@@ -346,14 +346,14 @@ function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }): React.
               disabled={refreshing}
               aria-label={translate(
                 'auto.components.right.sidebar.PortsPanel.7822e3edc6',
-                'Refresh Ports'
+                'Refresh ports'
               )}
             >
               <RefreshCw size={14} className={cn(refreshing && 'animate-spin')} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" sideOffset={4}>
-            {translate('auto.components.right.sidebar.PortsPanel.7822e3edc6', 'Refresh Ports')}
+            {translate('auto.components.right.sidebar.PortsPanel.7822e3edc6', 'Refresh ports')}
           </TooltipContent>
         </Tooltip>
       </div>
@@ -377,12 +377,12 @@ function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }): React.
             id="active"
             title={translate(
               'auto.components.right.sidebar.PortsPanel.935dda7718',
-              'Active Workspace'
+              'Active workspace'
             )}
             ports={activePorts}
             emptyText={
               refreshing && !displayScan
-                ? translate('auto.components.right.sidebar.PortsPanel.0d63d94db3', 'Scanning...')
+                ? translate('auto.components.right.sidebar.PortsPanel.0d63d94db3', 'Scanning…')
                 : translate(
                     'auto.components.right.sidebar.PortsPanel.38b16cfbef',
                     'No ports detected'
@@ -398,7 +398,7 @@ function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }): React.
             id="other"
             title={translate(
               'auto.components.right.sidebar.PortsPanel.4db4b5e435',
-              'Other Workspaces'
+              'Other workspaces'
             )}
             ports={otherWorkspacePorts}
             collapsed={collapsedSections.other ?? false}
@@ -479,11 +479,11 @@ function LocalPortSection({
           size={12}
           className={cn('shrink-0 transition-transform', !collapsed && 'rotate-90')}
         />
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </span>
         {ports.length > 0 && (
-          <span className="text-[10px] text-muted-foreground/60 ml-1">{ports.length}</span>
+          <span className="text-[11px] text-muted-foreground ml-1">{ports.length}</span>
         )}
       </button>
       {!collapsed && (
@@ -569,7 +569,7 @@ function LocalPortRow({
         : 'Unassigned'
   const openBrowserLabel = translate(
     'auto.components.right.sidebar.PortsPanel.b22b128b2a',
-    'Open in Browser'
+    'Open in browser'
   )
   const confidenceLabel =
     port.kind === 'workspace' ? (port.owner.confidence === 'cwd' ? 'cwd' : 'command') : null
@@ -581,7 +581,7 @@ function LocalPortRow({
       <div className="group flex items-center gap-2 py-1 px-1 -mx-1 rounded hover:bg-accent/50 transition-colors">
         <ContextMenuTrigger asChild>
           <div
-            className="flex min-w-0 flex-1 items-center gap-2 rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             tabIndex={0}
             aria-label={translate(
               'auto.components.right.sidebar.PortsPanel.5be4f7f727',
@@ -600,7 +600,7 @@ function LocalPortRow({
               <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="truncate">{address}</span>
               </div>
-              <div className="flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground/70">
+              <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground/70">
                 <span className="truncate">{ownerLabel}</span>
                 {confidenceLabel && (
                   <span className="shrink-0 text-muted-foreground/70">{confidenceLabel}</span>
@@ -664,14 +664,14 @@ function LocalPortRow({
                     onClick={handleStopButtonClick}
                     aria-label={translate(
                       'auto.components.right.sidebar.PortsPanel.f9528da632',
-                      'Stop Process'
+                      'Stop process'
                     )}
                   >
                     <Trash2 size={13} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={4}>
-                  {translate('auto.components.right.sidebar.PortsPanel.f9528da632', 'Stop Process')}
+                  {translate('auto.components.right.sidebar.PortsPanel.f9528da632', 'Stop process')}
                 </TooltipContent>
               </Tooltip>
             )}
@@ -691,7 +691,7 @@ function LocalPortRow({
         </ContextMenuItem>
         <ContextMenuItem className={LOCAL_PORT_MENU_ITEM_CLASS} onSelect={handleCopy}>
           <Copy size={13} />
-          {translate('auto.components.right.sidebar.PortsPanel.792baeb7ed', 'Copy Address')}
+          {translate('auto.components.right.sidebar.PortsPanel.792baeb7ed', 'Copy address')}
         </ContextMenuItem>
         <ContextMenuItem
           className={LOCAL_PORT_MENU_ITEM_CLASS}
@@ -700,14 +700,14 @@ function LocalPortRow({
           }}
         >
           <Copy size={13} />
-          {translate('auto.components.right.sidebar.PortsPanel.bdac206faf', 'Copy Details')}
+          {translate('auto.components.right.sidebar.PortsPanel.bdac206faf', 'Copy details')}
         </ContextMenuItem>
         <ContextMenuItem
           className={LOCAL_PORT_MENU_ITEM_CLASS}
           onSelect={() => onShowDetails(port)}
         >
           <Info size={13} />
-          {translate('auto.components.right.sidebar.PortsPanel.a223459512', 'Show Details')}
+          {translate('auto.components.right.sidebar.PortsPanel.a223459512', 'Show details')}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
@@ -717,7 +717,7 @@ function LocalPortRow({
           onSelect={() => onStop(port)}
         >
           <Trash2 size={13} />
-          {translate('auto.components.right.sidebar.PortsPanel.f9528da632', 'Stop Process')}
+          {translate('auto.components.right.sidebar.PortsPanel.f9528da632', 'Stop process')}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -903,7 +903,7 @@ function SshPortsPanel(): React.JSX.Element {
           {translate('auto.components.right.sidebar.PortsPanel.a2f1a47f42', 'SSH connection lost')}
         </p>
         <p className="text-xs mt-1">
-          {translate('auto.components.right.sidebar.PortsPanel.d4c3cd679c', 'Reconnecting...')}
+          {translate('auto.components.right.sidebar.PortsPanel.d4c3cd679c', 'Reconnecting…')}
         </p>
       </div>
     )
@@ -943,10 +943,10 @@ function SshPortsPanel(): React.JSX.Element {
                 !forwardedCollapsed && 'rotate-90'
               )}
             />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {translate('auto.components.right.sidebar.PortsPanel.ddbe58d74e', 'Forwarded')}
             </span>
-            <span className="text-[10px] text-muted-foreground/60 ml-1">{allForwards.length}</span>
+            <span className="text-[11px] text-muted-foreground ml-1">{allForwards.length}</span>
           </button>
           {!forwardedCollapsed &&
             allForwards.map((entry) => (
@@ -975,10 +975,10 @@ function SshPortsPanel(): React.JSX.Element {
                 !detectedCollapsed && 'rotate-90'
               )}
             />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {translate('auto.components.right.sidebar.PortsPanel.36b1b2984a', 'Detected')}
             </span>
-            <span className="text-[10px] text-muted-foreground/60 ml-1">{allDetected.length}</span>
+            <span className="text-[11px] text-muted-foreground ml-1">{allDetected.length}</span>
           </button>
           {!detectedCollapsed &&
             allDetected.map((port) => (
@@ -1013,7 +1013,7 @@ function SshPortsPanel(): React.JSX.Element {
               })
             }
           >
-            {translate('auto.components.right.sidebar.PortsPanel.907eb53ed2', 'Forward a Port')}
+            {translate('auto.components.right.sidebar.PortsPanel.907eb53ed2', 'Forward a port')}
           </button>
         </div>
       )}
@@ -1108,13 +1108,13 @@ function ForwardedPortRow({
   const advertisedBrowserUrl = advertisedBrowserUrlForForwardedRow(entry)
   const openBrowserLabel = translate(
     'auto.components.right.sidebar.PortsPanel.b22b128b2a',
-    'Open in Browser'
+    'Open in browser'
   )
   const openBrowserTitle = getPortOpenBrowserTooltipLabel(
     advertisedBrowserUrl
       ? translate(
           'auto.components.right.sidebar.PortsPanel.75aeea592f',
-          'Open {{value0}} in Browser',
+          'Open {{value0}} in browser',
           {
             value0: advertisedBrowserUrl
           }
@@ -1149,7 +1149,7 @@ function ForwardedPortRow({
       <div className="flex items-center gap-0.5 can-hover:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
         <button
           type="button"
-          className="p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+          className="p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={handleOpenBrowserButtonClick}
           title={openBrowserTitle}
         >
@@ -1157,7 +1157,7 @@ function ForwardedPortRow({
         </button>
         <button
           type="button"
-          className="p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+          className="p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={handleCopyButtonClick}
           title={translate(
             'auto.components.right.sidebar.PortsPanel.1004af16ab',
@@ -1169,7 +1169,7 @@ function ForwardedPortRow({
         </button>
         <button
           type="button"
-          className="p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+          className="p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={handleEditButtonClick}
           title={translate('auto.components.right.sidebar.PortsPanel.b3548e59f4', 'Edit')}
         >
@@ -1178,7 +1178,7 @@ function ForwardedPortRow({
         <button
           type="button"
           className={cn(
-            'p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground',
+            'p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
             removing && 'opacity-50'
           )}
           onClick={handleRemoveButtonClick}
@@ -1235,7 +1235,7 @@ function digitsOnly(value: string): string {
 }
 
 const INPUT_CLASS =
-  'block w-full mt-0.5 px-2 py-1.5 text-xs rounded border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring'
+  'block w-full mt-0.5 px-2 py-1.5 text-xs rounded border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
 function PortForwardDialog({
   state,
@@ -1302,9 +1302,9 @@ function PortForwardDialog({
             {isEdit
               ? translate(
                   'auto.components.right.sidebar.PortsPanel.80206251c8',
-                  'Edit Port Forward'
+                  'Edit port forward'
                 )
-              : translate('auto.components.right.sidebar.PortsPanel.907eb53ed2', 'Forward a Port')}
+              : translate('auto.components.right.sidebar.PortsPanel.907eb53ed2', 'Forward a port')}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {isEdit
@@ -1422,7 +1422,7 @@ function PortForwardForm({
       <div className="space-y-2">
         <label className="block">
           <span className="text-[11px] text-muted-foreground">
-            {translate('auto.components.right.sidebar.PortsPanel.9e5a4118b0', 'Remote Port')}
+            {translate('auto.components.right.sidebar.PortsPanel.9e5a4118b0', 'Remote port')}
           </span>
           <input
             type="text"
@@ -1447,7 +1447,7 @@ function PortForwardForm({
 
         <label className="block">
           <span className="text-[11px] text-muted-foreground">
-            {translate('auto.components.right.sidebar.PortsPanel.b950b1948b', 'Local Port')}
+            {translate('auto.components.right.sidebar.PortsPanel.b950b1948b', 'Local port')}
           </span>
           <input
             type="text"
@@ -1464,7 +1464,7 @@ function PortForwardForm({
 
         <label className="block">
           <span className="text-[11px] text-muted-foreground">
-            {translate('auto.components.right.sidebar.PortsPanel.a3721a50b0', 'Remote Host')}
+            {translate('auto.components.right.sidebar.PortsPanel.a3721a50b0', 'Remote host')}
           </span>
           <input
             type="text"
@@ -1504,8 +1504,8 @@ function PortForwardForm({
         <Button type="submit" size="sm" disabled={submitting || !remotePort}>
           {submitting
             ? mode === 'edit'
-              ? translate('auto.components.right.sidebar.PortsPanel.d7c83cfd24', 'Saving...')
-              : translate('auto.components.right.sidebar.PortsPanel.9f475dc994', 'Forwarding...')
+              ? translate('auto.components.right.sidebar.PortsPanel.d7c83cfd24', 'Saving…')
+              : translate('auto.components.right.sidebar.PortsPanel.9f475dc994', 'Forwarding…')
             : mode === 'edit'
               ? translate('auto.components.right.sidebar.PortsPanel.9079776663', 'Save')
               : translate('auto.components.right.sidebar.PortsPanel.c9d106547a', 'Forward')}

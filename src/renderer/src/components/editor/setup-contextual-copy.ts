@@ -33,7 +33,7 @@ export function setupContextualCopy({
   let lastCopiedSelectionKey: string | null = null
   const copyHintNode = document.createElement('div')
   copyHintNode.className =
-    'pointer-events-none rounded-md border border-border/90 bg-background px-2.5 py-1 text-xs font-medium text-foreground shadow-[0_6px_18px_rgba(15,23,42,0.18)] backdrop-blur whitespace-nowrap'
+    'pointer-events-none rounded-full border border-border/50 bg-popover-solid px-2.5 py-1 text-xs font-medium text-foreground shadow-floating whitespace-nowrap'
   const updateCopyHintLabel = (): void => {
     copyHintNode.textContent = `Copy context ${formatShortcutLabel(
       'editor.copyContext',

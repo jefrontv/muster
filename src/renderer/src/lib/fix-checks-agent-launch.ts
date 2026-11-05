@@ -133,7 +133,7 @@ export async function startFixChecksAgent(args: StartFixChecksAgentArgs): Promis
     toast.error(
       translate(
         'auto.lib.fix.checks.agent.launch.9f00d7df0c',
-        'Fix checks prompt is empty. Update Source Control AI settings.'
+        'Fix checks prompt is empty. Update Source control AI settings.'
       )
     )
     return false
