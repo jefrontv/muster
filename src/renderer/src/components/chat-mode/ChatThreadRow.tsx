@@ -196,7 +196,7 @@ export function ChatThreadRow({
           'transition-[padding,background-color,color] duration-150 ease-chat group-hover/thread:pr-8',
           indent ? 'pl-[26px]' : 'pl-2',
           current
-            ? 'bg-secondary font-semibold text-foreground'
+            ? 'bg-accent font-semibold text-foreground'
             : cn('text-chat-ink-secondary hover:text-foreground', ROW_HOVER)
         )}
         onClick={() => setActiveChatThread(thread.id)}

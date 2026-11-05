@@ -76,7 +76,7 @@ export function ChatModeSidebar(): React.JSX.Element {
             // Same current and hover fills as the thread rows below it.
             'group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors duration-150 ease-chat',
             tasksOpen
-              ? 'bg-secondary text-foreground'
+              ? 'bg-accent text-foreground'
               : cn('text-chat-ink-secondary hover:text-foreground', ROW_HOVER)
           )}
           onClick={() => openTaskPage()}
