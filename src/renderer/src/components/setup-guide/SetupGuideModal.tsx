@@ -177,6 +177,7 @@ export default function SetupGuideModal(): JSX.Element | null {
                 type="button"
                 variant="ghost"
                 size="xs"
+                className="h-7"
                 // Telemetry enum has no setup-guide source; this replaces the Help menu item.
                 onClick={() => openModal('feature-wall', { source: 'help_menu' })}
               >
@@ -190,6 +191,7 @@ export default function SetupGuideModal(): JSX.Element | null {
                 type="button"
                 variant="ghost"
                 size="xs"
+                className="h-7"
                 onClick={() => {
                   closeModal()
                   void showOnboardingFromRenderer()

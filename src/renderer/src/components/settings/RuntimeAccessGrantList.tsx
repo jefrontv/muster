@@ -46,7 +46,7 @@ export function RuntimeAccessGrantList({
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={onRefresh}
               disabled={isLoading}
               aria-label={translate(

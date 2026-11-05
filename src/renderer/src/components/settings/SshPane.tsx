@@ -352,18 +352,13 @@ export function SshPane({ addTargetIntentSignal }: SshPaneProps): React.JSX.Elem
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => void handleImport()}
-            className="gap-1.5"
-          >
-            <Upload className="size-3" />
+          <Button variant="outline" size="sm" onClick={() => void handleImport()}>
+            <Upload />
             {translate('auto.components.settings.SshPane.51d7dba44d', 'Import')}
           </Button>
           {!showForm ? (
-            <Button variant="outline" size="xs" onClick={openAddTargetForm} className="gap-1.5">
-              <Plus className="size-3" />
+            <Button variant="outline" size="sm" onClick={openAddTargetForm}>
+              <Plus />
               {translate('auto.components.settings.SshPane.639ceb3698', 'Add target')}
             </Button>
           ) : null}

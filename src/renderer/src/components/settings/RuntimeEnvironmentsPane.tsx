@@ -755,8 +755,7 @@ export function RuntimeEnvironmentsPane({
               <Button
                 type="button"
                 variant="outline"
-                size="default"
-                className="gap-1.5"
+                size="sm"
                 title={updateCheckHint}
                 onClick={(event) => {
                   setRemoteServerUpdateDialogOpen(true)
@@ -784,8 +783,7 @@ export function RuntimeEnvironmentsPane({
               <Button
                 type="button"
                 variant="outline"
-                size="default"
-                className="gap-1.5"
+                size="sm"
                 onClick={() => setAddServerFormOpen(true)}
                 disabled={isBusy}
               >
@@ -1124,6 +1122,7 @@ export function RuntimeEnvironmentsPane({
                   disabled={isBusy}
                 >
                   <SelectTrigger
+                    size="sm"
                     className="min-w-[260px]"
                     aria-labelledby="runtime-active-server-label"
                   >
@@ -1155,7 +1154,7 @@ export function RuntimeEnvironmentsPane({
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon"
+                  size="icon-sm"
                   aria-label={translate(
                     'auto.components.settings.RuntimeEnvironmentsPane.6ce4664003',
                     'Refresh servers'
@@ -1268,8 +1267,7 @@ export function RuntimeEnvironmentsPane({
               <Button
                 type="button"
                 variant="outline"
-                size="default"
-                className="gap-1.5"
+                size="sm"
                 onClick={() => setShareServerFormOpen((open) => !open)}
               >
                 <Share2 />
