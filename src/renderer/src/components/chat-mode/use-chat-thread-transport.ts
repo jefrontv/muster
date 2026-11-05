@@ -13,6 +13,7 @@ import {
 import { useAppStore } from '@/store'
 import { dispatchChatThreadSessionOption } from '@/lib/chat-thread-session-option-relaunch'
 import { ensureChatThreadSession } from '@/lib/chat-thread-session-ensure'
+import { chatEngineThreadStore } from '@/components/chat-thread/chat-engine-thread-store'
 import type { NativeChatTransport } from '@/components/native-chat/NativeChatView'
 import type {
   NativeChatMessageQueue,
@@ -93,13 +94,14 @@ export function useChatThreadTransport({
         : { outcome: 'applied' },
     [thread.id]
   )
-  const interrupt = useCallback(
-    async () =>
-      useAppStore.getState().chatThreadSessions[thread.id]
-        ? window.api.chatThreadStream.interrupt(thread.id)
-        : false,
-    [thread.id]
-  )
+  const interrupt = useCallback(async () => {
+    // A reloaded window has no session record yet; take over the running CLI rather than ignore Stop.
+    const running = chatEngineThreadStore().read(thread.id)?.meta.status === 'working'
+    const session =
+      useAppStore.getState().chatThreadSessions[thread.id] ??
+      (running ? await ensureChatThreadSession(thread.id) : null)
+    return session ? window.api.chatThreadStream.interrupt(thread.id) : false
+  }, [thread.id])
   const respondPermission = useCallback(
     (requestId: string, behavior: NativeChatPermissionBehavior, message?: string) => {
       const store = useAppStore.getState()
