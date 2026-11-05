@@ -6,6 +6,7 @@ import type {
 } from '../../../../shared/feature-wall-setup-steps'
 import { getFeatureWallSetupStepsForSection } from '../../../../shared/feature-wall-setup-steps'
 import { cn } from '@/lib/utils'
+import { SECTION_LABEL } from '@/components/ui/section-label-classes'
 import type { FeatureWallSetupProgress } from './feature-wall-setup-progress'
 import {
   AddReposAction,
@@ -102,9 +103,7 @@ function SetupSection(props: {
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          {props.title}
-        </h4>
+        <h4 className={SECTION_LABEL}>{props.title}</h4>
         <span className="font-mono text-xs text-muted-foreground">
           {doneCount}/{props.steps.length}
         </span>

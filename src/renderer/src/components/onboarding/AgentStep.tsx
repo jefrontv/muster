@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { Check, ExternalLink, Info } from 'lucide-react'
 import { getAgentCatalog, AgentIcon, type AgentCatalogEntry } from '@/lib/agent-catalog'
 import { cn } from '@/lib/utils'
+import { SECTION_LABEL } from '@/components/ui/section-label-classes'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -278,7 +279,7 @@ function SectionHeader({
   showDetectedIndicator?: boolean
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+    <div className={cn('flex shrink-0 items-center gap-2', SECTION_LABEL)}>
       {showDetectedIndicator && (
         <span className="size-1.5 shrink-0 rounded-full bg-status-success" aria-hidden="true" />
       )}

@@ -6,6 +6,7 @@ import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { SECTION_LABEL } from '@/components/ui/section-label-classes'
 import { useMeasuredWidth } from '../right-sidebar/right-sidebar-measured-width'
 import { filterSites, sitesOnDisk } from './site-filtering'
 import { DiscoveredSiteRow } from './DiscoveredSiteRow'
@@ -316,7 +317,7 @@ export default function SitesPage(): React.JSX.Element {
             ))}
             {visibleDiscovered.length > 0 ? (
               <>
-                <p className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <p className={cn('px-3 pb-1 pt-3', SECTION_LABEL)}>
                   {translate(
                     'auto.components.sites.SitesPage.discoveredHeading',
                     'Found on disk ({{count}})',

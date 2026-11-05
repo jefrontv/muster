@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { SECTION_LABEL } from '@/components/ui/section-label-classes'
 import { isEditableTarget } from '@/lib/editable-target'
 import { getScreenSubmitModifierLabel, isScreenSubmitShortcut } from '@/lib/screen-submit-shortcut'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -230,7 +231,7 @@ export default function OnboardingFlow({
 
                 <div className="mt-8 shrink-0">
                   {stepIndex === 0 && (
-                    <div className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    <div className={cn('mb-2', SECTION_LABEL)}>
                       {translate(
                         'auto.components.onboarding.OnboardingFlow.1b5e182e9f',
                         'Welcome to Muster'

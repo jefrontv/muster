@@ -24,6 +24,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { SECTION_LABEL } from '@/components/ui/section-label-classes'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { activateTabAndFocusPane } from '@/lib/activate-tab-and-focus-pane'
@@ -265,7 +266,7 @@ function AppSection({
           )}
         </button>
         <div className="flex-1 min-w-0 py-2 pr-3 flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wide truncate text-muted-foreground">
+          <span className={cn('truncate', SECTION_LABEL)}>
             {translate(
               'auto.components.status.bar.ResourceUsageStatusSegment.288a4dd177',
               'Muster'
@@ -693,9 +694,7 @@ function ResourceTree({
               </button>
               <div className="flex-1 min-w-0 py-2 pr-3 flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide truncate text-muted-foreground">
-                    {group.repoName}
-                  </span>
+                  <span className={cn('truncate', SECTION_LABEL)}>{group.repoName}</span>
                   {group.hasRemoteChildren && (
                     <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">
                       {translate(
@@ -1394,13 +1393,18 @@ export function ResourceUsageStatusSegment({
           className="flex h-[420px] flex-col outline-none"
         >
           {(unifiedRepos.length > 0 || resourceSnapshot) && (
-            <div className="flex items-center justify-between px-3 py-1 bg-muted/30 border-b border-border/50 text-[11px] uppercase tracking-wide shrink-0">
+            <div
+              className={cn(
+                'flex items-center justify-between px-3 py-1 bg-muted/30 border-b border-border/50 shrink-0',
+                SECTION_LABEL
+              )}
+            >
               <button
                 type="button"
                 onClick={() => setSortOption('name')}
                 className={cn(
                   'hover:text-foreground transition-colors',
-                  sortOption === 'name' ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                  sortOption === 'name' ? 'text-foreground' : 'text-muted-foreground'
                 )}
                 aria-pressed={sortOption === 'name'}
               >
@@ -1417,9 +1421,7 @@ export function ResourceUsageStatusSegment({
                     className={cn(
                       CPU_COLUMN_CLS,
                       'hover:text-foreground transition-colors',
-                      sortOption === 'cpu'
-                        ? 'font-semibold text-foreground'
-                        : 'text-muted-foreground'
+                      sortOption === 'cpu' ? 'text-foreground' : 'text-muted-foreground'
                     )}
                     aria-pressed={sortOption === 'cpu'}
                   >
@@ -1434,9 +1436,7 @@ export function ResourceUsageStatusSegment({
                     className={cn(
                       MEM_COLUMN_CLS,
                       'hover:text-foreground transition-colors',
-                      sortOption === 'memory'
-                        ? 'font-semibold text-foreground'
-                        : 'text-muted-foreground'
+                      sortOption === 'memory' ? 'text-foreground' : 'text-muted-foreground'
                     )}
                     aria-pressed={sortOption === 'memory'}
                   >

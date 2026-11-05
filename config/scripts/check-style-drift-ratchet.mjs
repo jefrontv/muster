@@ -1,6 +1,7 @@
 // Ratchets for recipes the styleguide pins down: readable muted text is full
 // text-muted-foreground (faded /20-/90 fails AA at small sizes), hover fills are bg-accent for
-// rows or bg-foreground/[0.07] for controls, and icon buttons are the ghost Button primitive.
+// rows or bg-foreground/[0.07] for controls, icon buttons are the ghost Button primitive, and
+// uppercase labels use SECTION_LABEL rather than tracking-wide.
 // Per-file counts may only fall; new files start at zero.
 import fs from 'node:fs'
 import path from 'node:path'
@@ -32,6 +33,13 @@ export const RULES = [
     pattern:
       /(?<![\w:-])rounded-full(?![\w-])[^"'`]*?(?<![\w:-])p-1(?![\w.-])|(?<![\w:-])p-1(?![\w.-])[^"'`]*?(?<![\w:-])rounded-full(?![\w-])/g,
     fix: 'Use <Button variant="ghost" size="icon-xs"> instead of a hand-built rounded-full p-1 button.'
+  },
+  {
+    name: 'one-off uppercase label',
+    baseline: 'config/uppercase-tracking-wide-baseline.txt',
+    pattern:
+      /(?<![\w:-])uppercase(?![\w-])[^"'`]*?(?<![\w:-])tracking-wide(?![\w-])|(?<![\w:-])tracking-wide(?![\w-])[^"'`]*?(?<![\w:-])uppercase(?![\w-])/g,
+    fix: 'Use SECTION_LABEL from ui/section-label-classes (tracking-[0.05em]) for uppercase labels.'
   }
 ]
 
