@@ -670,10 +670,10 @@ function DefaultAgentPill({ active, onClick, children }: DefaultAgentPillProps):
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+        'inline-flex h-8 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         active
-          ? 'border-muted-foreground/40 bg-accent font-medium text-accent-foreground'
-          : 'border-border bg-background/50 text-muted-foreground hover:border-muted-foreground/35 hover:text-foreground'
+          ? 'border-foreground bg-foreground text-background'
+          : 'border-border/60 bg-transparent text-foreground hover:bg-foreground/[0.07]'
       )}
     >
       {children}

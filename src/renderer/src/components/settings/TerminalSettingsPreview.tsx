@@ -13,7 +13,7 @@ import { resolveTerminalFontWeights } from '../../../../shared/terminal-fonts'
 import { resolveTerminalLigaturesEnabled } from '../../../../shared/terminal-ligatures'
 import { normalizeTerminalLineHeight } from '../../../../shared/terminal-line-height-settings'
 import { PREVIEW_BUFFER } from './terminal-preview-content'
-import { SettingsSwitch } from './SettingsFormControls'
+import { SettingsSegmentedControl, SettingsSwitch } from './SettingsFormControls'
 import type { GlobalSettings } from '../../../../shared/types'
 import { translate } from '@/i18n/i18n'
 
@@ -267,40 +267,29 @@ export function TerminalSettingsPreview({
               />
             </div>
             {showToggle ? (
-              <div
-                className="flex gap-0.5 rounded-md border border-border/50 p-0.5"
-                role="group"
-                aria-label={translate(
+              <SettingsSegmentedControl<PreviewMode>
+                size="sm"
+                value={togglePreviewMode}
+                onChange={setTogglePreviewMode}
+                ariaLabel={translate(
                   'auto.components.settings.TerminalSettingsPreview.2c248fcc27',
                   'Preview theme'
                 )}
-              >
-                {(['dark', 'light'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setTogglePreviewMode(mode)}
-                    aria-pressed={togglePreviewMode === mode}
-                    aria-label={translate(
-                      'auto.components.settings.TerminalSettingsPreview.a63953a48a',
-                      'Preview {{value0}} theme',
-                      { value0: mode }
-                    )}
-                    title={translate(
-                      'auto.components.settings.TerminalSettingsPreview.a63953a48a',
-                      'Preview {{value0}} theme',
-                      { value0: mode }
-                    )}
-                    className={`rounded-sm p-1 transition-colors ${
-                      togglePreviewMode === mode
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {mode === 'dark' ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
-                  </button>
-                ))}
-              </div>
+                options={(['dark', 'light'] as const).map((mode) => {
+                  const label = translate(
+                    'auto.components.settings.TerminalSettingsPreview.a63953a48a',
+                    'Preview {{value0}} theme',
+                    { value0: mode }
+                  )
+                  return {
+                    value: mode,
+                    ariaLabel: label,
+                    tooltip: label,
+                    label:
+                      mode === 'dark' ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />
+                  }
+                })}
+              />
             ) : null}
           </div>
         </div>
