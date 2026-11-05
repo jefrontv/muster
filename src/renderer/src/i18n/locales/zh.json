@@ -14769,7 +14769,8 @@
           "regenerateTitle": "Regenerate title",
           "unarchiveThread": "Unarchive",
           "archiveThread": "Archive",
-          "deleteThread": "Delete chat"
+          "deleteThread": "Delete chat",
+          "pinnedThread": "Pinned"
         },
         "connector": {
           "confirmTitle": "Delete chats?",

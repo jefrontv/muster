@@ -10,7 +10,13 @@ import { ChatThreadRow, type ChatThreadRowDragProps } from './ChatThreadRow'
 import { ORCA_INTERNAL_FILE_DRAG_TYPE } from '../../../../shared/native-file-drop'
 import { computeDropSortOrder } from './chat-thread-ordering'
 
-export function ChatThreadDragList({ threads }: { threads: ChatThread[] }): React.JSX.Element {
+export function ChatThreadDragList({
+  threads,
+  indent = false
+}: {
+  threads: ChatThread[]
+  indent?: boolean
+}): React.JSX.Element {
   const updateChatThread = useAppStore((s) => s.updateChatThread)
   const [dragId, setDragId] = useState<string | null>(null)
   const [over, setOver] = useState<{ id: string; after: boolean } | null>(null)
@@ -21,7 +27,7 @@ export function ChatThreadDragList({ threads }: { threads: ChatThread[] }): Reac
   }
 
   return (
-    <ul className="space-y-px">
+    <ul>
       {threads.map((thread) => {
         const dragProps: ChatThreadRowDragProps = {
           draggable: true,
@@ -68,6 +74,7 @@ export function ChatThreadDragList({ threads }: { threads: ChatThread[] }): Reac
             thread={thread}
             dragProps={dragProps}
             isDragging={dragId === thread.id}
+            indent={indent}
             dropEdge={over?.id === thread.id ? (over.after ? 'below' : 'above') : null}
           />
         )

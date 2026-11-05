@@ -1,12 +1,13 @@
-// One thread row in the chat sidebar: title, T3-style status label cluster, and
-// the row menu. Rename edits inline so the list keeps its place.
+// Ported from the muster-bots fork (src/components/SidebarThreadRow.tsx), Apache-2.0.
+// One thread row in the chat sidebar: title, status markers, and the row menu.
+// Rename edits inline so the list keeps its place.
 //
 // Archive hides the thread from the main list; the sidebar's Archived section
 // is what brings it back. Adding the one without the other would make archive a
 // one-way trip.
 
 import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
-import { CircleCheck, MoreHorizontal, Pin, PinOff, ShieldQuestion } from 'lucide-react'
+import { Loader2, MoreHorizontal, Pin, PinOff } from 'lucide-react'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
@@ -27,7 +28,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import { formatNativeChatWorkingElapsed } from '../native-chat/native-chat-duration-format'
 import {
   canMarkChatThreadUnread,
   hasUnseenCompletion,
@@ -40,69 +40,48 @@ import { regenerateChatThreadTitle } from './chat-thread-auto-title'
 import { useChatThreadContentMatch } from './use-chat-thread-content-search'
 import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 
-/** Self-ticking elapsed (setInterval → textContent), NOT React state: a state
- *  tick would re-commit every working row each second (T3/NativeChatWorkingRow). */
-function WorkingElapsed({ since }: { since: number }): React.JSX.Element {
-  const textRef = useRef<HTMLSpanElement | null>(null)
-  useEffect(() => {
-    const update = (): void => {
-      if (textRef.current) {
-        textRef.current.textContent = formatNativeChatWorkingElapsed(Date.now() - since)
-      }
-    }
-    update()
-    const id = window.setInterval(update, 1_000)
-    return () => window.clearInterval(id)
-  }, [since])
-  return (
-    <span ref={textRef} className="tabular-nums">
-      {formatNativeChatWorkingElapsed(Date.now() - since)}
-    </span>
-  )
-}
-
-/** T3 SidebarV2 attention hues: amber = act now, sky = in motion, emerald = unread done. */
-function ThreadStatusLabel({
+/** Right-hand markers: pin, then one status (approval label, working spinner or unread dot). */
+function ThreadRowMarkers({
   status,
-  workingSince
+  pinned
 }: {
   status: ChatThreadStatus
-  workingSince: number | undefined
+  pinned: boolean
 }): React.JSX.Element | null {
-  if (status === 'approval') {
-    return (
-      <span className="flex shrink-0 items-center gap-1 text-[11px] text-status-attention">
-        <ShieldQuestion className="size-3" />
+  const marker =
+    status === 'approval' ? (
+      <span className="shrink-0 text-[11px] font-medium text-status-attention">
         {translate('auto.components.chat.sidebar.statusApproval', 'Approval')}
       </span>
-    )
+    ) : status === 'working' ? (
+      // STYLEGUIDE: working shares the attention hue; the spinner tells it apart.
+      <Loader2
+        role="img"
+        aria-label={translate('auto.components.chat.sidebar.statusWorking', 'Working')}
+        className="size-3 shrink-0 animate-spin text-status-attention motion-reduce:animate-none"
+      />
+    ) : status === 'unread-done' ? (
+      <span
+        role="img"
+        aria-label={translate('auto.components.chat.sidebar.statusDone', 'Done')}
+        className="size-1.5 shrink-0 rounded-full bg-chat-accent"
+      />
+    ) : null
+  if (!pinned && !marker) {
+    return null
   }
-  if (status === 'working') {
-    return (
-      <span className="flex shrink-0 items-center gap-1 text-[11px] text-status-info">
-        <span className="size-1.5 animate-pulse rounded-full bg-status-info" />
-        {/* aria-hidden: a ticking timer would be announced every second. */}
-        <span aria-hidden>
-          {translate('auto.components.chat.sidebar.statusWorking', 'Working')}
-          {workingSince !== undefined ? (
-            <>
-              {' '}
-              <WorkingElapsed since={workingSince} />
-            </>
-          ) : null}
-        </span>
-      </span>
-    )
-  }
-  if (status === 'unread-done') {
-    return (
-      <span className="flex shrink-0 items-center gap-1 text-[11px] text-status-success">
-        <CircleCheck className="size-3" />
-        {translate('auto.components.chat.sidebar.statusDone', 'Done')}
-      </span>
-    )
-  }
-  return null
+  return (
+    <span className="flex shrink-0 items-center gap-2">
+      {pinned ? (
+        <Pin
+          role="img"
+          aria-label={translate('auto.components.chat.sidebar.pinnedThread', 'Pinned')}
+          className="size-3 shrink-0 text-chat-ink-secondary"
+        />
+      ) : null}
+      {marker}
+    </span>
+  )
 }
 
 export type ChatThreadRowDragProps = {
@@ -118,13 +97,16 @@ export function ChatThreadRow({
   thread,
   dragProps,
   isDragging = false,
-  dropEdge = null
+  dropEdge = null,
+  indent = false
 }: {
   thread: ChatThread
   dragProps?: ChatThreadRowDragProps
   isDragging?: boolean
   /** Insert-position indicator while another row is dragged over this one. */
   dropEdge?: 'above' | 'below' | null
+  /** Lines the title up under its workspace name while the fill stays full width. */
+  indent?: boolean
 }): React.JSX.Element {
   const activeChatThreadId = useAppStore((s) => s.activeChatThreadId)
   const setActiveChatThread = useAppStore((s) => s.setActiveChatThread)
@@ -141,6 +123,7 @@ export function ChatThreadRow({
     (s) =>
       s.settings?.nativeChatPermissionMode === 'full' || s.chatThreadFullAccess[thread.id] === true
   )
+  const current = thread.id === activeChatThreadId
   const unread = hasUnseenCompletion(thread)
   const canMarkUnread = canMarkChatThreadUnread(thread)
   const status = resolveChatThreadStatus({
@@ -171,11 +154,11 @@ export function ChatThreadRow({
 
   if (renaming) {
     return (
-      <li className="flex items-center px-0.5 py-0.5">
+      <li className="flex items-center">
         <Input
           ref={inputRef}
           value={draftTitle}
-          className="h-7 text-sm"
+          className="h-8 text-[13px] md:text-[13px]"
           onChange={(event) => setDraftTitle(event.target.value)}
           onBlur={commitRename}
           onKeyDown={(event) => {
@@ -206,44 +189,47 @@ export function ChatThreadRow({
       ) : null}
       <button
         type="button"
+        aria-current={current ? 'page' : undefined}
+        data-current={current ? 'true' : undefined}
         className={cn(
-          'flex w-full min-w-0 items-center gap-2 rounded-md py-1.5 pl-2 pr-2 text-left text-[13px] transition-[padding]',
-          'group-hover/thread:pr-8',
-          thread.id === activeChatThreadId
-            ? 'bg-accent text-accent-foreground'
-            : status === 'idle'
-              ? // Recede (T3): nothing here needs a human, so the row rests dim.
-                cn(
-                  'font-normal text-muted-foreground transition-colors hover:text-foreground',
-                  ROW_HOVER
-                )
-              : cn('text-foreground/90', ROW_HOVER)
+          'flex min-h-8 w-full min-w-0 items-center gap-2 rounded-md py-1.5 pr-2 text-left text-[13px] font-medium',
+          'transition-[padding,background-color,color] duration-150 ease-chat group-hover/thread:pr-8',
+          indent ? 'pl-[26px]' : 'pl-2',
+          current
+            ? 'bg-secondary font-semibold text-foreground'
+            : cn('text-chat-ink-secondary hover:text-foreground', ROW_HOVER)
         )}
         onClick={() => setActiveChatThread(thread.id)}
       >
         {thread.activeCollabTask ? (
-          <ActiveCollabIcon className="size-3 shrink-0 text-muted-foreground" />
+          <ActiveCollabIcon className="size-3 shrink-0 text-chat-ink-tertiary" />
         ) : null}
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate">
+          <span
+            className={cn(
+              'truncate',
+              unread && 'font-semibold text-foreground',
+              thread.archived === true && !current && 'text-chat-ink-tertiary'
+            )}
+          >
             {isChatWorkspaceBriefTitle(thread.title)
               ? deriveChatThreadTitle(thread.title)
               : thread.title}
           </span>
           {contentMatch ? (
-            <span className="truncate text-[11px] font-normal text-muted-foreground/70">
+            <span className="truncate text-[11px] font-normal text-chat-ink-tertiary">
               {contentMatch.snippet}
             </span>
           ) : null}
         </span>
-        <ThreadStatusLabel status={status} workingSince={agentStatus?.stateStartedAt} />
+        <ThreadRowMarkers status={status} pinned={thread.pinned === true} />
       </button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="icon-xs"
-            className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover/thread:opacity-100 data-[state=open]:opacity-100"
+            className="absolute right-1 top-1/2 -translate-y-1/2 text-chat-ink-secondary opacity-0 transition-opacity group-hover/thread:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
             aria-label={translate('auto.components.chat.sidebar.threadMenu', 'Chat menu')}
           >
             <MoreHorizontal className="size-3.5" />

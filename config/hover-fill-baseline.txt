@@ -21,8 +21,6 @@ src/renderer/src/components/chat-conversation/ChatPill.tsx 1
 src/renderer/src/components/chat-conversation/ChatRichTable.tsx 1
 src/renderer/src/components/chat-conversation/ChatTableViewport.tsx 2
 src/renderer/src/components/chat-mode/ChatModeHeroTaskShortcuts.tsx 1
-src/renderer/src/components/chat-mode/ChatModeSidebar.tsx 1
-src/renderer/src/components/chat-mode/ChatSidebarThreadSections.tsx 3
 src/renderer/src/components/chat-thread/ChatDiffBanner.tsx 1
 src/renderer/src/components/chat-thread/ChatMarkdownCodeBlock.tsx 1
 src/renderer/src/components/chat-thread/ChatTurnView.tsx 1

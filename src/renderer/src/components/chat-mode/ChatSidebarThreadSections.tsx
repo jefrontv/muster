@@ -25,11 +25,8 @@ import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { ActiveCollabIcon } from '@/components/icons/ActiveCollabIcon'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import {
-  CHAT_SIDEBAR_GROUP_LABEL,
-  CHAT_SIDEBAR_GROUP_ROWS,
-  CHAT_SIDEBAR_REGION_LABEL
-} from './chat-sidebar-hierarchy'
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
+import { CHAT_SIDEBAR_GROUP_LABEL, CHAT_SIDEBAR_REGION_LABEL } from './chat-sidebar-hierarchy'
 import { sortChatThreads } from './chat-thread-ordering'
 import { ChatClearAllDialog } from './ChatClearAllDialog'
 import { ChatSidebarFadeScroller } from './ChatSidebarFadeScroller'
@@ -39,6 +36,12 @@ import {
   useChatThreadContentMatches,
   type ChatThreadContentMatches
 } from './use-chat-thread-content-search'
+
+/** "Start a chat…" placeholder: a row-height link in tertiary ink. */
+const EMPTY_ROW = cn(
+  'flex min-h-8 w-full items-center rounded-md py-1.5 pr-2 text-left text-xs text-chat-ink-tertiary hover:text-foreground',
+  ROW_HOVER
+)
 
 function matchesQuery(value: string, query: string): boolean {
   return value.toLowerCase().includes(query)
@@ -87,7 +90,10 @@ export function ArchivedSection({ query }: { query: string }): React.JSX.Element
       <button
         type="button"
         aria-expanded={expanded}
-        className="group flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left hover:bg-muted/60"
+        className={cn(
+          'group flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-left',
+          ROW_HOVER
+        )}
         onClick={() => setExpanded((open) => !open)}
       >
         <ChevronRight
@@ -101,7 +107,7 @@ export function ArchivedSection({ query }: { query: string }): React.JSX.Element
         </span>
       </button>
       {expanded ? (
-        <ul className="space-y-px">
+        <ul>
           {archived.map((thread) => (
             <ChatThreadRow key={thread.id} thread={thread} />
           ))}
@@ -163,7 +169,7 @@ export function StandaloneChatsSection({ query }: { query: string }): React.JSX.
       {rows.length === 0 ? (
         <button
           type="button"
-          className="w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/60"
+          className={cn(EMPTY_ROW, 'pl-2')}
           onClick={() => void createChatThread(null)}
         >
           {translate('auto.components.chat.sidebar.startQuickChat', 'Start a quick chat…')}
@@ -217,8 +223,8 @@ export function WorkspaceSection({
   const linkedProjects = chatWorkspaceProjects(workspace)
 
   return (
-    <section className="space-y-1">
-      <div className="group flex items-center gap-1.5 px-1">
+    <section>
+      <div className="group flex min-h-8 items-center gap-1.5 px-1">
         <RepoIconGlyph
           repoIcon={workspace.icon}
           className="size-4 shrink-0"
@@ -258,7 +264,7 @@ export function WorkspaceSection({
             title={linkedProjects.map((project) => project.name).join(', ')}
             className="shrink-0"
           >
-            <ActiveCollabIcon className="size-3 text-muted-foreground/70" />
+            <ActiveCollabIcon className="size-3 text-chat-ink-tertiary" />
           </span>
         ) : null}
         <Button
@@ -270,23 +276,21 @@ export function WorkspaceSection({
           <MessageSquarePlus className="size-3.5" />
         </Button>
       </div>
-      <div className={CHAT_SIDEBAR_GROUP_ROWS}>
-        {rows.length === 0 ? (
-          <button
-            type="button"
-            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted/60"
-            onClick={() => void createChatThread(workspace.id)}
-          >
-            {translate('auto.components.chat.sidebar.startFirstChat', 'Start a chat…')}
-          </button>
-        ) : (
-          // Same cap as standalone chats: one busy workspace must not push the
-          // rest of the sidebar out of view.
-          <ChatSidebarFadeScroller>
-            <ChatThreadDragList threads={rows} />
-          </ChatSidebarFadeScroller>
-        )}
-      </div>
+      {rows.length === 0 ? (
+        <button
+          type="button"
+          className={cn(EMPTY_ROW, 'pl-[26px]')}
+          onClick={() => void createChatThread(workspace.id)}
+        >
+          {translate('auto.components.chat.sidebar.startFirstChat', 'Start a chat…')}
+        </button>
+      ) : (
+        // Same cap as standalone chats: one busy workspace must not push the
+        // rest of the sidebar out of view.
+        <ChatSidebarFadeScroller>
+          <ChatThreadDragList threads={rows} indent />
+        </ChatSidebarFadeScroller>
+      )}
       <ChatClearAllDialog
         open={confirmingClear}
         count={workspaceThreadCount}

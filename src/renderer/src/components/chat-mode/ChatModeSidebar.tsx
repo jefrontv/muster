@@ -10,6 +10,7 @@ import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { translate } from '@/i18n/i18n'
 import { CHAT_SIDEBAR_REGION_LABEL } from './chat-sidebar-hierarchy'
 import { Button } from '@/components/ui/button'
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import {
   WORKTREE_SIDEBAR_RESIZE_HANDLE_CLASS_NAME,
   WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME
@@ -72,16 +73,16 @@ export function ChatModeSidebar(): React.JSX.Element {
           type="button"
           aria-current={tasksOpen ? 'page' : undefined}
           className={cn(
-            // Mirrors the code sidebar's Tasks row so the two views read as one app.
-            'group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors',
+            // Same current and hover fills as the thread rows below it.
+            'group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors duration-150 ease-chat',
             tasksOpen
-              ? 'bg-accent text-accent-foreground'
-              : 'text-muted-foreground hover:bg-muted/60'
+              ? 'bg-secondary text-foreground'
+              : cn('text-chat-ink-secondary hover:text-foreground', ROW_HOVER)
           )}
           onClick={() => openTaskPage()}
         >
           <List
-            className={cn('size-4 shrink-0', !tasksOpen && 'text-muted-foreground')}
+            className={cn('size-4 shrink-0', !tasksOpen && 'text-chat-ink-secondary')}
             strokeWidth={tasksOpen ? 2.25 : 1.75}
           />
           <span className="flex-1">{translate('auto.components.chat.sidebar.tasks', 'Tasks')}</span>
