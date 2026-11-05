@@ -6,6 +6,7 @@ import {
   subscribeNativeChatTranscript
 } from '../../../native-chat/transcript-watch'
 import { defineMethod, defineStreamingMethod, type RpcAnyMethod, type RpcContext } from '../core'
+import { resolveClaudeSubagentTranscript } from '../../../native-chat/claude-subagent-transcript'
 
 // Why: native chat renders an agent's own transcript (Claude/Codex JSONL). The
 // desktop reaches the readers via Electron IPC; mobile/web clients reach the
@@ -178,6 +179,13 @@ function windowForClient(
 }
 
 export const NATIVE_CHAT_METHODS: readonly RpcAnyMethod[] = [
+  defineMethod({
+    name: 'nativeChat.resolveSubagentTranscript',
+    params: NativeChatSession.pick({ agent: true, sessionId: true, transcriptPath: true }).extend({
+      toolUseId: z.string().min(1, 'Missing tool use id')
+    }),
+    handler: async (params) => ({ path: await resolveClaudeSubagentTranscript(params) })
+  }),
   defineMethod({
     name: 'nativeChat.readSession',
     params: NativeChatSession,

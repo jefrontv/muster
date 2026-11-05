@@ -4545,6 +4545,12 @@ const api = {
         limit,
         transcriptPath
       }),
+    resolveSubagentTranscript: (args: {
+      agent: AgentType
+      sessionId: string
+      transcriptPath?: string
+      toolUseId: string
+    }): Promise<string | null> => ipcRenderer.invoke('nativeChat:resolveSubagentTranscript', args),
     /** Start live tailing; onAppended fires with only newly-appended messages. Returns an unsubscribe fn that closes the watcher. */
     subscribe: (
       args: {

@@ -113,7 +113,7 @@ export function ChatSubagentFocusView(props: {
   const interacted = useRef(false)
   const [held, setHeld] = useState(false)
   const { back, toMain } = focus
-  const { streamsAgentSteps = true } = useChatThreadContext()
+  const { renderAgentSteps } = useChatThreadContext()
   const { onReturn } = props
 
   if (agent?.status === 'running') {
@@ -207,13 +207,8 @@ export function ChatSubagentFocusView(props: {
       {agent ? (
         agent.items.length > 0 ? (
           <ChatProcessItems items={agent.items} />
-        ) : !streamsAgentSteps ? (
-          <p className="text-[13px] text-chat-ink-tertiary">
-            {translate(
-              'components.chat-conversation.focus.notInTranscript',
-              "This view shows the agent's result. Its steps stay in the terminal session."
-            )}
-          </p>
+        ) : renderAgentSteps ? (
+          renderAgentSteps(agent)
         ) : agent.status === 'running' ? (
           <p className="text-[13px] text-chat-ink-tertiary">
             {translate('components.chat-conversation.focus.noSteps', 'Waiting for its first step')}

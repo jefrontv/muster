@@ -6,6 +6,8 @@ import { useNativeChatLiveSession } from './use-native-chat-live-session'
 import { useStableSessionMessages } from './native-chat-message-identity'
 import { selectNativeChatViewState } from './native-chat-view-state'
 import { ChatConversationSurface } from '../chat-conversation/ChatConversationSurface'
+import type { ChatAgentItem } from '../chat-conversation/chat-subagent-focus'
+import { NativeChatSubagentSteps } from './NativeChatSubagentSteps'
 import { translate } from '@/i18n/i18n'
 import type { ChatEarlierHistory } from '../chat-thread/use-chat-turn-paging'
 import type { NativeChatComposerHandle } from './NativeChatComposer'
@@ -295,6 +297,19 @@ function NativeChatResolvedView({
     [hasMore, loadingEarlier, loadEarlier]
   )
 
+  const renderAgentSteps = useMemo(
+    () =>
+      sessionId
+        ? (item: ChatAgentItem) => (
+            <NativeChatSubagentSteps
+              source={{ paneKey, agent, sessionId, transcriptPath, runtimeEnvironmentId }}
+              agent={item}
+            />
+          )
+        : undefined,
+    [paneKey, agent, sessionId, transcriptPath, runtimeEnvironmentId]
+  )
+
   // Chat-only font zoom via Cmd/Ctrl +/-/0, gated to the live conversation so
   // the chord is inert on the loading/empty/error states and elsewhere.
   const fontScale = useNativeChatFontScale(isConversation)
@@ -323,7 +338,7 @@ function NativeChatResolvedView({
             onLinkClick={nativeChatFileLinkClick}
             earlier={earlier}
             canUndo={false}
-            streamsAgentSteps={false}
+            {...(renderAgentSteps ? { renderAgentSteps } : {})}
             empty={
               <h2 className="my-auto text-center text-2xl font-medium leading-8 text-foreground">
                 {translate('components.chat-thread.emptyTitle', 'What should we work on?')}

@@ -1,3 +1,4 @@
+import { registerSubagentTranscriptHandler } from '../native-chat/claude-subagent-transcript'
 import { app } from 'electron'
 import { registerAppHandlers } from './app'
 import { registerCliHandlers } from './cli'
@@ -302,6 +303,7 @@ export function registerCoreHandlers(
       prepareRuntimeAiVaultSessionResume(app.getPath('userData'), environmentId, args)
   })
   registerNativeChatHandlers()
+  registerSubagentTranscriptHandler()
   registerClipboardHandlers(store)
   registerUpdaterHandlers(store)
   registerSpeechHandlers(store)

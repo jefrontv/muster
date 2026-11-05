@@ -30,7 +30,7 @@ import { CHAT_CONVERSATION_COLUMN_CLASS } from './chat-conversation-column'
 import { ChatConversationTurn } from './ChatConversationTurn'
 import { ChatSubagentFocusView } from './ChatSubagentFocusView'
 import { useChatSubagentFocus } from './use-chat-subagent-focus'
-import type { ChatRosterAgent } from './chat-subagent-focus'
+import type { ChatAgentItem, ChatRosterAgent } from './chat-subagent-focus'
 
 function JumpToLatest(props: { visible: boolean; onClick: () => void }): React.JSX.Element {
   const label = translate('components.chat-thread.backToBottom', 'Back to latest')
@@ -66,8 +66,8 @@ export function ChatConversationSurface(props: {
   placeholder?: React.ReactNode
   /** Undo needs the engine's own CLI; the Code panel mirrors a terminal session and has none. */
   canUndo?: boolean
-  /** False where subagents' steps never reach the thread (the Code panel). */
-  streamsAgentSteps?: boolean
+  /** Subagent steps from outside the thread (the Code panel reads sidechain transcripts). */
+  renderAgentSteps?: (agent: ChatAgentItem) => React.ReactNode
   /** Accessible name of the transcript. */
   label: string
   /** The header pill row; it stays on top and the transcript fades under it. */
@@ -85,7 +85,7 @@ export function ChatConversationSurface(props: {
     conversational = false,
     unreadSince = null,
     canUndo = true,
-    streamsAgentSteps = true
+    renderAgentSteps
   } = props
   useRetainChatEngineThread(threadId)
   const loaded = useChatEngineThreadLoaded(threadId)
@@ -147,7 +147,7 @@ export function ChatConversationSurface(props: {
       ...(onQuote ? { onQuote } : {}),
       ...(onLinkClick ? { onLinkClick } : {}),
       canUndo,
-      streamsAgentSteps,
+      ...(renderAgentSteps ? { renderAgentSteps } : {}),
       openAgent,
       openRosterAgent
     }),
@@ -160,7 +160,7 @@ export function ChatConversationSurface(props: {
       onQuote,
       onLinkClick,
       canUndo,
-      streamsAgentSteps,
+      renderAgentSteps,
       openAgent,
       openRosterAgent
     ]

@@ -15,7 +15,10 @@ import {
 /** The read/subscribe surface the live-session hook needs, decoupled from where
  *  the transcript actually lives. Same shape as `window.api.nativeChat`, so the
  *  hook and everything downstream (merge, assembler, pagination) are unchanged. */
-export type NativeChatSessionTransport = Pick<NativeChatApi, 'readSession' | 'subscribe'>
+export type NativeChatSessionTransport = Pick<
+  NativeChatApi,
+  'readSession' | 'subscribe' | 'resolveSubagentTranscript'
+>
 
 const RUNTIME_TOO_OLD =
   'This remote runtime is too old to show agent chat history. Update the remote runtime to view it.'
@@ -45,13 +48,28 @@ export function toRuntimeNativeChatErrorMessage(err: unknown): string {
 const localNativeChatTransport: NativeChatSessionTransport = {
   readSession: (agent, sessionId, limit, transcriptPath) =>
     window.api.nativeChat.readSession(agent, sessionId, limit, transcriptPath),
-  subscribe: (args, onFrame) => window.api.nativeChat.subscribe(args, onFrame)
+  subscribe: (args, onFrame) => window.api.nativeChat.subscribe(args, onFrame),
+  resolveSubagentTranscript: (args) => window.api.nativeChat.resolveSubagentTranscript(args)
 }
 
 function createRuntimeNativeChatTransport(environmentId: string): NativeChatSessionTransport {
   const target: RuntimeClientTarget = { kind: 'environment', environmentId }
 
   return {
+    resolveSubagentTranscript: async (args) => {
+      try {
+        const result = await callRuntimeRpc<{ path?: unknown }>(
+          target,
+          'nativeChat.resolveSubagentTranscript',
+          args,
+          { timeoutMs: 15_000 }
+        )
+        return typeof result?.path === 'string' ? result.path : null
+      } catch {
+        // An older runtime without the method: no steps, same as a missing file.
+        return null
+      }
+    },
     readSession: async (agent, sessionId, limit, transcriptPath) => {
       try {
         const result = await callRuntimeRpc<unknown>(

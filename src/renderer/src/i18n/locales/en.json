@@ -15552,7 +15552,8 @@
         "noSteps": "Waiting for its first step",
         "unstreamed": "This agent runs in the background. Its steps aren't streamed to this chat.",
         "return": "Return to main agent",
-        "notInTranscript": "This view shows the agent's result. Its steps stay in the terminal session."
+        "notInTranscript": "This view shows the agent's result. Its steps stay in the terminal session.",
+        "noSidechain": "This agent's steps weren't saved with the session."
       }
     }
   },

@@ -1134,6 +1134,17 @@ function createWebKeybindingsApi(): WebKeybindingsApi {
 // Why: web has no IPC for native-chat transcripts, so route readSession/subscribe through runtime RPC (as mobile does).
 function createNativeChatApi(): NativeChatApi {
   return {
+    resolveSubagentTranscript: async (args) => {
+      try {
+        const result = await callRuntimeResult<{ path?: unknown }>(
+          'nativeChat.resolveSubagentTranscript',
+          args
+        )
+        return typeof result?.path === 'string' ? result.path : null
+      } catch {
+        return null
+      }
+    },
     readSession: async (agent, sessionId, limit, transcriptPath) =>
       parseRuntimeNativeChatReadSessionResult(
         await callRuntimeResult<unknown>('nativeChat.readSession', {

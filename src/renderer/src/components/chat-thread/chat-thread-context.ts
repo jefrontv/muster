@@ -1,6 +1,10 @@
 import { createContext, useContext } from 'react'
 import type { CommentMarkdownLinkClickHandler } from '@/components/sidebar/CommentMarkdown'
-import type { ChatRosterAgent } from '@/components/chat-conversation/chat-subagent-focus'
+import type React from 'react'
+import type {
+  ChatAgentItem,
+  ChatRosterAgent
+} from '@/components/chat-conversation/chat-subagent-focus'
 
 export type ChatThreadContextValue = {
   threadId: string
@@ -15,8 +19,8 @@ export type ChatThreadContextValue = {
   conversational?: boolean
   /** The visit stamp from before this open, when a turn finished unseen; drives the "New" line. */
   unreadSince?: number | null
-  /** Subagents' own steps reach this thread; the Code panel's transcript has only the call. */
-  streamsAgentSteps?: boolean
+  /** Draws a subagent's steps when they live outside this thread (the Code panel's sidechain files). */
+  renderAgentSteps?: (agent: ChatAgentItem) => React.ReactNode
   /** Undo changes is offered; false where the thread has no engine CLI to rewind. */
   canUndo?: boolean
   /** Shows a subagent's own steps in place of the transcript (Chat mode). */

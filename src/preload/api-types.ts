@@ -1475,6 +1475,13 @@ export type NativeChatApi = {
     limit?: number,
     transcriptPath?: string
   ) => Promise<NativeChatReadSessionResult>
+  /** A subagent's own transcript path, from its parent session and the Agent call id; null if absent. */
+  resolveSubagentTranscript: (args: {
+    agent: AgentType
+    sessionId: string
+    transcriptPath?: string
+    toolUseId: string
+  }) => Promise<string | null>
   /** Live-tail a transcript. The first frame is a bounded race-safe snapshot;
    *  later frames contain only newly appended messages. */
   subscribe: (
