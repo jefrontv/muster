@@ -1,8 +1,9 @@
 // Mic state for a composer textarea: whether voice typing is set up, whether it is
 // listening, and the toggle/hold actions. Shared by the chat hero and the thread composer.
 
-import { useCallback, useState, type RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import { useAppStore } from '@/store'
+import { openVoiceSettings, voiceDictationConfigured } from '../dictation/dictation-voice-settings'
 import { useNativeChatDictationActions } from './use-native-chat-dictation-actions'
 
 export type NativeChatDictation = {
@@ -25,13 +26,8 @@ export function useNativeChatDictation(
     textareaRef,
     setDictationPressed: setPressed
   })
-  const openSetup = useCallback(() => {
-    const store = useAppStore.getState()
-    store.openSettingsPage()
-    store.setSettingsSearchQuery('voice')
-  }, [])
   return {
-    configured: voiceSettings?.enabled === true && !!voiceSettings.sttModel,
+    configured: voiceDictationConfigured(voiceSettings),
     isDictating:
       pressed ||
       dictationState === 'starting' ||
@@ -41,6 +37,6 @@ export function useNativeChatDictation(
     toggle: toggleDictation,
     holdStart: startHoldDictation,
     holdEnd: stopHoldDictation,
-    openSetup
+    openSetup: openVoiceSettings
   }
 }

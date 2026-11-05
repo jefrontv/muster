@@ -10,6 +10,8 @@ import { useAppStore } from '@/store'
 import { ChatModeToggle } from '../chat-mode/ChatModeToggle'
 import { BotsFailedActions } from './BotsFailedActions'
 import { BotsIntroDialog } from './BotsIntroDialog'
+import { connectBotsDictation } from './bots-dictation-bridge'
+import { botsDictationHost } from './bots-dictation-host'
 import { BOTS_TOGGLE_CHROME_TOP, watchBotsSidebarRoom } from './bots-guest-layout'
 import { syncBotsHostTheme } from './bots-host-theme'
 import { useBotsStatus } from './use-bots-status'
@@ -54,9 +56,11 @@ function useBotsWebview(
         })
     })
     const stopRoom = watchBotsSidebarRoom(webview, setSidebarRoom)
+    const stopDictation = connectBotsDictation(webview, botsDictationHost)
     stopThemeSyncRef.current = () => {
       stopTheme()
       stopRoom()
+      stopDictation()
     }
   }, [containerRef, url, partition])
   useEffect(

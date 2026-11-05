@@ -8,17 +8,24 @@ import {
   measureTextControlPasteByteLengthWithYield,
   pasteTextIntoTextControl
 } from '@/lib/text-control-paste'
+import { dictationGuestSinkFor, type DictationGuestSink } from './dictation-guest-sinks'
 
 export type DictationInsertionTarget =
   | { kind: 'terminal'; tabId: string; paneId: number }
   | { kind: 'text'; element: HTMLInputElement | HTMLTextAreaElement }
   | { kind: 'contentEditable'; element: HTMLElement }
+  | { kind: 'guest'; element: Element; deliver: DictationGuestSink }
 
 export function captureInsertionTarget(): DictationInsertionTarget | null {
   const activeElement = document.activeElement
 
   if (!activeElement) {
     return null
+  }
+
+  const guestSink = dictationGuestSinkFor(activeElement)
+  if (guestSink) {
+    return { kind: 'guest', element: activeElement, deliver: guestSink }
   }
 
   if (activeElement.classList.contains('xterm-helper-textarea')) {
@@ -44,6 +51,11 @@ export function captureInsertionTarget(): DictationInsertionTarget | null {
 }
 
 export function insertText(text: string, target: DictationInsertionTarget): void {
+  if (target.kind === 'guest') {
+    target.deliver(text)
+    return
+  }
+
   if (target.kind === 'terminal') {
     document.dispatchEvent(
       new CustomEvent('dictation:insertText', {
