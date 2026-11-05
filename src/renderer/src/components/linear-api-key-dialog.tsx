@@ -216,7 +216,7 @@ export function LinearApiKeyDialog({
               </button>
             </div>
           </div>
-          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <Lock className="size-3 shrink-0" />
             {storageCopy}
           </p>

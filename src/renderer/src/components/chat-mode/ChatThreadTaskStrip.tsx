@@ -142,7 +142,7 @@ export function ChatThreadTaskStrip({
         </span>
         <span className="shrink-0 font-mono text-[11px] text-muted-foreground">#{task.id}</span>
         {task.projectName ? (
-          <span className="hidden min-w-0 truncate text-muted-foreground/70 md:inline">
+          <span className="hidden min-w-0 truncate text-muted-foreground md:inline">
             {task.projectName}
           </span>
         ) : null}

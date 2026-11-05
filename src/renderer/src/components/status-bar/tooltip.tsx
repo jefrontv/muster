@@ -277,7 +277,7 @@ export function ProviderPanel({
 }): React.JSX.Element {
   const textClass = inverted ? 'text-background' : 'text-foreground'
   const mutedClass = inverted ? 'text-background/60' : 'text-muted-foreground'
-  const faintClass = inverted ? 'text-background/50' : 'text-muted-foreground/80'
+  const faintClass = inverted ? 'text-background/50' : 'text-muted-foreground'
   const dividerClass = inverted ? 'border-background/15' : 'border-border/70'
   const emptyBarClass = inverted ? 'bg-background/20' : 'bg-muted'
 

@@ -150,7 +150,7 @@ function ConflictReviewFileTreeRow({
           <FolderOpen className="size-3 shrink-0" />
         )}
         <span className="min-w-0 flex-1 truncate">{node.name}</span>
-        <span className="w-4 shrink-0 text-center text-2xs font-semibold tabular-nums text-muted-foreground/80">
+        <span className="w-4 shrink-0 text-center text-2xs font-semibold tabular-nums text-muted-foreground">
           {node.fileCount}
         </span>
       </button>

@@ -275,7 +275,7 @@ export function ActiveCollabConnectDialog({
                   {connectError}
                 </p>
               ) : null}
-              <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground/70">
+              <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
                 <Lock className="mt-px size-3 shrink-0" />
                 {exchangeCopy}
               </p>

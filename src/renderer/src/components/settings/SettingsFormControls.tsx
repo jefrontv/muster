@@ -560,7 +560,7 @@ export function NumberField({
         <>
           {description}
           {defaultValue !== undefined ? (
-            <span className="ml-1 text-muted-foreground/70">
+            <span className="ml-1 text-muted-foreground">
               {translate('auto.components.settings.SettingsFormControls.b661b034ec', '· Default:')}{' '}
               {defaultValue}
             </span>

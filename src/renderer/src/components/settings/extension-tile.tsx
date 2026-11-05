@@ -64,7 +64,7 @@ export function ExtensionTile({
           {status.label}
         </IntegrationStatusPill>
         {state.installedVersion ? (
-          <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground/70">
+          <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
             {state.installedVersion}
           </span>
         ) : null}

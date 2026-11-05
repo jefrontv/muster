@@ -2884,7 +2884,7 @@ function CommentCodeContext({
               : ''}
           </span>
           {(from !== commentFrom || to !== commentTo) && (
-            <span className="shrink-0 font-mono text-muted-foreground/70">
+            <span className="shrink-0 font-mono text-muted-foreground">
               {translate('auto.components.GitHubItemDialog.bd7be7b1fd', 'comment l')}
               {commentFrom}
               {commentTo !== commentFrom
@@ -3372,7 +3372,7 @@ function ConversationTab({
           · {formatRelativeTime(comment.createdAt)}
         </span>
         {comment.path && (
-          <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground/70">
+          <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
             {comment.path.split('/').pop()}
             {comment.line
               ? translate('auto.components.GitHubItemDialog.136542c9ba', ':L{{value0}}', {
@@ -7417,7 +7417,7 @@ export default function GitHubItemDialog({
                 <span>
                   {translate('auto.components.GitHubItemDialog.55962099bc', 'opened this issue')}
                 </span>
-                <span className="text-muted-foreground/80">
+                <span className="text-muted-foreground">
                   {translate('auto.components.GitHubItemDialog.10ef1afb8e', '· updated')}
                   {formatRelativeTime(workItem.updatedAt)}
                 </span>

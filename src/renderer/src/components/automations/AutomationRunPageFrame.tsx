@@ -68,7 +68,7 @@ export function AutomationRunPageFrame({
               </ol>
             ) : null}
             {detail ? (
-              <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground/80">
+              <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
                 {detail}
               </div>
             ) : null}

@@ -134,7 +134,7 @@ export function createCompactCommentMarkdownComponents(
     hr: () => <hr className="my-1 border-border/50" />,
     // Compact blockquotes
     blockquote: ({ children }) => (
-      <blockquote className="my-0.5 border-l-2 border-border/60 pl-2 text-muted-foreground/80">
+      <blockquote className="my-0.5 border-l-2 border-border/60 pl-2 text-muted-foreground">
         {children}
       </blockquote>
     ),

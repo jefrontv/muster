@@ -106,7 +106,7 @@ export function TaskPageActiveCollabSetup({
         </span>
         <h2 className="text-base font-medium text-foreground">{heading}</h2>
         <p className="max-w-xl text-sm text-muted-foreground">{intro}</p>
-        {reason ? <p className="max-w-xl text-xs text-muted-foreground/80">{reason}</p> : null}
+        {reason ? <p className="max-w-xl text-xs text-muted-foreground">{reason}</p> : null}
       </header>
 
       <div className="mx-auto grid w-full max-w-3xl gap-4 sm:grid-cols-2">
@@ -148,7 +148,7 @@ export function TaskPageActiveCollabSetup({
               )}
             </li>
           </ul>
-          <p className="mt-3 text-xs text-muted-foreground/80">
+          <p className="mt-3 text-xs text-muted-foreground">
             {translate(
               'auto.components.activecollab.setup.credential_handling',
               'They are sent once, straight to your own instance, and exchanged for a long-lived API token. The password is never stored. Only the token is kept, encrypted where the runtime supports it.'
@@ -178,7 +178,7 @@ export function TaskPageActiveCollabSetup({
             )}
           </Button>
         </div>
-        <p className="max-w-xl text-center text-xs text-muted-foreground/80">
+        <p className="max-w-xl text-center text-xs text-muted-foreground">
           {translate(
             'auto.components.activecollab.setup.settings_hint',
             'Settings → Integrations holds the same connection, the account it resolved to, and the ActiveCollab MCP install your agents use.'

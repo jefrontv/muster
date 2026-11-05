@@ -175,7 +175,7 @@ export function LinearAgentSkillInstallCta({
             </Tooltip>
           </div>
           {remote || agentRuntime.runtime === 'wsl' ? (
-            <p className="text-[11px] text-muted-foreground/70">
+            <p className="text-[11px] text-muted-foreground">
               {getLinearAgentSkillSetupInlineRuntimeCopy(remote, agentRuntime)}
             </p>
           ) : null}

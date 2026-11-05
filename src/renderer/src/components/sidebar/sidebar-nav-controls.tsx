@@ -38,7 +38,7 @@ export function TaskProviderShortcut({
         onOpen()
       }}
       className={cn(
-        'rounded p-0.5 text-muted-foreground/70',
+        'rounded p-0.5 text-muted-foreground',
         canBrowseTasks ? 'transition-colors hover:text-foreground' : 'cursor-default'
       )}
       aria-label={canBrowseTasks ? label : undefined}

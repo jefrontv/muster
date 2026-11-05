@@ -124,7 +124,7 @@ export function OnboardingSiteSourcesStep(): React.JSX.Element {
           </ul>
         )}
         {isDerived ? (
-          <p className="px-1 text-xs leading-relaxed text-muted-foreground/70">
+          <p className="px-1 text-xs leading-relaxed text-muted-foreground">
             {translate(
               'auto.components.onboarding.SiteSourcesStep.derived_note',
               'Found from where your projects already sit. Add a folder to set your own.'

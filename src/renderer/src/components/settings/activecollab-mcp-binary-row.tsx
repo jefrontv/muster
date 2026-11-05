@@ -57,7 +57,7 @@ export function ActiveCollabMcpBinaryRow({
       </div>
       {binary.found ? (
         <p
-          className="truncate font-mono text-[11px] text-muted-foreground/80"
+          className="truncate font-mono text-[11px] text-muted-foreground"
           title={binary.path ?? undefined}
         >
           {binary.path}

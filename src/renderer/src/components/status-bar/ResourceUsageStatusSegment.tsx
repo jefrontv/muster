@@ -519,7 +519,7 @@ export function WorktreeRow({
           <span className="text-xs font-medium truncate">{rowLabel}</span>
           {/* Why: gate the chip on SSH connectionId, not missing data — warm-reattached local PTYs land here with hasLocalSamples=false. */}
           {worktree.isRemote && (
-            <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground/70">
+            <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">
               {translate(
                 'auto.components.status.bar.ResourceUsageStatusSegment.21cacb16d1',
                 '· remote'
@@ -697,7 +697,7 @@ function ResourceTree({
                     {group.repoName}
                   </span>
                   {group.hasRemoteChildren && (
-                    <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground/70">
+                    <span className="shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">
                       {translate(
                         'auto.components.status.bar.ResourceUsageStatusSegment.21cacb16d1',
                         '· remote'
@@ -1400,9 +1400,7 @@ export function ResourceUsageStatusSegment({
                 onClick={() => setSortOption('name')}
                 className={cn(
                   'hover:text-foreground transition-colors',
-                  sortOption === 'name'
-                    ? 'font-semibold text-foreground'
-                    : 'text-muted-foreground/80'
+                  sortOption === 'name' ? 'font-semibold text-foreground' : 'text-muted-foreground'
                 )}
                 aria-pressed={sortOption === 'name'}
               >
@@ -1421,7 +1419,7 @@ export function ResourceUsageStatusSegment({
                       'hover:text-foreground transition-colors',
                       sortOption === 'cpu'
                         ? 'font-semibold text-foreground'
-                        : 'text-muted-foreground/80'
+                        : 'text-muted-foreground'
                     )}
                     aria-pressed={sortOption === 'cpu'}
                   >
@@ -1438,7 +1436,7 @@ export function ResourceUsageStatusSegment({
                       'hover:text-foreground transition-colors',
                       sortOption === 'memory'
                         ? 'font-semibold text-foreground'
-                        : 'text-muted-foreground/80'
+                        : 'text-muted-foreground'
                     )}
                     aria-pressed={sortOption === 'memory'}
                   >

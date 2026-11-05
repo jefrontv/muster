@@ -747,7 +747,7 @@ function SectionMetricsBadge({ count }: { count: number }): React.JSX.Element {
 
   return (
     <span
-      className="inline-flex h-4 shrink-0 overflow-hidden rounded-full border border-worktree-sidebar-border bg-worktree-sidebar-accent text-[11px] font-medium leading-none text-muted-foreground/90"
+      className="inline-flex h-4 shrink-0 overflow-hidden rounded-full border border-worktree-sidebar-border bg-worktree-sidebar-accent text-[11px] font-medium leading-none text-muted-foreground"
       aria-label={totalLabel}
     >
       <Tooltip>
@@ -871,7 +871,7 @@ function HostSectionHeader({
             <span
               className={cn(
                 'shrink-0 truncate text-[11px] leading-none',
-                detail.isWarning ? 'text-destructive' : 'text-muted-foreground/70'
+                detail.isWarning ? 'text-destructive' : 'text-muted-foreground'
               )}
             >
               {detail.text}

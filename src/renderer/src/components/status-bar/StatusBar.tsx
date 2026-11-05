@@ -1361,7 +1361,7 @@ export function ProviderSegment({
         </>
       )}
       <ResetCreditBadge p={p} />
-      {isStale && <AlertTriangle size={11} className="text-muted-foreground/80" />}
+      {isStale && <AlertTriangle size={11} className="text-muted-foreground" />}
     </span>
   )
 }

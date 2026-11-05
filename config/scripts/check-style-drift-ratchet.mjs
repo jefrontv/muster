@@ -1,6 +1,6 @@
 // Ratchets for two recipes the styleguide pins down: readable muted text is full
-// text-muted-foreground (faded /20-/60 fails AA), and hover fills are bg-accent for rows or
-// bg-foreground/[0.07] for controls. Per-file counts may only fall; new files start at zero.
+// text-muted-foreground (faded /20-/90 fails AA at small sizes), and hover fills are bg-accent for
+// rows or bg-foreground/[0.07] for controls. Per-file counts may only fall; new files start at zero.
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -14,7 +14,7 @@ export const RULES = [
     name: 'faded muted text',
     baseline: 'config/faded-muted-text-baseline.txt',
     pattern:
-      /(?<![\w-])(?:[^\s"'`:{}()]+:)*text-muted-foreground\/(?:[2-6]0|\[0?\.[2-6]\d*\])(?![\w-])/g,
+      /(?<![\w-])(?:[^\s"'`:{}()]+:)*text-muted-foreground\/(?:[2-9]0|\[0?\.[2-9]\d*\])(?![\w-])/g,
     fix: 'Use full text-muted-foreground; keep a fade only on separators, disabled states or decorative glyphs.'
   },
   {

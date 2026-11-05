@@ -263,7 +263,7 @@ export function PortRow({
             </PortAction>
           </div>
         </div>
-        <div className="select-text truncate text-[11px] text-muted-foreground/70">
+        <div className="select-text truncate text-[11px] text-muted-foreground">
           {external ? port.kind : addressForPort(port)}
         </div>
       </div>
@@ -311,9 +311,7 @@ export function WorkspaceGroupRows({
           >
             <FolderOpen className="size-3" />
           </PortAction>
-          <span className="font-mono text-[11px] text-muted-foreground/70">
-            {group.ports.length}
-          </span>
+          <span className="font-mono text-[11px] text-muted-foreground">{group.ports.length}</span>
         </div>
       </div>
       <div className="pb-1">

@@ -2707,6 +2707,6 @@ export function prStateColor(state: PRInfo['state']): string {
     case 'closed':
       return 'bg-destructive/10 text-destructive border-destructive/20'
     case 'draft':
-      return 'bg-muted text-muted-foreground/70 border-border'
+      return 'bg-muted text-muted-foreground border-border'
   }
 }

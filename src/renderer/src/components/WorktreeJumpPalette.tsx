@@ -1628,7 +1628,7 @@ export default function WorktreeJumpPalette(): React.JSX.Element | null {
                 return (
                   <div
                     key={entry.id}
-                    className="mx-0.5 mt-1 px-3 py-1.5 text-[12px] italic text-muted-foreground/70"
+                    className="mx-0.5 mt-1 px-3 py-1.5 text-[12px] italic text-muted-foreground"
                   >
                     {entry.label}
                   </div>

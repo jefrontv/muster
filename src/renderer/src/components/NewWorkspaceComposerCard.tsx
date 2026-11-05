@@ -1327,7 +1327,7 @@ export default function NewWorkspaceComposerCard({
                   'auto.components.NewWorkspaceComposerCard.0ee17638fe',
                   'Workspace name'
                 )}{' '}
-            <span className="text-muted-foreground/70">
+            <span className="text-muted-foreground">
               {translate('auto.components.NewWorkspaceComposerCard.0c5d6a479c', '[Optional]')}
             </span>
           </label>

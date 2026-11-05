@@ -44,7 +44,7 @@ export function SiteMcpHarnessRow({
         <>
           <p className="text-xs text-muted-foreground">{state.detail}</p>
           <p
-            className="truncate font-mono text-[11px] text-muted-foreground/80"
+            className="truncate font-mono text-[11px] text-muted-foreground"
             title={harness.configPath}
           >
             {harness.configPath}

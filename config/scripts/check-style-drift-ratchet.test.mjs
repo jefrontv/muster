@@ -5,8 +5,8 @@ const [faded, hover] = RULES
 
 describe('style drift ratchets', () => {
   it('counts faded muted text but not the full token or stronger alphas', () => {
-    const source = `cn('text-muted-foreground/60', 'hover:text-muted-foreground/40', 'text-muted-foreground/[0.5]', 'text-muted-foreground', 'text-muted-foreground/80')`
-    expect(countMatches(source, faded.pattern)).toBe(3)
+    const source = `cn('text-muted-foreground/60', 'hover:text-muted-foreground/40', 'text-muted-foreground/[0.5]', 'text-muted-foreground', 'text-muted-foreground/80', 'text-muted-foreground/[0.9]', 'text-muted-foreground/100', 'text-muted-foreground/10')`
+    expect(countMatches(source, faded.pattern)).toBe(5)
   })
 
   it('counts hover fills outside the two recipes', () => {

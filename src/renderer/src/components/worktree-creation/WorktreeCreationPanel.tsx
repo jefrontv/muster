@@ -171,7 +171,7 @@ export default function WorktreeCreationPanel({
             <div className="flex items-center gap-2">
               <Loader2 className="size-3.5 shrink-0 animate-spin" />
               <span>{getCreationProgressLabel(entry)}</span>
-              <span className="text-muted-foreground/70">{elapsedLabel}</span>
+              <span className="text-muted-foreground">{elapsedLabel}</span>
             </div>
           </div>
         )}

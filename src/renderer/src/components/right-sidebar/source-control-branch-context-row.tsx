@@ -49,7 +49,7 @@ function ContextStat({
 }): React.JSX.Element {
   const className = cn(
     'shrink-0 tabular-nums text-muted-foreground',
-    stat.tone === 'muted' && 'text-muted-foreground/70',
+    stat.tone === 'muted' && 'text-muted-foreground',
     stat.tone === 'ahead' && 'text-[color:var(--git-decoration-added)]',
     stat.tone === 'behind' && 'text-[color:var(--git-decoration-deleted)]'
   )

@@ -717,7 +717,7 @@ function RichCardContent({
           <>
             {' '}
             <button
-              className="text-xs text-muted-foreground/70 underline hover:text-foreground inline"
+              className="text-xs text-muted-foreground underline hover:text-foreground inline"
               onClick={() => void window.api.shell.openUrl(release.releaseNotesUrl)}
             >
               +{releasesBehind - 1}{' '}

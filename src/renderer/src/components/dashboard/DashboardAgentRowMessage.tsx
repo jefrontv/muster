@@ -17,7 +17,7 @@ export function DashboardAgentRowMessage({
   // stays fixed as assistant text arrives or clears.
   if (!isInterrupted && !lastAssistantMessage) {
     return expanded ? null : (
-      <div className="mt-0.5 pl-5 text-[11px] leading-snug text-muted-foreground/70"> </div>
+      <div className="mt-0.5 pl-5 text-[11px] leading-snug text-muted-foreground"> </div>
     )
   }
 
@@ -25,7 +25,7 @@ export function DashboardAgentRowMessage({
     <div className="mt-0.5 flex min-w-0 items-start gap-1.5 pl-5">
       {isInterrupted ? (
         <span
-          className="shrink-0 text-[11px] leading-snug text-muted-foreground/80"
+          className="shrink-0 text-[11px] leading-snug text-muted-foreground"
           aria-label={translate(
             'auto.components.dashboard.DashboardAgentRowMessage.1ec01cef03',
             'Interrupted by user'
@@ -43,7 +43,7 @@ export function DashboardAgentRowMessage({
           // Why: animate between a clipped preview and natural height without
           // measuring markdown content in JS.
           className={cn(
-            'min-w-0 flex-1 overflow-hidden text-[11px] leading-snug text-muted-foreground/80',
+            'min-w-0 flex-1 overflow-hidden text-[11px] leading-snug text-muted-foreground',
             'transition-[height] duration-200 ease-out [interpolate-size:allow-keywords]',
             expanded ? 'h-auto' : 'h-[1lh]',
             !expanded &&

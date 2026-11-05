@@ -200,7 +200,7 @@ export default function GrabConfirmationSheet({
                   {translate('auto.components.browser.pane.GrabConfirmationSheet.eb98a0971a', '"')}
                 </div>
               ) : null}
-              <div className="mt-1 font-mono text-xs text-muted-foreground/70">
+              <div className="mt-1 font-mono text-xs text-muted-foreground">
                 <EscapedText text={target.selector} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
@@ -226,7 +226,7 @@ export default function GrabConfirmationSheet({
                   }
                 />
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground/70">
+              <div className="mt-0.5 text-xs text-muted-foreground">
                 <EscapedText text={page.sanitizedUrl} />
               </div>
             </div>

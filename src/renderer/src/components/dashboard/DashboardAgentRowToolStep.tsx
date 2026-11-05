@@ -21,7 +21,7 @@ export function DashboardAgentRowToolStep({
   return (
     <div
       data-agent-row-tool-slot=""
-      className="mt-0.5 min-w-0 pl-5 text-[11px] leading-snug text-muted-foreground/70"
+      className="mt-0.5 min-w-0 pl-5 text-[11px] leading-snug text-muted-foreground"
     >
       {toolName ? (
         <>

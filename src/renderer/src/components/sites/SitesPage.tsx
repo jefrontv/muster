@@ -316,7 +316,7 @@ export default function SitesPage(): React.JSX.Element {
             ))}
             {visibleDiscovered.length > 0 ? (
               <>
-                <p className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                <p className="px-3 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   {translate(
                     'auto.components.sites.SitesPage.discoveredHeading',
                     'Found on disk ({{count}})',

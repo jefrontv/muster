@@ -178,7 +178,7 @@ export function LinearIntegrationCard(): React.JSX.Element {
                 </div>
               )
             })}
-            <p className="text-[11px] text-muted-foreground/70">
+            <p className="text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.settings.task.tracker.integration.cards.6224fe9d34',
                 'Each connected Linear workspace has one key stored by the active runtime. Full-access keys can cover all teams the key owner can access; restricted keys can be replaced any time.'

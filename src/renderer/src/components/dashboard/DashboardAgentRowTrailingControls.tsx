@@ -118,7 +118,7 @@ export function DashboardAgentRowTrailingControls({
             onMouseDown={stopMouseDown}
             onKeyDown={stopKeyDown}
             className={cn(
-              '[grid-area:1/1] inline-flex items-center justify-center text-muted-foreground/70 hover:text-foreground',
+              '[grid-area:1/1] inline-flex items-center justify-center text-muted-foreground hover:text-foreground',
               'can-hover:opacity-0 transition-opacity duration-150',
               'group-hover/agent-row:opacity-100 focus-visible:opacity-100'
             )}
@@ -139,7 +139,7 @@ export function DashboardAgentRowTrailingControls({
           onMouseDown={stopMouseDown}
           onKeyDown={stopKeyDown}
           className={cn(
-            'inline-flex shrink-0 items-center justify-center text-muted-foreground/70 hover:text-foreground',
+            'inline-flex shrink-0 items-center justify-center text-muted-foreground hover:text-foreground',
             'can-hover:opacity-0 transition-opacity duration-150',
             'group-hover/agent-row:opacity-100 focus-visible:opacity-100'
           )}

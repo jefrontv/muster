@@ -1295,14 +1295,14 @@ function ThreadRow({
                 <CommentMarkdown
                   content={renderedResponsePreview}
                   className={cn(
-                    'h-[1lh] min-w-0 overflow-hidden truncate whitespace-nowrap text-[11px] font-normal leading-snug text-muted-foreground/80',
+                    'h-[1lh] min-w-0 overflow-hidden truncate whitespace-nowrap text-[11px] font-normal leading-snug text-muted-foreground',
                     '[&_*]:inline [&_*]:!m-0 [&_*]:!p-0 [&_*]:!whitespace-nowrap [&_br]:hidden [&_ol]:list-none [&_ul]:list-none'
                   )}
                   title={thread.responsePreview}
                 />
               ) : null}
               <div className="flex min-w-0 items-center gap-1.5 pt-0.5">
-                <span className="shrink-0 text-[11px] text-muted-foreground/80">{agentLabel}</span>
+                <span className="shrink-0 text-[11px] text-muted-foreground">{agentLabel}</span>
                 {canJump ? (
                   <span
                     className={cn(

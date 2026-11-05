@@ -600,10 +600,10 @@ function LocalPortRow({
               <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="truncate">{address}</span>
               </div>
-              <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground/70">
+              <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="truncate">{ownerLabel}</span>
                 {confidenceLabel && (
-                  <span className="shrink-0 text-muted-foreground/70">{confidenceLabel}</span>
+                  <span className="shrink-0 text-muted-foreground">{confidenceLabel}</span>
                 )}
               </div>
             </div>
@@ -1139,7 +1139,7 @@ function ForwardedPortRow({
           </span>
         </div>
         {advertisedBrowserUrl && (
-          <div className="text-[11px] text-muted-foreground/70 truncate">
+          <div className="text-[11px] text-muted-foreground truncate">
             {translate('auto.components.right.sidebar.PortsPanel.de349d4560', 'opens {{value0}}', {
               value0: advertisedBrowserUrl
             })}
@@ -1210,7 +1210,7 @@ function DetectedPortRow({
           )}
         </div>
         {advertisedBrowserUrl && (
-          <div className="text-[11px] text-muted-foreground/70 truncate">
+          <div className="text-[11px] text-muted-foreground truncate">
             {translate(
               'auto.components.right.sidebar.PortsPanel.c7e920aa7c',
               'advertised as {{value0}}',

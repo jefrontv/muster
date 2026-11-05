@@ -202,7 +202,7 @@ export function CmdJPaletteFeatureTipVisual(): JSX.Element {
                   <span className="block truncate text-[12px] font-semibold tracking-[-0.01em] text-foreground">
                     {result.name}
                   </span>
-                  <span className="block truncate text-[11px] text-muted-foreground/70">
+                  <span className="block truncate text-[11px] text-muted-foreground">
                     {result.branch}
                   </span>
                 </div>

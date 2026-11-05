@@ -50,7 +50,7 @@ export function ExtensionHarnessRow({
       <span
         className={cn(
           'min-w-0 flex-1 truncate font-mono text-[11px]',
-          harness.error ? 'text-destructive' : 'text-muted-foreground/70'
+          harness.error ? 'text-destructive' : 'text-muted-foreground'
         )}
         title={harness.error ?? harness.configPath}
       >

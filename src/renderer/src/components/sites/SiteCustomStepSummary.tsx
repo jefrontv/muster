@@ -13,7 +13,7 @@ export function SiteCustomStepSummary({ step }: { step: SiteCustomStep }): React
     <div className="min-w-0 flex-1 space-y-0.5">
       <div className="flex items-center gap-2">
         <span className="truncate text-xs font-medium leading-4">{step.name}</span>
-        <span className="shrink-0 text-[11px] uppercase leading-4 tracking-wider text-muted-foreground/70">
+        <span className="shrink-0 text-[11px] uppercase leading-4 tracking-wider text-muted-foreground">
           {step.group} · {step.position === 'before' ? 'pre' : 'post'} ·{' '}
           {step.runsOn === 'local' ? 'local' : 'server'}
         </span>

@@ -40,7 +40,7 @@ export function ExtensionAgentRuleRow({
           onChange={() => void toggle()}
         />
       </div>
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-xs text-muted-foreground">
         {translate(
           'auto.components.extensions.agent_rule_hint',
           'Keeps this in your global CLAUDE.md and AGENTS.md:'

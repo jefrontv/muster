@@ -1051,7 +1051,7 @@ function LabelsCell({
 
 function EmptyCellPrompt({ label }: { label: string }): React.JSX.Element {
   return (
-    <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-md border border-dashed border-border/70 bg-input/30 px-2 text-xs text-muted-foreground/80 shadow-xs hover:border-border hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:hover:bg-input/50">
+    <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-md border border-dashed border-border/70 bg-input/30 px-2 text-xs text-muted-foreground shadow-xs hover:border-border hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:hover:bg-input/50">
       <Plus className="size-3 shrink-0" />
       <span className="truncate">{label}</span>
     </span>

@@ -48,10 +48,7 @@ export function ActiveCollabMcpCredentialsRow({
           'This writes your ActiveCollab token to a file on disk, readable only by your user account, so the MCP server can authenticate without a second login.'
         )}
       </p>
-      <p
-        className="truncate font-mono text-[11px] text-muted-foreground/80"
-        title={credentialsPath}
-      >
+      <p className="truncate font-mono text-[11px] text-muted-foreground" title={credentialsPath}>
         {credentialsPath}
       </p>
       <Button

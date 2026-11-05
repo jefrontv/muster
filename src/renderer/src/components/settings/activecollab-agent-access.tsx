@@ -204,7 +204,7 @@ export function ActiveCollabAgentAccessPanel({
         </div>
       ) : null}
 
-      <p className="text-[11px] text-muted-foreground/80">
+      <p className="text-[11px] text-muted-foreground">
         {translate(
           'auto.components.settings.activecollab.access.local_only',
           'Agents on this computer only. Agents in SSH workspaces don’t get this server.'

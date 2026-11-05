@@ -193,7 +193,7 @@ export function JiraIntegrationCard(): React.JSX.Element {
                 </div>
               )
             })}
-            <p className="text-[11px] text-muted-foreground/70">
+            <p className="text-[11px] text-muted-foreground">
               {translate(
                 'auto.components.settings.task.tracker.integration.cards.8c20e76308',
                 'Each connected Jira site has one token stored by the active runtime.'

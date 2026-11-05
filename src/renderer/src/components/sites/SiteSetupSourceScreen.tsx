@@ -362,7 +362,7 @@ export function SiteSetupSourceScreen({
             onChange={(event) => setQuery(event.target.value)}
           />
           {truncated ? (
-            <p className="text-[11px] text-muted-foreground/70">
+            <p className="text-[11px] text-muted-foreground">
               {searchesRemotely ? strings.truncated : strings.truncatedLocal}
             </p>
           ) : null}

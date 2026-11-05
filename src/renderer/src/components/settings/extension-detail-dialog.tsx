@@ -327,7 +327,7 @@ export function ExtensionDetailDialog({
               />
             </div>
           ) : entry.autoUpdate?.reason ? (
-            <p className="border-t border-border pt-3 text-xs text-muted-foreground/70">
+            <p className="border-t border-border pt-3 text-xs text-muted-foreground">
               {translate(
                 'auto.components.extensions.auto_update_blocked',
                 'Updates stay manual here: {{reason}}'

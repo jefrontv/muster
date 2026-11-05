@@ -76,7 +76,7 @@ export function SiteMcpInstallCard({ enabled }: { enabled: boolean }): React.JSX
                   )}
                 </p>
                 <p
-                  className="truncate font-mono text-[11px] text-muted-foreground/80"
+                  className="truncate font-mono text-[11px] text-muted-foreground"
                   title={[status.command.command, ...status.command.args].join(' ')}
                 >
                   {[status.command.command, ...status.command.args].join(' ')}
@@ -95,7 +95,7 @@ export function SiteMcpInstallCard({ enabled }: { enabled: boolean }): React.JSX
                 />
               ))}
 
-              <p className="text-xs text-muted-foreground/70">
+              <p className="text-xs text-muted-foreground">
                 {translate(
                   'auto.components.settings.siteMcp.workspace_note',
                   'Project-level installs are automatic: Muster keeps a muster-sites entry in each site project\u2019s .mcp.json on its own.'

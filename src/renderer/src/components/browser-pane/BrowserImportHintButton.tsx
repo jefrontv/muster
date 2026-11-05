@@ -184,7 +184,7 @@ export function BrowserImportHintButton({
               )}
             </div>
             <p className="text-xs leading-5 text-muted-foreground">{importSummary}</p>
-            <p className="text-[11px] leading-4 text-muted-foreground/80">
+            <p className="text-[11px] leading-4 text-muted-foreground">
               {translate(
                 'auto.components.browser.pane.BrowserImportHintButton.e52a955e6f',
                 'You can always find this in Settings > Browser.'

@@ -1449,7 +1449,7 @@ function ConfirmRemoveRow({
           </>
         ) : null}
       </div>
-      <div className="mt-0.5 min-w-0 truncate font-mono text-[11px] text-muted-foreground/80">
+      <div className="mt-0.5 min-w-0 truncate font-mono text-[11px] text-muted-foreground">
         {candidate.path}
       </div>
     </div>

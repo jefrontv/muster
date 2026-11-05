@@ -65,7 +65,7 @@ export function ExtensionSettingFields({
       <div className="flex items-center justify-between gap-3">
         {/* Said plainly because it is true and the user cannot tell from the field: the value goes
             into the agent's own config file, which is not an encrypted store. */}
-        <span className="text-xs text-muted-foreground/70">
+        <span className="text-xs text-muted-foreground">
           {translate(
             'auto.components.extensions.setting_plaintext',
             'Stored in your agent config files, in the clear.'
