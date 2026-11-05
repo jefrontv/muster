@@ -6,15 +6,15 @@ import type React from 'react'
 import { useCallback, useState, type RefObject } from 'react'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useNativeChatSurface } from './native-chat-surface-context'
 import { translate } from '@/i18n/i18n'
 import type { NativeChatQuestionAnswers } from './use-native-chat-question-answers'
 import {
-  CHAT_TAKEOVER_CARD_CLASS,
   CHAT_TAKEOVER_ERROR_CLASS,
-  CHAT_TAKEOVER_FRAME_CLASS,
   CHAT_TAKEOVER_ICON_BUTTON_CLASS,
   CHAT_TAKEOVER_OUTLINE_CLASS,
-  CHAT_TAKEOVER_PRIMARY_CLASS
+  CHAT_TAKEOVER_PRIMARY_CLASS,
+  chatTakeoverClasses
 } from './chat-seat-takeover-classes'
 import { NativeChatSeatAnswerField, NativeChatSeatOptionRow } from './NativeChatSeatQuestionOptions'
 
@@ -29,6 +29,7 @@ export function NativeChatSeatQuestionCard({
   onCancel: () => void
   answerInputRef?: RefObject<HTMLInputElement | HTMLTextAreaElement | null>
 }): React.JSX.Element {
+  const takeover = chatTakeoverClasses(useNativeChatSurface().look)
   const { index, total, isLast, question, currentAnswered } = answers
   const [minimized, setMinimized] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -63,14 +64,11 @@ export function NativeChatSeatQuestionCard({
   const hasOptions = question.options.length > 0
 
   return (
-    <div className={CHAT_TAKEOVER_FRAME_CLASS}>
+    <div className={takeover.frame}>
       <section
         aria-label={question.question}
         aria-busy={isSubmitting}
-        className={cn(
-          CHAT_TAKEOVER_CARD_CLASS,
-          minimized ? 'max-h-none' : 'max-h-[min(60vh,520px)] pb-2.5'
-        )}
+        className={cn(takeover.card, minimized ? 'max-h-none' : 'max-h-[min(60vh,520px)] pb-2.5')}
       >
         <div
           className={cn(

@@ -19,6 +19,7 @@ import {
   CHAT_MESSAGE_ROW_CLASS,
   ChatMessageTray
 } from './ChatMessageTray'
+import { splitQuotedMessage } from './chat-composer-quote'
 
 const COLLAPSE_CHARS = 600
 const COLLAPSE_LINES = 8
@@ -79,7 +80,9 @@ export function ChatUserBubble(props: {
   /** Footnote under the text, such as a steer that has not landed yet. */
   note?: string
 }): React.JSX.Element {
-  const parts = useMemo(() => chatUserMessageParts(props.text), [props.text])
+  const parsed = useMemo(() => chatUserMessageParts(props.text), [props.text])
+  const { quote, body } = useMemo(() => splitQuotedMessage(parsed.body), [parsed.body])
+  const parts = { ...parsed, body }
   const [expanded, setExpanded] = useState(false)
   // Images sent without a path note (older sends) can only be counted.
   const uncounted = Math.max(0, props.imageCount - parts.images.length)
@@ -92,8 +95,17 @@ export function ChatUserBubble(props: {
       </ChatMessageTray>
       <div className="flex min-w-0 max-w-(--chat-reply-max) flex-col items-end gap-2">
         <Attachments parts={parts} />
-        {(parts.body || uncounted > 0) && (
+        {(parts.body || quote || uncounted > 0) && (
           <div className="max-w-full rounded-chat-reply bg-chat-bubble px-4 py-2.5 text-chat text-foreground">
+            {quote && (
+              <div
+                data-user-quote=""
+                title={quote}
+                className="mb-1.5 line-clamp-2 border-l-2 border-chat-line-3 pl-2 text-[13px] leading-5 text-chat-ink-secondary"
+              >
+                {quote}
+              </div>
+            )}
             <div
               className={cn(
                 'whitespace-pre-wrap break-words',

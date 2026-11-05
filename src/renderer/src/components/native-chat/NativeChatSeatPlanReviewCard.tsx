@@ -5,17 +5,17 @@ import type React from 'react'
 import { useMemo, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useNativeChatSurface } from './native-chat-surface-context'
 import { translate } from '@/i18n/i18n'
 import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
 import { planSummary } from './native-chat-plan-summary'
 import {
-  CHAT_TAKEOVER_CARD_CLASS,
   CHAT_TAKEOVER_ERROR_CLASS,
-  CHAT_TAKEOVER_FRAME_CLASS,
   CHAT_TAKEOVER_OUTLINE_CLASS,
   CHAT_TAKEOVER_PRIMARY_CLASS,
   CHAT_TAKEOVER_STATE_DOT_CLASS,
-  CHAT_TAKEOVER_STRIP_CLASS
+  CHAT_TAKEOVER_STRIP_CLASS,
+  chatTakeoverClasses
 } from './chat-seat-takeover-classes'
 
 // Sent with the denial so the agent stays in plan mode and waits for the reply.
@@ -30,6 +30,7 @@ export function NativeChatSeatPlanReviewCard({
   /** Called before the denial, so the composer can take focus once it returns. */
   onDiscuss: () => void
 }): React.JSX.Element {
+  const takeover = chatTakeoverClasses(useNativeChatSurface().look)
   const { request, respond } = approval
   const [answered, setAnswered] = useState(false)
   const summary = useMemo(() => planSummary(request.input), [request.input])
@@ -38,9 +39,9 @@ export function NativeChatSeatPlanReviewCard({
   const description = summary.description === title ? '' : summary.description
 
   return (
-    <div className={CHAT_TAKEOVER_FRAME_CLASS} data-plan-review-request={request.requestId}>
+    <div className={takeover.frame} data-plan-review-request={request.requestId}>
       <section
-        className={CHAT_TAKEOVER_CARD_CLASS}
+        className={takeover.card}
         aria-label={translate('components.native-chat.planReview.header', 'Plan review')}
         aria-busy={answered}
       >

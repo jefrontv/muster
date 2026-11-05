@@ -2,7 +2,7 @@
 // composer (pickers, attachments, menus, approvals) in the seat's chat look.
 // The engine draws the user's turn itself, so there is no optimistic echo.
 
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type React from 'react'
 import type { ChatThread } from '../../../../shared/chat-mode-types'
 import { chatThreadPaneIdentity } from '@/lib/chat-thread-pane-identity'
@@ -22,6 +22,8 @@ import {
   ChatComposerAccessMenu,
   ChatWebAccessToggle
 } from '@/components/chat-conversation/ChatComposerLeadControls'
+import { ChatComposerQuoteStrip } from '@/components/chat-conversation/ChatComposerQuoteStrip'
+import { quoteMessage } from '@/components/chat-conversation/chat-composer-quote'
 
 const noOptimisticEcho = (): undefined => undefined
 const noop = (): void => undefined
@@ -33,6 +35,9 @@ export function ChatThreadComposerSeat(props: {
   activeCollabProjectId: number | null
   /** Session state line (starting, ended, missing folder) above the composer. */
   notice?: React.ReactNode
+  /** A reply quoted from the transcript; it leads the next message. */
+  quote?: string | null
+  onClearQuote?: () => void
 }): React.JSX.Element {
   const { thread, transport } = props
   const identity = chatThreadPaneIdentity(thread.id)
@@ -49,6 +54,26 @@ export function ChatThreadComposerSeat(props: {
     reportedModel: thread.reportedModel ?? null
   })
   const { fullAccess, setFullAccess } = transport
+  const { quote = null, onClearQuote } = props
+  const transportSend = transport.send
+  const send = useCallback<typeof transportSend>(
+    async (text, imagePaths, mode) => {
+      if (!quote) {
+        return transportSend(text, imagePaths, mode)
+      }
+      const outcome = await transportSend(quoteMessage(quote, text), imagePaths, mode)
+      if (outcome !== 'failed') {
+        onClearQuote?.()
+      }
+      return outcome
+    },
+    [quote, onClearQuote, transportSend]
+  )
+  useEffect(() => {
+    if (quote) {
+      composerRef.current?.focus()
+    }
+  }, [quote])
   const seatSurface = useMemo(
     () => ({
       ...surface,
@@ -97,6 +122,9 @@ export function ChatThreadComposerSeat(props: {
         {!askActive && takeover.composerRequest === null ? (
           <NativeChatSubagentTab paneKey={identity.paneKey} />
         ) : null}
+        {quote && onClearQuote && !askActive && takeover.composerRequest === null ? (
+          <ChatComposerQuoteStrip quote={quote} onClear={onClearQuote} />
+        ) : null}
         {/* The queue tab belongs to the composer card, so it waits out every takeover. */}
         {transport.messageQueue && !askActive && takeover.composerRequest === null ? (
           <NativeChatQueueStrip
@@ -115,7 +143,7 @@ export function ChatThreadComposerSeat(props: {
             draftScopeKey={`chat-thread:${thread.id}`}
             targetPtyId={null}
             agent={thread.agent}
-            transportSend={transport.send}
+            transportSend={send}
             transportDispatchOption={transport.dispatchOption}
             transportInterrupt={transport.interrupt}
             canSend

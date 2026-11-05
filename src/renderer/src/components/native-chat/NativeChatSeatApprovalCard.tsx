@@ -14,12 +14,11 @@ import {
   type NativeChatComposerApproval
 } from './NativeChatApprovalPanel'
 import {
-  CHAT_TAKEOVER_FRAME_CLASS,
   CHAT_TAKEOVER_OUTLINE_CLASS,
   CHAT_TAKEOVER_PRIMARY_CLASS,
   CHAT_TAKEOVER_STATE_DOT_CLASS,
   CHAT_TAKEOVER_STRIP_CLASS,
-  CHAT_TAKEOVER_WARN_CARD_CLASS
+  chatTakeoverClasses
 } from './chat-seat-takeover-classes'
 
 const TEXT_FIELD_SELECTOR =
@@ -65,7 +64,8 @@ export function NativeChatSeatApprovalCard({
   approval: NativeChatComposerApproval
 }): React.JSX.Element {
   const { request, count, respond, cancelTurn } = approval
-  const { surface } = useNativeChatSurface()
+  const { surface, look } = useNativeChatSurface()
+  const takeover = chatTakeoverClasses(look)
   const detail = describeToolApproval(request.toolName, request.input, surface, translate)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [answered, setAnswered] = useState(false)
@@ -116,7 +116,7 @@ export function NativeChatSeatApprovalCard({
 
   return (
     <div
-      className={CHAT_TAKEOVER_FRAME_CLASS}
+      className={takeover.frame}
       data-approval-request={request.requestId}
       aria-busy={answered}
       onKeyDown={onKeyDown}
@@ -127,7 +127,7 @@ export function NativeChatSeatApprovalCard({
         composingRef.current = false
       }}
     >
-      <section className={CHAT_TAKEOVER_WARN_CARD_CLASS} aria-label={detail.title}>
+      <section className={takeover.warnCard} aria-label={detail.title}>
         <div className={cn(CHAT_TAKEOVER_STRIP_CLASS, 'py-2.5 text-[13px] leading-[18px]')}>
           <span
             aria-hidden

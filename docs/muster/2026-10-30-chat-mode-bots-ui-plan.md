@@ -391,8 +391,9 @@ Live check: Chat mode in "UX scratch", and the Code panel on the AIDC project (`
 2. Electron's `webview.insertText` is the fallback if a segment arrives while the Bots composer has focus but the bridge is busy.
 3. No speech model: the button opens Muster's Settings, Voice, the same as Chat.
 4. The Apple speech helper path stays in the fork for the standalone Bots build, behind its existing capability check, and is not used inside Muster.
+5. Effort slider (added 2026-11-05): the Bots settings "Effort" select becomes the stepped slider Chat mode uses (`NativeChatEffortSlider.tsx`), ported into the fork with a leading "Default" (engine default) stop. Check the fork's uncommitted `ModelPicker.tsx` work with the user before starting.
 
-Tests: bridge message round trip, insertion at caret, setup redirect. Live check: dictate into a Bots chat with a local model and with OpenAI transcription.
+Tests: bridge message round trip, insertion at caret, setup redirect, effort slider keyboard stepping. Live check: dictate into a Bots chat with a local model and with OpenAI transcription; change a bot's effort with the slider.
 
 ### Order and estimate
 

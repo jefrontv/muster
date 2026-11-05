@@ -15,6 +15,13 @@ export const CHAT_SEAT_TAB_CLASS =
   'relative isolate mx-4 -mb-[18px] overflow-hidden rounded-t-[18px] bg-chat-raised pb-3 shadow-chat-hairline'
 
 /** The tab rising out from behind the card. */
+/** Chat mode's tab: the Bots card's hairline ring and 20px top corners. */
+export const CHAT_CONVERSATION_TAB_CLASS =
+  'relative isolate mx-3 -mb-[18px] overflow-hidden rounded-t-[20px] bg-chat-raised pb-3 ring-[0.5px] ring-foreground/10'
+
+export const chatSeatTabClass = (look: 'conversation' | undefined): string =>
+  look === 'conversation' ? CHAT_CONVERSATION_TAB_CLASS : CHAT_SEAT_TAB_CLASS
+
 export const CHAT_SEAT_TAB_ENTER_CLASS =
   'animate-in fade-in-0 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none'
 

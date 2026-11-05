@@ -7,7 +7,8 @@ import { ImageIcon, Loader2, Pencil, X } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import type { ChatThreadQueuedMessage } from '../../../../shared/chat-thread-stream-types'
-import { CHAT_SEAT_TAB_CLASS, CHAT_SEAT_TAB_ENTER_CLASS } from './chat-seat-composer-classes'
+import { CHAT_SEAT_TAB_ENTER_CLASS, chatSeatTabClass } from './chat-seat-composer-classes'
+import { useNativeChatSurface } from './native-chat-surface-context'
 import { stripNativeChatImagePathNotes } from './native-chat-file-reference-display'
 import type { NativeChatMessageQueue } from './native-chat-view-types'
 
@@ -184,6 +185,7 @@ export function NativeChatQueueStrip({
   /** Puts the message back in the composer, replacing any draft. */
   restoreToComposer: (text: string, imagePaths: string[]) => void
 }): React.JSX.Element | null {
+  const { look } = useNativeChatSurface()
   if (queue.items.length === 0) {
     return null
   }
@@ -198,7 +200,7 @@ export function NativeChatQueueStrip({
   }
   return (
     <section
-      className={`${CHAT_SEAT_TAB_CLASS} ${CHAT_SEAT_TAB_ENTER_CLASS}`}
+      className={`${chatSeatTabClass(look)} ${CHAT_SEAT_TAB_ENTER_CLASS}`}
       aria-label={translate('components.native-chat.queue.label', 'Queued messages')}
     >
       <div className="flex h-9 items-center gap-2.5 px-3 py-1">

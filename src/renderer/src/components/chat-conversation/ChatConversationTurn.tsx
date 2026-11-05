@@ -17,7 +17,13 @@ import {
 } from '@/components/chat-thread/chat-turn-layout'
 import { useChatEngineTurn } from '@/components/chat-thread/use-chat-engine-thread'
 import { ChatDaySeparator, startsNewDay } from './ChatDaySeparator'
-import { CHAT_MESSAGE_ACTION_CLASS, ChatMessageTray, ChatRetryAction } from './ChatMessageTray'
+import {
+  CHAT_MESSAGE_ACTION_CLASS,
+  ChatMessageTray,
+  ChatReplyAction,
+  ChatRetryAction
+} from './ChatMessageTray'
+import { quoteExcerpt } from './chat-composer-quote'
 import { ChatProcessItems } from './ChatProcessItems'
 import { ChatTurnFoldPill } from './ChatProcessPills'
 import { ChatReplyBubble } from './ChatReplyBubble'
@@ -108,7 +114,7 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
 }): React.JSX.Element | null {
   const turn = useChatEngineTurn(props.threadId, props.turnId)
   const previous = useChatEngineTurn(props.threadId, props.previousTurnId ?? '')
-  const { onRetry } = useChatThreadContext()
+  const { onRetry, onQuote } = useChatThreadContext()
   // null until toggled, so the default follows the outcome.
   const [processOpen, setProcessOpen] = useState<boolean | null>(null)
   if (!turn) {
@@ -127,6 +133,7 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
     answer || retry ? (
       <ChatMessageTray>
         {answer && <NativeChatCopyButton text={answer} className={CHAT_MESSAGE_ACTION_CLASS} />}
+        {answer && onQuote && <ChatReplyAction onReply={() => onQuote(quoteExcerpt(answer))} />}
         {retry && turn.status !== 'error' && <ChatRetryAction onRetry={retry} />}
       </ChatMessageTray>
     ) : undefined

@@ -3,7 +3,7 @@
 // composer), and session state shows as one line above the composer.
 
 import type React from 'react'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
 import {
   deriveChatThreadTitle,
@@ -134,6 +134,8 @@ export function ChatThreadView({
     void send(firstMessage).catch(() => undefined)
   }, [firstMessage, thread.id, send])
 
+  // The reply quoted into the composer; it goes out with the next send.
+  const [quote, setQuote] = useState<string | null>(null)
   const retry = useCallback((text: string) => void send(text).catch(() => undefined), [send])
   const displayTitle = isChatWorkspaceBriefTitle(thread.title)
     ? deriveChatThreadTitle(thread.title)
@@ -152,6 +154,7 @@ export function ChatThreadView({
         <ChatConversationSurface
           threadId={thread.id}
           onRetry={retry}
+          onQuote={setQuote}
           label={displayTitle}
           header={<ChatConversationHeader thread={thread} workspace={workspace} />}
           empty={<ChatConversationEmpty workspace={workspace} fallbackName={displayTitle} />}
@@ -161,6 +164,8 @@ export function ChatThreadView({
               transport={transport}
               workingDirectory={workspace?.directories[0] ?? null}
               activeCollabProjectId={activeCollabProjectId}
+              quote={quote}
+              onClearQuote={() => setQuote(null)}
               notice={<ChatThreadSessionNotice thread={thread} workspace={workspace} />}
             />
           }

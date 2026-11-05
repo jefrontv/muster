@@ -8,6 +8,8 @@ export type ChatThreadContextValue = {
   onLinkClick?: CommentMarkdownLinkClickHandler
   /** Resends a failed turn's prompt. */
   onRetry?: (text: string) => void
+  /** Quotes a reply into the composer (Chat mode). */
+  onQuote?: (text: string) => void
 }
 
 export const ChatThreadContext = createContext<ChatThreadContextValue>({

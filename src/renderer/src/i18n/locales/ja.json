@@ -15491,6 +15491,11 @@
         "off": "Web access off",
         "on": "Web access on",
         "toggle": "Web access"
+      },
+      "quote": {
+        "replyingTo": "Replying to",
+        "remove": "Remove quote",
+        "reply": "Reply"
       }
     }
   },

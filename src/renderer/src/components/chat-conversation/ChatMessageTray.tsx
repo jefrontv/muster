@@ -2,7 +2,7 @@
 // Actions beside a message, shown on hover by opacity only so nothing shifts.
 
 import type React from 'react'
-import { RotateCcw } from 'lucide-react'
+import { CornerUpLeft, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 
@@ -30,6 +30,21 @@ export function ChatMessageTray(props: {
     >
       {props.children}
     </div>
+  )
+}
+
+export function ChatReplyAction(props: { onReply: () => void }): React.JSX.Element {
+  const label = translate('components.chat-conversation.quote.reply', 'Reply')
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={props.onReply}
+      className={CHAT_MESSAGE_ACTION_CLASS}
+    >
+      <CornerUpLeft aria-hidden />
+    </button>
   )
 }
 
