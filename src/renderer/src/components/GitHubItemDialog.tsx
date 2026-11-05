@@ -2908,8 +2908,8 @@ function CommentCodeContext({
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon-xs"
-                  className="size-7 border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
+                  size="icon-md"
+                  className="border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
                   onClick={() => {
                     setContextBefore(0)
                     setContextAfter(0)
@@ -2919,7 +2919,7 @@ function CommentCodeContext({
                     'Reset code context'
                   )}
                 >
-                  <UndoDot className="size-3.5" />
+                  <UndoDot />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -2932,8 +2932,8 @@ function CommentCodeContext({
               <Button
                 type="button"
                 variant="outline"
-                size="icon-xs"
-                className="size-7 border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
+                size="icon-md"
+                className="border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
                 disabled={!canExpandAbove}
                 onClick={() =>
                   setContextBefore((current) =>
@@ -2946,7 +2946,7 @@ function CommentCodeContext({
                   { value0: CODE_CONTEXT_EXPAND_STEP }
                 )}
               >
-                <ArrowUp className="size-3.5" />
+                <ArrowUp />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -2958,8 +2958,8 @@ function CommentCodeContext({
               <Button
                 type="button"
                 variant="outline"
-                size="icon-xs"
-                className="size-7 border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
+                size="icon-md"
+                className="border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
                 disabled={!canExpandBelow}
                 onClick={() =>
                   setContextAfter((current) =>
@@ -2972,7 +2972,7 @@ function CommentCodeContext({
                   { value0: CODE_CONTEXT_EXPAND_STEP }
                 )}
               >
-                <ArrowDown className="size-3.5" />
+                <ArrowDown />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -2984,8 +2984,8 @@ function CommentCodeContext({
               <Button
                 type="button"
                 variant="outline"
-                size="icon-xs"
-                className="size-7 border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
+                size="icon-md"
+                className="border-border/55 bg-background/35 text-muted-foreground shadow-none hover:bg-accent hover:text-accent-foreground"
                 disabled={!canExpandBlock}
                 onClick={() => {
                   setContextBefore((current) =>
@@ -2997,7 +2997,7 @@ function CommentCodeContext({
                 }}
                 aria-label={blockTooltip}
               >
-                <Braces className="size-3.5" />
+                <Braces />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{blockTooltip}</TooltipContent>
@@ -3391,8 +3391,7 @@ function ConversationTab({
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon-xs"
-                className="size-7"
+                size="icon-md"
                 onClick={() =>
                   setReplyingTo((current) => (current === comment.id ? null : comment.id))
                 }
@@ -3401,7 +3400,7 @@ function ConversationTab({
                   'Reply to comment'
                 )}
               >
-                <MessageSquarePlus className="size-3.5" />
+                <MessageSquarePlus />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -3414,15 +3413,14 @@ function ConversationTab({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-xs"
-                  className="size-7"
+                  size="icon-md"
                   onClick={() => window.api.shell.openUrl(comment.url)}
                   aria-label={translate(
                     'auto.components.GitHubItemDialog.a154ec5224',
                     'Open comment on GitHub'
                   )}
                 >
-                  <ExternalLink className="size-3.5" />
+                  <ExternalLink />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -3710,8 +3708,8 @@ function ConversationTab({
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon-xs"
-                      className="ml-auto size-7"
+                      size="icon-md"
+                      className="ml-auto"
                       onClick={() => {
                         setBodyDraft(body)
                         setBodyEditing(true)
@@ -3721,7 +3719,7 @@ function ConversationTab({
                         'Edit description'
                       )}
                     >
-                      <Pencil className="size-3.5" />
+                      <Pencil />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -4778,8 +4776,8 @@ function ChecksTab({
         <Button
           type="button"
           variant="ghost"
-          size="icon-xs"
-          className="size-7 shrink-0"
+          size="icon-md"
+          className="shrink-0"
           disabled={!canUseChecksRepoContext || refreshing}
           onClick={() => void handleRefresh()}
           aria-label={translate('auto.components.GitHubItemDialog.9a1004fc76', 'Refresh checks')}
@@ -6026,8 +6024,7 @@ function GHEditSection({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-xs"
-                  className="size-7"
+                  size="icon-md"
                   onClick={() => {
                     setDuplicatePickerOpen(false)
                     setDuplicateSearch('')
@@ -6035,7 +6032,7 @@ function GHEditSection({
                   }}
                   aria-label={translate('auto.components.TaskPage.backToCloseReasons', 'Back')}
                 >
-                  <ChevronLeft className="size-4" />
+                  <ChevronLeft />
                 </Button>
                 <span className="min-w-0 truncate text-[12px] font-semibold">
                   {duplicatePickerTitle}

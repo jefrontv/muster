@@ -120,7 +120,7 @@ function OpenInMenuRow({
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon-md"
             onClick={onEditToggle}
             title={
               editing
@@ -140,25 +140,25 @@ function OpenInMenuRow({
             }
             aria-expanded={editing}
             className={cn(
-              'size-7 text-muted-foreground hover:text-foreground',
+              'text-muted-foreground hover:text-foreground',
               editing && 'text-foreground'
             )}
           >
-            <Pencil className="size-3.5" />
+            <Pencil />
           </Button>
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon-md"
             onClick={onRemove}
             title={translate('auto.components.settings.OpenInMenuSetting.a261931d29', 'Remove app')}
             aria-label={translate(
               'auto.components.settings.OpenInMenuSetting.a261931d29',
               'Remove app'
             )}
-            className="size-7 text-muted-foreground hover:text-destructive"
+            className="text-muted-foreground hover:text-destructive"
           >
-            <Trash2 className="size-3.5" />
+            <Trash2 />
           </Button>
         </div>
       </div>

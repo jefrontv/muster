@@ -1425,15 +1425,14 @@ export default function LinearItemDrawer({
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="size-7"
+                        size="icon-md"
                         onClick={() => window.api.shell.openUrl(displayed.url)}
                         aria-label={translate(
                           'auto.components.LinearItemDrawer.0190b760c1',
                           'Open on Linear'
                         )}
                       >
-                        <ExternalLink className="size-4" />
+                        <ExternalLink />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={6}>
@@ -1444,15 +1443,14 @@ export default function LinearItemDrawer({
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="size-7"
+                        size="icon-md"
                         onClick={onClose}
                         aria-label={translate(
                           'auto.components.LinearItemDrawer.858d0630da',
                           'Close preview'
                         )}
                       >
-                        <X className="size-4" />
+                        <X />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={6}>

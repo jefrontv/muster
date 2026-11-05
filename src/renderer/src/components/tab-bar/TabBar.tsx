@@ -1031,15 +1031,15 @@ function TabBarInner({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon-md"
             // Why: 28px matches the quick commands split beside it.
-            className="ml-2 my-auto size-7 text-muted-foreground"
+            className="ml-2 my-auto text-muted-foreground"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             title={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
             // Why: aria-label matches the tooltip so E2E can locate the "+" via getByRole('button', { name: 'New tab' }).
             aria-label={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
           >
-            <Plus className="size-3.5" />
+            <Plus />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

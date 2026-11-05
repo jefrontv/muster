@@ -290,8 +290,7 @@ function NotebookHeaderButton({
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="size-7"
+          size="icon-md"
           aria-label={label}
           disabled={disabled}
           onClick={onClick}

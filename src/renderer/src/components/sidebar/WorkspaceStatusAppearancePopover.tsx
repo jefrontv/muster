@@ -32,8 +32,8 @@ export default function WorkspaceStatusAppearancePopover({
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
-              className="relative size-7"
+              size="icon-md"
+              className="relative"
               aria-label={translate(
                 'auto.components.sidebar.WorkspaceStatusAppearancePopover.ccbd1e2c69',
                 'Customize {{value0}} appearance',

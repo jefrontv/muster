@@ -64,14 +64,14 @@ export function SourceControlHeaderOverflowMenu({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-xs"
-                className="size-7 text-muted-foreground hover:text-foreground"
+                size="icon-md"
+                className="text-muted-foreground hover:text-foreground"
                 aria-label={translate(
                   'auto.components.right.sidebar.SourceControl.f71c4a8d90',
                   'More source control actions'
                 )}
               >
-                <MoreHorizontal className="size-3.5" />
+                <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>
           </span>

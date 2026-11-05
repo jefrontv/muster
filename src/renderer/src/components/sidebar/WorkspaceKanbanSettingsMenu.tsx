@@ -145,8 +145,7 @@ export default function WorkspaceKanbanSettingsMenu({
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon-xs"
-                    className="size-7"
+                    size="icon-md"
                     disabled={index === 0}
                     onClick={() => onMoveStatus(status.id, -1)}
                     aria-label={translate(
@@ -155,13 +154,12 @@ export default function WorkspaceKanbanSettingsMenu({
                       { value0: status.label }
                     )}
                   >
-                    <ArrowUp className="size-3.5" />
+                    <ArrowUp />
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon-xs"
-                    className="size-7"
+                    size="icon-md"
                     disabled={index === workspaceStatuses.length - 1}
                     onClick={() => onMoveStatus(status.id, 1)}
                     aria-label={translate(
@@ -170,13 +168,13 @@ export default function WorkspaceKanbanSettingsMenu({
                       { value0: status.label }
                     )}
                   >
-                    <ArrowDown className="size-3.5" />
+                    <ArrowDown />
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon-xs"
-                    className="size-7 text-muted-foreground hover:text-destructive"
+                    size="icon-md"
+                    className="text-muted-foreground hover:text-destructive"
                     disabled={workspaceStatuses.length <= 1}
                     onClick={() => onRemoveStatus(status.id)}
                     aria-label={translate(
@@ -185,7 +183,7 @@ export default function WorkspaceKanbanSettingsMenu({
                       { value0: status.label }
                     )}
                   >
-                    <Trash2 className="size-3.5" />
+                    <Trash2 />
                   </Button>
                 </div>
               </div>

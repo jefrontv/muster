@@ -1037,12 +1037,12 @@ export function RuntimeEnvironmentsPane({
                           <Button
                             type="button"
                             variant="ghost"
-                            size="icon"
+                            size="icon-md"
                             onClick={() => {
                               setRemoveError(null)
                               setPendingRemove(environment)
                             }}
-                            className="size-7 text-muted-foreground hover:text-status-danger"
+                            className="text-muted-foreground hover:text-status-danger"
                             disabled={isBusy}
                             aria-label={translate(
                               'auto.components.settings.RuntimeEnvironmentsPane.aeb26635d2',
@@ -1051,9 +1051,9 @@ export function RuntimeEnvironmentsPane({
                             )}
                           >
                             {removingId === environment.id ? (
-                              <Loader2 className="size-3 animate-spin" />
+                              <Loader2 className="animate-spin" />
                             ) : (
-                              <Trash2 className="size-3" />
+                              <Trash2 />
                             )}
                           </Button>
                         </div>

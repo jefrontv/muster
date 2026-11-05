@@ -180,15 +180,15 @@ export function UsagePercentageDisplayChangeNotice({
               </div>
               <Button
                 variant="ghost"
-                size="icon"
-                className="size-7 shrink-0"
+                size="icon-md"
+                className="shrink-0"
                 onClick={dismiss}
                 aria-label={translate(
                   'auto.components.status.bar.UsagePercentageDisplayChangeNotice.dismiss',
                   'Dismiss'
                 )}
               >
-                <X className="size-3.5" />
+                <X />
               </Button>
             </div>
             <div className="mt-3 flex gap-2">

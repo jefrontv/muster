@@ -98,12 +98,12 @@ function CompactCardContent({
       {onClose && (
         <Button
           variant="ghost"
-          size="icon"
-          className="size-7 shrink-0"
+          size="icon-md"
+          className="shrink-0"
           onClick={onClose}
           aria-label={translate('auto.components.UpdateCard.a726967bd3', 'Dismiss')}
         >
-          <X className="size-3.5" />
+          <X />
         </Button>
       )}
     </div>
@@ -621,12 +621,12 @@ export function UpdateCard() {
             </div>
             <Button
               variant="ghost"
-              size="icon"
-              className="size-7 shrink-0"
+              size="icon-md"
+              className="shrink-0"
               onClick={markReassuranceSeen}
               aria-label={translate('auto.components.UpdateCard.7274ef6e59', 'Dismiss tip')}
             >
-              <X className="size-3.5" />
+              <X />
             </Button>
           </div>
         </Card>
@@ -682,12 +682,12 @@ function RichCardContent({
         </h3>
         <Button
           variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 min-w-[44px] min-h-[44px] -m-2"
+          size="icon-md"
+          className="shrink-0 min-w-[44px] min-h-[44px] -m-2"
           onClick={onClose}
           aria-label={translate('auto.components.UpdateCard.318d3b4bc7', 'Dismiss update')}
         >
-          <X className="size-3.5" />
+          <X />
         </Button>
       </div>
 
@@ -762,12 +762,12 @@ function SimpleCardContent({
         </h3>
         <Button
           variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 min-w-[44px] min-h-[44px] -m-2"
+          size="icon-md"
+          className="shrink-0 min-w-[44px] min-h-[44px] -m-2"
           onClick={onClose}
           aria-label={translate('auto.components.UpdateCard.318d3b4bc7', 'Dismiss update')}
         >
-          <X className="size-3.5" />
+          <X />
         </Button>
       </div>
 
@@ -841,12 +841,12 @@ function DownloadingContent({
         )}
         <Button
           variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 min-w-[44px] min-h-[44px] -m-2"
+          size="icon-md"
+          className="shrink-0 min-w-[44px] min-h-[44px] -m-2"
           onClick={onCollapse}
           aria-label={translate('auto.components.UpdateCard.8acbdd3961', 'Minimize to status bar')}
         >
-          <Minus className="size-3.5" />
+          <Minus />
         </Button>
       </div>
 
@@ -956,12 +956,12 @@ function ErrorCardContent({
         </div>
         <Button
           variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 min-w-[44px] min-h-[44px] -m-2"
+          size="icon-md"
+          className="shrink-0 min-w-[44px] min-h-[44px] -m-2"
           onClick={onClose}
           aria-label={translate('auto.components.UpdateCard.8acbdd3961', 'Minimize to status bar')}
         >
-          <Minus className="size-3.5" />
+          <Minus />
         </Button>
       </div>
 
@@ -1054,12 +1054,12 @@ function ReadyToInstallContent({
         </h3>
         <Button
           variant="ghost"
-          size="icon"
-          className="size-7 shrink-0 min-w-[44px] min-h-[44px] -m-2"
+          size="icon-md"
+          className="shrink-0 min-w-[44px] min-h-[44px] -m-2"
           onClick={onClose}
           aria-label={translate('auto.components.UpdateCard.8acbdd3961', 'Minimize to status bar')}
         >
-          <Minus className="size-3.5" />
+          <Minus />
         </Button>
       </div>
 

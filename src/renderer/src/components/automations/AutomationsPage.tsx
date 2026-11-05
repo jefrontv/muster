@@ -2137,15 +2137,15 @@ export default function AutomationsPage(): React.JSX.Element {
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon"
-                className="size-7 rounded-full"
+                size="icon-md"
+                className="rounded-full"
                 onClick={closeAutomationsPage}
                 aria-label={translate(
                   'auto.components.automations.AutomationsPage.67c7ff795b',
                   'Close automations'
                 )}
               >
-                <X className="size-4" />
+                <X />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={6}>

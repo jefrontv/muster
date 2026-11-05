@@ -224,10 +224,10 @@ export function SourceControlHeaderToolbar({
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-md"
               data-testid="source-control-filter-toggle"
               className={cn(
-                'relative size-7 text-muted-foreground',
+                'relative text-muted-foreground',
                 normalizedFilter && 'bg-foreground/[0.07] text-foreground'
               )}
               onClick={expandFilter}
@@ -235,7 +235,7 @@ export function SourceControlHeaderToolbar({
               title={filterToggleTitle}
               aria-expanded={false}
             >
-              <Search className="size-3.5" />
+              <Search />
               {normalizedFilter ? (
                 <span className="absolute right-1 top-1 size-1.5 rounded-full bg-foreground" />
               ) : null}
@@ -274,8 +274,8 @@ export function SourceControlHeaderToolbar({
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
-              className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+              size="icon-md"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
               aria-label={translate(
                 'auto.components.right.sidebar.SourceControl.d4f8c2a901',
                 'Clear and close filter'
@@ -286,7 +286,7 @@ export function SourceControlHeaderToolbar({
               )}
               onClick={clearAndCollapseFilter}
             >
-              <X className="size-3.5" />
+              <X />
             </Button>
           </>
         )}

@@ -52,15 +52,15 @@ export function MobilePageToolbar({
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
-            size="icon"
-            className="mp-page-toolbar-close size-7 shrink-0 rounded-full"
+            size="icon-md"
+            className="mp-page-toolbar-close shrink-0 rounded-full"
             onClick={onClose}
             aria-label={translate(
               'auto.components.mobile.MobilePageToolbar.9883b58693',
               'Close Muster Mobile'
             )}
           >
-            <X className="size-4" />
+            <X />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" sideOffset={6}>

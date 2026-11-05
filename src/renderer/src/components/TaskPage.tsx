@@ -1363,8 +1363,7 @@ function GHStatusCell({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-xs"
-                className="size-7"
+                size="icon-md"
                 onClick={() => {
                   setDuplicatePickerOpen(false)
                   setDuplicateSearch('')
@@ -1372,7 +1371,7 @@ function GHStatusCell({
                 }}
                 aria-label={translate('auto.components.TaskPage.backToCloseReasons', 'Back')}
               >
-                <ChevronLeft className="size-4" />
+                <ChevronLeft />
               </Button>
               <span className="min-w-0 truncate text-[12px] font-semibold">
                 {duplicatePickerTitle}

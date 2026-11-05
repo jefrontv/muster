@@ -217,8 +217,8 @@ export function BrowserProfileRow({
         {isDefault ? (
           <Button
             variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-destructive"
+            size="icon-md"
+            className="text-muted-foreground hover:text-destructive"
             disabled={!profile.source}
             aria-label={translate(
               'auto.components.settings.BrowserProfileRow.clearCookies',
@@ -240,13 +240,13 @@ export function BrowserProfileRow({
               }
             }}
           >
-            <Trash2 className="size-3" />
+            <Trash2 />
           </Button>
         ) : (
           <Button
             variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-destructive"
+            size="icon-md"
+            className="text-muted-foreground hover:text-destructive"
             aria-label={translate(
               'auto.components.settings.BrowserProfileRow.removeProfile',
               'Remove profile'
@@ -268,7 +268,7 @@ export function BrowserProfileRow({
               }
             }}
           >
-            <Trash2 className="size-3" />
+            <Trash2 />
           </Button>
         )}
       </div>

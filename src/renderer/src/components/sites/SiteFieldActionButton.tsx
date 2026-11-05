@@ -32,8 +32,8 @@ export function SiteFieldActionButton({
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground"
+            size="icon-md"
+            className="text-muted-foreground hover:text-foreground"
             aria-label={ariaLabel}
             onClick={onClick}
           >

@@ -127,15 +127,15 @@ export default function SetupGuideModal(): JSX.Element | null {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-xs"
+                size="icon-md"
                 aria-label={translate(
                   'auto.components.setup.guide.SetupGuideModal.f3b5ffb2a6',
                   'Hide checklist from sidebar'
                 )}
                 onClick={handleHideFromSidebar}
-                className="size-7 rounded-full text-muted-foreground"
+                className="rounded-full text-muted-foreground"
               >
-                <EyeOff className="size-3.5" />
+                <EyeOff />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>
@@ -149,11 +149,11 @@ export default function SetupGuideModal(): JSX.Element | null {
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-md"
               aria-label={translate('auto.components.ui.dialog.f26c4baeda', 'Close')}
-              className="size-7 rounded-full text-muted-foreground"
+              className="rounded-full text-muted-foreground"
             >
-              <X className="size-3.5" />
+              <X />
             </Button>
           </DialogClose>
         </div>

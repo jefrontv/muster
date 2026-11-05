@@ -1064,17 +1064,12 @@ export default function GitLabItemDialog({
                 </div>
                 <Button
                   variant="ghost"
-                  size="icon-sm"
+                  size="icon-md"
                   aria-label={translate('auto.components.GitLabItemDialog.b3c156dd51', 'Refresh')}
                   disabled={loading}
                   onClick={handleRefresh}
-                  className="size-7"
                 >
-                  {loading ? (
-                    <LoaderCircle className="size-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="size-3.5" />
-                  )}
+                  {loading ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
                 </Button>
               </div>
             </header>

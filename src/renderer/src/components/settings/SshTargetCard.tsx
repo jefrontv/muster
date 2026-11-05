@@ -169,9 +169,9 @@ export function SshTargetCard({
       <TooltipTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-md"
           onClick={handleTerminateSessions}
-          className="size-7 text-muted-foreground hover:text-status-danger"
+          className="text-muted-foreground hover:text-status-danger"
           disabled={hasActionInFlight}
           aria-label={
             terminateInFlight
@@ -185,11 +185,7 @@ export function SshTargetCard({
                 )
           }
         >
-          {terminateInFlight ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : (
-            <CircleStop className="size-3" />
-          )}
+          {terminateInFlight ? <Loader2 className="animate-spin" /> : <CircleStop />}
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={4}>
@@ -203,9 +199,9 @@ export function SshTargetCard({
       <TooltipTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-md"
           onClick={handleResetRelay}
-          className="size-7 text-muted-foreground hover:text-status-danger"
+          className="text-muted-foreground hover:text-status-danger"
           disabled={hasActionInFlight}
           aria-label={
             resetInFlight
@@ -216,11 +212,7 @@ export function SshTargetCard({
               : translate('auto.components.settings.SshTargetCard.762a48c662', 'Reset remote relay')
           }
         >
-          {resetInFlight ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : (
-            <RotateCcw className="size-3" />
-          )}
+          {resetInFlight ? <Loader2 className="animate-spin" /> : <RotateCcw />}
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={4}>
@@ -237,16 +229,15 @@ export function SshTargetCard({
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-md"
             onClick={() => onEdit(target)}
-            className="size-7"
             disabled={hasActionInFlight}
             aria-label={translate(
               'auto.components.settings.SshTargetCard.3d8af2949f',
               'Edit target'
             )}
           >
-            <Pencil className="size-3" />
+            <Pencil />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={4}>
@@ -257,9 +248,9 @@ export function SshTargetCard({
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-md"
             onClick={() => onRemove(target.id)}
-            className="size-7 text-muted-foreground hover:text-status-danger"
+            className="text-muted-foreground hover:text-status-danger"
             disabled={hasActionInFlight}
             aria-label={
               removeInFlight
@@ -267,11 +258,7 @@ export function SshTargetCard({
                 : translate('auto.components.settings.SshTargetCard.7f7b3d7ab4', 'Remove target')
             }
           >
-            {removeInFlight ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              <Trash2 className="size-3" />
-            )}
+            {removeInFlight ? <Loader2 className="animate-spin" /> : <Trash2 />}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={4}>

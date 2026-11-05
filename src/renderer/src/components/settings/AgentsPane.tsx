@@ -584,7 +584,7 @@ function AgentRow({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                size="icon-md"
                 onClick={() => setCmdOpen((prev) => !prev)}
                 aria-label={
                   cmdOpen
@@ -597,7 +597,7 @@ function AgentRow({
                         'Expand command override'
                       )
                 }
-                className="size-7 text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <ChevronDown
                   className={cn('size-3.5 transition-transform', cmdOpen && 'rotate-180')}
