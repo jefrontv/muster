@@ -1,47 +1,12 @@
-// The seated composer's look (Chat mode today, Code mode once it adopts `seat`),
-// shared by the thread composer and the empty-state hero so the two never drift.
-// Controls follow DSH's InputBar (docs/muster/2026-10-20-chat-dsh-visual-gap.md §1); insets run 12-16px, roomier than DSH's 8px.
+// The seated composer's look, shared by the thread composer, the Code panel and the
+// empty-state hero so they never drift.
 
-/** Keyboard-only focus for every seated control. */
-export const CHAT_SEAT_FOCUS_CLASS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent'
-
-/** The card: 12px top pad, 8px from editor to toolbar, no ring of its own. */
-export const CHAT_SEAT_CARD_CLASS =
-  'relative flex flex-col gap-2 rounded-chat-composer bg-chat-raised pt-3 text-sm leading-6 shadow-chat-soft'
-
-/** A tab tucked 12px under the card (-mb also cancels the seat's 6px gap), in the card's own surface so the two read as one. */
+/** A tab tucked 12px under the card (-mb also cancels the seat's 6px gap), with the card's hairline ring and 20px top corners. */
 export const CHAT_SEAT_TAB_CLASS =
-  'relative isolate mx-4 -mb-[18px] overflow-hidden rounded-t-[18px] bg-chat-raised pb-3 shadow-chat-hairline'
-
-/** The tab rising out from behind the card. */
-/** Chat mode's tab: the Bots card's hairline ring and 20px top corners. */
-export const CHAT_CONVERSATION_TAB_CLASS =
   'relative isolate mx-3 -mb-[18px] overflow-hidden rounded-t-[20px] bg-chat-raised pb-3 ring-[0.5px] ring-foreground/10'
-
-export const chatSeatTabClass = (look: 'conversation' | undefined): string =>
-  look === 'conversation' ? CHAT_CONVERSATION_TAB_CLASS : CHAT_SEAT_TAB_CLASS
 
 export const CHAT_SEAT_TAB_ENTER_CLASS =
   'animate-in fade-in-0 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none'
-
-/** Editor without its floor; callers add min-h-12 (docked) or min-h-[64px] (hero). */
-export const CHAT_SEAT_EDITOR_CLASS =
-  'scrollbar-sleek field-sizing-content mr-1 max-h-[336px] w-[calc(100%-4px)] resize-none bg-transparent pt-0.5 pr-3 pb-0 pl-4 text-sm leading-6 text-foreground caret-chat-accent outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap placeholder:text-chat-ink-caption disabled:cursor-not-allowed disabled:opacity-50'
-
-/** Attachment chips above the editor, inset to the editor's text edge. */
-export const CHAT_SEAT_ATTACHMENTS_CLASS = 'flex flex-wrap items-center gap-2 px-4'
-
-/** Toolbar row; a size container so its groups tighten when the card is narrow. */
-export const CHAT_SEAT_TOOLBAR_CLASS = '@container flex flex-wrap items-center gap-2 px-3 pb-3'
-
-export const CHAT_SEAT_TOOLBAR_ROW_CLASS =
-  'flex w-full flex-wrap items-center justify-between gap-3 @max-[560px]:gap-2'
-
-export const CHAT_SEAT_TOOLBAR_LEAD_CLASS = 'flex min-w-0 items-center gap-3 @max-[560px]:gap-2'
-
-export const CHAT_SEAT_TOOLBAR_TRAIL_CLASS =
-  'ml-auto flex shrink-0 items-center gap-3 @max-[560px]:gap-2'
 
 /** Attach: 28px filled circle; hover stacks a second hover tint inside it. */
 export const CHAT_SEAT_ATTACH_CLASS =
@@ -54,8 +19,7 @@ export const CHAT_SEAT_CHIP_CLASS =
 export const CHAT_SEAT_CHIP_CHEVRON_CLASS =
   'size-3 shrink-0 text-chat-ink-caption transition-transform duration-[120ms] ease-chat group-data-[state=open]/chip:rotate-180 motion-reduce:transition-none'
 
-// Chat mode's conversation look (the Bots composer): one row, controls either side of the editor.
-// Phase 9 makes these the only seat classes; until then Code mode never reads them.
+// The conversation row (the Bots composer): controls either side of the editor.
 
 /** One rounded row that wraps the editor onto its own line below 30rem. */
 export const CHAT_CONVERSATION_CARD_CLASS =

@@ -8,12 +8,11 @@ import type React from 'react'
 import { Bot, ChevronDown } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
-import { useNativeChatSurface } from './native-chat-surface-context'
 import { useChatThreadContext } from '@/components/chat-thread/chat-thread-context'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useAppStore } from '../../store'
 import type { AgentSubagentSnapshot } from '../../../../shared/agent-status-types'
-import { CHAT_SEAT_TAB_ENTER_CLASS, chatSeatTabClass } from './chat-seat-composer-classes'
+import { CHAT_SEAT_TAB_CLASS, CHAT_SEAT_TAB_ENTER_CLASS } from './chat-seat-composer-classes'
 import { formatNativeChatWorkingElapsed } from './native-chat-duration-format'
 import { useClearedSubagents } from './use-cleared-subagents'
 
@@ -130,7 +129,6 @@ function SubagentRow({
 }
 
 export function NativeChatSubagentTab({ paneKey }: { paneKey: string }): React.JSX.Element | null {
-  const { look } = useNativeChatSurface()
   const { openRosterAgent } = useChatThreadContext()
   const subagents = useAppStore((s) => s.agentStatusByPaneKey[paneKey]?.subagents)
   const paneState = useAppStore((s) => s.agentStatusByPaneKey[paneKey]?.state)
@@ -154,7 +152,7 @@ export function NativeChatSubagentTab({ paneKey }: { paneKey: string }): React.J
   return (
     <section
       className={cn(
-        chatSeatTabClass(look),
+        CHAT_SEAT_TAB_CLASS,
         leaving
           ? 'pointer-events-none animate-out fade-out-0 slide-out-to-bottom-4 fill-mode-forwards duration-200'
           : CHAT_SEAT_TAB_ENTER_CLASS

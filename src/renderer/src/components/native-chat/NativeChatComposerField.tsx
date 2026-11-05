@@ -11,10 +11,6 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useNativeChatSurface } from './native-chat-surface-context'
 import {
-  CHAT_SEAT_ATTACHMENTS_CLASS,
-  CHAT_SEAT_CARD_CLASS,
-  CHAT_SEAT_EDITOR_CLASS,
-  CHAT_SEAT_TOOLBAR_CLASS,
   CHAT_CONVERSATION_ATTACHMENTS_CLASS,
   CHAT_CONVERSATION_CARD_CLASS,
   CHAT_CONVERSATION_EDITOR_CLASS
@@ -144,8 +140,7 @@ export function NativeChatComposerField({
   onAttachTask,
   activeCollabProjectId
 }: NativeChatComposerFieldProps): React.JSX.Element {
-  const { seat, look } = useNativeChatSurface()
-  const conversation = seat === true && look === 'conversation'
+  const { seat } = useNativeChatSurface()
   const focusOnReturnRef = useRef(false)
   // Plan review's Discuss hands the reply to the composer once the card is gone.
   useEffect(() => {
@@ -192,11 +187,9 @@ export function NativeChatComposerField({
             // Why: always-on hairline (token-level border, not focus ring) — no
             // focus/click border flash. The box is a container, not a focus target.
             className={
-              conversation
+              seat
                 ? CHAT_CONVERSATION_CARD_CLASS
-                : seat
-                  ? CHAT_SEAT_CARD_CLASS
-                  : 'rounded-lg border border-border p-1.5 shadow-xs bg-muted/50 dark:bg-input/40'
+                : 'rounded-lg border border-border p-1.5 shadow-xs bg-muted/50 dark:bg-input/40'
             }
           >
             {approval ? <NativeChatApprovalPanel approval={approval} /> : null}
@@ -205,11 +198,9 @@ export function NativeChatComposerField({
             taskAttachments.length > 0 ? (
               <div
                 className={
-                  conversation
+                  seat
                     ? CHAT_CONVERSATION_ATTACHMENTS_CLASS
-                    : seat
-                      ? CHAT_SEAT_ATTACHMENTS_CLASS
-                      : 'mb-2 flex flex-wrap items-center gap-2 px-1'
+                    : 'mb-2 flex flex-wrap items-center gap-2 px-1'
                 }
               >
                 {taskAttachments.map((task) => (
@@ -290,7 +281,7 @@ export function NativeChatComposerField({
               ref={textareaRef}
               value={draft}
               disabled={disabled || approval !== null}
-              rows={conversation ? 1 : 2}
+              rows={seat ? 1 : 2}
               onChange={(e) => onDraftChange(e.target.value, e.currentTarget)}
               onKeyDown={onKeyDown}
               onCompositionStart={onCompositionStart}
@@ -318,23 +309,13 @@ export function NativeChatComposerField({
               // field-sizing grows the box with the draft between min/max; past
               // max-height it scrolls, and scrollbar-sleek keeps that gutter quiet.
               className={cn(
-                conversation
+                seat
                   ? CHAT_CONVERSATION_EDITOR_CLASS
-                  : seat
-                    ? CHAT_SEAT_EDITOR_CLASS
-                    : 'scrollbar-sleek field-sizing-content max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
-                conversation ? undefined : seat ? 'min-h-12' : 'min-h-12 pointer-coarse:min-h-14'
+                  : 'scrollbar-sleek field-sizing-content max-h-64 w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                !seat && 'min-h-12 pointer-coarse:min-h-14'
               )}
             />
-            <div
-              className={
-                conversation
-                  ? 'contents'
-                  : seat
-                    ? CHAT_SEAT_TOOLBAR_CLASS
-                    : 'flex flex-wrap items-center gap-2 pt-0.5'
-              }
-            >
+            <div className={seat ? 'contents' : 'flex flex-wrap items-center gap-2 pt-0.5'}>
               {approval ? (
                 <NativeChatApprovalActions approval={approval} />
               ) : (

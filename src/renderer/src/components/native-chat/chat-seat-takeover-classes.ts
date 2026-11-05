@@ -1,16 +1,16 @@
 // The seated takeover cards (question, approval, plan review) that replace the
 // composer. Values follow DSH; see docs/muster/2026-10-20-chat-dsh-visual-gap.md §4-5.
 
-/** Inset 16px into the composer column, so takeovers sit at the text column's width. */
-export const CHAT_TAKEOVER_FRAME_CLASS = 'mx-4 shrink-0'
+/** The takeover spans the composer column. */
+export const CHAT_TAKEOVER_FRAME_CLASS = 'shrink-0'
 
-/** Question and plan review card: raised fill, panel elevation, no border. */
+/** Question and plan review card: 20px radius, hairline ring, no shadow. */
 export const CHAT_TAKEOVER_CARD_CLASS =
-  'flex flex-col overflow-hidden rounded-chat-bubble bg-chat-raised text-foreground shadow-chat-panel'
+  'flex flex-col overflow-hidden rounded-[20px] bg-chat-raised text-foreground ring-[0.5px] ring-foreground/10'
 
-/** Approval card: the amber border replaces the hairline. */
+/** Approval card: an amber ring replaces the hairline. */
 export const CHAT_TAKEOVER_WARN_CARD_CLASS =
-  'flex flex-col overflow-hidden rounded-chat-bubble border border-chat-warn bg-chat-raised text-foreground shadow-(--chat-panel)'
+  'flex flex-col overflow-hidden rounded-[20px] bg-chat-raised text-foreground ring-1 ring-chat-warn/70'
 
 /** The tinted "Waiting" / "Plan review" band across the card's top. */
 export const CHAT_TAKEOVER_STRIP_CLASS =
@@ -32,29 +32,3 @@ export const CHAT_TAKEOVER_OUTLINE_CLASS =
 /** 24px round icon button: minimise, close, pager chevrons. */
 export const CHAT_TAKEOVER_ICON_BUTTON_CLASS =
   'grid size-6 shrink-0 place-items-center rounded-full text-chat-ink-tertiary transition-colors duration-100 ease-chat enabled:hover:bg-chat-hover enabled:hover:text-foreground disabled:cursor-default disabled:text-chat-ink-caption focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent'
-
-/** Chat mode's Bots card: 20px radius, hairline ring, resting on the page without a shadow. */
-const CONVERSATION_CARD =
-  'flex flex-col overflow-hidden rounded-[20px] bg-chat-raised text-foreground ring-[0.5px] ring-foreground/10'
-
-/** Frame and card recipes for a look; Code mode (no look) keeps the DSH values above. */
-export function chatTakeoverClasses(look: 'conversation' | undefined): {
-  frame: string
-  card: string
-  warnCard: string
-} {
-  return look === 'conversation'
-    ? {
-        frame: 'shrink-0',
-        card: CONVERSATION_CARD,
-        warnCard: CONVERSATION_CARD.replace(
-          'ring-[0.5px] ring-foreground/10',
-          'ring-1 ring-chat-warn/70'
-        )
-      }
-    : {
-        frame: CHAT_TAKEOVER_FRAME_CLASS,
-        card: CHAT_TAKEOVER_CARD_CLASS,
-        warnCard: CHAT_TAKEOVER_WARN_CARD_CLASS
-      }
-}

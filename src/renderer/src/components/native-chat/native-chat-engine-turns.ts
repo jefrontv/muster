@@ -1,5 +1,5 @@
 // Code mode's conversation (transcript, hook preview and optimistic sends) as
-// chat-engine turns, so it draws on the same ChatThreadSurface as Chat mode.
+// chat-engine turns, so it draws on the same ChatConversationSurface as Chat mode.
 // Pure; previous output goes back in so ids hold and unchanged turns keep identity.
 
 import type { ChatEngineThreadMeta, ChatEngineTurn } from '../../../../shared/chat-engine-types'

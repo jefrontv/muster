@@ -78,7 +78,6 @@ export function ChatThreadComposerSeat(props: {
     () => ({
       ...surface,
       seat: true,
-      look: 'conversation' as const,
       composerLeadSlot: (
         <>
           {setFullAccess ? (

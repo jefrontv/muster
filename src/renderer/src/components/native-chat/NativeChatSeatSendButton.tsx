@@ -1,9 +1,7 @@
-// The seated composer's Send / Stop: one 34px accent circle whose glyph swaps,
+// The seated composer's Send / Stop: one 32px circle whose glyph swaps,
 // so starting or stopping a turn never moves the toolbar.
 
 import type React from 'react'
-import { cn } from '@/lib/utils'
-import { useNativeChatSurface } from './native-chat-surface-context'
 
 export function NativeChatSeatSendButton(props: {
   stop: boolean
@@ -11,18 +9,13 @@ export function NativeChatSeatSendButton(props: {
   disabled: boolean
   onClick?: () => void
 }): React.JSX.Element {
-  const { look } = useNativeChatSurface()
   return (
     <button
       type="button"
       aria-label={props.label}
       disabled={props.disabled}
       onClick={props.onClick}
-      // Code's seat lifts it 2px like DSH; Chat's row centres every control at 32px.
-      className={cn(
-        look === 'conversation' ? 'size-8' : 'size-[34px] -translate-y-0.5',
-        'flex shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors duration-100 ease-chat enabled:hover:bg-foreground/85 disabled:cursor-default disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent focus-visible:ring-offset-2 focus-visible:ring-offset-chat-raised'
-      )}
+      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-colors duration-100 ease-chat enabled:hover:bg-foreground/85 disabled:cursor-default disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent focus-visible:ring-offset-2 focus-visible:ring-offset-chat-raised"
     >
       {props.stop ? (
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>

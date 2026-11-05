@@ -4,8 +4,8 @@ import type React from 'react'
 import { CornerUpLeft, X } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import {
-  CHAT_SEAT_TAB_ENTER_CLASS,
-  chatSeatTabClass
+  CHAT_SEAT_TAB_CLASS,
+  CHAT_SEAT_TAB_ENTER_CLASS
 } from '@/components/native-chat/chat-seat-composer-classes'
 
 export function ChatComposerQuoteStrip(props: {
@@ -14,10 +14,7 @@ export function ChatComposerQuoteStrip(props: {
 }): React.JSX.Element {
   const preview = props.quote.replace(/\s+/g, ' ')
   return (
-    <div
-      data-composer-quote=""
-      className={`${chatSeatTabClass('conversation')} ${CHAT_SEAT_TAB_ENTER_CLASS}`}
-    >
+    <div data-composer-quote="" className={`${CHAT_SEAT_TAB_CLASS} ${CHAT_SEAT_TAB_ENTER_CLASS}`}>
       <div className="flex h-9 items-center gap-2 px-3 py-1 text-[13px] leading-6">
         <CornerUpLeft className="size-3.5 shrink-0 text-chat-ink-tertiary" aria-hidden />
         <span className="shrink-0 text-chat-ink-secondary">

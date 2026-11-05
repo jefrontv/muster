@@ -81,7 +81,7 @@ describe('NativeChatSeatTakeover approval card', () => {
   it('shows the waiting strip, the headline and the command', () => {
     render(bash)
     const card = container.querySelector('section')!
-    expect(card.className).toContain('border-chat-warn')
+    expect(card.className).toContain('ring-chat-warn')
     expect(container.textContent).toContain('Waiting for approval')
     expect(container.querySelector('pre')?.textContent).toBe('rm -rf build')
     expect(container.querySelector('pre')?.className).toContain('break-all')

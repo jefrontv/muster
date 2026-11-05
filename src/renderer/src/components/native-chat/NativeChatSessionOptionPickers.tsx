@@ -265,7 +265,6 @@ function NativeChatSessionOptionPickersInner({
   const [pendingId, setPendingId] = useState<string | null>(null)
   const latestSighting = useClaudeModelSightings()
   const settingsEffort = useClaudeSettingsEffortLevel(chatThread)
-  const { look } = useNativeChatSurface()
   // Uncontrolled when no slot is supplied, so a caller that does not care keeps the old behaviour.
   const menuProps: { open?: boolean; onOpenChange?: (open: boolean) => void } = onOpenPickerChange
     ? {
@@ -321,11 +320,7 @@ function NativeChatSessionOptionPickersInner({
         />
         {options.map((descriptor) => {
           const reason = nativeChatSessionOptionDisabledReason(descriptor.disabledReason)
-          if (
-            look === 'conversation' &&
-            descriptor.id === 'effort' &&
-            descriptor.kind.type === 'select'
-          ) {
+          if (descriptor.id === 'effort' && descriptor.kind.type === 'select') {
             return (
               <div key={descriptor.id}>
                 <DropdownMenuSeparator />

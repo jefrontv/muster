@@ -1,5 +1,5 @@
 // Feeds Code mode's conversation into the chat engine store under a per-leaf
-// thread id, so ChatThreadSurface draws it. The entry goes when the view does.
+// thread id, so ChatConversationSurface draws it. The entry goes when the view does.
 
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { translate } from '@/i18n/i18n'

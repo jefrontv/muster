@@ -23,7 +23,6 @@ src/renderer/src/components/chat-conversation/ChatTableViewport.tsx 2
 src/renderer/src/components/chat-mode/ChatModeHeroTaskShortcuts.tsx 1
 src/renderer/src/components/chat-thread/ChatDiffBanner.tsx 1
 src/renderer/src/components/chat-thread/ChatMarkdownCodeBlock.tsx 1
-src/renderer/src/components/chat-thread/ChatTurnView.tsx 1
 src/renderer/src/components/dashboard-popout/AgentKanbanCard.tsx 1
 src/renderer/src/components/dashboard/DashboardAgentChildDisclosure.tsx 1
 src/renderer/src/components/editor/combined-diff-file-tree-row.tsx 2

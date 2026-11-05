@@ -18,8 +18,6 @@ export type NativeChatSurfaceContextValue = {
   reportedModel: string | null
   /** The composer sits in the chat engine surface's seat, which owns its width. */
   seat?: boolean
-  /** Chat mode's Bots look: a single-row composer. Code mode leaves it unset. */
-  look?: 'conversation'
   /** Chat-only controls the conversation composer places after attach (access, web). */
   composerLeadSlot?: React.ReactNode
 }

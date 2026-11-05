@@ -39,8 +39,7 @@ const HERO_SURFACE: NativeChatSurfaceContextValue = {
   openFile: null,
   chatThread: true,
   reportedModel: null,
-  seat: true,
-  look: 'conversation'
+  seat: true
 }
 
 /** Fetched once per app run; undefined = not asked yet (distinct from "no name"). */
