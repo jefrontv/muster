@@ -4,8 +4,10 @@
 // control requests, replays user messages, streams a reply, asks permission for
 // one Edit, and returns a structured patch. Reads --permission-mode, --resume and --fork-session;
 // other flags are ignored. Under the e2e's isolated HOME (or FAKE_CLAUDE_TRANSCRIPT_DIR) it also
-// writes a transcript, as the CLI does. FAKE_CLAUDE_SCENARIO=full adds a read, a command, a web
-// search and a subagent before the edit; a prompt containing "fail" ends the turn with an error.
+// writes a transcript, as the CLI does. FAKE_CLAUDE_SCENARIO=full (or "full" in the prompt) adds a
+// read, a command, a web search and a subagent before the edit. Prompt words: "fail" ends the turn
+// with an error, "slowly" streams the first reply a word at a time, "hang" reads style.css until
+// an interrupt control request stops the turn.
 
 const fs = require('node:fs')
 const os = require('node:os')
@@ -35,6 +37,8 @@ const launchMode = flag('--permission-mode') ?? 'default'
 let permissionMode = launchMode === 'manual' ? 'default' : launchMode
 /** Resolves with the control_response to our can_use_tool request. */
 let awaitingVerdict = null
+/** Resolves when an interrupt control request arrives during a hanging turn. */
+let awaitingInterrupt = null
 
 /** The transcript line a stream record leaves behind, or null for partials and control traffic. */
 function transcriptLine(record) {
@@ -102,12 +106,18 @@ function control(record) {
       })
     case 'get_context_usage':
       return reply(record, { totalTokens: 42_000, maxTokens: 200_000, percentage: 21 })
+    case 'interrupt': {
+      reply(record, {})
+      const resolve = awaitingInterrupt
+      awaitingInterrupt = null
+      return resolve?.()
+    }
     default:
       return reply(record, {})
   }
 }
 
-function streamText(messageId, index, text) {
+async function streamText(messageId, index, text, wordDelayMs = 0) {
   out({
     type: 'stream_event',
     event: { type: 'content_block_start', index, content_block: { type: 'text', text: '' } }
@@ -117,6 +127,9 @@ function streamText(messageId, index, text) {
       type: 'stream_event',
       event: { type: 'content_block_delta', index, delta: { type: 'text_delta', text: word } }
     })
+    if (wordDelayMs > 0) {
+      await sleep(wordDelayMs)
+    }
   }
   out({ type: 'stream_event', event: { type: 'content_block_stop', index } })
   out({
@@ -153,6 +166,39 @@ function promptText(record) {
     : ''
 }
 
+/** A read that never returns, until the user stops the turn; ends as the CLI does on interrupt. */
+async function hangOnRead(messageId, started) {
+  out({
+    type: 'assistant',
+    message: {
+      id: messageId,
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: `fake-read-${turn}`,
+          name: 'Read',
+          input: { file_path: path.join(cwd, 'style.css') }
+        }
+      ]
+    },
+    session_id: sessionId
+  })
+  await new Promise((resolve) => (awaitingInterrupt = resolve))
+  out({
+    type: 'user',
+    message: { role: 'user', content: [{ type: 'text', text: '[Request interrupted by user]' }] },
+    session_id: sessionId
+  })
+  out({
+    type: 'result',
+    subtype: 'success',
+    is_error: false,
+    duration_ms: Date.now() - started,
+    session_id: sessionId
+  })
+}
+
 async function userTurn(record) {
   turn += 1
   if (!initialized) {
@@ -179,10 +225,20 @@ async function userTurn(record) {
   })
   const started = Date.now()
   const messageId = `fake-msg-${turn}`
+  // Keywords match what the user typed, not the workspace brief prepended to the first turn.
+  const prompt = promptText(record).split('</muster-workspace-brief>').at(-1)
   out({ type: 'stream_event', event: { type: 'message_start', message: { id: messageId } } })
-  streamText(messageId, 0, 'I will switch the header to 100dvh.')
+  if (prompt.includes('hang')) {
+    return hangOnRead(messageId, started)
+  }
+  await streamText(
+    messageId,
+    0,
+    'I will switch the header to 100dvh.',
+    prompt.includes('slowly') ? 150 : 0
+  )
 
-  if (promptText(record).includes('fail')) {
+  if (prompt.includes('fail')) {
     out({
       type: 'result',
       subtype: 'error_max_turns',
@@ -192,7 +248,7 @@ async function userTurn(record) {
     })
     return
   }
-  if (process.env.FAKE_CLAUDE_SCENARIO === 'full') {
+  if (process.env.FAKE_CLAUDE_SCENARIO === 'full' || prompt.includes('full')) {
     const css = path.join(cwd, 'style.css')
     toolPair(messageId, 'Read', { file_path: css }, '1\t.site-header {')
     toolPair(
@@ -313,7 +369,7 @@ async function userTurn(record) {
   await sleep(50)
   const second = `fake-msg-${turn}-b`
   out({ type: 'stream_event', event: { type: 'message_start', message: { id: second } } })
-  streamText(
+  await streamText(
     second,
     0,
     allowed
