@@ -6,6 +6,7 @@ import { translate } from '@/i18n/i18n'
 import type { AgentType } from '../../../../shared/native-chat-types'
 import type { ChatAgentItem } from '../chat-conversation/chat-subagent-focus'
 import { ChatProcessItems } from '../chat-conversation/ChatProcessItems'
+import { ChatMarkdown } from '@/components/chat-thread/ChatMarkdown'
 import { getNativeChatSessionTransport } from './native-chat-session-transport'
 import { useNativeChatLiveSession } from './use-native-chat-live-session'
 import { nativeChatEngineTurns } from './native-chat-engine-turns'
@@ -25,12 +26,21 @@ const note = (text: string): React.JSX.Element => (
   <p className="text-[13px] text-chat-ink-tertiary">{text}</p>
 )
 
+/** The focus view leaves the summary to this component, since the sidechain usually ends with it in full. */
+const outcome = (summary: string | null | undefined): React.JSX.Element | null =>
+  summary?.trim() ? (
+    <div className="rounded-2xl px-3 py-2 text-[13px] text-chat-ink-secondary ring-[0.5px] ring-foreground/10">
+      <ChatMarkdown text={summary} streaming={false} density="compact" />
+    </div>
+  ) : null
+
 function SidechainSteps(props: {
   source: NativeChatSubagentSource
   path: string
   running: boolean
-}): React.JSX.Element {
-  const { source } = props
+  summary: string | null | undefined
+}): React.JSX.Element | null {
+  const { source, summary } = props
   const session = useNativeChatLiveSession({
     // Its own key: a subagent has no hook status of its own.
     paneKey: `${source.paneKey}#subagent:${props.path}`,
@@ -54,11 +64,12 @@ function SidechainSteps(props: {
       ).turns.flatMap((turn) => turn.items),
     [session.messages, source.agent, props.running]
   )
-  return items.length > 0 ? (
-    <ChatProcessItems items={items} />
-  ) : (
-    note(translate('components.chat-conversation.focus.noSteps', 'Waiting for its first step'))
-  )
+  if (items.length > 0) {
+    return <ChatProcessItems items={items} />
+  }
+  return props.running
+    ? note(translate('components.chat-conversation.focus.noSteps', 'Waiting for its first step'))
+    : outcome(summary)
 }
 
 export function NativeChatSubagentSteps(props: {
@@ -102,17 +113,22 @@ export function NativeChatSubagentSteps(props: {
   ])
 
   if (path) {
-    return <SidechainSteps source={source} path={path} running={running} />
+    return <SidechainSteps source={source} path={path} running={running} summary={agent.summary} />
   }
   if (path === undefined || running) {
     return note(
       translate('components.chat-conversation.focus.noSteps', 'Waiting for its first step')
     )
   }
-  return note(
-    translate(
-      'components.chat-conversation.focus.noSidechain',
-      "This agent's steps weren't saved with the session."
-    )
+  return (
+    <>
+      {note(
+        translate(
+          'components.chat-conversation.focus.noSidechain',
+          "This agent's steps weren't saved with the session."
+        )
+      )}
+      {outcome(agent.summary)}
+    </>
   )
 }

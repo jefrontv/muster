@@ -107,13 +107,15 @@ export function ChatSubagentFocusView(props: {
   const found = useChatEngineAgent(threadId, entry.agentId)
   const agent = found?.agent ?? null
   const running = agent ? agent.status === 'running' : entry.roster !== null
-  const summary = agent && agent.status !== 'running' ? agentSummary(agent) : null
   const seconds = useElapsed(entry.roster?.startedAt ?? null, running)
   const sawRunning = useRef(false)
   const interacted = useRef(false)
   const [held, setHeld] = useState(false)
   const { back, toMain } = focus
   const { renderAgentSteps } = useChatThreadContext()
+  // Sidechain steps end with the agent's full reply, so they own the summary.
+  const sidechain = agent !== null && agent.items.length === 0 && renderAgentSteps !== undefined
+  const summary = agent && agent.status !== 'running' && !sidechain ? agentSummary(agent) : null
   const { onReturn } = props
 
   if (agent?.status === 'running') {
