@@ -13,7 +13,7 @@ import {
 } from './session-scanner-parse-cache'
 
 // Bump when the persisted entry layout changes; a mismatched file is discarded whole.
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
 // Debounce so back-to-back scans (desktop IPC + runtime RPC) collapse into one write.
 const SAVE_DEBOUNCE_MS = 1_500
 // The payload contains transcript-derived preview text; keep it user-only

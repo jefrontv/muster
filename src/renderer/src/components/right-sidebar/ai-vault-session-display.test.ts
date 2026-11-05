@@ -99,4 +99,11 @@ describe('ai vault session display', () => {
     expect(sessionModelLabel(baseSession)).toBe('gpt-5.5')
     expect(sessionModelLabel({ ...baseSession, model: null })).toBeNull()
   })
+
+  it('shows Claude model ids by their friendly name', () => {
+    expect(sessionModelLabel({ ...baseSession, model: 'claude-sonnet-5-5' })).toBe('Sonnet 5.5')
+    expect(sessionModelLabel({ ...baseSession, model: 'us.anthropic.claude-opus-5-5-v1:0' })).toBe(
+      'Opus 5.5'
+    )
+  })
 })

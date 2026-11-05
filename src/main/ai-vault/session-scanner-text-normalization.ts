@@ -7,6 +7,8 @@ const FIELD_BLANK_SCAN_LIMIT = 1024
 
 const AGENTS_INSTRUCTIONS_PREFIX = '# AGENTS.md instructions'
 const XML_INSTRUCTIONS_PREFIX = '<INSTRUCTIONS>'
+// Why: Muster Bots prepends this line to each prompt; it is never the user's words.
+const INJECTED_TIME_LINE_PREFIX = 'Current time when this message was sent:'
 
 const HIDDEN_TEXT_BLOCKS = [
   { name: 'system-reminder', closeTag: '</system-reminder>' },
@@ -125,6 +127,15 @@ function appendNormalizedString(builder: TextBuilder, value: string): void {
     }
 
     const code = value.charCodeAt(index)
+    if (
+      builder.text.length === 0 &&
+      startsWithIgnoreCase(value, INJECTED_TIME_LINE_PREFIX, index)
+    ) {
+      const lineEnd = value.indexOf('\n', index)
+      index = lineEnd === -1 ? value.length : lineEnd
+      continue
+    }
+
     if (isWhitespaceCode(code)) {
       if (builder.text.length > 0) {
         builder.pendingSpace = true

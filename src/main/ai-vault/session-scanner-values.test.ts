@@ -18,6 +18,24 @@ describe('AI Vault session scanner text values', () => {
     expect(normalizeTitleText('<INSTRUCTIONS>Use this repo guidance')).toBeNull()
   })
 
+  it('titles from the user text after an injected current-time line', () => {
+    const injected =
+      '<system-reminder>room rules</system-reminder>\n\n' +
+      'Current time when this message was sent: Wednesday, 2026-11-04 16:19 Australia/Melbourne.\n\n' +
+      'Bob: let us play a round'
+    expect(normalizeTitleText(injected)).toBe('Bob: let us play a round')
+    expect(extractPreviewContentText([{ type: 'text', text: injected }])).toBe(
+      'Bob: let us play a round'
+    )
+    expect(
+      normalizeTitleText('Current time when this message was sent: Wednesday, 16:19.')
+    ).toBeNull()
+    // Only a leading line is injected; the same words later are the user's own.
+    expect(normalizeTitleText('Quote: Current time when this message was sent: noon')).toBe(
+      'Quote: Current time when this message was sent: noon'
+    )
+  })
+
   it('folds large preview text directly without full-string replacement', () => {
     const replaceSpy = vi.spyOn(String.prototype, 'replace')
     const hiddenContext = `<codex_internal_context source="goal">${'SECRET\n'.repeat(10_000)}</codex_internal_context>`

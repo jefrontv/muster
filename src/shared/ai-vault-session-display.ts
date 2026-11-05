@@ -1,8 +1,9 @@
 // Why: pure preview/search-text core for Agent Session History, lifted to
 // /shared so both the renderer and the mobile package (which cannot import
 // renderer modules) can build session previews from the same logic.
-// INVARIANT: /shared is a leaf — this module imports only types from /shared.
+// INVARIANT: /shared is a leaf — this module imports only from /shared.
 import type { AiVaultSession, AiVaultSessionPreviewMessage } from './ai-vault-types'
+import { claudeModelDisplayName } from './claude-model-name'
 
 const CONVERSATION_ROLES = new Set<AiVaultSessionPreviewMessage['role']>(['user', 'assistant'])
 
@@ -82,7 +83,11 @@ function normalizeSessionDisplayText(value: string): string {
 }
 
 export function sessionModelLabel(session: AiVaultSession): string | null {
-  return session.model || null
+  if (!session.model) {
+    return null
+  }
+  // Non-Claude ids have no friendly name, so they show raw.
+  return claudeModelDisplayName({ picked: session.model }) ?? session.model
 }
 
 export function sessionPreviewSearchText(session: AiVaultSession): string {
