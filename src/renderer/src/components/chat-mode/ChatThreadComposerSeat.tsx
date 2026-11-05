@@ -77,7 +77,6 @@ export function ChatThreadComposerSeat(props: {
   const seatSurface = useMemo(
     () => ({
       ...surface,
-      seat: true,
       composerLeadSlot: (
         <>
           {setFullAccess ? (
@@ -156,8 +155,6 @@ export function ChatThreadComposerSeat(props: {
             onRespondPermission={transport.respondPermission}
             contextUsageEnabled
             contextMaxTokens={transport.contextWindowTokens}
-            fullAccess={transport.fullAccess}
-            onSetFullAccess={transport.setFullAccess}
             activeCollabProjectId={props.activeCollabProjectId}
           />
         )}

@@ -2,7 +2,7 @@
 // the plan review card for ExitPlanMode, the approval card for anything else.
 
 import type React from 'react'
-import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
+import type { NativeChatComposerApproval } from './native-chat-composer-approval'
 import { NativeChatSeatApprovalCard } from './NativeChatSeatApprovalCard'
 import { NativeChatSeatPlanReviewCard } from './NativeChatSeatPlanReviewCard'
 import { isPlanReviewTool } from './native-chat-plan-summary'

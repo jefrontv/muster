@@ -1,7 +1,6 @@
 import { memo, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +28,6 @@ import {
 } from './native-chat-session-option-labels'
 import { useClaudeModelSightings } from './claude-model-sightings'
 import { useClaudeSettingsEffortLevel } from './claude-settings-effort-level'
-import { useNativeChatSurface } from './native-chat-surface-context'
 import { CHAT_SEAT_CHIP_CHEVRON_CLASS, CHAT_SEAT_CHIP_CLASS } from './chat-seat-composer-classes'
 import { NativeChatEffortSlider } from './NativeChatEffortSlider'
 
@@ -104,37 +102,20 @@ function PickerTrigger(props: {
     '{{value0}} {{value1}}',
     { value0: props.tooltipLabel, value1: visible }
   )
-  const { seat } = useNativeChatSurface()
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <DropdownMenuTrigger asChild disabled={props.disabled}>
-          {seat ? (
-            <button type="button" aria-label={accessibleName} className={CHAT_SEAT_CHIP_CLASS}>
-              <span className="min-w-0 truncate">{props.modelLabel}</span>
-              {props.effortLabel ? (
-                // Shrinks first, so the effort ellipsizes away before the model name loses a pixel.
-                <span className="min-w-0 shrink-[1000] truncate text-chat-ink-tertiary">
-                  {props.effortLabel}
-                </span>
-              ) : null}
-              <ChevronDown className={CHAT_SEAT_CHIP_CHEVRON_CLASS} aria-hidden />
-            </button>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              aria-label={accessibleName}
-              className="max-w-56 gap-1 text-foreground/90"
-            >
-              <span className="truncate">{props.modelLabel}</span>
-              {props.effortLabel ? (
-                <span className="truncate text-muted-foreground">{props.effortLabel}</span>
-              ) : null}
-              <ChevronDown className="size-3 text-muted-foreground" />
-            </Button>
-          )}
+          <button type="button" aria-label={accessibleName} className={CHAT_SEAT_CHIP_CLASS}>
+            <span className="min-w-0 truncate">{props.modelLabel}</span>
+            {props.effortLabel ? (
+              // Shrinks first, so the effort ellipsizes away before the model name loses a pixel.
+              <span className="min-w-0 shrink-[1000] truncate text-chat-ink-tertiary">
+                {props.effortLabel}
+              </span>
+            ) : null}
+            <ChevronDown className={CHAT_SEAT_CHIP_CHEVRON_CLASS} aria-hidden />
+          </button>
         </DropdownMenuTrigger>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={4}>

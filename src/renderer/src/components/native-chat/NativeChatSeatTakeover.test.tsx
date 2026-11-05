@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NativeChatSeatTakeover } from './NativeChatSeatTakeover'
 import { NativeChatSurfaceProvider } from './native-chat-surface-context'
-import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
+import type { NativeChatComposerApproval } from './native-chat-composer-approval'
 import type { NativeChatPermissionRequest } from './native-chat-view-types'
 
 let container: HTMLDivElement
@@ -27,8 +27,7 @@ const SEAT = {
   cwd: null,
   openFile: null,
   chatThread: true,
-  reportedModel: null,
-  seat: true
+  reportedModel: null
 }
 
 function render(

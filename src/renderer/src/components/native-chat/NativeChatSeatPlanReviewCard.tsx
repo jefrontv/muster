@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
-import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
+import type { NativeChatComposerApproval } from './native-chat-composer-approval'
 import { planSummary } from './native-chat-plan-summary'
 import {
   CHAT_TAKEOVER_CARD_CLASS,

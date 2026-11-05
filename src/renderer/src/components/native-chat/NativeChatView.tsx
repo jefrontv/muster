@@ -275,8 +275,6 @@ function NativeChatResolvedView({
     fileLinkContext
   })
 
-  // The composer takes Chat mode's seat.
-  const seatSurfaceValue = useMemo(() => ({ ...surfaceValue, seat: true }), [surfaceValue])
   const threadId = nativeChatEngineThreadId(paneKey)
   useNativeChatEngineThread({
     threadId,
@@ -312,7 +310,7 @@ function NativeChatResolvedView({
   const fontScale = useNativeChatFontScale(isConversation)
 
   return (
-    <NativeChatSurfaceProvider value={seatSurfaceValue}>
+    <NativeChatSurfaceProvider value={surfaceValue}>
       <div
         ref={rootRef}
         data-native-chat-root="true"

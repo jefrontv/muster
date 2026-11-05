@@ -130,7 +130,6 @@ export function ChatModeDraftHeroControls({
           onHoldStart={dictation.holdStart}
           onHoldEnd={dictation.holdEnd}
           onSetUp={dictation.openSetup}
-          variant="voice"
         />
         <NativeChatSeatSendButton
           stop={false}

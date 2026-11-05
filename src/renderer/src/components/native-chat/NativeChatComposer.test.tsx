@@ -8,7 +8,7 @@ import type {
 } from '../../../../shared/native-chat-session-options'
 import type * as nativeChatAgentProfiles from '../../../../shared/native-chat-agent-profiles'
 import { clearNativeChatSessionOptionCacheForTests } from './native-chat-session-option-cache'
-import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
+import type { NativeChatComposerApproval } from './native-chat-composer-approval'
 
 const mocks = vi.hoisted(() => ({
   cancelPendingSends: vi.fn(),

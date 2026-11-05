@@ -5,7 +5,6 @@ import { ArchiveRestore, Layers, Paperclip, Plus, X } from 'lucide-react'
 import type React from 'react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +18,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { promptStashRelativeLabel, promptStashSnippet } from './native-chat-prompt-stash'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
-import { useNativeChatSurface } from './native-chat-surface-context'
 import { CHAT_SEAT_ATTACH_CLASS } from './chat-seat-composer-classes'
 
 function StashEntries({ stash }: { stash: NativeChatPromptStash }): React.JSX.Element {
@@ -69,7 +67,6 @@ export function NativeChatStashMenu({
   const label = translate('components.native-chat.composer.addMenu', 'Add files and more')
   const stashedLabel = translate('auto.components.native-chat.stash.label', 'Stashed prompts')
   const stashChord = navigator.userAgent.includes('Mac') ? '⌘S' : 'Ctrl+S'
-  const { seat } = useNativeChatSurface()
   const badge =
     stash.entries.length > 0 ? (
       <span
@@ -93,23 +90,10 @@ export function NativeChatStashMenu({
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            {seat ? (
-              <button type="button" aria-label={label} className={CHAT_SEAT_ATTACH_CLASS}>
-                <Plus className="size-3.5" />
-                {badge}
-              </button>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={label}
-                className="relative pointer-coarse:size-11"
-              >
-                <Plus className="size-4" />
-                {badge}
-              </Button>
-            )}
+            <button type="button" aria-label={label} className={CHAT_SEAT_ATTACH_CLASS}>
+              <Plus className="size-3.5" />
+              {badge}
+            </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent side="top" sideOffset={4}>

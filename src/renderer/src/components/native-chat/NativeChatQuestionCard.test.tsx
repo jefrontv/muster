@@ -127,9 +127,9 @@ describe('NativeChatQuestionCard', () => {
     const onAnswer = vi.fn()
     render(tabsOrSpaces, onAnswer)
 
-    const input = container.querySelector('input')!
+    const input = container.querySelector('textarea')!
     act(() => {
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
       setter.call(input, 'four spaces')
       input.dispatchEvent(new Event('input', { bubbles: true }))
     })

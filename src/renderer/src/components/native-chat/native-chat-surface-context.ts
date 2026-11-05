@@ -16,8 +16,6 @@ export type NativeChatSurfaceContextValue = {
   chatThread: boolean
   /** Model id from the session's init record, for the composer's model name. */
   reportedModel: string | null
-  /** The composer sits in the chat engine surface's seat, which owns its width. */
-  seat?: boolean
   /** Chat-only controls the conversation composer places after attach (access, web). */
   composerLeadSlot?: React.ReactNode
 }

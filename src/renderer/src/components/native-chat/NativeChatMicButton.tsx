@@ -1,7 +1,7 @@
-// The composer mic. Set up, it toggles (or holds) dictation into the textarea;
-// without a speech model it stays visible and explains what it needs.
+// The composer mic: a filled waveform button with a voice options chevron. Set up, it toggles
+// (or holds) dictation into the textarea; without a speech model it explains what it needs.
 
-import { AudioLines, ChevronDown, Mic, Square } from 'lucide-react'
+import { AudioLines, ChevronDown, Square } from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,11 +25,9 @@ export type NativeChatMicButtonProps = {
   onHoldStart: () => void
   onHoldEnd: () => void
   onSetUp: () => void
-  /** Chat mode's Bots row: a filled waveform button with an options chevron. */
-  variant?: 'voice'
 }
 
-function SetUpMic({ onSetUp, voice }: { onSetUp: () => void; voice: boolean }): React.JSX.Element {
+function SetUpMic({ onSetUp }: { onSetUp: () => void }): React.JSX.Element {
   const label = translate('components.native-chat.composer.voiceTyping', 'Voice typing')
   return (
     <Popover>
@@ -39,9 +37,9 @@ function SetUpMic({ onSetUp, voice }: { onSetUp: () => void; voice: boolean }): 
           variant="ghost"
           size="icon-sm"
           aria-label={label}
-          className={voice ? CHAT_CONVERSATION_FILLED_ICON_CLASS : 'pointer-coarse:size-11'}
+          className={CHAT_CONVERSATION_FILLED_ICON_CLASS}
         >
-          {voice ? <AudioLines className="size-4" /> : <Mic className="size-4" />}
+          <AudioLines className="size-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent side="top" align="end" className="w-64 space-y-2 p-3 text-sm">
@@ -67,12 +65,10 @@ export function NativeChatMicButton({
   onToggle,
   onHoldStart,
   onHoldEnd,
-  onSetUp,
-  variant
+  onSetUp
 }: NativeChatMicButtonProps): React.JSX.Element {
-  const voice = variant === 'voice'
   if (!configured) {
-    return <SetUpMic onSetUp={onSetUp} voice={voice} />
+    return <SetUpMic onSetUp={onSetUp} />
   }
   const label = isDictating
     ? translate('components.native-chat.composer.stopDictation', 'Stop dictation')
@@ -103,16 +99,14 @@ export function NativeChatMicButton({
             }
           }}
           className={cn(
-            voice ? CHAT_CONVERSATION_FILLED_ICON_CLASS : 'pointer-coarse:size-11',
-            voice && isDictating && 'bg-chat-accent text-background'
+            CHAT_CONVERSATION_FILLED_ICON_CLASS,
+            isDictating && 'bg-chat-accent text-background'
           )}
         >
           {isDictating ? (
             <Square className="size-3.5 fill-current" />
-          ) : voice ? (
-            <AudioLines className="size-4" />
           ) : (
-            <Mic className="size-4" />
+            <AudioLines className="size-4" />
           )}
         </Button>
       </TooltipTrigger>
@@ -121,9 +115,6 @@ export function NativeChatMicButton({
       </TooltipContent>
     </Tooltip>
   )
-  if (!voice) {
-    return button
-  }
   return (
     <div className="flex items-center gap-1">
       {button}

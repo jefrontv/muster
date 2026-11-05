@@ -26,8 +26,7 @@ const SEAT = {
   cwd: null,
   openFile: null,
   chatThread: true,
-  reportedModel: null,
-  seat: true
+  reportedModel: null
 }
 
 function render(

@@ -12,7 +12,7 @@ import { useNativeChatSurface } from './native-chat-surface-context'
 import {
   NativeChatApprovalAllowMenuContent,
   type NativeChatComposerApproval
-} from './NativeChatApprovalPanel'
+} from './native-chat-composer-approval'
 import {
   CHAT_TAKEOVER_FRAME_CLASS,
   CHAT_TAKEOVER_OUTLINE_CLASS,

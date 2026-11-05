@@ -96,7 +96,6 @@ function renderActions(
           openFile: null,
           chatThread: true,
           reportedModel: null,
-          seat: true,
           ...surface
         }}
       >
@@ -113,7 +112,8 @@ describe('NativeChatComposerActions', () => {
     renderActions()
     const pickers = screen.getByTestId('session-option-pickers')
     const mic = screen.getByRole('button', { name: 'Start dictation' })
-    expect(pickers.nextElementSibling).toBe(mic)
+    // The voice variant wraps the mic with its options button.
+    expect(pickers.nextElementSibling?.contains(mic)).toBe(true)
   })
 
   it('keeps the mic visible without a speech model', () => {

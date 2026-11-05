@@ -56,9 +56,6 @@ export type NativeChatComposerProps = {
   contextUsageEnabled?: boolean
   /** Current model's context window for the meter; defaults to 200k. */
   contextMaxTokens?: number
-  /** Full-access session state + toggle (stream transport only). */
-  fullAccess?: boolean
-  onSetFullAccess?: (enabled: boolean) => void
   /** Bound AC project of the hosting chat workspace; task picker sorts it first. */
   activeCollabProjectId?: number | null
 }

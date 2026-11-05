@@ -10,7 +10,7 @@ import { readNativeChatDraftCache } from './native-chat-draft-cache'
 import { useNativeChatDraft } from './use-native-chat-draft'
 import { NativeChatComposerField } from './NativeChatComposerField'
 import type { NativeChatResolvedTarget } from './native-chat-composer-target'
-import type { NativeChatComposerApproval } from './NativeChatApprovalPanel'
+import type { NativeChatComposerApproval } from './native-chat-composer-approval'
 import { useNativeChatComposerAttachments } from './use-native-chat-composer-attachments'
 import { useNativeChatComposerPaste } from './use-native-chat-composer-paste'
 import { useNativeChatExternalAttachments } from './use-native-chat-external-attachments'
@@ -71,8 +71,6 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
       onRespondPermission,
       contextUsageEnabled = false,
       contextMaxTokens,
-      fullAccess,
-      onSetFullAccess,
       activeCollabProjectId
     },
     ref
@@ -442,8 +440,6 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         // The CLI-reported window (transport) is authoritative; the transcript's
         // model-sized window covers surfaces that never see a stream result.
         contextMaxTokens={contextMaxTokens ?? contextUsage?.windowTokens}
-        fullAccess={fullAccess}
-        onSetFullAccess={onSetFullAccess}
         onAttachTask={attachTask}
         activeCollabProjectId={activeCollabProjectId ?? null}
       />
