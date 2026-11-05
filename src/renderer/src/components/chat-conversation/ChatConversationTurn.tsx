@@ -1,20 +1,14 @@
-// One engine turn in Chat mode: the user's bubble, the steps, and the reply as
-// cards or prose. Process rows still come from the chat surface until they get pills.
+// One engine turn in Chat mode: the user's bubble, the steps as cards and pills,
+// and the reply as cards or prose.
 
 import { memo, useState } from 'react'
 import type React from 'react'
-import { CircleAlert, RotateCcw } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { NativeChatCopyButton } from '@/components/native-chat/NativeChatCopyButton'
 import type { ChatEngineItem, ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import { unwrapChatWorkspaceUserTurn } from '../../../../shared/chat-workspace-site-info'
 import { useChatThreadContext } from '@/components/chat-thread/chat-thread-context'
-import { ChatItemList } from '@/components/chat-thread/ChatItemRows'
-import {
-  FoldHeader,
-  RunningStatus,
-  TurnOutcomeAnnouncement
-} from '@/components/chat-thread/ChatTurnChrome'
+import { RunningStatus, TurnOutcomeAnnouncement } from '@/components/chat-thread/ChatTurnChrome'
 import {
   answerText,
   foldKeepsVisible,
@@ -24,9 +18,11 @@ import {
 import { useChatEngineTurn } from '@/components/chat-thread/use-chat-engine-thread'
 import { ChatDaySeparator, startsNewDay } from './ChatDaySeparator'
 import { CHAT_MESSAGE_ACTION_CLASS, ChatMessageTray, ChatRetryAction } from './ChatMessageTray'
-import { ChatPill } from './ChatPill'
+import { ChatProcessItems } from './ChatProcessItems'
+import { ChatTurnFoldPill } from './ChatProcessPills'
 import { ChatReplyBubble } from './ChatReplyBubble'
 import { ChatUserBubble } from './ChatUserBubble'
+import { ChatTurnFailure, ChatTurnStopped } from './ChatTurnNotice'
 
 type ItemOf<K extends ChatEngineItem['kind']> = Extract<ChatEngineItem, { kind: K }>
 
@@ -84,30 +80,10 @@ function ConversationItems(props: {
             }
           />
         ) : (
-          <ChatItemList key={segment.id} items={segment.items} />
+          <ChatProcessItems key={segment.id} items={segment.items} />
         )
       )}
     </>
-  )
-}
-
-function TurnFailure(props: { message: string | null; onRetry?: () => void }): React.JSX.Element {
-  return (
-    <div className="flex flex-col items-start gap-2">
-      <div role="alert" className="flex items-start gap-2 text-[13px] text-destructive">
-        <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        <span className="font-medium">
-          {props.message ??
-            translate('components.chat-thread.turnFailed', 'Claude stopped with an error.')}
-        </span>
-      </div>
-      {props.onRetry && (
-        <ChatPill onClick={props.onRetry}>
-          <RotateCcw className="size-3.5" aria-hidden />
-          {translate('components.chat-thread.retry', 'Try again')}
-        </ChatPill>
-      )}
-    </div>
   )
 }
 
@@ -163,21 +139,19 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
       {user && <ChatUserBubble text={user.text} imageCount={user.imageCount} />}
       {fold ? (
         <>
-          <FoldHeader turn={turn} open={open} onToggle={() => setProcessOpen(!open)} />
+          <ChatTurnFoldPill turn={turn} open={open} onOpenChange={setProcessOpen}>
+            <ConversationItems items={fold.process} />
+          </ChatTurnFoldPill>
           {/* Closed hides the steps only; earlier replies stay readable. */}
-          <ConversationItems items={open ? fold.process : fold.process.filter(foldKeepsVisible)} />
+          {!open && <ConversationItems items={fold.process.filter(foldKeepsVisible)} />}
           <ConversationItems items={fold.answer} tray={tray} />
         </>
       ) : (
         <ConversationItems items={turn.items} tray={tray} />
       )}
       {turn.status === 'running' && <RunningStatus startedAt={turn.startedAt} />}
-      {turn.status === 'interrupted' && !fold && (
-        <div className="text-[13px] text-chat-ink-tertiary">
-          {translate('components.chat-thread.turnInterrupted', 'Stopped')}
-        </div>
-      )}
-      {turn.status === 'error' && <TurnFailure message={turn.errorMessage} onRetry={retry} />}
+      {turn.status === 'interrupted' && !fold && <ChatTurnStopped />}
+      {turn.status === 'error' && <ChatTurnFailure message={turn.errorMessage} onRetry={retry} />}
       {props.latest && <TurnOutcomeAnnouncement turn={turn} />}
     </section>
   )

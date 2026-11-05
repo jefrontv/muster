@@ -24,7 +24,7 @@ import { useChatThreadContext } from './chat-thread-context'
 import { ChatDisclosureRow, ChatRowDot } from './ChatDisclosureRow'
 import { toolIsLive } from './chat-turn-layout'
 
-const ICONS: Record<ChatToolIconKey, LucideIcon> = {
+export const CHAT_TOOL_ICONS: Record<ChatToolIconKey, LucideIcon> = {
   file: FileText,
   pen: Pencil,
   plus: FilePlus,
@@ -53,7 +53,7 @@ export function ChatToolRow({ item }: { item: ChatToolItem }): React.JSX.Element
   // Follows the default until the user picks, so an error that lands later still opens.
   const isOpen = open ?? renderer.openByDefault(item)
   const live = toolIsLive(item)
-  const Icon = ICONS[row.icon]
+  const Icon = CHAT_TOOL_ICONS[row.icon]
   const status = STATUS_LABEL[item.status]?.()
   const summary = row.errorSummary ?? row.object
   // Counts stay quiet until the row is engaged.

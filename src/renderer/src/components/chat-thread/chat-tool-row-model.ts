@@ -117,7 +117,9 @@ export function toolRowModel(item: ChatToolItem, cwd: string | null): ChatToolRo
   const row = rowFor(item, cwd)
   // Bash failures already say how they ended through the exit badge.
   const failure =
-    item.status === 'error' && item.name !== 'Bash' ? firstLine(item.result?.text ?? '') : ''
+    item.status === 'error' && item.name !== 'Bash'
+      ? firstLine((item.result?.text ?? '').replace(/<\/?tool_use_error>/g, ''))
+      : ''
   return failure ? { ...row, errorSummary: failure } : row
 }
 

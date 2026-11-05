@@ -209,6 +209,17 @@ describe('toolRowModel', () => {
     expect(row).toMatchObject({ verb: 'Ran', object: 'false', isError: true })
   })
 
+  it('drops the CLI error tag from a failed tool summary', () => {
+    const row = toolRowModel(
+      tool('Grep', { pattern: 'TODO' }, 'error', {
+        text: '<tool_use_error>Error: No such tool available: Grep</tool_use_error>',
+        isError: true
+      }),
+      null
+    )
+    expect(row.errorSummary).toBe('Error: No such tool available: Grep')
+  })
+
   it('splits MCP names into server and tool', () => {
     expect(toolRowModel(tool('mcp__plugin_figma_figma__get_screenshot', {}), null)).toMatchObject({
       verb: 'figma:',

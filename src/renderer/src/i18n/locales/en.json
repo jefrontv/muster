@@ -15457,7 +15457,13 @@
         "expand": "Expand table",
         "noResults": "No matching rows",
         "empty": "This table is empty"
-      }
+      },
+      "runSteps": "{{count}} steps: {{tools}}",
+      "runMore": "+{{count}} more",
+      "worked": "Worked",
+      "workedFor": "Worked for {{duration}}",
+      "showSteps": "Show steps",
+      "hideSteps": "Hide steps"
     }
   },
   "dashboardPopout": {
