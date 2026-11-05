@@ -65,4 +65,47 @@ describe('SettingsProjectsNav', () => {
     expect(html).toContain('Project 17<')
     expect(html).toContain('Show all 20')
   })
+
+  it('previews projects by name, not store order, and keeps the active one', () => {
+    const titles = [
+      'zeta',
+      'yak',
+      'xray',
+      'wolf',
+      'vole',
+      'urchin',
+      'tern',
+      'stoat',
+      'robin',
+      'quail',
+      'puffin',
+      'owl',
+      'newt',
+      'aidc',
+      'mole'
+    ]
+    const shuffled = titles.map((title, index) => ({
+      id: `repo-${index}`,
+      title,
+      icon: Folder
+    }))
+    const renderWith = (activeSectionId: string): string =>
+      renderToStaticMarkup(
+        <SettingsProjectsNav
+          activeSectionId={activeSectionId}
+          repoSections={shuffled}
+          hasRepos
+          searchQuery=""
+          navItemClassName={() => 'row'}
+          onSelectSection={() => {}}
+        />
+      )
+
+    const html = renderWith('repo-13')
+    expect(html).toContain('aidc<')
+    expect(html.indexOf('aidc<')).toBeLessThan(html.indexOf('mole<'))
+    expect(html).not.toContain('zeta<')
+    // Past the first 12 by name, the active project still shows.
+    expect(renderWith('repo-0')).toContain('zeta<')
+  })
 })

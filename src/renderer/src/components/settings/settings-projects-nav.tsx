@@ -58,17 +58,25 @@ export function SettingsProjectsNav({
 
   const needle = filter.trim().toLowerCase()
   const truncated = !searching && !needle && !showAll && repoSections.length > PREVIEW_COUNT
+  // Why: store order reads as alphabetical but isn't, so a slice hid projects that looked in range.
+  const sortedSections = useMemo(
+    () =>
+      [...repoSections].sort((a, b) =>
+        a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+      ),
+    [repoSections]
+  )
   const visibleSections = useMemo(() => {
     if (needle && !searching) {
-      return repoSections.filter((section) => section.title.toLowerCase().includes(needle))
+      return sortedSections.filter((section) => section.title.toLowerCase().includes(needle))
     }
     if (!truncated) {
-      return repoSections
+      return sortedSections
     }
-    const preview = repoSections.slice(0, PREVIEW_COUNT)
-    const active = repoSections.find((section) => section.id === activeSectionId)
+    const preview = sortedSections.slice(0, PREVIEW_COUNT)
+    const active = sortedSections.find((section) => section.id === activeSectionId)
     return active && !preview.includes(active) ? [...preview, active] : preview
-  }, [activeSectionId, needle, repoSections, searching, truncated])
+  }, [activeSectionId, needle, sortedSections, searching, truncated])
 
   const showFilter = expanded && !searching && repoSections.length > FILTER_THRESHOLD
 
