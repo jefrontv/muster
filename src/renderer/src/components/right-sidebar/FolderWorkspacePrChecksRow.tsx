@@ -1,4 +1,5 @@
 import { ChevronRight, ExternalLink, GitMerge } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -105,9 +106,11 @@ export function FolderWorkspacePrChecksRow({
         {row.reviewUrl ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="rounded-full p-1 text-muted-foreground opacity-80 hover:bg-accent hover:text-foreground group-hover:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                variant="ghost"
+                size="icon-xs"
+                className="text-muted-foreground"
                 aria-label={openExternalLabel}
                 onClick={(event) => {
                   event.stopPropagation()
@@ -116,7 +119,7 @@ export function FolderWorkspacePrChecksRow({
                 onKeyDown={(event) => event.stopPropagation()}
               >
                 <ExternalLink className="size-3.5" />
-              </button>
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="left">{openExternalLabel}</TooltipContent>
           </Tooltip>

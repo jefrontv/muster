@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { ArrowDown, ArrowUp, Columns2, Eye, FileText, ListTree, Rows2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
 import { selectWorktreeDiffCommentsOrEmpty } from '@/store/worktree-diff-comments-selector'
 import type { OpenFile } from '@/store/slices/editor'
@@ -115,17 +116,19 @@ export function EditorPanelHeader({
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 type="button"
-                className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground"
                 onClick={onOpenPreviewToSide}
                 aria-label={translate(
                   'auto.components.editor.EditorPanelHeader.fb8331694e',
                   'Open preview to the side'
                 )}
               >
-                <Eye size={14} />
-              </button>
+                <Eye className="size-3.5" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={4}>
               {translate(
@@ -140,9 +143,11 @@ export function EditorPanelHeader({
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 type="button"
-                className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground"
                 onClick={() => onOpenDiffTargetFile(isMarkdown ? 'rich' : undefined)}
                 aria-label={translate(
                   'auto.components.editor.EditorPanelHeader.a10d9b8337',
@@ -150,8 +155,8 @@ export function EditorPanelHeader({
                 )}
                 disabled={!openFileState.canOpen}
               >
-                <FileText size={14} />
-              </button>
+                <FileText className="size-3.5" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={4}>
               {openFileState.canOpen
@@ -191,13 +196,15 @@ export function EditorPanelHeader({
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 type="button"
-                className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground"
                 onClick={onToggleSideBySide}
               >
-                {sideBySide ? <Rows2 size={14} /> : <Columns2 size={14} />}
-              </button>
+                {sideBySide ? <Rows2 className="size-3.5" /> : <Columns2 className="size-3.5" />}
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={4}>
               {sideBySide
@@ -213,9 +220,11 @@ export function EditorPanelHeader({
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 type="button"
-                className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground"
                 onClick={goToPreviousDiff}
                 aria-label={translate(
                   'auto.components.editor.EditorPanelHeader.2076ecfc9c',
@@ -223,8 +232,8 @@ export function EditorPanelHeader({
                 )}
                 disabled={changeCount === 0}
               >
-                <ArrowUp size={14} />
-              </button>
+                <ArrowUp className="size-3.5" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={4}>
               {translate('auto.components.editor.EditorPanelHeader.2076ecfc9c', 'Previous change')}
@@ -239,9 +248,11 @@ export function EditorPanelHeader({
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 type="button"
-                className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground"
                 onClick={goToNextDiff}
                 aria-label={translate(
                   'auto.components.editor.EditorPanelHeader.631dab0df3',
@@ -249,8 +260,8 @@ export function EditorPanelHeader({
                 )}
                 disabled={changeCount === 0}
               >
-                <ArrowDown size={14} />
-              </button>
+                <ArrowDown className="size-3.5" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={4}>
               {translate('auto.components.editor.EditorPanelHeader.631dab0df3', 'Next change')}
@@ -279,13 +290,15 @@ export function EditorPanelHeader({
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className={`p-1 rounded-full hover:bg-accent hover:text-foreground transition-colors flex-shrink-0 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground ${
+                variant="ghost"
+                size="icon-xs"
+                className={
                   showMarkdownTableOfContents && !isMarkdownTableOfContentsDisabled
-                    ? 'bg-accent text-foreground'
+                    ? 'bg-foreground/[0.07] text-foreground'
                     : 'text-muted-foreground'
-                }`}
+                }
                 onClick={onToggleMarkdownTableOfContents}
                 disabled={isMarkdownTableOfContentsDisabled}
                 aria-label={translate(
@@ -294,8 +307,8 @@ export function EditorPanelHeader({
                 )}
                 aria-pressed={showMarkdownTableOfContents}
               >
-                <ListTree size={14} />
-              </button>
+                <ListTree className="size-3.5" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={4}>
               {isMarkdownTableOfContentsDisabled

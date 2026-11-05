@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Check, Copy } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 
@@ -74,14 +75,17 @@ function CopyButton({
   )
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-xs"
       ref={setCopyButtonRef}
-      className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="text-muted-foreground"
       title={title}
       onClick={handleCopy}
     >
       {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-    </button>
+    </Button>
   )
 }
 

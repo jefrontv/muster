@@ -1,6 +1,7 @@
-// Ratchets for two recipes the styleguide pins down: readable muted text is full
-// text-muted-foreground (faded /20-/90 fails AA at small sizes), and hover fills are bg-accent for
-// rows or bg-foreground/[0.07] for controls. Per-file counts may only fall; new files start at zero.
+// Ratchets for recipes the styleguide pins down: readable muted text is full
+// text-muted-foreground (faded /20-/90 fails AA at small sizes), hover fills are bg-accent for
+// rows or bg-foreground/[0.07] for controls, and icon buttons are the ghost Button primitive.
+// Per-file counts may only fall; new files start at zero.
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -23,6 +24,14 @@ export const RULES = [
     pattern:
       /(?<![\w-])(?:[^\s"'`:{}()]+:)*hover:bg-(?!accent(?![\w/-])|foreground\/\[0\.07\](?![\w-])|transparent(?![\w-]))[^\s"'`]+/g,
     fix: 'Use ROW_HOVER (hover:bg-accent) or CONTROL_HOVER (hover:bg-foreground/[0.07]).'
+  },
+  {
+    // Either order in one class string, so `p-1 rounded-full` can't slip past.
+    name: 'hand-built round icon button',
+    baseline: 'config/round-icon-button-baseline.txt',
+    pattern:
+      /(?<![\w:-])rounded-full(?![\w-])[^"'`]*?(?<![\w:-])p-1(?![\w.-])|(?<![\w:-])p-1(?![\w.-])[^"'`]*?(?<![\w:-])rounded-full(?![\w-])/g,
+    fix: 'Use <Button variant="ghost" size="icon-xs"> instead of a hand-built rounded-full p-1 button.'
   }
 ]
 

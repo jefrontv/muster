@@ -10,6 +10,7 @@ import { Label } from '../ui/label'
 import { Popover, PopoverAnchor, PopoverContent } from '../ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 import { Check, ChevronsUpDown, CircleX } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { normalizeColor, type TerminalThemeOption } from '@/lib/terminal-theme'
 import { MAX_THEME_RESULTS } from './SettingsConstants'
 import {
@@ -784,8 +785,10 @@ export function FontAutocomplete({
             />
             <div className="absolute inset-y-0 right-2 flex items-center gap-1">
               {query ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     setQuery('')
@@ -794,7 +797,7 @@ export function FontAutocomplete({
                     setOpen(true)
                     focusInput()
                   }}
-                  className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="text-muted-foreground"
                   aria-label={translate(
                     'auto.components.settings.SettingsFormControls.a4ff6143f8',
                     'Clear font selection'
@@ -805,10 +808,12 @@ export function FontAutocomplete({
                   )}
                 >
                   <CircleX className="size-3.5" />
-                </button>
+                </Button>
               ) : null}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   const nextOpen = !open
@@ -821,7 +826,7 @@ export function FontAutocomplete({
                     focusInput()
                   }
                 }}
-                className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground"
                 aria-label={translate(
                   'auto.components.settings.SettingsFormControls.c766f8ac75',
                   'Toggle font suggestions'
@@ -832,7 +837,7 @@ export function FontAutocomplete({
                 )}
               >
                 <ChevronsUpDown className="size-3.5" />
-              </button>
+              </Button>
             </div>
           </div>
         </PopoverAnchor>

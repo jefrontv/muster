@@ -43,18 +43,18 @@ function HeaderIconButton({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           aria-label={label}
           aria-pressed={pressed}
           disabled={disabled}
           onClick={onClick}
-          className={`flex-shrink-0 rounded-full p-1 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground ${
-            pressed ? 'bg-accent text-foreground' : 'text-muted-foreground'
-          }`}
+          className="text-muted-foreground aria-pressed:bg-foreground/[0.07] aria-pressed:text-foreground"
         >
           {children}
-        </button>
+        </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={4}>
         {label}
@@ -135,7 +135,7 @@ export function PlanAnnotationHeader({
           disabled={!isRich}
           onClick={onToggleTableOfContents}
         >
-          <ListTree size={14} />
+          <ListTree className="size-3.5" />
         </HeaderIconButton>
         <HeaderIconButton
           label={readable ? 'Use full width' : 'Use readable width'}
@@ -143,17 +143,17 @@ export function PlanAnnotationHeader({
           disabled={!isRich}
           onClick={onToggleReadable}
         >
-          <MoveHorizontal size={14} />
+          <MoveHorizontal className="size-3.5" />
         </HeaderIconButton>
         <HeaderIconButton
           label="Comment on the whole plan"
           disabled={!isRich}
           onClick={onWholePlanNote}
         >
-          <MessageSquarePlus size={14} />
+          <MessageSquarePlus className="size-3.5" />
         </HeaderIconButton>
         <HeaderIconButton label="Copy plan" onClick={onCopyPlan}>
-          <Copy size={14} />
+          <Copy className="size-3.5" />
         </HeaderIconButton>
       </div>
     </TooltipProvider>

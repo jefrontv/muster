@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, ExternalLink, FolderPlus, Globe, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useAppStore } from '../store'
 import type { Repo } from '../../../shared/types'
 import {
@@ -91,13 +92,16 @@ function PreflightBanner({
             </button>
           </div>
           {issue.dismissible && (
-            <button
-              className="-mr-1 -mt-0.5 shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              className="-mr-1 -mt-0.5 text-muted-foreground"
               onClick={() => dismiss(issue)}
               aria-label={translate('auto.components.Landing.preflightDismiss', 'Dismiss')}
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       ))}

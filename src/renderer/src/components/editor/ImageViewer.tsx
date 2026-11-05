@@ -1,5 +1,6 @@
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: image surface size is measured with ResizeObserver and DOM refs, which are external layout systems outside render derivation. */
 import { Image as ImageIcon, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { type JSX, useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import ImageViewerPopup from './ImageViewerPopup'
@@ -185,37 +186,40 @@ export default function ImageViewer({
         </div>
         <div className="flex items-center gap-4 border-t px-4 py-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <button
+            <Button
               type="button"
-              className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              variant="ghost"
+              size="icon-xs"
               onClick={() =>
                 applyInlineZoomChange((currentZoom) => currentZoom / IMAGE_VIEWER_ZOOM_STEP)
               }
               disabled={inlineZoom <= MIN_IMAGE_VIEWER_ZOOM}
               title={translate('auto.components.editor.ImageViewer.be27304574', 'Zoom out')}
             >
-              <ZoomOut size={14} />
-            </button>
-            <button
+              <ZoomOut className="size-3.5" />
+            </Button>
+            <Button
               type="button"
-              className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              variant="ghost"
+              size="icon-xs"
               onClick={() => applyInlineZoomChange(() => 1)}
               disabled={inlineZoom === 1}
               title={translate('auto.components.editor.ImageViewer.6c89c73d9f', 'Reset zoom')}
             >
-              <RotateCcw size={14} />
-            </button>
-            <button
+              <RotateCcw className="size-3.5" />
+            </Button>
+            <Button
               type="button"
-              className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              variant="ghost"
+              size="icon-xs"
               onClick={() =>
                 applyInlineZoomChange((currentZoom) => currentZoom * IMAGE_VIEWER_ZOOM_STEP)
               }
               disabled={inlineZoom >= MAX_IMAGE_VIEWER_ZOOM}
               title={translate('auto.components.editor.ImageViewer.3c9217f5a6', 'Zoom in')}
             >
-              <ZoomIn size={14} />
-            </button>
+              <ZoomIn className="size-3.5" />
+            </Button>
             <span className="ml-1 tabular-nums">{inlineSurface.zoomPercent}%</span>
           </div>
           <span className="min-w-0 truncate" title={filename}>

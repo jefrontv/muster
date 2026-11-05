@@ -574,22 +574,24 @@ export function RemoteFileBrowser({
     <div ref={setBrowserRootRef} className="flex flex-col gap-2 min-w-0 w-full">
       {/* Breadcrumb bar */}
       <div className="flex items-center gap-0.5 min-h-[28px] overflow-x-auto scrollbar-none">
-        <button
+        <Button
+          variant="ghost"
+          size="icon-xs"
           type="button"
           onClick={navigateUp}
           disabled={resolvedPath === '/' || loading}
-          className="shrink-0 p-1 rounded-full hover:bg-accent disabled:opacity-30 transition-colors cursor-pointer disabled:cursor-default outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowUp className="size-3.5" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
           type="button"
           onClick={() => navigate('~')}
           disabled={loading}
-          className="shrink-0 p-1 rounded-full hover:bg-accent transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Home className="size-3.5" />
-        </button>
+        </Button>
         <div className="flex items-center gap-0 text-[11px] text-muted-foreground ml-1 min-w-0">
           <button
             type="button"

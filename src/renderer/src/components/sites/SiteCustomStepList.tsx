@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, Library, Pencil, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -36,17 +37,19 @@ function IconButton({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           // aria-label, not title: the tooltip is the visible hint, and a native title on top of it
           // shows a second, slower, duplicate one.
           aria-label={label}
           disabled={disabled}
           onClick={onClick}
-          className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="text-muted-foreground"
         >
           {children}
-        </button>
+        </Button>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={4}>
         {label}

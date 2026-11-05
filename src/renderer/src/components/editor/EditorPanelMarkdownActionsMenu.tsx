@@ -1,5 +1,6 @@
 import type React from 'react'
 import { MoreHorizontal } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -50,9 +51,11 @@ export function EditorPanelMarkdownActionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
+          variant="ghost"
+          size="icon-xs"
           type="button"
-          className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="text-muted-foreground"
           aria-label={translate(
             'auto.components.editor.EditorPanelMarkdownActionsMenu.561251019a',
             'More actions'
@@ -62,8 +65,8 @@ export function EditorPanelMarkdownActionsMenu({
             'More actions'
           )}
         >
-          <MoreHorizontal size={14} />
-        </button>
+          <MoreHorizontal className="size-3.5" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={4}>
         <DropdownMenuCheckboxItem checked={wordWrapChecked} onCheckedChange={onToggleWordWrap}>

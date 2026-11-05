@@ -179,17 +179,20 @@ export function JiraIntegrationCard(): React.JSX.Element {
                       )
                     )}
                   </Button>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={() => void handleDisconnect(site.id)}
                     aria-label={translate(
                       'auto.components.settings.task.tracker.integration.cards.dd3529015d',
                       'Disconnect {{value0}}',
                       { value0: site.displayName }
                     )}
-                    className="rounded-full p-1 text-muted-foreground transition-colors hover:text-destructive outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="text-muted-foreground hover:text-destructive"
                   >
                     <Unlink className="size-3.5" />
-                  </button>
+                  </Button>
                 </div>
               )
             })}

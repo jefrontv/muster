@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { RULES, countMatches } from './check-style-drift-ratchet.mjs'
 
-const [faded, hover] = RULES
+const [faded, hover, roundIcon] = RULES
 
 describe('style drift ratchets', () => {
   it('counts faded muted text but not the full token or stronger alphas', () => {
@@ -12,5 +12,10 @@ describe('style drift ratchets', () => {
   it('counts hover fills outside the two recipes', () => {
     const source = `cn('hover:bg-accent', 'hover:bg-foreground/[0.07]', 'hover:bg-transparent', 'hover:bg-muted/50', 'hover:bg-accent/40', 'dark:hover:bg-foreground/[0.05]')`
     expect(countMatches(source, hover.pattern)).toBe(3)
+  })
+
+  it('counts hand-built round icon buttons in either class order', () => {
+    const source = `<button className="rounded-full p-1 hover:bg-accent" /><button className="p-1 text-muted-foreground rounded-full" /><span className="rounded-full p-1.5" /><span className="rounded-full sm:p-1" /><span className="rounded-full" title="p-1" />`
+    expect(countMatches(source, roundIcon.pattern)).toBe(2)
   })
 })

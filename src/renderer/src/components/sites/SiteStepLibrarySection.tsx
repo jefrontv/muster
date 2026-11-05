@@ -204,18 +204,20 @@ export function SiteStepLibrarySection({ summary }: { summary: SiteSummary }): R
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-xs"
                           aria-label={translate(
                             'auto.components.sites.StepLibrary.remove',
                             'Remove from library'
                           )}
                           disabled={busyId !== null}
                           onClick={() => void removeFromLibrary(step)}
-                          className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="text-muted-foreground"
                         >
                           <Trash2 className="size-3.5" />
-                        </button>
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent side="top" sideOffset={4}>
                         {translate(

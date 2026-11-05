@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { XIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   DASHBOARD_BUCKET_ORDER,
   type DashboardBucket,
@@ -206,14 +207,16 @@ export function AgentKanbanBoard({
           <div className="ml-auto flex items-center gap-1">
             {headerActions}
             {onClose ? (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={onClose}
                 aria-label={translate('dashboardPopout.close', 'Close dashboard')}
-                className="rounded-full p-1 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="text-muted-foreground"
               >
                 <XIcon className="size-4" />
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}

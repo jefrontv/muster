@@ -301,14 +301,17 @@ export function ChecksPanelReviewHeader({
         {review.state}
       </span>
       <div className="flex-1" />
-      <button
-        className="cursor-pointer rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        className="text-muted-foreground"
         title={translate('auto.components.right.sidebar.ChecksPanel.7f4489f370', 'Refresh')}
         onClick={onRefresh}
         disabled={isRefreshing}
       >
         <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
-      </button>
+      </Button>
       {showPullRequestMenu && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -4041,8 +4044,11 @@ export default function ChecksPanel(): React.JSX.Element {
               onKeyDown={handleTitleKeyDown}
               disabled={titleSaving}
             />
-            <button
-              className="cursor-pointer rounded-full p-1 text-status-success transition-colors hover:bg-accent hover:text-status-success disabled:cursor-default disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              className="text-status-success hover:text-status-success"
               title={translate('auto.components.right.sidebar.ChecksPanel.2ab7fd4b6d', 'Save')}
               onClick={() => void handleSaveTitle()}
               disabled={titleSaving}
@@ -4052,15 +4058,18 @@ export default function ChecksPanel(): React.JSX.Element {
               ) : (
                 <Check className="size-3.5" />
               )}
-            </button>
-            <button
-              className="cursor-pointer rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              className="text-muted-foreground"
               title={translate('auto.components.right.sidebar.ChecksPanel.058039787c', 'Cancel')}
               onClick={handleCancelEdit}
               disabled={titleSaving}
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           </div>
         ) : (
           <div

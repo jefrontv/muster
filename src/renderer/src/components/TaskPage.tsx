@@ -11214,15 +11214,17 @@ export default function TaskPage(): React.JSX.Element {
                 </span>
               )}
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={() => setNewLinearProjectOpen(false)}
-              className="rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="text-muted-foreground"
               disabled={newLinearProjectSubmitting}
               aria-label={translate('auto.components.TaskPage.b6795e65fd', 'Close')}
             >
               <X className="size-4" />
-            </button>
+            </Button>
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5 scrollbar-sleek">
@@ -11658,13 +11660,17 @@ export default function TaskPage(): React.JSX.Element {
                 </span>
               )}
             </div>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={() => setNewLinearIssueOpen(false)}
-              className="text-muted-foreground hover:text-foreground p-1 rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="text-muted-foreground"
               disabled={newLinearIssueSubmitting}
+              aria-label={translate('auto.components.TaskPage.b6795e65fd', 'Close')}
             >
               <X className="size-4" />
-            </button>
+            </Button>
           </div>
 
           {/* Form Content */}

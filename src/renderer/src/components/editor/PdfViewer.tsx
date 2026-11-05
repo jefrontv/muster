@@ -1,6 +1,7 @@
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: PDF loading drives pdf.js document/viewer instances and decode errors through an external worker lifecycle. */
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Image as ImageIcon, RotateCcw, Search, ZoomIn, ZoomOut } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import * as pdfjsLib from 'pdfjs-dist'
 import {
   EventBus,
@@ -399,37 +400,41 @@ export default function PdfViewer({
       </div>
       <div className="flex items-center gap-4 border-t px-4 py-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
-          <button
+          <Button
             type="button"
-            className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            variant="ghost"
+            size="icon-xs"
             onClick={zoomOut}
             disabled={scale <= MIN_SCALE}
             title={translate('auto.components.editor.PdfViewer.fa5d096b00', 'Zoom out')}
           >
-            <ZoomOut size={14} />
-          </button>
-          <button
+            <ZoomOut className="size-3.5" />
+          </Button>
+          <Button
             type="button"
-            className="rounded-full p-1 hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            variant="ghost"
+            size="icon-xs"
             onClick={zoomReset}
             title={translate('auto.components.editor.PdfViewer.c0119616d6', 'Fit to width')}
           >
-            <RotateCcw size={14} />
-          </button>
-          <button
+            <RotateCcw className="size-3.5" />
+          </Button>
+          <Button
             type="button"
-            className="rounded-full p-1 hover:bg-accent hover:text-foreground disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            variant="ghost"
+            size="icon-xs"
             onClick={zoomIn}
             disabled={scale >= MAX_SCALE}
             title={translate('auto.components.editor.PdfViewer.2b6eb1ccd6', 'Zoom in')}
           >
-            <ZoomIn size={14} />
-          </button>
+            <ZoomIn className="size-3.5" />
+          </Button>
           <span className="ml-1 tabular-nums">{zoomPercent}%</span>
         </div>
-        <button
+        <Button
           type="button"
-          className="rounded-full p-1 hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          variant="ghost"
+          size="icon-xs"
           onClick={() => setFindOpen(true)}
           title={translate(
             'auto.components.editor.PdfViewer.069ff59932',
@@ -437,8 +442,8 @@ export default function PdfViewer({
             { value0: findShortcutLabel }
           )}
         >
-          <Search size={14} />
-        </button>
+          <Search className="size-3.5" />
+        </Button>
         <span className="min-w-0 truncate" title={filename}>
           {filename}
         </span>

@@ -102,15 +102,17 @@ export function FirstLaunchBanner({
         </Button>
       </div>
       {/* aria-label says "Dismiss" but this persists silent opt-in, not just hides the UI. */}
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
         aria-label={translate('auto.components.FirstLaunchBanner.b9e1b966c7', 'Dismiss notice')}
         onClick={handleAcknowledge}
         disabled={inFlight}
-        className="absolute right-1.5 top-1.5 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="absolute right-1.5 top-1.5 text-muted-foreground"
       >
         <X className="size-3.5" />
-      </button>
+      </Button>
     </div>
   )
 }

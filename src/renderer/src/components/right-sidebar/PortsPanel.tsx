@@ -1147,17 +1147,21 @@ function ForwardedPortRow({
         )}
       </div>
       <div className="flex items-center gap-0.5 can-hover:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-        <button
+        <Button
+          variant="ghost"
+          size="icon-xs"
           type="button"
-          className="p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="text-muted-foreground"
           onClick={handleOpenBrowserButtonClick}
           title={openBrowserTitle}
         >
-          <ExternalLink size={13} />
-        </button>
-        <button
+          <ExternalLink className="size-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
           type="button"
-          className="p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="text-muted-foreground"
           onClick={handleCopyButtonClick}
           title={translate(
             'auto.components.right.sidebar.PortsPanel.1004af16ab',
@@ -1165,28 +1169,29 @@ function ForwardedPortRow({
             { value0: forwardedAddress }
           )}
         >
-          <Copy size={13} />
-        </button>
-        <button
+          <Copy className="size-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
           type="button"
-          className="p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="text-muted-foreground"
           onClick={handleEditButtonClick}
           title={translate('auto.components.right.sidebar.PortsPanel.b3548e59f4', 'Edit')}
         >
-          <Pencil size={13} />
-        </button>
-        <button
+          <Pencil className="size-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
           type="button"
-          className={cn(
-            'p-1 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            removing && 'opacity-50'
-          )}
+          className="text-muted-foreground"
           onClick={handleRemoveButtonClick}
           disabled={removing}
           title={translate('auto.components.right.sidebar.PortsPanel.e740075063', 'Remove')}
         >
-          <Trash2 size={13} />
-        </button>
+          <Trash2 className="size-3" />
+        </Button>
       </div>
     </div>
   )

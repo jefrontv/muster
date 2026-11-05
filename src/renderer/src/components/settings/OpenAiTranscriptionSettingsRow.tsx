@@ -57,17 +57,20 @@ export function OpenAiTranscriptionSettingsRow({
               'Replace key'
             )}
           </Button>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={onClear}
             aria-label={translate(
               'auto.components.settings.OpenAiTranscriptionSettingsRow.ae2df8f511',
               'Disconnect OpenAI API key'
             )}
             disabled={disabled}
-            className="rounded-full p-1 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-muted-foreground hover:text-destructive"
           >
             <Unlink className="size-3.5" />
-          </button>
+          </Button>
         </div>
       ) : (
         <Button variant="outline" size="sm" disabled={disabled} onClick={onConfigure}>

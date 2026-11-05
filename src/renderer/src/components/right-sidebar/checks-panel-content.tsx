@@ -1383,14 +1383,17 @@ function CopyButton({
   )
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-xs"
       ref={setCopyButtonRef}
-      className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="text-muted-foreground"
       title={title}
       onClick={handleCopy}
     >
       {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-    </button>
+    </Button>
   )
 }
 
@@ -1504,9 +1507,11 @@ function CommentMoreMenu({
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           type="button"
-          className="shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          variant="ghost"
+          size="icon-xs"
+          className="text-muted-foreground"
           aria-label={translate(
             'auto.components.right.sidebar.checks.panel.content.74c6885b8a',
             'More comment actions'
@@ -1515,7 +1520,7 @@ function CommentMoreMenu({
           onClick={(event) => event.stopPropagation()}
         >
           <MoreHorizontal className="size-3" />
-        </button>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={4}>
         {hasQueue ? (

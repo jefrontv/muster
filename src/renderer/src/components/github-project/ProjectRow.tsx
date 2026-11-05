@@ -1,5 +1,6 @@
 import React from 'react'
 import { ExternalLink, Play } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
@@ -122,17 +123,18 @@ export default function ProjectRow({
         {row.content.url ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={onOpenInBrowser}
                 aria-label={translate(
                   'auto.components.github.project.ProjectRow.e12be8b4d4',
                   'Open in GitHub'
                 )}
-                className="rounded-full p-1 hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <ExternalLink className="size-3.5" />
-              </button>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               {translate('auto.components.github.project.ProjectRow.e12be8b4d4', 'Open in GitHub')}
@@ -142,17 +144,18 @@ export default function ProjectRow({
         {!disabled && row.itemType !== 'DRAFT_ISSUE' && row.content.number != null ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={onStartWork}
                 aria-label={translate(
                   'auto.components.github.project.ProjectRow.75b5d816e3',
                   'Start work'
                 )}
-                className="rounded-full p-1 hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Play className="size-3.5" />
-              </button>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               {translate('auto.components.github.project.ProjectRow.75b5d816e3', 'Start work')}

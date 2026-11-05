@@ -126,16 +126,19 @@ export function ActiveCollabIntegrationCard(): React.JSX.Element {
                   {connection ? `${connection.userEmail} · ${connection.instanceUrl}` : ''}
                 </p>
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => void handleDisconnect()}
                 aria-label={translate(
                   'auto.components.settings.activecollab.integration.card.disconnect_label',
                   'Disconnect ActiveCollab'
                 )}
-                className="rounded-full p-1 text-muted-foreground transition-colors hover:text-destructive outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="text-muted-foreground hover:text-destructive"
               >
                 <Unlink className="size-3.5" />
-              </button>
+              </Button>
             </div>
             {disconnectError ? (
               <p role="alert" className="text-xs text-destructive">

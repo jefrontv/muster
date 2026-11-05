@@ -5,6 +5,7 @@
 // ordinary states, and a permanent grey row for each would be noise in a panel kept open all day.
 
 import { ExternalLink, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { openHttpLink } from '@/lib/http-link-routing'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
@@ -119,14 +120,16 @@ export function SitePanelPipelines({
                       {formatRelativeTime(run.createdOn)}
                     </span>
                   )}
-                  <button
+                  <Button
                     type="button"
-                    className="rounded-full p-1 text-muted-foreground opacity-80 hover:bg-accent hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="text-muted-foreground"
                     aria-label={`${openLabel} #${run.buildNumber}`}
                     onClick={() => void openHttpLink(run.url)}
                   >
                     <ExternalLink className="size-3.5" />
-                  </button>
+                  </Button>
                 </span>
               </div>
               {/* Indented under the run it belongs to, aligned past the glyph. */}

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown, Columns3 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import ColumnResizeHandle from './ColumnResizeHandle'
@@ -362,16 +363,18 @@ function ProjectHeaderRow({
       <div className="flex items-center justify-end">
         <Popover>
           <PopoverTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               aria-label={translate(
                 'auto.components.github.project.ProjectViewList.f949f5b2b7',
                 'Configure columns'
               )}
-              className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="text-muted-foreground"
             >
               <Columns3 className="size-3.5" />
-            </button>
+            </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-56 p-1">
             <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
