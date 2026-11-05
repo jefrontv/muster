@@ -8,7 +8,7 @@ import { NativeChatCopyButton } from '@/components/native-chat/NativeChatCopyBut
 import type { ChatEngineItem, ChatEngineTurn } from '../../../../shared/chat-engine-types'
 import { unwrapChatWorkspaceUserTurn } from '../../../../shared/chat-workspace-site-info'
 import { useChatThreadContext } from '@/components/chat-thread/chat-thread-context'
-import { RunningStatus, TurnOutcomeAnnouncement } from '@/components/chat-thread/ChatTurnChrome'
+import { TurnOutcomeAnnouncement } from '@/components/chat-thread/ChatTurnChrome'
 import {
   answerText,
   foldKeepsVisible,
@@ -23,6 +23,8 @@ import { ChatTurnFoldPill } from './ChatProcessPills'
 import { ChatReplyBubble } from './ChatReplyBubble'
 import { ChatUserBubble } from './ChatUserBubble'
 import { ChatTurnFailure, ChatTurnStopped } from './ChatTurnNotice'
+import { ChatTurnPresence } from './ChatTurnPresence'
+import { turnIsAnswering } from './chat-turn-phrases'
 
 type ItemOf<K extends ChatEngineItem['kind']> = Extract<ChatEngineItem, { kind: K }>
 
@@ -149,7 +151,7 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
       ) : (
         <ConversationItems items={turn.items} tray={tray} />
       )}
-      {turn.status === 'running' && <RunningStatus startedAt={turn.startedAt} />}
+      {turn.status === 'running' && !turnIsAnswering(turn) && <ChatTurnPresence turn={turn} />}
       {turn.status === 'interrupted' && !fold && <ChatTurnStopped />}
       {turn.status === 'error' && <ChatTurnFailure message={turn.errorMessage} onRetry={retry} />}
       {props.latest && <TurnOutcomeAnnouncement turn={turn} />}
