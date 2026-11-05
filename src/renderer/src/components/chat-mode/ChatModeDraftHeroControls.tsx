@@ -1,5 +1,5 @@
-// The hero composer's footer, laid out like the thread composer's: + menu and the
-// workspace chip on the left; the model/effort trigger, mic and send on the right.
+// The hero composer's controls, laid out like the thread composer's: + menu and the
+// workspace chip lead; the model/effort trigger, voice and send trail.
 
 import { ChevronDown, Folder, FolderPlus } from 'lucide-react'
 import type React from 'react'
@@ -21,12 +21,10 @@ import type { NativeChatPromptStash } from '../native-chat/use-native-chat-promp
 import type { NativeChatDictation } from '../native-chat/use-native-chat-dictation'
 import { NativeChatSeatSendButton } from '../native-chat/NativeChatSeatSendButton'
 import {
+  CHAT_CONVERSATION_LEAD_CLASS,
+  CHAT_CONVERSATION_TRAIL_CLASS,
   CHAT_SEAT_CHIP_CHEVRON_CLASS,
-  CHAT_SEAT_CHIP_CLASS,
-  CHAT_SEAT_TOOLBAR_CLASS,
-  CHAT_SEAT_TOOLBAR_LEAD_CLASS,
-  CHAT_SEAT_TOOLBAR_ROW_CLASS,
-  CHAT_SEAT_TOOLBAR_TRAIL_CLASS
+  CHAT_SEAT_CHIP_CLASS
 } from '../native-chat/chat-seat-composer-classes'
 import { useChatDraftSessionOptions } from './chat-draft-session-options'
 
@@ -107,41 +105,40 @@ export function ChatModeDraftHeroControls({
 }): React.JSX.Element {
   const options = useChatDraftSessionOptions()
   return (
-    <div className={CHAT_SEAT_TOOLBAR_CLASS}>
-      <div className={CHAT_SEAT_TOOLBAR_ROW_CLASS}>
-        <div className={CHAT_SEAT_TOOLBAR_LEAD_CLASS}>
-          <NativeChatStashMenu stash={stash} attachDisabled={false} onAttach={onAttach} />
-          <WorkspaceChip
-            workspaces={workspaces}
-            selected={selectedWorkspace}
-            onSelect={onSelectWorkspace}
-            onCreateWorkspace={onCreateWorkspace}
-          />
-        </div>
-        <div className={CHAT_SEAT_TOOLBAR_TRAIL_CLASS}>
-          <NativeChatSessionOptionPickers
-            surface={options.surface}
-            snapshot={options.snapshot}
-            isWorking={false}
-            chatThread
-          />
-          <NativeChatMicButton
-            configured={dictation.configured}
-            isDictating={dictation.isDictating}
-            isHoldMode={dictation.isHoldMode}
-            onToggle={dictation.toggle}
-            onHoldStart={dictation.holdStart}
-            onHoldEnd={dictation.holdEnd}
-            onSetUp={dictation.openSetup}
-          />
-          <NativeChatSeatSendButton
-            stop={false}
-            label={translate('auto.components.chat.hero.send', 'Start the chat')}
-            disabled={sendDisabled}
-            onClick={onSend}
-          />
-        </div>
+    <>
+      <div className={CHAT_CONVERSATION_LEAD_CLASS}>
+        <NativeChatStashMenu stash={stash} attachDisabled={false} onAttach={onAttach} />
+        <WorkspaceChip
+          workspaces={workspaces}
+          selected={selectedWorkspace}
+          onSelect={onSelectWorkspace}
+          onCreateWorkspace={onCreateWorkspace}
+        />
       </div>
-    </div>
+      <div className={CHAT_CONVERSATION_TRAIL_CLASS}>
+        <NativeChatSessionOptionPickers
+          surface={options.surface}
+          snapshot={options.snapshot}
+          isWorking={false}
+          chatThread
+        />
+        <NativeChatMicButton
+          configured={dictation.configured}
+          isDictating={dictation.isDictating}
+          isHoldMode={dictation.isHoldMode}
+          onToggle={dictation.toggle}
+          onHoldStart={dictation.holdStart}
+          onHoldEnd={dictation.holdEnd}
+          onSetUp={dictation.openSetup}
+          variant="voice"
+        />
+        <NativeChatSeatSendButton
+          stop={false}
+          label={translate('auto.components.chat.hero.send', 'Start the chat')}
+          disabled={sendDisabled}
+          onClick={onSend}
+        />
+      </div>
+    </>
   )
 }

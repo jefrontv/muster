@@ -28,6 +28,8 @@ import { useNativeChatSurface } from './native-chat-surface-context'
 import type { NativeChatDictation } from './use-native-chat-dictation'
 import { NativeChatSeatSendButton } from './NativeChatSeatSendButton'
 import {
+  CHAT_CONVERSATION_LEAD_CLASS,
+  CHAT_CONVERSATION_TRAIL_CLASS,
   CHAT_SEAT_FOCUS_CLASS,
   CHAT_SEAT_TOOLBAR_LEAD_CLASS,
   CHAT_SEAT_TOOLBAR_ROW_CLASS,
@@ -81,7 +83,8 @@ export function NativeChatComposerActions({
   // One slot for every picker on this bar (thought level / model / access), so opening one closes
   // whichever was open instead of stacking a second panel over it.
   const [openPicker, setOpenPicker] = React.useState<string | null>(null)
-  const { chatThread, reportedModel, seat } = useNativeChatSurface()
+  const { chatThread, reportedModel, seat, look, composerLeadSlot } = useNativeChatSurface()
+  const conversation = seat === true && look === 'conversation'
   const showMeter =
     contextUsedTokens !== null &&
     contextUsedTokens /
@@ -93,6 +96,65 @@ export function NativeChatComposerActions({
   const sendLabel = isWorking
     ? translate('components.native-chat.stop', 'Stop the agent')
     : translate('components.native-chat.composer.send', 'Send')
+  const stashMenu = (
+    <NativeChatStashMenu stash={stash} attachDisabled={attachDisabled} onAttach={onAttach} />
+  )
+  const taskMenu = onAttachTask ? (
+    <NativeChatTaskPickerMenu
+      onAttachTask={onAttachTask}
+      preferredProjectId={activeCollabProjectId}
+    />
+  ) : null
+  const optionPickers = (
+    <NativeChatSessionOptionPickers
+      surface={sessionOptionsSurface}
+      snapshot={sessionOptionsSnapshot}
+      isWorking={isWorking}
+      openPicker={openPicker}
+      onOpenPickerChange={setOpenPicker}
+      chatThread={chatThread}
+      reportedModel={reportedModel}
+    />
+  )
+  const contextMeter =
+    showMeter && contextUsedTokens !== null ? (
+      <NativeChatContextWindowMeter usedTokens={contextUsedTokens} maxTokens={contextMaxTokens} />
+    ) : null
+  const micButton = (
+    <NativeChatMicButton
+      configured={dictation.configured}
+      isDictating={dictation.isDictating}
+      isHoldMode={dictation.isHoldMode}
+      disabled={dictationDisabled}
+      onToggle={dictation.toggle}
+      onHoldStart={dictation.holdStart}
+      onHoldEnd={dictation.holdEnd}
+      onSetUp={dictation.openSetup}
+      variant={conversation ? 'voice' : undefined}
+    />
+  )
+  if (conversation) {
+    return (
+      <>
+        <div className={CHAT_CONVERSATION_LEAD_CLASS}>
+          {stashMenu}
+          {taskMenu}
+          {composerLeadSlot}
+        </div>
+        <div className={CHAT_CONVERSATION_TRAIL_CLASS}>
+          {optionPickers}
+          {contextMeter}
+          {micButton}
+          <NativeChatSeatSendButton
+            stop={isWorking}
+            label={sendLabel}
+            disabled={sendDisabled}
+            onClick={isWorking ? onStop : onSend}
+          />
+        </div>
+      </>
+    )
+  }
   return (
     <div
       className={
@@ -100,24 +162,11 @@ export function NativeChatComposerActions({
       }
     >
       <div className={seat ? CHAT_SEAT_TOOLBAR_LEAD_CLASS : 'flex min-w-0 items-center gap-0.5'}>
-        <NativeChatStashMenu stash={stash} attachDisabled={attachDisabled} onAttach={onAttach} />
-        {onAttachTask ? (
-          <NativeChatTaskPickerMenu
-            onAttachTask={onAttachTask}
-            preferredProjectId={activeCollabProjectId}
-          />
-        ) : null}
+        {stashMenu}
+        {taskMenu}
       </div>
       <div className={seat ? CHAT_SEAT_TOOLBAR_TRAIL_CLASS : 'ml-auto flex items-center gap-1'}>
-        <NativeChatSessionOptionPickers
-          surface={sessionOptionsSurface}
-          snapshot={sessionOptionsSnapshot}
-          isWorking={isWorking}
-          openPicker={openPicker}
-          onOpenPickerChange={setOpenPicker}
-          chatThread={chatThread}
-          reportedModel={reportedModel}
-        />
+        {optionPickers}
         {onSetFullAccess ? (
           <DropdownMenu
             open={openPicker === 'access'}
@@ -192,22 +241,8 @@ export function NativeChatComposerActions({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
-        {showMeter && contextUsedTokens !== null ? (
-          <NativeChatContextWindowMeter
-            usedTokens={contextUsedTokens}
-            maxTokens={contextMaxTokens}
-          />
-        ) : null}
-        <NativeChatMicButton
-          configured={dictation.configured}
-          isDictating={dictation.isDictating}
-          isHoldMode={dictation.isHoldMode}
-          disabled={dictationDisabled}
-          onToggle={dictation.toggle}
-          onHoldStart={dictation.holdStart}
-          onHoldEnd={dictation.holdEnd}
-          onSetUp={dictation.openSetup}
-        />
+        {contextMeter}
+        {micButton}
         {seat ? (
           <NativeChatSeatSendButton
             stop={isWorking}

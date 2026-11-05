@@ -15,9 +15,9 @@ import {
   type NativeChatSurfaceContextValue
 } from '../native-chat/native-chat-surface-context'
 import {
-  CHAT_SEAT_ATTACHMENTS_CLASS,
-  CHAT_SEAT_CARD_CLASS,
-  CHAT_SEAT_EDITOR_CLASS
+  CHAT_CONVERSATION_ATTACHMENTS_CLASS,
+  CHAT_CONVERSATION_CARD_CLASS,
+  CHAT_CONVERSATION_EDITOR_CLASS
 } from '../native-chat/chat-seat-composer-classes'
 import { basename } from '@/lib/path'
 import { formatNativeChatFileReference } from '../native-chat/native-chat-composer-target'
@@ -39,7 +39,8 @@ const HERO_SURFACE: NativeChatSurfaceContextValue = {
   openFile: null,
   chatThread: true,
   reportedModel: null,
-  seat: true
+  seat: true,
+  look: 'conversation'
 }
 
 /** Fetched once per app run; undefined = not asked yet (distinct from "no name"). */
@@ -179,7 +180,7 @@ export function ChatModeDraftHero({
       </h1>
       <NativeChatSurfaceProvider value={HERO_SURFACE}>
         <div
-          className={cn(CHAT_CONVERSATION_COLUMN_CLASS, CHAT_SEAT_CARD_CLASS)}
+          className={cn(CHAT_CONVERSATION_COLUMN_CLASS, CHAT_CONVERSATION_CARD_CLASS)}
           data-contextual-tour-target="chat-thread-composer"
           data-native-file-drop-target={NATIVE_FILE_DROP_TARGET.composer}
         >
@@ -193,7 +194,7 @@ export function ChatModeDraftHero({
             />
           ) : null}
           {stagedPaths.length > 0 ? (
-            <div className={CHAT_SEAT_ATTACHMENTS_CLASS}>
+            <div className={CHAT_CONVERSATION_ATTACHMENTS_CLASS}>
               {stagedPaths.map((path) => (
                 <div
                   key={path}
@@ -220,7 +221,7 @@ export function ChatModeDraftHero({
           <textarea
             ref={textareaRef}
             value={text}
-            rows={3}
+            rows={2}
             autoFocus
             disabled={submitting}
             role="combobox"
@@ -284,7 +285,11 @@ export function ChatModeDraftHero({
                 void submit()
               }
             }}
-            className={cn(CHAT_SEAT_EDITOR_CLASS, 'min-h-[64px]')}
+            // The hero's field spans the card; the controls share the row beneath it.
+            className={cn(
+              CHAT_CONVERSATION_EDITOR_CLASS,
+              'order-first w-full flex-none basis-full min-h-20 pt-1.5'
+            )}
           />
           <ChatModeDraftHeroControls
             sendDisabled={(text.trim() === '' && stagedPaths.length === 0) || submitting}

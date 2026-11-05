@@ -15071,7 +15071,9 @@
         "defaultEffort": "Default",
         "effortFromSettings": "From your Claude settings",
         "effortCliDefault": "Claude's default effort for this model",
-        "queue": "将消息加入队列（{{shortcut}} 立即引导）"
+        "queue": "将消息加入队列（{{shortcut}} 立即引导）",
+        "voiceOptions": "Voice options",
+        "voiceSettings": "Voice settings"
       },
       "tool": {
         "running": "正在运行…",
@@ -15475,6 +15477,20 @@
         "askingYou": "Asking you a question",
         "usingServer": "Using {{server}}",
         "usingTool": "Using {{tool}}"
+      },
+      "access": {
+        "ask": "Ask first",
+        "full": "Full access",
+        "plan": "Plan first",
+        "value": "Tool access: {{value}}",
+        "askHint": "Every tool needs your approval",
+        "fullHint": "Runs every tool without asking",
+        "planHint": "Reads and plans, then asks before changing anything"
+      },
+      "web": {
+        "off": "Web access off",
+        "on": "Web access on",
+        "toggle": "Web access"
       }
     }
   },

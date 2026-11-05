@@ -2,6 +2,7 @@
 // every row: Chat mode (plain sentences) or Code mode (diffs, commands, paths).
 
 import { createContext, useContext } from 'react'
+import type React from 'react'
 import type { NativeChatSurface } from '../../../../shared/native-chat-tool-activity-types'
 
 export type NativeChatSurfaceContextValue = {
@@ -17,6 +18,10 @@ export type NativeChatSurfaceContextValue = {
   reportedModel: string | null
   /** The composer sits in the chat engine surface's seat, which owns its width. */
   seat?: boolean
+  /** Chat mode's Bots look: a single-row composer. Code mode leaves it unset. */
+  look?: 'conversation'
+  /** Chat-only controls the conversation composer places after attach (access, web). */
+  composerLeadSlot?: React.ReactNode
 }
 
 const NativeChatSurfaceContext = createContext<NativeChatSurfaceContextValue>({

@@ -6,6 +6,10 @@ import type { StateCreator } from 'zustand'
 import { isAskUserQuestionTool } from '../../../../shared/agent-question-answered-intent'
 import type { AppState } from '../types'
 
+const WEB_TOOLS = new Set(['WebSearch', 'WebFetch'])
+const WEB_BLOCKED_MESSAGE =
+  'The user turned web access off for this chat. Answer without searching or fetching the web.'
+
 /** A pending can_use_tool question from the stream, awaiting Approve/Decline. */
 export type ChatThreadPermissionRequest = {
   requestId: string
@@ -23,6 +27,8 @@ export type ChatThreadPermissionSlice = {
   /** Full-access (auto-approve every tool) per thread. Runtime-only; dies with
    *  the session like the allowed-tools list. */
   chatThreadFullAccess: Record<string, boolean>
+  /** Threads with web access off: WebSearch/WebFetch requests are declined. Runtime-only. */
+  chatThreadWebBlocked: Record<string, boolean>
   /** Request ids already answered this session, so a replay cannot resurrect a
    *  card nothing would remove. Runtime-only; cleared with the session. */
   chatThreadAnsweredPermissions: Record<string, string[]>
@@ -39,6 +45,7 @@ export type ChatThreadPermissionSlice = {
   allowChatThreadToolForSession: (threadId: string, toolName: string) => void
   clearChatThreadSessionAllowedTools: (threadId: string) => void
   setChatThreadFullAccess: (threadId: string, enabled: boolean) => void
+  setChatThreadWebBlocked: (threadId: string, blocked: boolean) => void
 }
 
 export const createChatThreadPermissionSlice: StateCreator<
@@ -50,6 +57,7 @@ export const createChatThreadPermissionSlice: StateCreator<
   chatThreadPermissionRequests: {},
   chatThreadSessionAllowedTools: {},
   chatThreadFullAccess: {},
+  chatThreadWebBlocked: {},
   chatThreadAnsweredPermissions: {},
 
   addChatThreadPermissionRequest: (threadId, request) => {
@@ -57,6 +65,11 @@ export const createChatThreadPermissionSlice: StateCreator<
     // more than one producer (live stream events and the reload replay), and a
     // producer that forgets the check shows an approval card under full access.
     const state = get()
+    // Web access off outranks every allow, full access included.
+    if (state.chatThreadWebBlocked[threadId] === true && WEB_TOOLS.has(request.toolName)) {
+      state.respondChatThreadPermission(threadId, request.requestId, 'deny', WEB_BLOCKED_MESSAGE)
+      return
+    }
     if (
       !isAskUserQuestionTool(request.toolName) &&
       (state.settings?.nativeChatPermissionMode === 'full' ||
@@ -175,5 +188,17 @@ export const createChatThreadPermissionSlice: StateCreator<
         return { chatThreadFullAccess: remaining }
       }
       return { chatThreadFullAccess: { ...s.chatThreadFullAccess, [threadId]: true } }
+    }),
+
+  setChatThreadWebBlocked: (threadId, blocked) =>
+    set((s) => {
+      if (blocked) {
+        return { chatThreadWebBlocked: { ...s.chatThreadWebBlocked, [threadId]: true } }
+      }
+      if (!(threadId in s.chatThreadWebBlocked)) {
+        return {}
+      }
+      const { [threadId]: _dropped, ...remaining } = s.chatThreadWebBlocked
+      return { chatThreadWebBlocked: remaining }
     })
 })

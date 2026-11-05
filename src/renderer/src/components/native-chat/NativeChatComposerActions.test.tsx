@@ -36,6 +36,14 @@ vi.mock('./NativeChatStashMenu', () => ({
 }))
 
 import { NativeChatComposerActions } from './NativeChatComposerActions'
+import {
+  NativeChatSurfaceProvider,
+  type NativeChatSurfaceContextValue
+} from './native-chat-surface-context'
+import {
+  CHAT_CONVERSATION_LEAD_CLASS,
+  CHAT_SEAT_TOOLBAR_LEAD_CLASS
+} from './chat-seat-composer-classes'
 import type { NativeChatPromptStash } from './use-native-chat-prompt-stash'
 import type { NativeChatDictation } from './use-native-chat-dictation'
 
@@ -63,9 +71,10 @@ const stubStash: NativeChatPromptStash = {
 afterEach(() => cleanup())
 
 function renderActions(
-  overrides: Partial<React.ComponentProps<typeof NativeChatComposerActions>> = {}
+  overrides: Partial<React.ComponentProps<typeof NativeChatComposerActions>> = {},
+  surface?: Partial<NativeChatSurfaceContextValue>
 ): void {
-  render(
+  const actions = (
     <NativeChatComposerActions
       attachDisabled={false}
       dictationDisabled={false}
@@ -80,6 +89,25 @@ function renderActions(
       contextUsedTokens={null}
       {...overrides}
     />
+  )
+  render(
+    surface ? (
+      <NativeChatSurfaceProvider
+        value={{
+          surface: 'chat',
+          cwd: null,
+          openFile: null,
+          chatThread: true,
+          reportedModel: null,
+          seat: true,
+          ...surface
+        }}
+      >
+        {actions}
+      </NativeChatSurfaceProvider>
+    ) : (
+      actions
+    )
   )
 }
 
@@ -102,5 +130,21 @@ describe('NativeChatComposerActions', () => {
     cleanup()
     renderActions({ contextUsedTokens: 120_000, contextMaxTokens: 200_000 })
     expect(screen.getByRole('img')).not.toBeNull()
+  })
+
+  it("keeps Code mode's seat toolbar when no look is set", () => {
+    renderActions({}, {})
+    expect(screen.getByTestId('stash-menu').parentElement?.className).toBe(
+      CHAT_SEAT_TOOLBAR_LEAD_CLASS
+    )
+    expect(screen.queryByRole('button', { name: 'Voice options' })).toBeNull()
+  })
+
+  it("lays Chat mode's row out with the lead slot and the voice button", () => {
+    renderActions({}, { look: 'conversation', composerLeadSlot: <span data-testid="lead-slot" /> })
+    const lead = screen.getByTestId('stash-menu').parentElement
+    expect(lead?.className).toBe(CHAT_CONVERSATION_LEAD_CLASS)
+    expect(lead?.contains(screen.getByTestId('lead-slot'))).toBe(true)
+    expect(screen.getByRole('button', { name: 'Voice options' })).not.toBeNull()
   })
 })

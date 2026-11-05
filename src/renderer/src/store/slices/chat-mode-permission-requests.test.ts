@@ -136,4 +136,22 @@ describe('chat-mode permission request state', () => {
     // Clearing an absent entry is a no-op, not a crash.
     store.getState().clearChatThreadFirstMessage('ghost')
   })
+
+  it('declines web tools while web access is off, even under full access', () => {
+    const store = makeStore()
+    store.getState().setChatThreadFullAccess('t1', true)
+    store.getState().setChatThreadWebBlocked('t1', true)
+    store
+      .getState()
+      .addChatThreadPermissionRequest('t1', { requestId: 'w1', toolName: 'WebFetch', input: {} })
+    expect(respondPermission).toHaveBeenLastCalledWith(
+      expect.objectContaining({ requestId: 'w1', behavior: 'deny' })
+    )
+    store.getState().addChatThreadPermissionRequest('t1', request('r1'))
+    expect(respondPermission).toHaveBeenLastCalledWith(
+      expect.objectContaining({ requestId: 'r1', behavior: 'allow' })
+    )
+    store.getState().setChatThreadWebBlocked('t1', false)
+    expect('t1' in store.getState().chatThreadWebBlocked).toBe(false)
+  })
 })

@@ -18,6 +18,10 @@ import { NativeChatSurfaceProvider } from '@/components/native-chat/native-chat-
 import { useNativeChatSurfaceValue } from '@/components/native-chat/use-native-chat-surface-value'
 import type { NativeChatTransport } from '@/components/native-chat/native-chat-view-types'
 import { useChatEngineMeta } from '@/components/chat-thread/use-chat-engine-thread'
+import {
+  ChatComposerAccessMenu,
+  ChatWebAccessToggle
+} from '@/components/chat-conversation/ChatComposerLeadControls'
 
 const noOptimisticEcho = (): undefined => undefined
 const noop = (): void => undefined
@@ -44,7 +48,27 @@ export function ChatThreadComposerSeat(props: {
     fileLinkContext: null,
     reportedModel: thread.reportedModel ?? null
   })
-  const seatSurface = useMemo(() => ({ ...surface, seat: true }), [surface])
+  const { fullAccess, setFullAccess } = transport
+  const seatSurface = useMemo(
+    () => ({
+      ...surface,
+      seat: true,
+      look: 'conversation' as const,
+      composerLeadSlot: (
+        <>
+          {setFullAccess ? (
+            <ChatComposerAccessMenu
+              threadId={thread.id}
+              fullAccess={fullAccess === true}
+              onSetFullAccess={setFullAccess}
+            />
+          ) : null}
+          <ChatWebAccessToggle threadId={thread.id} />
+        </>
+      )
+    }),
+    [surface, thread.id, fullAccess, setFullAccess]
+  )
   const takeover = pickNativeChatTakeover(transport.permissionRequests)
   // Plan review outranks a latched question; the question keeps its state underneath.
   const planActive = takeover.plan !== null
