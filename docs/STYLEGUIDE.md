@@ -123,7 +123,7 @@ Don't add a fourth level. If something needs more emphasis than "floating," you'
 
 ## Chat surface
 
-The chat surface (`src/renderer/src/components/chat-thread/`, used by Code mode's agent chat view) reads more like a document than a tool, so it has a small set of scoped tokens. Use them only inside the chat surface. Values follow DeepSeek Harness; see `docs/muster/2026-10-20-chat-dsh-parity-plan.md`. Chat mode wears the conversation look instead (`chat-conversation/`, see "Chat mode conversation look" below); it keeps these tokens and adds a few of its own.
+Chat mode and the Code panel's chat view share one chat surface: `ChatConversationSurface` in `src/renderer/src/components/chat-conversation/`, with hooks, markdown and tool bodies from `chat-thread/`. It has a small set of scoped tokens; use them only inside the chat surface. The base values follow DeepSeek Harness (`docs/muster/2026-10-20-chat-dsh-parity-plan.md`); the conversation look below adds its own.
 
 | Token                                | Tailwind                                                      | Use it for                                                                                |
 | ------------------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -153,7 +153,7 @@ Rules:
 
 - Primary ink is `foreground`. Hierarchy comes from the four ink levels, not from weight: nothing in the chat surface goes above `font-medium` except markdown headings and `strong`.
 - Process rows are 13px text, `--chat-row-height` tall, with a 16px icon box. They sit at tertiary ink and rise to secondary on hover. Diff counts stay tertiary until the row is hovered or open.
-- The user gets a bubble; the assistant gets bare prose on the page background. Chat mode differs: a chat-line reply gets a card, and only a document-shaped reply stays prose.
+- The user gets a bubble. A chat-line reply gets a card, and a document-shaped reply stays bare prose (see the conversation look below).
 - `shadow-chat-soft` is the chat version of elevation level 2 (subtle lift), not a fourth level. A chat card that has it takes no `border`.
 - Running state uses `.chat-shimmer` on the label plus tabular-nums timers. It paints the text fill only, so an element inside a shimmering label that sets its own text colour shows the sweep colour instead while running. It has a reduced-motion branch; keep it.
 - The turn's running line is the one accent-coloured shimmer: it sets `--chat-shimmer-highlight` to an accent mix so the sweep stays blue.
@@ -164,7 +164,9 @@ Rules:
 
 Composer (`native-chat/chat-seat-composer-classes.ts`, applied when `NativeChatSurfaceProvider` sets `seat: true`):
 
-- The card sits in `CHAT_COMPOSER_COLUMN_CLASS`, the transcript column without its 16px pads, so it is 32px wider than the text. The thread composer and the Chat hero share every class, so change them in that one file.
+- The card sits in `CHAT_CONVERSATION_COLUMN_CLASS`, the same column as the transcript. Chat mode's thread composer, the Chat hero and the Code panel share every class, so change them in that one file.
+- One 48px row: lead controls (attach, access, web), the field, then model, voice and Send, all centred on the same line. The hero puts the field on its own row (80px minimum) with the controls under it.
+- Effort is the `NativeChatEffortSlider` inside the model menu: a filled track with a sprung knob, not a radio list.
 - Send and Stop are one `NativeChatSeatSendButton`; only the glyph swaps.
 - Known differences from DSH: the attach circle's fill is `bg-chat-hover` (DSH has an opaque grey with no chat token) and hover stacks a second tint; the queue's Steer is a 28px text pill, not an icon; the model chip truncates the effort and then the name instead of collapsing to an icon; the hero placeholder stays on one line; the mic and task buttons keep their 32px ghost style.
 
@@ -178,7 +180,7 @@ Takeovers (`native-chat/chat-seat-takeover-classes.ts`, seat only): the question
 
 ### Chat mode conversation look
 
-Chat mode (`src/renderer/src/components/chat-conversation/`) follows the Bots tab's Advanced chat: one centred column, a card for chat-line replies, pills for process, and a header pill that fades into the page. Code mode keeps the document look above. The plan is `docs/muster/2026-10-30-chat-mode-bots-ui-plan.md`. These tokens are for `chat-conversation/` and Chat mode's conversation variants only.
+Both chat views follow the Bots tab's Advanced chat: one centred column, a card for chat-line replies, pills for process, and (Chat mode only) a header pill that fades into the page. The Code panel has no header; its pane tab names the session. The plan is `docs/muster/2026-10-30-chat-mode-bots-ui-plan.md`.
 
 | Token                        | Tailwind                    | Use it for                                                      |
 | ---------------------------- | --------------------------- | --------------------------------------------------------------- |
@@ -197,7 +199,12 @@ Rules:
 - The weight cap of 500 holds, with markdown headings and `strong` at 600.
 - Pills (activity runs, the turn fold, thinking) use the one `ChatPill` component: 28px tall, full radius, `--sidebar` fill, a `--chat-line-2` hairline, 13px medium, secondary ink. Don't add pill classes.
 - The approval panel and table cards keep `rounded-chat-bubble`; the header pill, jump button and composer take `shadow-chat-soft` with no border.
-- Motion stays at 160ms or less on `ease-chat`, as in the chat surface.
+- Motion stays at 160ms or less on `ease-chat`, as in the chat surface. Two moments run longer on purpose: conversational reply segments stagger in 120ms apart, and a finished subagent's view holds "Finished" for 2s before it returns.
+- The surface is a size container (`@container/chat-conversation`). Gutters come from `--chat-gutter`: 20px, or 12px when the pane is 480px or narrower, where bubbles and cards also take the full column. Never size chat by the window; a Code pane can be 320px wide.
+- Takeover cards (approval, question, plan review) are `rounded-[20px] bg-chat-raised` with a 0.5px `ring-foreground/10`; the approval card's ring is `ring-chat-warn/70` instead. Tabs above the composer (queue, running agents) use `CHAT_CONVERSATION_TAB_CLASS`.
+- A subagent opens in place of the transcript (`ChatSubagentFocusView`): a sticky header with Back, the agent breadcrumb, its type and state, then its steps. Esc goes back one level. The transcript stays mounted underneath, so returning lands on the agent's row with its folds as they were. A live agent that finishes returns on its own after 2s unless the reader scrolled, clicked or typed in that window; then a "Return to main agent" pill holds the view.
+- Background subagents count as running until their task notification arrives, not when their launch call returns. The Code panel's transcript holds only the call and the result, so its subagent view shows state and result, with a line saying the steps stay in the terminal session.
+- Turn tray actions sit under the reply: Copy, Reply (quotes an excerpt into a strip above the composer), Undo changes (Chat mode only; it needs the engine's own CLI) and Try again. A "New" divider marks the first turn that finished after the last visit.
 
 ## Components
 
