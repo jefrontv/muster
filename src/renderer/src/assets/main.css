@@ -384,6 +384,18 @@
   --chat-reply: var(--secondary);
 }
 
+/* Chat conversation gutters; a narrow pane (a Code pane can be ~320px) tightens them and lets bubbles fill the column. */
+[data-chat-conversation-scroller] {
+  --chat-gutter: 20px;
+}
+@container chat-conversation (max-width: 480px) {
+  [data-chat-conversation-scroller] {
+    --chat-gutter: 12px;
+    --chat-reply-max: 100%;
+    --chat-card-max: 100%;
+  }
+}
+
 /* ── Dark Mode ───────────────────────────────────────── */
 
 .dark {

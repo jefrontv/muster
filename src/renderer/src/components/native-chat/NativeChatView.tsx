@@ -5,7 +5,8 @@ import type { NativeChatSession } from '../../../../shared/native-chat-types'
 import { useNativeChatLiveSession } from './use-native-chat-live-session'
 import { useStableSessionMessages } from './native-chat-message-identity'
 import { selectNativeChatViewState } from './native-chat-view-state'
-import { ChatThreadSurface } from '../chat-thread/ChatThreadSurface'
+import { ChatConversationSurface } from '../chat-conversation/ChatConversationSurface'
+import { translate } from '@/i18n/i18n'
 import type { ChatEarlierHistory } from '../chat-thread/use-chat-turn-paging'
 import type { NativeChatComposerHandle } from './NativeChatComposer'
 import { NativeChatViewInput } from './NativeChatViewInput'
@@ -272,8 +273,11 @@ function NativeChatResolvedView({
     fileLinkContext
   })
 
-  // The composer takes the engine surface's seat look, as in Chat mode.
-  const seatSurfaceValue = useMemo(() => ({ ...surfaceValue, seat: true }), [surfaceValue])
+  // The composer takes Chat mode's seat and conversation look.
+  const seatSurfaceValue = useMemo(
+    () => ({ ...surfaceValue, seat: true, look: 'conversation' as const }),
+    [surfaceValue]
+  )
   const threadId = nativeChatEngineThreadId(paneKey)
   useNativeChatEngineThread({
     threadId,
@@ -313,10 +317,18 @@ function NativeChatResolvedView({
           className="min-h-0 flex-1"
           style={fontScale.scale === 1 ? undefined : { zoom: fontScale.scale }}
         >
-          <ChatThreadSurface
+          <ChatConversationSurface
             threadId={threadId}
+            label={translate('components.native-chat.transcript', 'Conversation')}
             onLinkClick={nativeChatFileLinkClick}
             earlier={earlier}
+            canUndo={false}
+            streamsAgentSteps={false}
+            empty={
+              <h2 className="my-auto text-center text-2xl font-medium leading-8 text-foreground">
+                {translate('components.chat-thread.emptyTitle', 'What should we work on?')}
+              </h2>
+            }
             placeholder={
               viewState.kind === 'loading' || viewState.kind === 'error' ? (
                 <div className="py-16">

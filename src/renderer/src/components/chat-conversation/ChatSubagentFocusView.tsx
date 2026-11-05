@@ -9,6 +9,8 @@ import { translate } from '@/i18n/i18n'
 import { AgentWorkingSpinner } from '@/components/AgentWorkingSpinner'
 import { formatElapsed } from '@/components/chat-thread/chat-tool-row-model'
 import { ChatProcessItems } from './ChatProcessItems'
+import { ChatMarkdown } from '@/components/chat-thread/ChatMarkdown'
+import { useChatThreadContext } from '@/components/chat-thread/chat-thread-context'
 import { ChatPill } from './ChatPill'
 import { agentSummary, type ChatAgentItem } from './chat-subagent-focus'
 import {
@@ -111,6 +113,7 @@ export function ChatSubagentFocusView(props: {
   const interacted = useRef(false)
   const [held, setHeld] = useState(false)
   const { back, toMain } = focus
+  const { streamsAgentSteps = true } = useChatThreadContext()
   const { onReturn } = props
 
   if (agent?.status === 'running') {
@@ -153,7 +156,7 @@ export function ChatSubagentFocusView(props: {
       onPointerDown={touch}
       onKeyDown={touch}
     >
-      <div className="sticky top-12 z-[5] flex min-w-0 flex-col gap-1 rounded-2xl bg-chat-raised px-3 py-2 ring-[0.5px] ring-foreground/10">
+      <div className="sticky top-2 z-[5] group-data-[header]/conversation:top-12 flex min-w-0 flex-col gap-1 rounded-2xl bg-chat-raised px-3 py-2 ring-[0.5px] ring-foreground/10">
         <div className="flex min-w-0 items-center gap-2 text-[13px]">
           <button
             type="button"
@@ -204,11 +207,18 @@ export function ChatSubagentFocusView(props: {
       {agent ? (
         agent.items.length > 0 ? (
           <ChatProcessItems items={agent.items} />
-        ) : (
+        ) : !streamsAgentSteps ? (
+          <p className="text-[13px] text-chat-ink-tertiary">
+            {translate(
+              'components.chat-conversation.focus.notInTranscript',
+              "This view shows the agent's result. Its steps stay in the terminal session."
+            )}
+          </p>
+        ) : agent.status === 'running' ? (
           <p className="text-[13px] text-chat-ink-tertiary">
             {translate('components.chat-conversation.focus.noSteps', 'Waiting for its first step')}
           </p>
-        )
+        ) : null
       ) : (
         <p className="text-[13px] text-chat-ink-tertiary">
           {translate(
@@ -224,7 +234,7 @@ export function ChatSubagentFocusView(props: {
             finishedLive && !held && 'animate-in fade-in duration-200 motion-reduce:animate-none'
           )}
         >
-          {summary}
+          <ChatMarkdown text={summary} streaming={false} density="compact" />
         </div>
       )}
       {held && (

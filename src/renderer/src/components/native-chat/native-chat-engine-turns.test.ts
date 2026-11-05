@@ -354,6 +354,65 @@ describe('nativeChatEngineTurns: Claude', () => {
     })
   })
 
+  it('keeps a background agent running until its task notification', () => {
+    const launch: NativeChatMessage[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        blocks: [{ type: 'text', text: 'Go' }],
+        timestamp: T0,
+        source: 'transcript'
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        blocks: [
+          {
+            type: 'tool-call',
+            id: 'toolu_bg',
+            name: 'Agent',
+            input: { description: 'List folders', subagent_type: 'Explore' }
+          }
+        ],
+        timestamp: T0 + 1000,
+        source: 'transcript'
+      },
+      {
+        id: 'r1',
+        role: 'tool',
+        blocks: [
+          {
+            type: 'tool-result',
+            toolUseId: 'toolu_bg',
+            output: 'Async agent launched successfully. (internal)\nagentId: abc'
+          }
+        ],
+        timestamp: T0 + 2000,
+        source: 'transcript'
+      }
+    ]
+    expect(build({ messages: launch }).turns[0]!.items[0]).toMatchObject({
+      status: 'running',
+      summary: null
+    })
+    const notice: NativeChatMessage = {
+      id: 'n1',
+      role: 'user',
+      blocks: [
+        {
+          type: 'text',
+          text: '<task-notification>\n<task-id>abc</task-id>\n<tool-use-id>toolu_bg</tool-use-id>\n<status>completed</status>\n<summary>Agent finished</summary>\n<result>cron\nwp-content</result>\n</task-notification>'
+        }
+      ],
+      timestamp: T0 + 9000,
+      source: 'transcript'
+    }
+    expect(build({ messages: [...launch, notice] }).turns[0]!.items[0]).toMatchObject({
+      status: 'done',
+      summary: 'cron\nwp-content'
+    })
+  })
+
   it('puts rows before the first loaded prompt in a lead turn', () => {
     const { turns } = build({ messages: messages.slice(4) })
     expect(turns[0]).toMatchObject({ id: 'lead', user: null })

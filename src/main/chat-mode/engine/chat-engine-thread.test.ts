@@ -244,6 +244,30 @@ describe('ChatEngineThread', () => {
     expect(items(engine)[0]).toMatchObject({ kind: 'agent', status: 'done' })
   })
 
+  it('keeps a background agent running past its launch notice until it notifies', () => {
+    const { engine } = engineAt()
+    engine.userMessage(T, { id: 'local-bg', text: 'Look around', imageCount: 0, steer: false })
+    engine.ingest(
+      T,
+      assistant(
+        'm4',
+        { type: 'tool_use', id: 'ag2', name: 'Agent', input: { description: 'List folders' } },
+        0
+      )
+    )
+    engine.ingest(T, toolResult('ag2', 'Async agent launched successfully.\nagentId: abc'))
+    expect(items(engine)[0]).toMatchObject({ kind: 'agent', status: 'running', summary: null })
+    engine.ingest(T, {
+      type: 'system',
+      subtype: 'task_notification',
+      task_id: 't9',
+      tool_use_id: 'ag2',
+      status: 'completed',
+      summary: 'Seven folders'
+    })
+    expect(items(engine)[0]).toMatchObject({ status: 'done', summary: 'Seven folders' })
+  })
+
   it('tracks tasks from start to notification, and background commands without a block', () => {
     const { engine } = engineAt()
     engine.userMessage(T, { id: 'local-244', text: 'Go', imageCount: 0, steer: false })

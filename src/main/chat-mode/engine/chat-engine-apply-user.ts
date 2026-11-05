@@ -4,6 +4,7 @@
 import type { ChatEngineThread } from './chat-engine-thread'
 import { asRecord, asString, type Rec } from './chat-engine-records'
 import { buildToolResult, toolResultText } from './chat-engine-tool-result'
+import { isAsyncAgentLaunch } from '../../../shared/chat-background-agent'
 
 /** Claude Code's marker for a turn the user stopped ("[Request interrupted by user for tool use]"). */
 const INTERRUPTED = /^\[Request interrupted by user/
@@ -43,9 +44,15 @@ export function applyUserRecord(thread: ChatEngineThread, record: Rec, now: numb
           return { ...item, status, result }
         }
         if (item.kind === 'agent') {
-          const firstLine = toolResultText(block.content)
-            .split('\n')
-            .find((line) => line.trim() !== '')
+          const text = toolResultText(block.content)
+          // A background agent is still working; its task_notification ends it.
+          if (
+            !isError &&
+            isAsyncAgentLaunch(text, toolResults.length === 1 ? record.tool_use_result : undefined)
+          ) {
+            return item
+          }
+          const firstLine = text.split('\n').find((line) => line.trim() !== '')
           return {
             ...item,
             status: isError ? 'error' : 'done',

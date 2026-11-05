@@ -15285,7 +15285,8 @@
         "waiting": "Waiting",
         "idle": "Idle",
         "unnamed": "Agent"
-      }
+      },
+      "transcript": "Conversation"
     },
     "tab": {
       "bar": {
@@ -15527,7 +15528,8 @@
         "main": "Main agent",
         "noSteps": "Waiting for its first step",
         "unstreamed": "This agent runs in the background. Its steps aren't streamed to this chat.",
-        "return": "Return to main agent"
+        "return": "Return to main agent",
+        "notInTranscript": "This view shows the agent's result. Its steps stay in the terminal session."
       }
     }
   },

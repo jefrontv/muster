@@ -6,6 +6,10 @@ import type { ChatEngineThreadMeta, ChatEngineTurn } from '../../../../shared/ch
 import { resolveNativeChatTranscriptAgent } from '../../../../shared/native-chat-agent-support'
 import { parseNativeChatCommandEnvelope } from '../../../../shared/native-chat-command-envelope'
 import { NATIVE_CHAT_STREAMING_ID } from '../../../../shared/native-chat-streaming'
+import {
+  parseTaskNotification,
+  type ChatTaskNotification
+} from '../../../../shared/chat-background-agent'
 import { isTextBlock, type NativeChatMessage } from '../../../../shared/native-chat-types'
 import { replaceEqualDeep } from '../chat-thread/chat-engine-structural-sharing'
 import { formatNativeChatImagePathNote } from './native-chat-file-reference-display'
@@ -133,12 +137,32 @@ function resolveTurnIds(
   return aliases
 }
 
+/** Background agents' ends; the last notification for a call wins (an agent can notify again). */
+function taskNotifications(
+  messages: readonly NativeChatMessage[]
+): Map<string, ChatTaskNotification> {
+  const found = new Map<string, ChatTaskNotification>()
+  for (const message of messages) {
+    if (message.role !== 'user') {
+      continue
+    }
+    for (const block of message.blocks.filter(isTextBlock)) {
+      const notification = parseTaskNotification(block.text)
+      if (notification) {
+        found.set(notification.toolUseId, notification)
+      }
+    }
+  }
+  return found
+}
+
 export function nativeChatEngineTurns(
   input: NativeChatEngineTurnsInput,
   previous: NativeChatEngineTurnsState | null
 ): NativeChatEngineTurnsState {
   const agent = resolveNativeChatTranscriptAgent(input.agent)
   // The caller already ranks transcript, streaming preview, then optimistic echoes.
+  const notifications = taskNotifications(input.messages)
   const messages = stripNoiseMessages(input.messages)
   const groups = groupTurns(messages)
   const aliases = resolveTurnIds(groups, previous)
@@ -155,7 +179,7 @@ export function nativeChatEngineTurns(
       group.user !== null && input.failedDeliveryMessageIds?.has(group.user.id) === true
     const items = nativeChatEngineTurnItems(
       { ...group, id },
-      { agent, live, interrupted, timestamps: new Map() }
+      { agent, live, interrupted, timestamps: new Map(), notifications }
     )
     const { endedAt, durationMs } = turnDurationMs(group)
     const firstStamp =

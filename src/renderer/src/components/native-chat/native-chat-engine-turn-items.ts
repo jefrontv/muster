@@ -22,6 +22,11 @@ import {
   type NativeChatEngineToolCall
 } from './native-chat-engine-tool-names'
 
+import {
+  isAsyncAgentLaunch,
+  type ChatTaskNotification
+} from '../../../../shared/chat-background-agent'
+
 export type NativeChatEngineTurnGroup = {
   id: string
   user: NativeChatMessage | null
@@ -33,6 +38,8 @@ export type NativeChatEngineTurnContext = {
   live: boolean
   interrupted: boolean
   timestamps: Map<NativeChatBlock, number | null>
+  /** Background agents' ends, by Agent tool call id (from <task-notification> messages). */
+  notifications?: ReadonlyMap<string, ChatTaskNotification>
 }
 
 const SUMMARY_CHARS = 200
@@ -110,19 +117,32 @@ function toolItems(
         string,
         unknown
       >
+      // A background launch: the agent runs on until its notification arrives.
+      const background =
+        result && !result.isError && isAsyncAgentLaunch(result.output)
+          ? (context.notifications?.get(id) ?? null)
+          : undefined
       return {
         kind: 'agent',
         id: itemId,
         description: typeof fields.description === 'string' ? fields.description : '',
         subagentType: typeof fields.subagent_type === 'string' ? fields.subagent_type : null,
-        status: result
-          ? result.isError
-            ? 'error'
-            : 'done'
-          : pending === 'running'
-            ? 'running'
-            : 'stopped',
-        summary: result ? firstLine(result.output) : null,
+        status:
+          background !== undefined
+            ? (background?.status ?? 'running')
+            : result
+              ? result.isError
+                ? 'error'
+                : 'done'
+              : pending === 'running'
+                ? 'running'
+                : 'stopped',
+        summary:
+          background !== undefined
+            ? (background?.summary ?? null)
+            : result
+              ? firstLine(result.output)
+              : null,
         items: []
       }
     }

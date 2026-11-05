@@ -15,6 +15,10 @@ export type ChatThreadContextValue = {
   conversational?: boolean
   /** The visit stamp from before this open, when a turn finished unseen; drives the "New" line. */
   unreadSince?: number | null
+  /** Subagents' own steps reach this thread; the Code panel's transcript has only the call. */
+  streamsAgentSteps?: boolean
+  /** Undo changes is offered; false where the thread has no engine CLI to rewind. */
+  canUndo?: boolean
   /** Shows a subagent's own steps in place of the transcript (Chat mode). */
   openAgent?: (agentId: string) => void
   /** Same, from a roster row in the running-agents tab. */

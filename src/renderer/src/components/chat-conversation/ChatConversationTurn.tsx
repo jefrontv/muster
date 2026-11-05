@@ -117,7 +117,7 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
 }): React.JSX.Element | null {
   const turn = useChatEngineTurn(props.threadId, props.turnId)
   const previous = useChatEngineTurn(props.threadId, props.previousTurnId ?? '')
-  const { onRetry, onQuote, unreadSince } = useChatThreadContext()
+  const { onRetry, onQuote, unreadSince, canUndo = true } = useChatThreadContext()
   // null until toggled, so the default follows the outcome.
   const [processOpen, setProcessOpen] = useState<boolean | null>(null)
   if (!turn) {
@@ -132,7 +132,7 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
     onRetry && props.latest && user && turn.status !== 'running'
       ? () => onRetry(unwrapChatWorkspaceUserTurn(user.text))
       : undefined
-  const undo = turnUndoTarget(turn)
+  const undo = canUndo ? turnUndoTarget(turn) : null
   const tray =
     answer || retry || undo ? (
       <ChatMessageTray>
