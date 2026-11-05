@@ -50,6 +50,7 @@ export function ChatConversationSurface(props: {
   onRetry?: (text: string) => void
   onQuote?: (text: string) => void
   conversational?: boolean
+  unreadSince?: number | null
   /** Accessible name of the transcript. */
   label: string
   /** The header pill row; it stays on top and the transcript fades under it. */
@@ -59,7 +60,7 @@ export function ChatConversationSurface(props: {
   /** The composer, docked at the bottom of the column. */
   footer?: React.ReactNode
 }): React.JSX.Element {
-  const { threadId, onRetry, onQuote, conversational = false } = props
+  const { threadId, onRetry, onQuote, conversational = false, unreadSince = null } = props
   useRetainChatEngineThread(threadId)
   const loaded = useChatEngineThreadLoaded(threadId)
   const order = useChatEngineTurnOrder(threadId)
@@ -73,10 +74,11 @@ export function ChatConversationSurface(props: {
       threadId,
       cwd,
       conversational,
+      unreadSince,
       ...(onRetry ? { onRetry } : {}),
       ...(onQuote ? { onQuote } : {})
     }),
-    [threadId, cwd, conversational, onRetry, onQuote]
+    [threadId, cwd, conversational, unreadSince, onRetry, onQuote]
   )
   const latest = order.at(-1)
   const empty = loaded && order.length === 0

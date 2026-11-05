@@ -2,6 +2,7 @@
 // under it. A Claude process starts only when the user sends (or focuses the
 // composer), and session state shows as one line above the composer.
 
+import { hasUnseenCompletion } from './chat-thread-status'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChatThread, ChatWorkspace } from '../../../../shared/chat-mode-types'
@@ -136,6 +137,10 @@ export function ChatThreadView({
 
   // The reply quoted into the composer; it goes out with the next send.
   const [quote, setQuote] = useState<string | null>(null)
+  // Read before this open's visit stamp lands (a parent effect), so the line marks what was missed.
+  const [unreadSince] = useState(() =>
+    hasUnseenCompletion(thread) ? (thread.lastVisitedAt ?? null) : null
+  )
   const retry = useCallback((text: string) => void send(text).catch(() => undefined), [send])
   const displayTitle = isChatWorkspaceBriefTitle(thread.title)
     ? deriveChatThreadTitle(thread.title)
@@ -156,6 +161,7 @@ export function ChatThreadView({
           onRetry={retry}
           onQuote={setQuote}
           conversational={workspace?.replyStyle === 'conversational'}
+          unreadSince={unreadSince}
           label={displayTitle}
           header={<ChatConversationHeader thread={thread} workspace={workspace} />}
           empty={<ChatConversationEmpty workspace={workspace} fallbackName={displayTitle} />}

@@ -15526,7 +15526,18 @@
         "replyingTo": "Replying to",
         "remove": "Remove quote",
         "reply": "Reply"
-      }
+      },
+      "undo": {
+        "action": "Undo changes",
+        "failed": "Could not undo changes",
+        "done": "Changes undone",
+        "unavailable": "This turn has no checkpoint to undo to",
+        "title": "Undo this turn's changes?",
+        "body": "Files go back to how they were before this message. The chat itself stays.",
+        "more": "and {{count}} more",
+        "cancel": "Keep changes"
+      },
+      "unreadDivider": "New"
     }
   },
   "dashboardPopout": {

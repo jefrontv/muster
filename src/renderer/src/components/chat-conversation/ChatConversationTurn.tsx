@@ -24,6 +24,9 @@ import {
   ChatRetryAction
 } from './ChatMessageTray'
 import { quoteExcerpt } from './chat-composer-quote'
+import { turnUndoTarget } from './chat-turn-undo'
+import { ChatUnreadDivider, startsUnread } from './ChatUnreadDivider'
+import { ChatUndoTurnAction } from './ChatUndoTurnAction'
 import { ChatProcessItems } from './ChatProcessItems'
 import { ChatTurnFoldPill } from './ChatProcessPills'
 import { ChatReplyBubble } from './ChatReplyBubble'
@@ -114,7 +117,7 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
 }): React.JSX.Element | null {
   const turn = useChatEngineTurn(props.threadId, props.turnId)
   const previous = useChatEngineTurn(props.threadId, props.previousTurnId ?? '')
-  const { onRetry, onQuote } = useChatThreadContext()
+  const { onRetry, onQuote, unreadSince } = useChatThreadContext()
   // null until toggled, so the default follows the outcome.
   const [processOpen, setProcessOpen] = useState<boolean | null>(null)
   if (!turn) {
@@ -129,11 +132,15 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
     onRetry && props.latest && user && turn.status !== 'running'
       ? () => onRetry(unwrapChatWorkspaceUserTurn(user.text))
       : undefined
+  const undo = turnUndoTarget(turn)
   const tray =
-    answer || retry ? (
+    answer || retry || undo ? (
       <ChatMessageTray>
         {answer && <NativeChatCopyButton text={answer} className={CHAT_MESSAGE_ACTION_CLASS} />}
         {answer && onQuote && <ChatReplyAction onReply={() => onQuote(quoteExcerpt(answer))} />}
+        {undo && (
+          <ChatUndoTurnAction threadId={props.threadId} userMessageId={undo.userMessageId} />
+        )}
         {retry && turn.status !== 'error' && <ChatRetryAction onRetry={retry} />}
       </ChatMessageTray>
     ) : undefined
@@ -145,6 +152,7 @@ export const ChatConversationTurn = memo(function ChatConversationTurn(props: {
       aria-label={user ? unwrapChatWorkspaceUserTurn(user.text).slice(0, 80) : undefined}
     >
       {startsNewDay(previous ? turnAt(previous) : null, at) && <ChatDaySeparator at={at} />}
+      {startsUnread(unreadSince, previous?.endedAt ?? null, turn.endedAt) && <ChatUnreadDivider />}
       {user && <ChatUserBubble text={user.text} imageCount={user.imageCount} />}
       {fold ? (
         <>

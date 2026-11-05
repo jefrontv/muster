@@ -12,6 +12,8 @@ export type ChatThreadContextValue = {
   onQuote?: (text: string) => void
   /** Workspace reply style is conversational: replies show as a few short bubbles. */
   conversational?: boolean
+  /** The visit stamp from before this open, when a turn finished unseen; drives the "New" line. */
+  unreadSince?: number | null
 }
 
 export const ChatThreadContext = createContext<ChatThreadContextValue>({
