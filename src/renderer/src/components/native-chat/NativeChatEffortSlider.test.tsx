@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DropdownMenu, DropdownMenuContent } from '@/components/ui/dropdown-menu'
 import { NativeChatEffortSlider } from './NativeChatEffortSlider'
@@ -34,6 +34,20 @@ describe('NativeChatEffortSlider', () => {
     expect(onChange).toHaveBeenLastCalledWith('high')
     fireEvent.keyDown(slider, { key: 'Home' })
     expect(onChange).toHaveBeenLastCalledWith('low')
+  })
+
+  it('holds the chosen level until it applies, then lets go if it never does', () => {
+    vi.useFakeTimers()
+    try {
+      renderSlider('medium')
+      const slider = screen.getByRole('slider')
+      fireEvent.keyDown(slider, { key: 'ArrowRight' })
+      expect(slider.getAttribute('aria-valuetext')).toBe('High')
+      act(() => vi.advanceTimersByTime(3000))
+      expect(slider.getAttribute('aria-valuetext')).toBe('Medium')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('stays put at the ends and shows Default with no known level', () => {

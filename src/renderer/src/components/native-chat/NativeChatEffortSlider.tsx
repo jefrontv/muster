@@ -1,7 +1,7 @@
 // Chat mode's effort picker: a stepped track with a knob, in place of the radio list.
 // It is a menu row so the dropdown's roving focus can reach it; arrows step it.
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type React from 'react'
 import { Zap } from 'lucide-react'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
@@ -31,8 +31,18 @@ export function NativeChatEffortSlider(props: {
   const dragging = useRef(false)
   // Raw 0..1 position while dragging; the knob follows the pointer, then springs to a stop.
   const [dragShare, setDragShare] = useState<number | null>(null)
+  // The released stop, held until the applied value moves off `base` so the knob doesn't snap back.
+  const [pending, setPending] = useState<{ index: number; base: string | null } | null>(null)
+  useEffect(() => {
+    if (!pending) {
+      return
+    }
+    const timer = setTimeout(() => setPending(null), 3000)
+    return () => clearTimeout(timer)
+  }, [pending])
   const valueIndex = choices.findIndex((choice) => choice.value === props.value)
-  const settled = valueIndex >= 0 ? valueIndex : null
+  const held = pending && pending.base === props.value ? pending.index : null
+  const settled = held ?? (valueIndex >= 0 ? valueIndex : null)
   const shown = dragShare === null ? settled : Math.round(dragShare * last)
   const share = dragShare ?? (settled === null ? null : stopShare(settled, choices.length))
   const labels = choices.map((choice) => nativeChatSessionChoiceLabel(choice))
@@ -51,6 +61,7 @@ export function NativeChatEffortSlider(props: {
   const commit = (index: number): void => {
     const choice = choices[index]
     if (choice && choice.value !== props.value) {
+      setPending({ index, base: props.value })
       props.onChange(choice.value)
     }
   }
