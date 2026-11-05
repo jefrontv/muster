@@ -31,6 +31,7 @@ import { useClaudeModelSightings } from './claude-model-sightings'
 import { useClaudeSettingsEffortLevel } from './claude-settings-effort-level'
 import { useNativeChatSurface } from './native-chat-surface-context'
 import { CHAT_SEAT_CHIP_CHEVRON_CLASS, CHAT_SEAT_CHIP_CLASS } from './chat-seat-composer-classes'
+import { NativeChatEffortSlider } from './NativeChatEffortSlider'
 
 export type NativeChatSessionOptionPickersProps = {
   surface: SessionOptionsSurface | null
@@ -264,6 +265,7 @@ function NativeChatSessionOptionPickersInner({
   const [pendingId, setPendingId] = useState<string | null>(null)
   const latestSighting = useClaudeModelSightings()
   const settingsEffort = useClaudeSettingsEffortLevel(chatThread)
+  const { look } = useNativeChatSurface()
   // Uncontrolled when no slot is supplied, so a caller that does not care keeps the old behaviour.
   const menuProps: { open?: boolean; onOpenChange?: (open: boolean) => void } = onOpenPickerChange
     ? {
@@ -319,6 +321,27 @@ function NativeChatSessionOptionPickersInner({
         />
         {options.map((descriptor) => {
           const reason = nativeChatSessionOptionDisabledReason(descriptor.disabledReason)
+          if (
+            look === 'conversation' &&
+            descriptor.id === 'effort' &&
+            descriptor.kind.type === 'select'
+          ) {
+            return (
+              <div key={descriptor.id}>
+                <DropdownMenuSeparator />
+                <NativeChatEffortSlider
+                  choices={descriptor.kind.choices}
+                  value={
+                    descriptor.valueSource === 'unknown'
+                      ? (settingsEffort ?? null)
+                      : (descriptor.kind.currentValue ?? null)
+                  }
+                  disabled={!descriptor.settable || pendingId !== null}
+                  onChange={(value) => setOption(descriptor, value)}
+                />
+              </div>
+            )
+          }
           return (
             <div key={descriptor.id}>
               <DropdownMenuSeparator />
