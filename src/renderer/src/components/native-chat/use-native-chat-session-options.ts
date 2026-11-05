@@ -22,6 +22,7 @@ import {
 } from './native-chat-session-option-discovery'
 import { readClaudeSessionOptionsFromTerminalScreen } from './claude-terminal-session-options'
 import { getAgentSessionOptionCatalog } from '../../../../shared/agent-session-option-catalog'
+import { claudeModelFamilyFromId } from '../../../../shared/claude-model-family'
 
 const EMPTY_SNAPSHOT: SessionOptionDescriptor[] = []
 const subscribeEmpty = (): (() => void) => () => {}
@@ -69,6 +70,10 @@ export function useNativeChatSessionOptions(args: {
   dispatchCommand: NativeChatSessionOptionDispatchCommand
   onAgentPicker?: () => void
   readTerminalScreen?: () => string | null
+  /** The pane whose hook may report the session's model. */
+  paneKey?: string
+  /** The transcript's latest model; the hook's report wins over it. */
+  sessionModel?: string | null
 }): {
   surface: NativeChatPtySessionOptionsSurface | null
   snapshot: SessionOptionDescriptor[]
@@ -80,7 +85,9 @@ export function useNativeChatSessionOptions(args: {
     hasTransport = false,
     dispatchCommand,
     onAgentPicker,
-    readTerminalScreen
+    readTerminalScreen,
+    paneKey,
+    sessionModel = null
   } = args
   const discoveryContext = useMemo(
     () => resolveNativeChatModelDiscoveryContext(terminalTabId),
@@ -207,5 +214,34 @@ export function useNativeChatSessionOptions(args: {
     () => (headless ? withoutUnlaunchableOptions(agent, rawSnapshot) : rawSnapshot),
     [agent, headless, rawSnapshot]
   )
+  // The banner that names the model scrolls away; fall back so the picker never shows "Model".
+  const hookModel = useAppStore((s) =>
+    paneKey ? (s.agentStatusByPaneKey?.[paneKey]?.model ?? null) : null
+  )
+  const sessionModelId = catalogModelIdFor(agent, hookModel ?? sessionModel)
+  const modelKnown = rawSnapshot.some(
+    (descriptor) =>
+      descriptor.category === 'model' &&
+      descriptor.kind.type === 'select' &&
+      descriptor.kind.currentValue !== undefined
+  )
+  useEffect(() => {
+    if (surface && sessionModelId && !modelKnown) {
+      surface.reportSessionOptions({ model: sessionModelId })
+    }
+  }, [surface, sessionModelId, modelKnown])
   return { surface, snapshot }
+}
+
+/** A catalog id for a raw model id (`claude-opus-5-5` → `opus`), or null. */
+export function catalogModelIdFor(agent: AgentType, model: string | null): string | null {
+  const catalog = model ? getAgentSessionOptionCatalog(agent) : null
+  if (!catalog || !model) {
+    return null
+  }
+  if (catalog.models.some((entry) => entry.id === model)) {
+    return model
+  }
+  const family = agent === 'claude' ? claudeModelFamilyFromId(model)?.id : null
+  return family && catalog.models.some((entry) => entry.id === family) ? family : null
 }

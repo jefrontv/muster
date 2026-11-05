@@ -10,6 +10,8 @@ export type NativeChatContextUsage = {
   usedTokens: number
   /** Model-sized window fallback; a CLI-reported window should win over this. */
   windowTokens: number
+  /** The model of the latest assistant turn in the transcript. */
+  model?: string
 }
 
 export function useNativeChatContextUsage({
@@ -50,7 +52,8 @@ export function useNativeChatContextUsage({
               ? {
                   usedTokens: read.usedTokens,
                   // Learned (CLI-reported once, any thread) beats the static map.
-                  windowTokens: read.windowTokens ?? claudeContextWindowForModel(read.model)
+                  windowTokens: read.windowTokens ?? claudeContextWindowForModel(read.model),
+                  ...(read.model ? { model: read.model } : {})
                 }
               : null
           )

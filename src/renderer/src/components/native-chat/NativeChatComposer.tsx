@@ -240,6 +240,12 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         setHistory
       })
 
+    const contextUsage = useNativeChatContextUsage({
+      paneKey,
+      agent,
+      isWorking,
+      enabled: contextUsageEnabled
+    })
     const { surface: sessionOptionsSurface, snapshot: sessionOptionsSnapshot } =
       useNativeChatSessionOptions({
         agent,
@@ -250,7 +256,9 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
         // typing a slash command into a PTY.
         dispatchCommand: transportDispatchOption ?? dispatchSessionOptionCommand,
         onAgentPicker: onSwitchToTerminal,
-        readTerminalScreen
+        readTerminalScreen,
+        paneKey,
+        sessionModel: contextUsage?.model ?? null
       })
 
     const sendViaTransport = useNativeChatTransportSend({
@@ -304,12 +312,6 @@ export const NativeChatComposer = forwardRef<NativeChatComposerHandle, NativeCha
     })
 
     const stash = useNativeChatPromptStash({ draft, setDraft, setCaret, textareaRef })
-    const contextUsage = useNativeChatContextUsage({
-      paneKey,
-      agent,
-      isWorking,
-      enabled: contextUsageEnabled
-    })
 
     // Oldest queued permission request owns the composer until answered.
     const approval = useMemo<NativeChatComposerApproval | null>(() => {
