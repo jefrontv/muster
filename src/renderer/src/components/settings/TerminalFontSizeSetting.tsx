@@ -47,7 +47,7 @@ export function TerminalFontSizeSetting({
               }}
               disabled={settings.terminalFontSize <= 10}
             >
-              <Minus className="size-3" />
+              <Minus />
             </Button>
             <Input
               type="number"
@@ -75,7 +75,7 @@ export function TerminalFontSizeSetting({
               }}
               disabled={settings.terminalFontSize >= 24}
             >
-              <Plus className="size-3" />
+              <Plus />
             </Button>
             <span className="text-xs text-muted-foreground">
               {translate('auto.components.settings.TerminalFontSizeSetting.9b5252c85a', 'px')}
