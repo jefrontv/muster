@@ -11222,7 +11222,7 @@ export default function TaskPage(): React.JSX.Element {
               disabled={newLinearProjectSubmitting}
               aria-label={translate('auto.components.TaskPage.b6795e65fd', 'Close')}
             >
-              <X className="size-4" />
+              <X className="size-3.5" />
             </Button>
           </div>
 
@@ -11668,7 +11668,7 @@ export default function TaskPage(): React.JSX.Element {
               disabled={newLinearIssueSubmitting}
               aria-label={translate('auto.components.TaskPage.b6795e65fd', 'Close')}
             >
-              <X className="size-4" />
+              <X className="size-3.5" />
             </Button>
           </div>
 

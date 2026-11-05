@@ -215,7 +215,7 @@ export function AgentKanbanBoard({
                 aria-label={translate('dashboardPopout.close', 'Close dashboard')}
                 className="text-muted-foreground"
               >
-                <XIcon className="size-4" />
+                <XIcon className="size-3.5" />
               </Button>
             ) : null}
           </div>

@@ -34,7 +34,7 @@ export function TerminalZoomControl({
         onClick={() => apply(size - 1)}
         disabled={size <= MIN_FONT_SIZE}
       >
-        <Minus className="size-3" />
+        <Minus />
       </Button>
       <span className="w-14 text-center text-sm tabular-nums text-foreground">{percent}%</span>
       <Button
@@ -44,7 +44,7 @@ export function TerminalZoomControl({
         onClick={() => apply(size + 1)}
         disabled={size >= MAX_FONT_SIZE}
       >
-        <Plus className="size-3" />
+        <Plus />
       </Button>
       <Button
         variant="outline"
@@ -53,7 +53,7 @@ export function TerminalZoomControl({
         disabled={size === BASE_FONT_SIZE}
         className="ml-1 gap-1.5"
       >
-        <RotateCcw className="size-3" />
+        <RotateCcw className="size-3.5" />
         {translate('auto.components.settings.TerminalZoomControl.reset', 'Reset')}
       </Button>
     </div>

@@ -32,7 +32,7 @@ export function UIZoomControl(): React.JSX.Element {
         onClick={() => applyZoom(zoomLevel - ZOOM_STEP)}
         disabled={zoomLevel <= ZOOM_MIN}
       >
-        <Minus className="size-3" />
+        <Minus />
       </Button>
       <span className="w-14 text-center text-sm tabular-nums text-foreground">{percent}%</span>
       <Button
@@ -42,7 +42,7 @@ export function UIZoomControl(): React.JSX.Element {
         onClick={() => applyZoom(zoomLevel + ZOOM_STEP)}
         disabled={zoomLevel >= ZOOM_MAX}
       >
-        <Plus className="size-3" />
+        <Plus />
       </Button>
       <Button
         variant="outline"
@@ -51,7 +51,7 @@ export function UIZoomControl(): React.JSX.Element {
         disabled={zoomLevel === 0}
         className="ml-1 gap-1.5"
       >
-        <RotateCcw className="size-3" />
+        <RotateCcw className="size-3.5" />
         {translate('auto.components.settings.UIZoomControl.c2c64b24d0', 'Reset')}
       </Button>
     </div>
