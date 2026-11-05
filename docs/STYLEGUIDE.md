@@ -127,7 +127,6 @@ Chat mode and the Code panel's chat view share one chat surface: `ChatConversati
 
 | Token                                | Tailwind                                                      | Use it for                                                                                |
 | ------------------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `--chat-content-width`               | `w-(--chat-content-width)`                                    | Transcript column, composer, approval and question cards, turn navigator                  |
 | `--chat-row-height`                  | `h-(--chat-row-height)`                                       | Every process row: tool, reasoning, group, turn fold header                               |
 | `--chat-bubble`                      | `bg-chat-bubble`                                              | The user message bubble only                                                              |
 | `--chat-ink-secondary`               | `text-chat-ink-secondary`                                     | Process rows on hover, list markers, toolbar selects                                      |

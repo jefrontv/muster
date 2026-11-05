@@ -338,8 +338,7 @@
      meet >=3:1 against `--card`, not only the hover/drag strong state. */
   --tab-group-split-divider: #868690;
   --tab-group-split-divider-strong: #71717a;
-  /* Chat mode (docs/STYLEGUIDE.md "Chat surface"). One width for transcript, composer and takeovers. */
-  --chat-content-width: clamp(680px, 64%, 920px);
+  /* Chat surface tokens (docs/STYLEGUIDE.md "Chat surface"). */
   --chat-row-height: 24px;
   --chat-bubble: rgb(237 243 254);
   --chat-ink-secondary: #404040;
