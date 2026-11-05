@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Play } from 'lucide-react'
 import { useAppStore } from '@/store'
+import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   createTerminalQuickCommandDraft,
@@ -142,10 +143,13 @@ export function TabBarQuickCommandsButton({
       <>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               onClick={addRepoCommand}
-              className="my-auto flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-muted-foreground hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              // Why: 28px matches the populated quick commands split.
+              className="my-auto h-7 text-muted-foreground"
               aria-label={translate(
                 'auto.components.tab.bar.TabBarQuickCommandsButton.8f1e971966',
                 'Add quick command'
@@ -158,7 +162,7 @@ export function TabBarQuickCommandsButton({
                   'Command'
                 )}
               </span>
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={6}>
             {translate(

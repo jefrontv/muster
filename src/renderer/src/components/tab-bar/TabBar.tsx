@@ -839,7 +839,7 @@ function TabBarInner({
             <Button
               variant="ghost"
               size="icon-xs"
-              className="mx-0.5 my-auto h-6 w-5 text-muted-foreground hover:bg-accent/50 hover:text-foreground disabled:opacity-35"
+              className="mx-0.5 my-auto text-muted-foreground disabled:opacity-35"
               style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
               aria-label={translate(
                 'auto.components.tab.bar.TabBar.7a9b4af2af',
@@ -1000,7 +1000,7 @@ function TabBarInner({
             <Button
               variant="ghost"
               size="icon-xs"
-              className="mx-0.5 my-auto h-6 w-5 text-muted-foreground hover:bg-accent/50 hover:text-foreground disabled:opacity-35"
+              className="mx-0.5 my-auto text-muted-foreground disabled:opacity-35"
               style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
               aria-label={translate(
                 'auto.components.tab.bar.TabBar.232e075b07',
@@ -1029,15 +1029,18 @@ function TabBarInner({
         modal={false}
       >
         <DropdownMenuTrigger asChild>
-          <button
-            className="ml-2 my-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            // Why: 28px matches the quick commands split beside it.
+            className="ml-2 my-auto size-7 text-muted-foreground"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             title={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
             // Why: aria-label matches the tooltip so E2E can locate the "+" via getByRole('button', { name: 'New tab' }).
             aria-label={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
           >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+            <Plus className="size-3.5" />
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
