@@ -22,30 +22,42 @@ export function ChatDisclosurePill(props: {
   onOpenChange: (open: boolean) => void
   live?: boolean
   title?: string
+  /** Beside the pill, e.g. an agent's Open. */
+  action?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
   const bodyId = useId()
+  const pill = (
+    <ChatPill
+      aria-expanded={props.open}
+      aria-controls={props.open ? bodyId : undefined}
+      aria-busy={props.live || undefined}
+      title={props.title}
+      onClick={() => props.onOpenChange(!props.open)}
+    >
+      <span className="flex shrink-0">{props.icon}</span>
+      <span className={cn('min-w-0 max-w-[480px] truncate', props.live && 'chat-shimmer')}>
+        {props.label}
+      </span>
+      <ChevronRight
+        className={cn(
+          'size-3.5 shrink-0 transition-transform duration-100 ease-chat motion-reduce:transition-none',
+          props.open && 'rotate-90'
+        )}
+        aria-hidden
+      />
+    </ChatPill>
+  )
   return (
     <div className="flex min-w-0 flex-col items-start gap-1.5">
-      <ChatPill
-        aria-expanded={props.open}
-        aria-controls={props.open ? bodyId : undefined}
-        aria-busy={props.live || undefined}
-        title={props.title}
-        onClick={() => props.onOpenChange(!props.open)}
-      >
-        <span className="flex shrink-0">{props.icon}</span>
-        <span className={cn('min-w-0 max-w-[480px] truncate', props.live && 'chat-shimmer')}>
-          {props.label}
-        </span>
-        <ChevronRight
-          className={cn(
-            'size-3.5 shrink-0 transition-transform duration-100 ease-chat motion-reduce:transition-none',
-            props.open && 'rotate-90'
-          )}
-          aria-hidden
-        />
-      </ChatPill>
+      {props.action ? (
+        <div className="group/pill flex min-w-0 items-center gap-1">
+          {pill}
+          {props.action}
+        </div>
+      ) : (
+        pill
+      )}
       {props.open && (
         <div id={bodyId} className="flex w-full min-w-0 flex-col items-start gap-1.5">
           {props.children}

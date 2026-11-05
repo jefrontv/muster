@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { CommentMarkdownLinkClickHandler } from '@/components/sidebar/CommentMarkdown'
+import type { ChatRosterAgent } from '@/components/chat-conversation/chat-subagent-focus'
 
 export type ChatThreadContextValue = {
   threadId: string
@@ -14,6 +15,10 @@ export type ChatThreadContextValue = {
   conversational?: boolean
   /** The visit stamp from before this open, when a turn finished unseen; drives the "New" line. */
   unreadSince?: number | null
+  /** Shows a subagent's own steps in place of the transcript (Chat mode). */
+  openAgent?: (agentId: string) => void
+  /** Same, from a roster row in the running-agents tab. */
+  openRosterAgent?: (roster: readonly ChatRosterAgent[], target: ChatRosterAgent) => void
 }
 
 export const ChatThreadContext = createContext<ChatThreadContextValue>({

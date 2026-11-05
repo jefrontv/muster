@@ -2,7 +2,7 @@
 // Chat mode's transcript: one centred column under a fading header pill, with the
 // composer docked at the bottom on plain page colour. Data comes from the chat engine.
 
-import { useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import type React from 'react'
 import { ArrowDown, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,9 @@ import {
 } from '@/components/chat-thread/use-chat-engine-thread'
 import { CHAT_CONVERSATION_COLUMN_CLASS } from './chat-conversation-column'
 import { ChatConversationTurn } from './ChatConversationTurn'
+import { ChatSubagentFocusView } from './ChatSubagentFocusView'
+import { useChatSubagentFocus } from './use-chat-subagent-focus'
+import type { ChatRosterAgent } from './chat-subagent-focus'
 
 function JumpToLatest(props: { visible: boolean; onClick: () => void }): React.JSX.Element {
   const label = translate('components.chat-thread.backToBottom', 'Back to latest')
@@ -69,6 +72,48 @@ export function ChatConversationSurface(props: {
   const scroll = useChatScrollFollow(threadId)
   useFollowOnNewTurn(order.length, scroll.follow)
   const paging = useChatTurnPaging(threadId, order, scroll.scrollRef)
+  const focus = useChatSubagentFocus(threadId)
+  const { open: openFocus, openRoster } = focus
+  const { follow, scrollRef } = scroll
+  // Where the transcript was, for an agent with no row of its own to return to.
+  const transcriptTop = useRef<number | null>(null)
+  const leaveTranscript = useCallback(() => {
+    const scroller = scrollRef.current
+    if (scroller && !scroller.querySelector('[data-subagent-focus]')) {
+      transcriptTop.current = scroller.scrollTop
+    }
+  }, [scrollRef])
+  const openAgent = useCallback(
+    (agentId: string) => {
+      leaveTranscript()
+      openFocus({ agentId, roster: null })
+      follow()
+    },
+    [leaveTranscript, openFocus, follow]
+  )
+  const openRosterAgent = useCallback(
+    (roster: readonly ChatRosterAgent[], target: ChatRosterAgent) => {
+      leaveTranscript()
+      openRoster(roster, target)
+      follow()
+    },
+    [leaveTranscript, openRoster, follow]
+  )
+  // Back in the transcript, bring the agent the user left into view.
+  const onFocusReturn = useCallback(
+    (agentId: string | null) => {
+      requestAnimationFrame(() => {
+        const scroller = scrollRef.current
+        const run = agentId && scroller?.querySelector(`[data-agent-run="${CSS.escape(agentId)}"]`)
+        if (run) {
+          run.scrollIntoView({ block: 'center' })
+        } else if (scroller && transcriptTop.current !== null) {
+          scroller.scrollTop = transcriptTop.current
+        }
+      })
+    },
+    [scrollRef]
+  )
   const context = useMemo<ChatThreadContextValue>(
     () => ({
       threadId,
@@ -76,10 +121,13 @@ export function ChatConversationSurface(props: {
       conversational,
       unreadSince,
       ...(onRetry ? { onRetry } : {}),
-      ...(onQuote ? { onQuote } : {})
+      ...(onQuote ? { onQuote } : {}),
+      openAgent,
+      openRosterAgent
     }),
-    [threadId, cwd, conversational, unreadSince, onRetry, onQuote]
+    [threadId, cwd, conversational, unreadSince, onRetry, onQuote, openAgent, openRosterAgent]
   )
+  const focused = focus.stack.length > 0
   const latest = order.at(-1)
   const empty = loaded && order.length === 0
   return (
@@ -105,30 +153,39 @@ export function ChatConversationSurface(props: {
             aria-label={props.label}
             className={cn(CHAT_CONVERSATION_COLUMN_CLASS, 'flex flex-1 flex-col gap-3 pt-2 pb-6')}
           >
-            {paging.hasEarlier && <div ref={paging.sentinelRef} aria-hidden className="h-px" />}
-            {!loaded ? (
-              <div className="flex items-center gap-2 text-[13px] text-chat-ink-tertiary">
-                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden />
-                {translate('components.chat-thread.loading', 'Loading chat')}
-              </div>
-            ) : empty ? (
-              props.empty
-            ) : (
-              paging.visible.map((turnId, index) => (
-                <ChatConversationTurn
-                  key={turnId}
-                  threadId={threadId}
-                  turnId={turnId}
-                  // The first paged-in turn still needs its real predecessor for the day line.
-                  previousTurnId={
-                    index > 0
-                      ? paging.visible[index - 1]
-                      : (order[order.indexOf(turnId) - 1] ?? null)
-                  }
-                  latest={turnId === latest}
-                />
-              ))
+            {focused && (
+              <ChatSubagentFocusView threadId={threadId} focus={focus} onReturn={onFocusReturn} />
             )}
+            {/* Hidden, not unmounted, so open folds survive and the way back lands on the agent. */}
+            <div className={focused ? 'hidden' : 'contents'}>
+              {paging.hasEarlier && <div ref={paging.sentinelRef} aria-hidden className="h-px" />}
+              {!loaded ? (
+                <div className="flex items-center gap-2 text-[13px] text-chat-ink-tertiary">
+                  <Loader2
+                    className="size-3.5 animate-spin motion-reduce:animate-none"
+                    aria-hidden
+                  />
+                  {translate('components.chat-thread.loading', 'Loading chat')}
+                </div>
+              ) : empty ? (
+                props.empty
+              ) : (
+                paging.visible.map((turnId, index) => (
+                  <ChatConversationTurn
+                    key={turnId}
+                    threadId={threadId}
+                    turnId={turnId}
+                    // The first paged-in turn still needs its real predecessor for the day line.
+                    previousTurnId={
+                      index > 0
+                        ? paging.visible[index - 1]
+                        : (order[order.indexOf(turnId) - 1] ?? null)
+                    }
+                    latest={turnId === latest}
+                  />
+                ))
+              )}
+            </div>
           </div>
           {props.footer && (
             <div className="sticky bottom-0 z-10">

@@ -15514,7 +15514,21 @@
         "more": "and {{count}} more",
         "cancel": "Keep changes"
       },
-      "unreadDivider": "New"
+      "unreadDivider": "New",
+      "focus": {
+        "open": "Open agent",
+        "working": "Working",
+        "finished": "Finished",
+        "failed": "Failed",
+        "stopped": "Stopped",
+        "back": "Back",
+        "backHint": "Back (Esc)",
+        "trail": "Agents",
+        "main": "Main agent",
+        "noSteps": "Waiting for its first step",
+        "unstreamed": "This agent runs in the background. Its steps aren't streamed to this chat.",
+        "return": "Return to main agent"
+      }
     }
   },
   "dashboardPopout": {

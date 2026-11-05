@@ -9,6 +9,7 @@ import { Bot, ChevronDown } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useNativeChatSurface } from './native-chat-surface-context'
+import { useChatThreadContext } from '@/components/chat-thread/chat-thread-context'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { useAppStore } from '../../store'
 import type { AgentSubagentSnapshot } from '../../../../shared/agent-status-types'
@@ -55,13 +56,17 @@ function SubagentRow({
   agent,
   now,
   cleared,
-  divided
+  divided,
+  onOpen
 }: {
   agent: AgentSubagentSnapshot
   now: number
   cleared: boolean
   divided: boolean
+  /** Chat mode: the row opens the agent's own steps. */
+  onOpen?: () => void
 }): React.JSX.Element {
+  const Row = onOpen ? 'button' : 'div'
   const working = agent.state === 'working'
   const attention = agent.state === 'blocked' || agent.state === 'waiting'
   const name =
@@ -75,7 +80,15 @@ function SubagentRow({
       inert={cleared}
     >
       <div className="min-h-0 overflow-hidden">
-        <div className={cn(ROW_CLASS, divided && 'shadow-[inset_0_1px_0_var(--chat-line-1)]')}>
+        <Row
+          {...(onOpen ? { type: 'button' as const, onClick: onOpen } : {})}
+          className={cn(
+            ROW_CLASS,
+            divided && 'shadow-[inset_0_1px_0_var(--chat-line-1)]',
+            onOpen &&
+              'w-full text-left transition-colors duration-100 ease-chat hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent focus-visible:ring-inset motion-reduce:transition-none'
+          )}
+        >
           <span
             className={cn(
               'size-1.5 shrink-0 rounded-full transition-colors duration-300 motion-reduce:transition-none',
@@ -110,7 +123,7 @@ function SubagentRow({
               ? formatNativeChatWorkingElapsed(Math.max(0, now - agent.startedAt))
               : stateLabel(agent.state)}
           </span>
-        </div>
+        </Row>
       </div>
     </li>
   )
@@ -118,6 +131,7 @@ function SubagentRow({
 
 export function NativeChatSubagentTab({ paneKey }: { paneKey: string }): React.JSX.Element | null {
   const { look } = useNativeChatSurface()
+  const { openRosterAgent } = useChatThreadContext()
   const subagents = useAppStore((s) => s.agentStatusByPaneKey[paneKey]?.subagents)
   const paneState = useAppStore((s) => s.agentStatusByPaneKey[paneKey]?.state)
   const cleared = useClearedSubagents(paneState, subagents)
@@ -192,6 +206,7 @@ export function NativeChatSubagentTab({ paneKey }: { paneKey: string }): React.J
                 now={now}
                 cleared={isCleared}
                 divided={divided && !isCleared}
+                onOpen={openRosterAgent && (() => openRosterAgent(subagents, agent))}
               />
             )
             divided ||= !isCleared
