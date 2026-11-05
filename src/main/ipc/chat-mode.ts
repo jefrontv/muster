@@ -3,6 +3,7 @@
 // (it composes the existing pty:spawn + agent-hooks machinery).
 
 import { app, ipcMain } from 'electron'
+import { normalizeChatReplyStyle } from '../../shared/chat-reply-style'
 import { join } from 'node:path'
 import { getChatGreetingName } from '../chat-mode/chat-greeting-name'
 import { readClaudeSettingsEffortLevel } from '../chat-mode/claude-settings-effort'
@@ -122,6 +123,7 @@ export function registerChatModeHandlers(): void {
         clientEmails?: unknown
         notes?: unknown
         iconOverridden?: unknown
+        replyStyle?: unknown
       }
     ): Promise<ChatWorkspace | null> =>
       chatStore().updateWorkspace(asString(id, 'id'), {
@@ -159,6 +161,9 @@ export function registerChatModeHandlers(): void {
           : {}),
         ...(typeof patch?.iconOverridden === 'boolean'
           ? { iconOverridden: patch.iconOverridden }
+          : {}),
+        ...(patch?.replyStyle !== undefined
+          ? { replyStyle: normalizeChatReplyStyle(patch.replyStyle) }
           : {})
       })
   )

@@ -3,6 +3,7 @@
 // transcript files; threads keep only the pointers needed to resume and cold-render a session.
 
 import type { RepoIcon } from './repo-icon'
+import type { ChatReplyStyle } from './chat-reply-style'
 
 export type ChatWorkspace = {
   id: string
@@ -27,6 +28,8 @@ export type ChatWorkspace = {
   notes?: string
   /** True once the user picked an icon; primary-URL favicon must not overwrite. */
   iconOverridden?: boolean
+  /** Absent means default; set only for conversational. */
+  replyStyle?: ChatReplyStyle
   createdAt: number
   updatedAt: number
 }
@@ -44,6 +47,7 @@ export type ChatWorkspacePatch = Partial<
     | 'clientEmails'
     | 'notes'
     | 'iconOverridden'
+    | 'replyStyle'
   >
 >
 

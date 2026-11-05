@@ -15355,6 +15355,12 @@
       },
       "draftOptions": {
         "model": "Model"
+      },
+      "workspaceDialog": {
+        "replyStyle": "Reply style",
+        "replyStyleHint": "Conversational sends short replies as a few small messages. Applies to new chats.",
+        "replyStyleDefault": "Default",
+        "replyStyleConversational": "Conversational"
       }
     },
     "chat-thread": {

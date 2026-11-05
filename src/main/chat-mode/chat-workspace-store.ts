@@ -68,7 +68,8 @@ export class ChatWorkspaceStore {
     if (!existing) {
       return null
     }
-    const { urls, clientEmails, notes, iconOverridden, activeCollabProjects, ...rest } = patch
+    const { urls, clientEmails, notes, iconOverridden, activeCollabProjects, replyStyle, ...rest } =
+      patch
     const updated: ChatWorkspace = { ...existing, ...rest, updatedAt: this.now() }
     if (activeCollabProjects !== undefined) {
       const nextProjects = normalizeChatWorkspaceProjects(activeCollabProjects)
@@ -109,6 +110,13 @@ export class ChatWorkspaceStore {
         updated.iconOverridden = true
       } else {
         delete updated.iconOverridden
+      }
+    }
+    if (replyStyle !== undefined) {
+      if (replyStyle === 'conversational') {
+        updated.replyStyle = 'conversational'
+      } else {
+        delete updated.replyStyle
       }
     }
     this.state = {

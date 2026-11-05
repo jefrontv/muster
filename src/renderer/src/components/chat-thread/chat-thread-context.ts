@@ -10,6 +10,8 @@ export type ChatThreadContextValue = {
   onRetry?: (text: string) => void
   /** Quotes a reply into the composer (Chat mode). */
   onQuote?: (text: string) => void
+  /** Workspace reply style is conversational: replies show as a few short bubbles. */
+  conversational?: boolean
 }
 
 export const ChatThreadContext = createContext<ChatThreadContextValue>({

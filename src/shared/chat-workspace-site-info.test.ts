@@ -159,6 +159,15 @@ describe('buildChatWorkspaceAgentBrief', () => {
     expect(brief).not.toContain('Primary website')
   })
 
+  it('adds the conversational reply style only when the workspace asks for it', () => {
+    expect(buildChatWorkspaceAgentBrief(workspace())).not.toContain('Reply style')
+    expect(
+      buildChatWorkspaceAgentBrief(workspace({ replyStyle: 'conversational' })).endsWith(
+        'roughly the length of their message.'
+      )
+    ).toBe(true)
+  })
+
   it('names the primary URL first and includes notes plus the linked project', () => {
     const brief = buildChatWorkspaceAgentBrief(
       workspace({

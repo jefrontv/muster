@@ -49,6 +49,7 @@ export function ChatConversationSurface(props: {
   threadId: string
   onRetry?: (text: string) => void
   onQuote?: (text: string) => void
+  conversational?: boolean
   /** Accessible name of the transcript. */
   label: string
   /** The header pill row; it stays on top and the transcript fades under it. */
@@ -58,7 +59,7 @@ export function ChatConversationSurface(props: {
   /** The composer, docked at the bottom of the column. */
   footer?: React.ReactNode
 }): React.JSX.Element {
-  const { threadId, onRetry, onQuote } = props
+  const { threadId, onRetry, onQuote, conversational = false } = props
   useRetainChatEngineThread(threadId)
   const loaded = useChatEngineThreadLoaded(threadId)
   const order = useChatEngineTurnOrder(threadId)
@@ -68,8 +69,14 @@ export function ChatConversationSurface(props: {
   useFollowOnNewTurn(order.length, scroll.follow)
   const paging = useChatTurnPaging(threadId, order, scroll.scrollRef)
   const context = useMemo<ChatThreadContextValue>(
-    () => ({ threadId, cwd, ...(onRetry ? { onRetry } : {}), ...(onQuote ? { onQuote } : {}) }),
-    [threadId, cwd, onRetry, onQuote]
+    () => ({
+      threadId,
+      cwd,
+      conversational,
+      ...(onRetry ? { onRetry } : {}),
+      ...(onQuote ? { onQuote } : {})
+    }),
+    [threadId, cwd, conversational, onRetry, onQuote]
   )
   const latest = order.at(-1)
   const empty = loaded && order.length === 0

@@ -1,6 +1,14 @@
 // Create/edit dialog for a chat workspace: name, site URLs, notes, and the
 // directories the agent may touch. Deliberately non-technical — no branch or agent config.
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { normalizeChatReplyStyle, type ChatReplyStyle } from '../../../../shared/chat-reply-style'
 import { FolderPlus, X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -63,6 +71,7 @@ export function ChatWorkspaceCreateDialog({
   const [color, setColor] = useState<string | null>(null)
   const [iconOverridden, setIconOverridden] = useState(false)
   const [acProjects, setAcProjects] = useState<ChatWorkspaceProjectRef[]>([])
+  const [replyStyle, setReplyStyle] = useState<ChatReplyStyle>('default')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -76,6 +85,7 @@ export function ChatWorkspaceCreateDialog({
       setColor(workspace?.color ?? null)
       setIconOverridden(isChatWorkspaceIconOverridden(workspace))
       setAcProjects(workspace ? chatWorkspaceProjects(workspace) : [])
+      setReplyStyle(normalizeChatReplyStyle(workspace?.replyStyle))
       setSaving(false)
     }
   }, [open, workspace])
@@ -129,7 +139,14 @@ export function ChatWorkspaceCreateDialog({
 
   const siteFields = (): Pick<
     ChatWorkspacePatch,
-    'urls' | 'clientEmails' | 'notes' | 'icon' | 'color' | 'iconOverridden' | 'activeCollabProjects'
+    | 'urls'
+    | 'clientEmails'
+    | 'notes'
+    | 'icon'
+    | 'color'
+    | 'iconOverridden'
+    | 'activeCollabProjects'
+    | 'replyStyle'
   > => ({
     urls: urlsFromDrafts(urlDrafts),
     clientEmails: emailsFromDrafts(emailDrafts),
@@ -137,6 +154,7 @@ export function ChatWorkspaceCreateDialog({
     icon,
     iconOverridden,
     activeCollabProjects: acProjects,
+    replyStyle,
     ...(color ? { color } : {})
   })
 
@@ -220,6 +238,38 @@ export function ChatWorkspaceCreateDialog({
                 'focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring'
               )}
             />
+          </div>
+          <div className="space-y-1.5">
+            <div className="space-y-1">
+              <Label htmlFor="chat-workspace-reply-style">
+                {translate('components.chat-mode.workspaceDialog.replyStyle', 'Reply style')}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {translate(
+                  'components.chat-mode.workspaceDialog.replyStyleHint',
+                  'Conversational sends short replies as a few small messages. Applies to new chats.'
+                )}
+              </p>
+            </div>
+            <Select
+              value={replyStyle}
+              onValueChange={(value) => setReplyStyle(normalizeChatReplyStyle(value))}
+            >
+              <SelectTrigger id="chat-workspace-reply-style" className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  {translate('components.chat-mode.workspaceDialog.replyStyleDefault', 'Default')}
+                </SelectItem>
+                <SelectItem value="conversational">
+                  {translate(
+                    'components.chat-mode.workspaceDialog.replyStyleConversational',
+                    'Conversational'
+                  )}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <ChatWorkspaceUrlList drafts={urlDrafts} onChange={setUrlDrafts} />
           <ChatWorkspaceEmailList drafts={emailDrafts} onChange={setEmailDrafts} />

@@ -60,6 +60,7 @@ function normalizeWorkspace(raw: unknown): ChatWorkspace | null {
     ...(clientEmails.length > 0 ? { clientEmails } : {}),
     ...(notes ? { notes } : {}),
     ...(raw.iconOverridden === true ? { iconOverridden: true } : {}),
+    ...(raw.replyStyle === 'conversational' ? { replyStyle: 'conversational' as const } : {}),
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : 0,
     updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : 0
   }

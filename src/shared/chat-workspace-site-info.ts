@@ -2,6 +2,7 @@
 // new chats receive so the agent knows the live site without being told again.
 
 import type { ChatWorkspace } from './chat-mode-types'
+import { CHAT_CONVERSATIONAL_STYLE_PROMPT } from './chat-reply-style'
 
 export const MAX_CHAT_WORKSPACE_URLS = 12
 export const MAX_CHAT_WORKSPACE_URL_LENGTH = 2048
@@ -199,6 +200,10 @@ export function buildChatWorkspaceAgentBrief(workspace: ChatWorkspace): string {
     '',
     'This session has "muster" MCP tools scoped to this workspace. Use them when the user asks to view or change workspace settings: rename the workspace, edit notes, URLs, or client emails, change the color or working folders, switch the default chat model, or rename, archive, or clean up chats. They can also move this chat into another workspace, or turn it into a new workspace of its own.'
   )
+
+  if (workspace.replyStyle === 'conversational') {
+    lines.push('', CHAT_CONVERSATIONAL_STYLE_PROMPT)
+  }
 
   return lines.join('\n')
 }

@@ -155,6 +155,7 @@ export function ChatThreadView({
           threadId={thread.id}
           onRetry={retry}
           onQuote={setQuote}
+          conversational={workspace?.replyStyle === 'conversational'}
           label={displayTitle}
           header={<ChatConversationHeader thread={thread} workspace={workspace} />}
           empty={<ChatConversationEmpty workspace={workspace} fallbackName={displayTitle} />}
