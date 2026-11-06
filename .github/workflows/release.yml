@@ -195,16 +195,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Why soft-skip: without the token the app still builds; the Bots tab shows its "not included" notice.
+      # Why hard-fail: v1.15.13 shipped without Bots when the token was missing and the step only warned.
       - name: Fetch Muster Bots artifact
         env:
           GH_TOKEN: ${{ secrets.MUSTER_BOTS_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::warning::MUSTER_BOTS_TOKEN is not set; building without Muster Bots"
-            exit 0
+            echo "::error::MUSTER_BOTS_TOKEN is not set; a release must include Muster Bots"
+            exit 1
           fi
           pnpm fetch:muster-bots
+          test -d resources/muster-bots || { echo "::error::resources/muster-bots is missing after fetch"; exit 1; }
 
       # Why: publish config uses releaseType 'release', and electron-builder only adopts
       # DRAFT releases — a leftover published release from a failed run makes every retry
