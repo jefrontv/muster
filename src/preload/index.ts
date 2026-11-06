@@ -937,7 +937,19 @@ const api = {
       return () => ipcRenderer.removeListener('bots:statusChanged', listener)
     },
     composioKeyStatus: () => ipcRenderer.invoke('bots:composioKeyStatus'),
-    setComposioKey: (value) => ipcRenderer.invoke('bots:setComposioKey', value)
+    setComposioKey: (value) => ipcRenderer.invoke('bots:setComposioKey', value),
+    listCommentDrafts: () => ipcRenderer.invoke('bots:listCommentDrafts'),
+    commentDraftTask: (ref) => ipcRenderer.invoke('bots:commentDraftTask', ref),
+    updateCommentDraft: (edit) => ipcRenderer.invoke('bots:updateCommentDraft', edit),
+    discardCommentDraft: (id) => ipcRenderer.invoke('bots:discardCommentDraft', id),
+    undoCommentDraft: (id) => ipcRenderer.invoke('bots:undoCommentDraft', id),
+    commentDraftFeedback: (args) => ipcRenderer.invoke('bots:commentDraftFeedback', args),
+    postCommentDraft: (args) => ipcRenderer.invoke('bots:postCommentDraft', args),
+    onCommentDraftsChanged: (callback) => {
+      const listener = (): void => callback()
+      ipcRenderer.on('bots:commentDraftsChanged', listener)
+      return () => ipcRenderer.removeListener('bots:commentDraftsChanged', listener)
+    }
   } satisfies PreloadApi['bots'],
 
   chatConnector: {

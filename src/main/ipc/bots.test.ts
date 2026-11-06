@@ -8,6 +8,7 @@ vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn(), removeHandler: vi.fn(), on: vi.fn() }
 }))
 vi.mock('../bots/bots-session', () => ({ installBotsSession: vi.fn() }))
+vi.mock('./bots-comment-drafts', () => ({ registerBotsCommentDraftHandlers: vi.fn() }))
 vi.mock('../bots/bots-sidecar', () => ({
   botsDataDir: () => '/tmp/bots',
   getBotsSidecarStatus: vi.fn(),

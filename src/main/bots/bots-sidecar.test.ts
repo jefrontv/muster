@@ -129,6 +129,33 @@ describe('bots sidecar', () => {
     expect(mocks.writeCredentials).toHaveBeenCalledWith({ COMPOSIO_API_KEY: 'ak_new' })
   })
 
+  it('forwards the drafts change signal and reaches the drafts API only while running', async () => {
+    const sidecar = await loadSidecar()
+    expect(await sidecar.botsCommentDrafts.list()).toMatchObject({
+      ok: false,
+      reason: 'unavailable'
+    })
+    await sidecar.startBotsSidecar()
+    const changed = vi.fn()
+    const off = sidecar.onBotsCommentDraftsChanged(changed)
+    mocks.procs[0].emit('message', { type: 'muster:comment-drafts-changed' })
+    expect(changed).toHaveBeenCalledTimes(1)
+    expect(mocks.writeCredentials).not.toHaveBeenCalled()
+    off()
+    mocks.procs[0].emit('message', { type: 'muster:comment-drafts-changed' })
+    expect(changed).toHaveBeenCalledTimes(1)
+
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ drafts: [] }), { status: 200 }))
+    expect(await sidecar.botsCommentDrafts.list()).toEqual({ ok: true, value: [] })
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(String(url)).toBe('http://127.0.0.1:18899/api/muster/comment-drafts?status=waiting')
+    const headers = (init?.headers ?? {}) as Record<string, string>
+    expect(headers['X-OpenMausBot-Desktop-Owner']).toBe(sidecar.botsOwnerCapability()?.token)
+    fetchMock.mockRestore()
+  })
+
   it('stores a key only after the server accepts it, starting the server to ask', async () => {
     const sidecar = await loadSidecar()
     const fetchMock = vi

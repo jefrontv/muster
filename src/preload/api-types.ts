@@ -601,6 +601,13 @@ import type {
 } from '../shared/workspace-cleanup'
 import type { KeybindingActionId, KeybindingFileSnapshot } from '../shared/keybindings'
 import type { BotsKeySaveResult, BotsKeyStatus, BotsSidecarStatus } from '../shared/bots-types'
+import type {
+  BotsCommentDraft,
+  BotsCommentDraftEdit,
+  BotsCommentDraftPostArgs,
+  BotsCommentDraftResult,
+  BotsCommentDraftTask
+} from '../shared/bots-comment-draft-types'
 
 type GitLabRepoSelectorArgs = {
   repoPath: string
@@ -1015,6 +1022,28 @@ export type BotsApi = {
   composioKeyStatus: () => Promise<BotsKeyStatus>
   /** Empty clears the key. Applies live while the bots server runs. */
   setComposioKey: (value: string) => Promise<BotsKeySaveResult>
+  /** Waiting comment drafts, oldest first. */
+  listCommentDrafts: () => Promise<BotsCommentDraftResult<BotsCommentDraft[]>>
+  /** Title and project for a draft's task; cached per task in main. */
+  commentDraftTask: (ref: {
+    projectId: number
+    taskId: number
+  }) => Promise<BotsCommentDraftResult<BotsCommentDraftTask>>
+  updateCommentDraft: (
+    edit: BotsCommentDraftEdit
+  ) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  discardCommentDraft: (id: string) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  undoCommentDraft: (id: string) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  /** Sends a note into the drafting bot's thread so it amends the draft. */
+  commentDraftFeedback: (args: {
+    id: string
+    note: string
+  }) => Promise<BotsCommentDraftResult<null>>
+  /** Posts to ActiveCollab; the draft is marked posted only after ActiveCollab confirms. */
+  postCommentDraft: (
+    args: BotsCommentDraftPostArgs
+  ) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  onCommentDraftsChanged: (callback: () => void) => () => void
 }
 
 export type ChatConnectorApi = {

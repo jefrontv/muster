@@ -6,7 +6,9 @@ import { randomBytes } from 'node:crypto'
 import { createWriteStream, mkdirSync, statSync, type WriteStream } from 'node:fs'
 import path from 'node:path'
 import { BOTS_PARTITION, type BotsSidecarStatus } from '../../shared/bots-types'
+import { BOTS_COMMENT_DRAFTS_CHANGED_MESSAGE } from '../../shared/bots-comment-draft-types'
 import { buildBotsAgentEnv } from './bots-agent-env'
+import { BOTS_OWNER_HEADER, createBotsCommentDraftsClient } from './bots-comment-drafts-client'
 import { readBotsCredentialEnv, writeBotsCredentialEnv } from './bots-credentials'
 import { reportBotsOwnListeners } from './bots-own-listeners'
 import { pickBotsPort, waitForBotsServer } from './bots-sidecar-port'
@@ -17,7 +19,7 @@ const MAX_RESTARTS = 3
 const RESTART_WINDOW_MS = 60_000
 const STOP_TIMEOUT_MS = 5_000
 const LOG_TAIL_LINES = 40
-export const BOTS_OWNER_HEADER = 'X-OpenMausBot-Desktop-Owner'
+export { BOTS_OWNER_HEADER }
 const CREDENTIALS_MESSAGE = 'muster:credentials'
 
 type Running = { proc: UtilityProcess; port: number; token: string }
@@ -29,6 +31,7 @@ let stopping = false
 let restarts: number[] = []
 let agentResolvers: CommitMessageAgentEnvironmentResolvers | undefined
 const listeners = new Set<(next: BotsSidecarStatus) => void>()
+const draftsListeners = new Set<() => void>()
 const logTail: string[] = []
 const LOG_FILE_MAX_BYTES = 1024 * 1024
 let logFile: WriteStream | null = null
@@ -94,6 +97,16 @@ export function onBotsSidecarStatus(listener: (next: BotsSidecarStatus) => void)
 /** The Bots partition adds this to requests for the server's port; null while nothing runs. */
 export function botsOwnerCapability(): { port: number; token: string } | null {
   return current ? { port: current.port, token: current.token } : null
+}
+
+/** Comment drafts on the running server; every call answers `unavailable` while it is stopped. */
+export const botsCommentDrafts = createBotsCommentDraftsClient(() =>
+  current && status.state === 'running' ? { port: current.port, token: current.token } : null
+)
+
+export function onBotsCommentDraftsChanged(listener: () => void): () => void {
+  draftsListeners.add(listener)
+  return () => draftsListeners.delete(listener)
 }
 
 export function startBotsSidecar(): Promise<BotsSidecarStatus> {
@@ -175,6 +188,12 @@ async function launch(): Promise<BotsSidecarStatus> {
 
 function onServerMessage(message: unknown): void {
   const { type, env } = (message ?? {}) as { type?: unknown; env?: unknown }
+  if (type === BOTS_COMMENT_DRAFTS_CHANGED_MESSAGE) {
+    for (const listener of draftsListeners) {
+      listener()
+    }
+    return
+  }
   if (type !== CREDENTIALS_MESSAGE || !env || typeof env !== 'object') {
     return
   }

@@ -18,6 +18,7 @@ import type { Store } from '../persistence'
 import { botsCredentialHint, COMPOSIO_API_KEY_ENV } from '../bots/bots-credentials'
 import type { BotsKeyStatus, BotsKeySaveResult } from '../../shared/bots-types'
 import { installBotsSession } from '../bots/bots-session'
+import { registerBotsCommentDraftHandlers } from './bots-comment-drafts'
 import type { CommitMessageAgentEnvironmentResolvers } from '../text-generation/commit-message-agent-environment'
 
 const CHANNELS = [
@@ -58,6 +59,7 @@ export function registerBotsHandlers(
   ipcMain.handle('bots:openLog', () =>
     shell.openPath(existsSync(botsLogPath()) ? botsLogPath() : botsDataDir())
   )
+  registerBotsCommentDraftHandlers()
   ipcMain.handle('bots:composioKeyStatus', () => composioKeyStatus())
   ipcMain.handle(
     'bots:setComposioKey',
