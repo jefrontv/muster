@@ -98,6 +98,27 @@ describe('activeCollabCommentBodyHtml formatting', () => {
   })
 })
 
+describe('activeCollabCommentBodyHtml lists', () => {
+  it('emits bulleted and numbered lists with plain items', () => {
+    expect(posted('<ul><li><p>one</p></li><li><p><strong>two</strong></p></li></ul>')).toBe(
+      '<ul><li>one</li><li><strong>two</strong></li></ul>'
+    )
+    expect(posted('<ol><li>first</li><li>second</li></ol>')).toBe(
+      '<ol><li>first</li><li>second</li></ol>'
+    )
+  })
+
+  it('keeps a nested list inside its item and drops empty items', () => {
+    expect(posted('<ul><li><p>parent</p><ol><li>child</li></ol></li><li><p></p></li></ul>')).toBe(
+      '<ul><li>parent<ol><li>child</li></ol></li></ul>'
+    )
+  })
+
+  it('posts nothing for a list with only empty items', () => {
+    expect(posted('<ul><li><p></p></li></ul>')).toBe('')
+  })
+})
+
 describe('activeCollabCommentBodyHtml tag allowlist', () => {
   it('emits only allowlisted tags for content well outside the allowlist', () => {
     // Everything here is something a paste from a browser, a doc, or an email can carry.
@@ -113,7 +134,7 @@ describe('activeCollabCommentBodyHtml tag allowlist', () => {
         '<p>kept</p>'
     )
 
-    expect(new Set(tagsIn(html))).toEqual(new Set(['p']))
+    expect(new Set(tagsIn(html))).toEqual(new Set(['p', 'ul', 'li']))
     for (const tag of tagsIn(html)) {
       expect(ACTIVECOLLAB_COMMENT_ALLOWED_TAGS).toContain(tag)
     }

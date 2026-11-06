@@ -13,6 +13,12 @@ describe('canonicalActiveCollabCommentHtml', () => {
     expect(out).toContain('href="https://dev.example/x"')
   })
 
+  it('keeps lists', () => {
+    expect(
+      canonicalActiveCollabCommentHtml('<p>Steps:</p><ol><li>Pull</li><li>Build</li></ol>')
+    ).toBe('<p>Steps:</p><ol><li>Pull</li><li>Build</li></ol>')
+  })
+
   it('drops scripts, handlers, unsafe links and unknown tags', () => {
     const out = canonicalActiveCollabCommentHtml(
       '<p onclick="x()">Hi <script>alert(1)</script><img src=x onerror=y><a href="javascript:alert(1)">bad</a><h1>Big</h1></p>'

@@ -1509,8 +1509,34 @@
   outline: none;
 }
 
+/* The bot draft editor dialog: room to rework a whole comment. */
+[data-slot='bots-draft-editor'] .activecollab-comment-editor {
+  min-height: 14rem;
+  max-height: 55vh;
+  padding: 12px 16px 14px;
+  font-size: 14px;
+}
+
 .activecollab-comment-editor p {
   margin: 0 0 0.5em;
+}
+
+.activecollab-comment-editor ul,
+.activecollab-comment-editor ol {
+  margin: 0 0 0.5em;
+  padding-left: 1.4em;
+}
+
+.activecollab-comment-editor ul {
+  list-style: disc;
+}
+
+.activecollab-comment-editor ol {
+  list-style: decimal;
+}
+
+.activecollab-comment-editor li > p {
+  margin: 0;
 }
 
 .activecollab-comment-editor p:last-child {

@@ -378,13 +378,13 @@ describe('ActiveCollabCommentComposer layout', () => {
     ).toBe(false)
   })
 
-  it('offers exactly the three controls the schema can represent', async () => {
+  it('offers exactly the controls the schema can represent', async () => {
     await mount()
     const labels = [...container.querySelectorAll('button[aria-label]')].map((button) =>
       button.getAttribute('aria-label')
     )
 
-    expect(labels).toEqual(['Bold', 'Italic', 'Link'])
+    expect(labels).toEqual(['Bold', 'Italic', 'Link', 'Bulleted list', 'Numbered list'])
   })
 })
 

@@ -28,11 +28,21 @@ import {
 } from './activecollab-comment-mention-node'
 
 /**
- * Every tag this module can emit. Paragraphs and breaks for structure, `strong`/`em` for the two
+ * Every tag this module can emit. Paragraphs, breaks and lists for structure, `strong`/`em` for the two
  * emphases the composer offers, `a` for links, and `span` solely for the mention. Nothing else can
  * be produced: unknown nodes contribute their children or nothing at all.
  */
-export const ACTIVECOLLAB_COMMENT_ALLOWED_TAGS = ['a', 'br', 'em', 'p', 'span', 'strong'] as const
+export const ACTIVECOLLAB_COMMENT_ALLOWED_TAGS = [
+  'a',
+  'br',
+  'em',
+  'li',
+  'ol',
+  'p',
+  'span',
+  'strong',
+  'ul'
+] as const
 
 /** Every attribute this module can emit. `class` is only ever the literal `new_mention`. */
 export const ACTIVECOLLAB_COMMENT_ALLOWED_ATTRIBUTES = [
@@ -144,19 +154,65 @@ function serializeInline(node: ProseMirrorNode): string {
  * left behind by accepting a mention is not something anybody typed on purpose.
  */
 export function activeCollabCommentBodyHtml(doc: ProseMirrorNode): string {
-  const paragraphs: string[] = []
-  doc.forEach((block) => {
-    if (block.type.name !== 'paragraph') {
-      return
-    }
-    let inner = ''
-    block.forEach((child) => {
-      inner += serializeInline(child)
-    })
-    const trimmed = inner.trim()
-    if (trimmed !== '') {
-      paragraphs.push(`<p>${trimmed}</p>`)
+  return serializeBlocks(doc).join('')
+}
+
+function serializeBlocks(parent: ProseMirrorNode): string[] {
+  const blocks: string[] = []
+  parent.forEach((block) => {
+    const html = serializeBlock(block)
+    if (html !== '') {
+      blocks.push(html)
     }
   })
-  return paragraphs.join('')
+  return blocks
+}
+
+function serializeBlock(block: ProseMirrorNode): string {
+  if (block.type.name === 'paragraph') {
+    const inner = paragraphInner(block)
+    return inner === '' ? '' : `<p>${inner}</p>`
+  }
+  if (block.type.name === 'bulletList' || block.type.name === 'orderedList') {
+    const tag = block.type.name === 'bulletList' ? 'ul' : 'ol'
+    const items: string[] = []
+    block.forEach((item) => {
+      const html = serializeListItem(item)
+      if (html !== '') {
+        items.push(html)
+      }
+    })
+    return items.length === 0 ? '' : `<${tag}>${items.join('')}</${tag}>`
+  }
+  return ''
+}
+
+// An item's paragraphs are written inline, joined by breaks, so the instance shows plain bullets
+// rather than paragraph gaps inside each one; a nested list follows the text.
+function serializeListItem(item: ProseMirrorNode): string {
+  if (item.type.name !== 'listItem') {
+    return ''
+  }
+  const lines: string[] = []
+  let nested = ''
+  item.forEach((child) => {
+    if (child.type.name === 'paragraph') {
+      const inner = paragraphInner(child)
+      if (inner !== '') {
+        lines.push(inner)
+      }
+    } else {
+      nested += serializeBlock(child)
+    }
+  })
+  const html = lines.join('<br>') + nested
+  return html === '' ? '' : `<li>${html}</li>`
+}
+
+function paragraphInner(paragraph: ProseMirrorNode): string {
+  let inner = ''
+  paragraph.forEach((child) => {
+    inner += serializeInline(child)
+  })
+  return inner.trim()
 }

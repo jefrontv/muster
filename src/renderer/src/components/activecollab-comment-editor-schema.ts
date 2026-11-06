@@ -2,7 +2,7 @@
 //
 // This is the FIRST of the two gates on what can be posted. A comment goes to a shared instance
 // other people read, and ActiveCollab renders only a narrow slice of HTML, so the editor should be
-// incapable of holding a heading, a list, a table or an image in the first place — a document that
+// incapable of holding a heading, a table or an image in the first place — a document that
 // cannot contain a node is a stronger guarantee than a serialiser that remembers to skip it. The
 // second gate is `activeCollabCommentBodyHtml`, which emits by explicit case and drops anything it
 // does not recognise.
@@ -31,15 +31,11 @@ import { ActiveCollabMentionNode } from './activecollab-comment-mention-node'
  */
 const DISABLED_STARTER_KIT_NODES = {
   blockquote: false,
-  bulletList: false,
   code: false,
   codeBlock: false,
   heading: false,
   horizontalRule: false,
   link: false,
-  listItem: false,
-  listKeymap: false,
-  orderedList: false,
   strike: false,
   // Why: an auto-appended trailing paragraph is a document the author did not write; the serialiser
   // would drop it, but the empty-draft check reads the document, not the output.
@@ -48,8 +44,8 @@ const DISABLED_STARTER_KIT_NODES = {
 } as const
 
 /**
- * The extensions the comment composer runs on: paragraphs, hard breaks, bold, italic, links, and
- * the mention node — plus undo/redo and the cursor affordances, which produce no markup at all.
+ * The extensions the comment composer runs on: paragraphs, bulleted and numbered lists, hard
+ * breaks, bold, italic, links, and the mention node — plus undo/redo and the cursor affordances, which produce no markup at all.
  */
 export function createActiveCollabCommentExtensions(placeholder: string): AnyExtension[] {
   return [

@@ -1,13 +1,13 @@
 import React from 'react'
 import { useEditorState, type Editor } from '@tiptap/react'
-import { Bold, Italic, Link as LinkIcon } from 'lucide-react'
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered } from 'lucide-react'
 
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 
 /**
- * Three controls, matching the three things a comment body may carry beyond plain text. Anything
- * further — headings, lists, code — is absent because the schema cannot hold it and the serialiser
+ * One control per thing a comment body may carry beyond plain text. Anything further (headings,
+ * code, quotes) is absent because the schema cannot hold it and the serialiser
  * would not emit it, so offering the button would be a lie.
  */
 export function ActiveCollabCommentToolbar({
@@ -26,9 +26,11 @@ export function ActiveCollabCommentToolbar({
     selector: ({ editor: current }) => ({
       bold: current?.isActive('bold') ?? false,
       italic: current?.isActive('italic') ?? false,
-      link: current?.isActive('link') ?? false
+      link: current?.isActive('link') ?? false,
+      bulletList: current?.isActive('bulletList') ?? false,
+      orderedList: current?.isActive('orderedList') ?? false
     })
-  }) ?? { bold: false, italic: false, link: false }
+  }) ?? { bold: false, italic: false, link: false, bulletList: false, orderedList: false }
 
   return (
     <div
@@ -61,6 +63,28 @@ export function ActiveCollabCommentToolbar({
         onClick={onToggleLink}
       >
         <LinkIcon className="size-3.5" />
+      </ActiveCollabCommentToolbarButton>
+      <ActiveCollabCommentToolbarButton
+        label={translate(
+          'auto.components.activecollab.task_workspace.comment_bullet_list',
+          'Bulleted list'
+        )}
+        active={active.bulletList}
+        disabled={disabled}
+        onClick={() => editor?.chain().focus().toggleBulletList().run()}
+      >
+        <List className="size-3.5" />
+      </ActiveCollabCommentToolbarButton>
+      <ActiveCollabCommentToolbarButton
+        label={translate(
+          'auto.components.activecollab.task_workspace.comment_ordered_list',
+          'Numbered list'
+        )}
+        active={active.orderedList}
+        disabled={disabled}
+        onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+      >
+        <ListOrdered className="size-3.5" />
       </ActiveCollabCommentToolbarButton>
     </div>
   )
