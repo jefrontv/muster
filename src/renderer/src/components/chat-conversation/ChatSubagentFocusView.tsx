@@ -89,7 +89,7 @@ function Crumb(props: {
     <button
       type="button"
       onClick={props.onClick}
-      className="min-w-0 truncate rounded-sm text-chat-ink-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
+      className="min-w-0 truncate rounded-full text-chat-ink-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
     >
       {name}
     </button>
@@ -176,7 +176,7 @@ export function ChatSubagentFocusView(props: {
             <button
               type="button"
               onClick={main}
-              className="shrink-0 rounded-sm text-chat-ink-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
+              className="shrink-0 rounded-full text-chat-ink-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chat-accent"
             >
               {translate('components.chat-conversation.focus.main', 'Main agent')}
             </button>

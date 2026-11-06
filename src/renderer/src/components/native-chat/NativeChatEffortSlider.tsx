@@ -178,10 +178,10 @@ export function NativeChatEffortSlider(props: {
             aria-hidden
             data-effort-knob=""
             className={cn(
-              'absolute top-1/2 size-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-[0_1px_3px_rgb(0_0_0/0.3)]',
+              'absolute top-1/2 size-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-sm',
               dragShare === null
                 ? `transition-[left,scale,box-shadow] duration-300 ${SPRING}`
-                : 'scale-110 shadow-[0_2px_10px_rgb(0_0_0/0.35)] transition-[scale,box-shadow] duration-150',
+                : 'scale-110 shadow-floating transition-[scale,box-shadow] duration-150',
               reduce
             )}
             style={{ left: at(share) }}
