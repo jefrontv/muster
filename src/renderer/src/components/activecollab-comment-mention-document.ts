@@ -95,7 +95,8 @@ export function insertActiveCollabMention(
 
 /**
  * Comment HTML as editor starting content: ActiveCollab mention spans (anything carrying
- * `data-user-id`) become the chip spans the mention node parses, so loaded mentions stay addressable.
+ * `data-user-id`) become the chip spans the mention node parses, so loaded mentions stay addressable,
+ * and empty spacer paragraphs are dropped.
  */
 export function activeCollabCommentHtmlForEditor(html: string): string {
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html')
@@ -110,6 +111,13 @@ export function activeCollabCommentHtmlForEditor(html: string): string {
     chip.setAttribute(ACTIVECOLLAB_MENTION_NAME_ATTRIBUTE, name)
     chip.textContent = `@${name}`
     span.replaceWith(chip)
+  }
+  // ActiveCollab's spacer paragraphs; the editor spaces paragraphs itself and the serializer adds them back.
+  for (const paragraph of Array.from(doc.body.querySelectorAll('p'))) {
+    const onlyBreaks = Array.from(paragraph.children).every((child) => child.tagName === 'BR')
+    if (onlyBreaks && (paragraph.textContent ?? '').trim() === '') {
+      paragraph.remove()
+    }
   }
   return doc.body.innerHTML
 }

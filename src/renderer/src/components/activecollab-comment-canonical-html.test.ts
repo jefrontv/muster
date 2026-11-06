@@ -13,10 +13,12 @@ describe('canonicalActiveCollabCommentHtml', () => {
     expect(out).toContain('href="https://dev.example/x"')
   })
 
-  it('keeps lists', () => {
-    expect(
-      canonicalActiveCollabCommentHtml('<p>Steps:</p><ol><li>Pull</li><li>Build</li></ol>')
-    ).toBe('<p>Steps:</p><ol><li>Pull</li><li>Build</li></ol>')
+  it('keeps lists and spaces blocks once, however often it runs', () => {
+    const once = canonicalActiveCollabCommentHtml(
+      '<p>Steps:</p><ol><li>Pull</li><li>Build</li></ol>'
+    )
+    expect(once).toBe('<p>Steps:</p><p>&nbsp;</p><ol><li>Pull</li><li>Build</li></ol>')
+    expect(canonicalActiveCollabCommentHtml(once)).toBe(once)
   })
 
   it('drops scripts, handlers, unsafe links and unknown tags', () => {

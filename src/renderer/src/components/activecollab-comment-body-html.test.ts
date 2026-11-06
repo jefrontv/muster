@@ -85,12 +85,16 @@ describe('activeCollabCommentBodyHtml formatting', () => {
     )
   })
 
-  it('keeps a soft line break as <br> and a blank line as a new paragraph', () => {
-    expect(posted('<p>one<br>two</p><p>three</p>')).toBe('<p>one<br>two</p><p>three</p>')
+  it('keeps a soft line break as <br> and spaces paragraphs the way ActiveCollab does', () => {
+    expect(posted('<p>one<br>two</p><p>three</p>')).toBe(
+      '<p>one<br>two</p><p>&nbsp;</p><p>three</p>'
+    )
   })
 
   it('drops paragraphs the author only pressed Enter on', () => {
-    expect(posted('<p>one</p><p></p><p>   </p><p>two</p>')).toBe('<p>one</p><p>two</p>')
+    expect(posted('<p>one</p><p></p><p>   </p><p>two</p>')).toBe(
+      '<p>one</p><p>&nbsp;</p><p>two</p>'
+    )
   })
 
   it('posts nothing at all for an empty document', () => {

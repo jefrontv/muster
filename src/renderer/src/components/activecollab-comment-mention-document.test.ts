@@ -211,10 +211,20 @@ describe('activeCollabCommentHtmlForEditor', () => {
   it('loads comment HTML with its mentions as chips and serialises it back unchanged', () => {
     const wire =
       '<p>Hi <span class="new_mention" data-user-id="12" data-type="user">Ada Lovelace</span>, ' +
-      '<strong>see</strong> <a href="https://example.com">this</a></p><p>Thanks</p>'
+      '<strong>see</strong> <a href="https://example.com">this</a></p><p>&nbsp;</p><p>Thanks</p>'
     const instance = editor(activeCollabCommentHtmlForEditor(wire))
     expect(mentionNames(instance)).toEqual([{ userId: 12, name: 'Ada Lovelace' }])
     expect(activeCollabCommentBodyHtml(instance.state.doc)).toBe(wire)
+  })
+
+  it("drops ActiveCollab's spacer paragraphs so the editor shows no blank lines", () => {
+    const loaded = activeCollabCommentHtmlForEditor(
+      '<p>One</p>\n<p>\u00a0</p>\n<p><br></p><p>Two</p>'
+    )
+    expect(loaded.match(/<p>/g)).toHaveLength(2)
+    expect(activeCollabCommentBodyHtml(editor(loaded).state.doc)).toBe(
+      '<p>One</p><p>&nbsp;</p><p>Two</p>'
+    )
   })
 
   it('reads the server read format when it carries an id, and leaves id-less spans as text', () => {

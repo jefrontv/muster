@@ -149,13 +149,17 @@ function serializeInline(node: ProseMirrorNode): string {
  * The comment body as ActiveCollab stores it.
  *
  * Blank paragraphs are dropped rather than posted as `<p></p>`: they are the author pressing Enter,
- * not content, and the instance renders them as stray gaps in the thread. Each paragraph's edges
- * are trimmed for the same reason the old plain-text composer trimmed its draft — a trailing space
+ * not content; the gaps between blocks come from {@link ACTIVECOLLAB_BLOCK_GAP}. Each paragraph's
+ * edges are trimmed for the same reason the old plain-text composer trimmed its draft — a trailing space
  * left behind by accepting a mention is not something anybody typed on purpose.
  */
 export function activeCollabCommentBodyHtml(doc: ProseMirrorNode): string {
-  return serializeBlocks(doc).join('')
+  return serializeBlocks(doc).join(ACTIVECOLLAB_BLOCK_GAP)
 }
+
+// ActiveCollab gives paragraphs and lists no margin; its own editor separates them with an empty
+// paragraph, so posted blocks do the same or they render packed together.
+const ACTIVECOLLAB_BLOCK_GAP = '<p>&nbsp;</p>'
 
 function serializeBlocks(parent: ProseMirrorNode): string[] {
   const blocks: string[] = []

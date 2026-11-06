@@ -565,7 +565,7 @@ describe('ActiveCollabTaskWorkspace comments', () => {
 
     expect(mocks.postComment).toHaveBeenCalledWith({
       taskId: TASK_ID,
-      bodyHtml: '<p>Ping &lt;b&gt;Ada&lt;/b&gt;</p><p>second line</p>'
+      bodyHtml: '<p>Ping &lt;b&gt;Ada&lt;/b&gt;</p><p>&nbsp;</p><p>second line</p>'
     })
     expect(container.textContent).toContain('Shipped')
   })
