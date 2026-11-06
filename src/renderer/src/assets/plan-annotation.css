@@ -14,22 +14,31 @@
   background: color-mix(in srgb, var(--annotation-good) 22%, transparent);
 }
 
-/* The markdown viewer runs full width; a plan defaults to a 760px column with equal space either
-   side. Each side is at least the notes rail (cards plus their gap), so the text never moves when
-   a note lands or the rail is toggled. Padding rather than max-width, so a click in the margin
-   lands in the document. */
-.plan-review-shell.is-readable .rich-markdown-editor,
-.plan-review-shell.is-readable.has-rich-markdown-review-notes .rich-markdown-editor {
-  padding-inline: max(290px, calc((100% - 760px) / 2));
+/* Measured on the shell, not the layout, so an open contents panel counts against the width. */
+.plan-review-shell {
+  container: plan-review-text / inline-size;
 }
 
-/* Too narrow for a rail on both sides: keep the rail's side, give the other back to the text. */
-@container (max-width: 1000px) {
-  .plan-review-shell.is-readable .rich-markdown-editor,
-  .plan-review-shell.is-readable.has-rich-markdown-review-notes .rich-markdown-editor {
-    padding-left: 32px;
-    padding-right: 290px;
+/* The markdown viewer runs full width; a plan defaults to a 760px column, centred when wide. The
+   right side always holds the notes rail (cards plus their gap), so the text never moves when a
+   note lands; the left side shrinks to 32px before the column does. Padding rather than
+   max-width, so a click in the margin lands in the document. */
+.plan-review-shell.is-readable .rich-markdown-editor,
+.plan-review-shell.is-readable.has-rich-markdown-review-notes .rich-markdown-editor {
+  padding-left: max(32px, min(calc(100% - 1050px), calc((100% - 760px) / 2)));
+  padding-right: max(290px, calc((100% - 760px) / 2));
+}
+
+/* Reserving an empty rail would leave under ~600px of text: the text takes it until a note lands. */
+@container plan-review-text (max-width: 920px) {
+  .plan-review-shell.is-readable:not(.has-rich-markdown-review-notes) .rich-markdown-editor {
+    padding-right: max(32px, calc(100% - 792px));
   }
+}
+
+/* Long paths and identifiers break anywhere rather than overflow or split the line oddly. */
+.plan-review-shell .rich-markdown-editor :not(pre) > code {
+  overflow-wrap: anywhere;
 }
 
 .plan-review-note-card.is-remove > .orca-diff-comment-card {

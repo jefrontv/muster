@@ -35,6 +35,10 @@ import {
   type PlanReviewDraft
 } from './plan-annotation-drafts'
 import { toAnnotations, type DraftNote } from './plan-annotation-notes'
+import {
+  shouldShowPlanReviewTableOfContents,
+  usePlanReviewModalWidth
+} from './plan-review-toc-visibility'
 
 const PlanReviewChangesView = lazy(() => import('./PlanReviewChangesView'))
 
@@ -77,10 +81,15 @@ function PlanReviewSession({
   // The editor's serialization of the plan as sent, restored with edits or taken on first render.
   const [baseline, setBaseline] = useState<string | null>(() => draft.edits?.baseline ?? null)
   const [view, setView] = useState<PlanReviewView>('rich')
-  // Open by default when there is an outline to show; a plan with no headings would get an empty panel.
-  const [showTableOfContents, setShowTableOfContents] = useState(() =>
-    /^#{1,6}\s/m.test(current.content)
-  )
+  // A plan with no headings would get an empty panel; a narrow window starts it closed.
+  const hasOutline = useMemo(() => /^#{1,6}\s/m.test(current.content), [current.content])
+  const [modalWidth, modalRef] = usePlanReviewModalWidth()
+  const [tableOfContentsChoice, setTableOfContentsChoice] = useState<boolean | null>(null)
+  const showTableOfContents = shouldShowPlanReviewTableOfContents({
+    hasOutline,
+    modalWidth,
+    userChoice: tableOfContentsChoice
+  })
   const [readable, setReadable] = useState(true)
   const [wholePlanRequest, setWholePlanRequest] = useState(0)
 
@@ -152,13 +161,14 @@ function PlanReviewSession({
   return (
     <Dialog open onOpenChange={(next) => !next && settle('dismissed')}>
       <DialogContent
+        ref={modalRef}
         showCloseButton={false}
         // Escape closes whatever is on top (search, note draft, menu); it never ends the review,
         // which would discard every note AND answer the waiting agent with "no feedback".
         onEscapeKeyDown={(event) => {
           event.preventDefault()
           if (!isInsideNestedLayer(event.target) && showTableOfContents) {
-            setShowTableOfContents(false)
+            setTableOfContentsChoice(false)
           }
         }}
         data-plan-review-dialog=""
@@ -189,7 +199,7 @@ function PlanReviewSession({
           showTableOfContents={showTableOfContents}
           readable={readable}
           onViewChange={setView}
-          onToggleTableOfContents={() => setShowTableOfContents((open) => !open)}
+          onToggleTableOfContents={() => setTableOfContentsChoice(!showTableOfContents)}
           onToggleReadable={() => setReadable((value) => !value)}
           onWholePlanNote={() => setWholePlanRequest((count) => count + 1)}
           onCopyPlan={() => void navigator.clipboard.writeText(editedContent ?? current.content)}
@@ -220,7 +230,7 @@ function PlanReviewSession({
                 )
               }
               onRemoveNote={(id) => setNotes((notes) => notes.filter((note) => note.id !== id))}
-              onCloseTableOfContents={() => setShowTableOfContents(false)}
+              onCloseTableOfContents={() => setTableOfContentsChoice(false)}
             />
           )}
         </div>
