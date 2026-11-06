@@ -276,8 +276,8 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
         label: `${translateMain('menu.openWorktreePalette', 'Open Worktree Palette')}\t${shortcutLabel('worktree.palette')}`
       },
       { type: 'separator' },
-      { role: 'togglefullscreen' },
-      { type: 'separator' },
+      // macOS adds its own full screen item to the View menu; a second one would duplicate it.
+      ...(isMac ? [] : [{ role: 'togglefullscreen' as const }, { type: 'separator' as const }]),
       appearanceSubmenu
     ]
   }

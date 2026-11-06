@@ -91,6 +91,14 @@ describe('registerAppMenu', () => {
     expect(forceReloadItem?.accelerator).toBeUndefined()
   })
 
+  it('lists one full screen item: the system one on macOS, its own elsewhere', () => {
+    registerAppMenu(buildMenuOptions())
+    const fullScreenItems = getSubmenu(getTemplate(), 'View').filter(
+      (item) => item.role === 'togglefullscreen'
+    )
+    expect(fullScreenItems).toHaveLength(isMac ? 0 : 1)
+  })
+
   it('reloads the focused window from the view menu', () => {
     const reloadMock = vi.fn()
     const reloadIgnoringCacheMock = vi.fn()
