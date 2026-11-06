@@ -2,12 +2,14 @@
 // partition, the only session that carries the server's owner token.
 import { Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from '../chat-mode/ChatModeToggle'
+import type { BotsCommentDraft } from '../../../../shared/bots-comment-draft-types'
+import { BotsCommentDraftsPanel } from './BotsCommentDraftsPanel'
 import { BotsFailedActions } from './BotsFailedActions'
 import { BotsIntroDialog } from './BotsIntroDialog'
 import { connectBotsDictation } from './bots-dictation-bridge'
@@ -15,6 +17,8 @@ import { botsDictationHost } from './bots-dictation-host'
 import { BOTS_TOGGLE_CHROME_TOP, watchBotsSidebarRoom } from './bots-guest-layout'
 import { syncBotsHostTheme } from './bots-host-theme'
 import { useBotsStatus } from './use-bots-status'
+import { useBotsCommentDrafts } from './use-bots-comment-drafts'
+import { useBotsCommentDraftsPanel, useBotsDraftsOverlay } from './use-bots-comment-drafts-panel'
 
 function useBotsWebview(
   containerRef: React.RefObject<HTMLDivElement | null>,
@@ -103,6 +107,15 @@ export default function BotsPage({ active = true }: { active?: boolean }): React
   // Once the guest's sidebar leaves room, the toggle sits where Code mode has it and no band shifts the page.
   const floatToggle = Boolean(running) && sidebarRoom
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
+  const drafts = useBotsCommentDrafts(Boolean(running))
+  const draftsPanel = useBotsCommentDraftsPanel(drafts.loaded ? drafts.drafts.length : null)
+  const [contentRow, setContentRow] = useState<HTMLDivElement | null>(null)
+  const draftsOverlay = useBotsDraftsOverlay(contentRow)
+  const openDraftTask = useCallback((draft: BotsCommentDraft) => {
+    const store = useAppStore.getState()
+    store.requestActiveCollabTask({ projectId: draft.projectId, taskId: draft.taskId })
+    store.openTaskPage()
+  }, [])
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col bg-background', !active && 'hidden')}>
@@ -114,52 +127,66 @@ export default function BotsPage({ active = true }: { active?: boolean }): React
           </div>
         </div>
       )}
-      <div className="relative min-h-0 flex-1">
-        {floatToggle ? (
-          <div className="absolute top-0 left-0 z-10 p-3" style={{ width: sidebarWidth }}>
-            <ChatModeToggle mode="bots" />
-          </div>
-        ) : null}
-        <div ref={containerRef} className={cn('absolute inset-0 flex', !running && 'hidden')} />
-        {status.state === 'starting' || status.state === 'stopped' ? (
-          <BotsNotice
-            title={translate('auto.components.bots.BotsPage.starting', 'Starting Muster Bots…')}
-            action={<Loader2 className="size-4 animate-spin text-muted-foreground" />}
-          />
-        ) : null}
-        {status.state === 'missing' ? (
-          <BotsNotice
-            title={translate(
-              'auto.components.bots.BotsPage.missing',
-              "Muster Bots isn't part of this build."
-            )}
-            detail={
-              import.meta.env.DEV
-                ? translate(
-                    'auto.components.bots.BotsPage.missingDetail',
-                    'In a development checkout, run pnpm fetch:muster-bots and reopen this tab.'
-                  )
-                : translate(
-                    'auto.components.bots.BotsPage.missingReleaseDetail',
-                    'Install the latest Muster release to get it.'
-                  )
-            }
-            action={
-              import.meta.env.DEV ? null : (
-                <Button size="sm" variant="outline" asChild>
-                  <a href={MUSTER_RELEASES_URL} target="_blank" rel="noopener noreferrer">
-                    {translate('auto.components.bots.BotsPage.getLatest', 'Get the latest Muster')}
-                  </a>
-                </Button>
-              )
-            }
-          />
-        ) : null}
-        {status.state === 'failed' ? (
-          <BotsNotice
-            title={translate('auto.components.bots.BotsPage.failed', 'Muster Bots stopped')}
-            detail={status.error}
-            action={<BotsFailedActions error={status.error} onRestart={restart} />}
+      <div ref={setContentRow} className="relative flex min-h-0 flex-1">
+        <div className="relative min-h-0 min-w-0 flex-1">
+          {floatToggle ? (
+            <div className="absolute top-0 left-0 z-10 p-3" style={{ width: sidebarWidth }}>
+              <ChatModeToggle mode="bots" />
+            </div>
+          ) : null}
+          <div ref={containerRef} className={cn('absolute inset-0 flex', !running && 'hidden')} />
+          {status.state === 'starting' || status.state === 'stopped' ? (
+            <BotsNotice
+              title={translate('auto.components.bots.BotsPage.starting', 'Starting Muster Bots…')}
+              action={<Loader2 className="size-4 animate-spin text-muted-foreground" />}
+            />
+          ) : null}
+          {status.state === 'missing' ? (
+            <BotsNotice
+              title={translate(
+                'auto.components.bots.BotsPage.missing',
+                "Muster Bots isn't part of this build."
+              )}
+              detail={
+                import.meta.env.DEV
+                  ? translate(
+                      'auto.components.bots.BotsPage.missingDetail',
+                      'In a development checkout, run pnpm fetch:muster-bots and reopen this tab.'
+                    )
+                  : translate(
+                      'auto.components.bots.BotsPage.missingReleaseDetail',
+                      'Install the latest Muster release to get it.'
+                    )
+              }
+              action={
+                import.meta.env.DEV ? null : (
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={MUSTER_RELEASES_URL} target="_blank" rel="noopener noreferrer">
+                      {translate(
+                        'auto.components.bots.BotsPage.getLatest',
+                        'Get the latest Muster'
+                      )}
+                    </a>
+                  </Button>
+                )
+              }
+            />
+          ) : null}
+          {status.state === 'failed' ? (
+            <BotsNotice
+              title={translate('auto.components.bots.BotsPage.failed', 'Muster Bots stopped')}
+              detail={status.error}
+              action={<BotsFailedActions error={status.error} onRestart={restart} />}
+            />
+          ) : null}
+        </div>
+        {running ? (
+          <BotsCommentDraftsPanel
+            state={drafts}
+            open={draftsPanel.open}
+            overlay={draftsOverlay}
+            onOpenChange={draftsPanel.setOpen}
+            onOpenTask={openDraftTask}
           />
         ) : null}
       </div>
