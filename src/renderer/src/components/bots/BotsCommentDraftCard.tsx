@@ -9,12 +9,14 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type {
   BotsCommentDraft,
+  BotsCommentDraftPostArgs,
   BotsCommentDraftResult,
   BotsCommentDraftTask
 } from '../../../../shared/bots-comment-draft-types'
 import { activeCollabStamp } from '../activecollab-task-timestamps'
 import { BotsCommentDraftEditor } from './BotsCommentDraftEditor'
 import { describeBotsCommentDraftFailure } from './bots-comment-draft-failure-message'
+import { canonicalActiveCollabCommentHtml } from '../activecollab-comment-canonical-html'
 
 type Action = 'post' | 'discard' | 'undo' | 'ask'
 
@@ -59,6 +61,14 @@ function editedLine(draft: BotsCommentDraft): string | null {
     })
   }
   return null
+}
+
+/** A bot's HTML goes out only as the editor would write it; a cleaned body is saved before posting. */
+function postArgs(draft: BotsCommentDraft): BotsCommentDraftPostArgs {
+  const bodyHtml = canonicalActiveCollabCommentHtml(draft.bodyHtml)
+  return bodyHtml === draft.bodyHtml
+    ? { id: draft.id }
+    : { id: draft.id, edit: { bodyHtml, bodyText: draft.bodyText, baseVersion: draft.version } }
 }
 
 export function BotsCommentDraftCard({
@@ -208,7 +218,7 @@ export function BotsCommentDraftCard({
             size="xs"
             disabled={locked}
             onClick={() =>
-              void run('post', () => window.api.bots.postCommentDraft({ id: draft.id }))
+              void run('post', () => window.api.bots.postCommentDraft(postArgs(draft)))
             }
           >
             {busy === 'post' ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
