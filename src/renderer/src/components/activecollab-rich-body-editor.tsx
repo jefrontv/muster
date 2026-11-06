@@ -41,7 +41,8 @@ export function useActiveCollabRichBody({
   disabled,
   placeholder,
   ariaLabel,
-  initialHtml
+  initialHtml,
+  projectOnlyMentions = false
 }: {
   projectId: number | null
   disabled: boolean
@@ -49,6 +50,8 @@ export function useActiveCollabRichBody({
   ariaLabel: string
   /** Comment HTML to start from; read once at creation, with its mentions loaded as chips. */
   initialHtml?: string
+  /** Limit @mention suggestions to the project's members, with no wider fallback. */
+  projectOnlyMentions?: boolean
 }): ActiveCollabRichBody {
   const rootRef = useRef<HTMLDivElement | null>(null)
   // Why: `editorProps` is frozen when the editor is created, so the menu's live handler has to be
@@ -80,7 +83,11 @@ export function useActiveCollabRichBody({
     [extensions]
   )
 
-  const menu = useActiveCollabCommentMentionMenu({ editor, projectId })
+  const menu = useActiveCollabCommentMentionMenu({
+    editor,
+    projectId,
+    projectOnly: projectOnlyMentions
+  })
   menuKeyDownRef.current = menu.handleKeyDown
   const link = useActiveCollabCommentLinkBubble({ editor, rootRef, disabled })
 

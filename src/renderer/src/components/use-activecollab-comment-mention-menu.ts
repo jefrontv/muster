@@ -33,10 +33,13 @@ export type ActiveCollabCommentMentionMenu = {
 
 export function useActiveCollabCommentMentionMenu({
   editor,
-  projectId
+  projectId,
+  projectOnly = false
 }: {
   editor: Editor | null
   projectId: number | null
+  /** Suggest the project's members and nobody else: no whole-instance roster on a miss or failure. */
+  projectOnly?: boolean
 }): ActiveCollabCommentMentionMenu {
   const [token, setToken] = useState<ActiveCollabMentionRange | null>(null)
   const [people, setPeople] = useState<ActiveCollabMentionPeople>({ users: [], scoped: true })
@@ -95,11 +98,11 @@ export function useActiveCollabCommentMentionMenu({
       members: people.users,
       // The roster is the fallback only when this list IS the project's; when the members read
       // already fell back, `people.users` is the roster and there is nothing wider to try.
-      roster: people.scoped ? roster : null,
+      roster: people.scoped && !projectOnly ? roster : null,
       query: token.query,
       currentUserId
     })
-  }, [token, dismissedAt, people, roster, currentUserId])
+  }, [token, dismissedAt, people, roster, currentUserId, projectOnly])
   const suggestions = resolved.users
   const highlighted = Math.min(activeIndex, Math.max(suggestions.length - 1, 0))
 
@@ -114,7 +117,8 @@ export function useActiveCollabCommentMentionMenu({
       suggestions.length > 0 ||
       roster !== null ||
       rosterRequested.current ||
-      !people.scoped
+      !people.scoped ||
+      projectOnly
     ) {
       return
     }
@@ -128,7 +132,7 @@ export function useActiveCollabCommentMentionMenu({
     return () => {
       live = false
     }
-  }, [token, suggestions.length, roster, people.scoped, listUsers])
+  }, [token, suggestions.length, roster, people.scoped, listUsers, projectOnly])
 
   // The people list is fetched on the FIRST `@` and never on mount: a comment written without a
   // mention must not cost a request at all. One attempt per PROJECT — retrying a refused read on
@@ -148,16 +152,17 @@ export function useActiveCollabCommentMentionMenu({
     void activeCollabMentionPeople({
       projectId,
       listProjectMembers: (id) => listProjectMembers(id),
-      listUsers: () => listUsers()
+      // Project-only never reads the roster: unreadable members mean an empty menu, not everyone.
+      listUsers: projectOnly ? async () => ({ ok: true, value: [] }) : () => listUsers()
     }).then((resolved) => {
       if (live) {
-        setPeople(resolved)
+        setPeople(projectOnly ? { users: resolved.users, scoped: true } : resolved)
       }
     })
     return () => {
       live = false
     }
-  }, [token, projectId, listProjectMembers, listUsers])
+  }, [token, projectId, listProjectMembers, listUsers, projectOnly])
 
   // A narrowed list must not leave the highlight pointing at whoever now occupies the old row.
   const tokenKey = token === null ? null : `${token.from}:${token.query}`

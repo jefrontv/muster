@@ -1,15 +1,24 @@
-// Editing a draft in place with the ActiveCollab rich editor. A bot amend while editing never
+// Editing a draft in a dialog with the ActiveCollab rich editor. A bot amend while editing never
 // replaces the person's text: it raises a banner offering the bot's version or keeping theirs.
 import { LoaderCircle } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useEditorState } from '@tiptap/react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { translate } from '@/i18n/i18n'
 import { hasBoundedCommentBodyText } from '@/lib/comment-body-submit-state'
 import type {
   BotsCommentDraft,
-  BotsCommentDraftFailure
+  BotsCommentDraftFailure,
+  BotsCommentDraftTask
 } from '../../../../shared/bots-comment-draft-types'
 import { activeCollabCommentBodyHtml } from '../activecollab-comment-body-html'
 import { activeCollabCommentHtmlForEditor } from '../activecollab-comment-mention-document'
@@ -23,10 +32,14 @@ type Busy = 'save' | 'post' | null
 
 export function BotsCommentDraftEditor({
   draft,
+  task,
+  taskTitle,
   onClose
 }: {
   /** The latest draft from the server; a newer version than the one being edited is a conflict. */
   draft: BotsCommentDraft
+  task: BotsCommentDraftTask | undefined
+  taskTitle: string
   onClose: () => void
 }): React.JSX.Element {
   const [baseVersion, setBaseVersion] = useState(draft.version)
@@ -41,7 +54,8 @@ export function BotsCommentDraftEditor({
       'Write a comment'
     ),
     ariaLabel: translate('auto.components.bots.commentDrafts.editorLabel', 'Draft comment'),
-    initialHtml: draft.bodyHtml
+    initialHtml: draft.bodyHtml,
+    projectOnlyMentions: true
   })
   const { editor } = body
   // The serialised seed, so an untouched editor posts without writing a new version.
@@ -151,75 +165,105 @@ export function BotsCommentDraftEditor({
     void save(version)
   }
 
+  const close = (): void => {
+    if (busy === null) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-2">
-      {newer ? (
-        <div
-          role="alert"
-          className="flex flex-col gap-2 rounded-xl border border-chat-warn bg-chat-warn-tint px-3 py-2 text-xs text-chat-warn-ink"
-        >
-          <span>
-            {translate(
-              'auto.components.bots.commentDrafts.botUpdated',
-              '{{value0}} updated this draft',
-              { value0: newer.botName }
-            )}
-          </span>
-          <div className="flex gap-2">
-            <Button size="xs" variant="secondary" onClick={useTheirs}>
-              {translate('auto.components.bots.commentDrafts.useTheirs', "Use {{value0}}'s", {
-                value0: newer.botName
-              })}
-            </Button>
-            <Button size="xs" variant="outline" onClick={keepMine}>
-              {translate('auto.components.bots.commentDrafts.keepMine', 'Keep mine')}
-            </Button>
+    <Dialog open onOpenChange={(open) => (open ? undefined : close())}>
+      <DialogContent
+        className="gap-3 sm:max-w-2xl"
+        // Escape first closes an open @mention menu, not the whole dialog.
+        onEscapeKeyDown={(event) => (body.menuOpen ? event.preventDefault() : undefined)}
+      >
+        <DialogHeader>
+          <DialogTitle>
+            {translate('auto.components.bots.commentDrafts.editTitle', 'Edit comment')}
+          </DialogTitle>
+          <DialogDescription className="truncate">
+            {[taskTitle, task?.projectName, draft.botName].filter(Boolean).join(' · ')}
+          </DialogDescription>
+        </DialogHeader>
+        {newer ? (
+          <div
+            role="alert"
+            className="flex flex-col gap-2 rounded-xl border border-chat-warn bg-chat-warn-tint px-3 py-2 text-xs text-chat-warn-ink"
+          >
+            <span>
+              {newer.editedBy === 'user'
+                ? translate(
+                    'auto.components.bots.commentDrafts.changedElsewhere',
+                    'This draft was changed in another window'
+                  )
+                : translate(
+                    'auto.components.bots.commentDrafts.botUpdated',
+                    '{{value0}} updated this draft',
+                    { value0: newer.botName }
+                  )}
+            </span>
+            <div className="flex gap-2">
+              <Button size="xs" variant="secondary" onClick={useTheirs}>
+                {newer.editedBy === 'user'
+                  ? translate('auto.components.bots.commentDrafts.useNewer', 'Use that version')
+                  : translate('auto.components.bots.commentDrafts.useTheirs', "Use {{value0}}'s", {
+                      value0: newer.botName
+                    })}
+              </Button>
+              <Button size="xs" variant="outline" onClick={keepMine}>
+                {translate('auto.components.bots.commentDrafts.keepMine', 'Keep mine')}
+              </Button>
+            </div>
           </div>
+        ) : null}
+        <div data-slot="bots-draft-editor">
+          <ActiveCollabRichBodyFrame
+            body={body}
+            attachments={null}
+            disabled={busy !== null}
+            dragging={false}
+            footer={null}
+          />
         </div>
-      ) : null}
-      <ActiveCollabRichBodyFrame
-        body={body}
-        attachments={null}
-        disabled={busy !== null}
-        dragging={false}
-        footer={
-          <div className="flex items-center justify-end gap-1.5 border-t border-border px-1.5 py-1.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={onClose}
-            >
+        {error ? (
+          <p role="status" className="text-xs text-destructive">
+            {error}
+          </p>
+        ) : null}
+        <DialogFooter className="items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            {translate(
+              'auto.components.bots.commentDrafts.mentionHint',
+              'Type @ to mention someone on the project'
+            )}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={close}>
               {translate('auto.components.bots.commentDrafts.cancel', 'Cancel')}
             </Button>
             <Button
               type="button"
               variant="secondary"
-              size="xs"
+              size="sm"
               disabled={busy !== null || !hasText || newer !== null}
               onClick={() => void save(baseVersion)}
             >
-              {busy === 'save' ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
-              {translate('auto.components.bots.commentDrafts.save', 'Save')}
+              {busy === 'save' ? <LoaderCircle className="size-4 animate-spin" /> : null}
+              {translate('auto.components.bots.commentDrafts.saveDraft', 'Save draft')}
             </Button>
             <Button
               type="button"
-              size="xs"
+              size="sm"
               disabled={busy !== null || !hasText || newer !== null}
               onClick={() => void post()}
             >
-              {busy === 'post' ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
-              {translate('auto.components.bots.commentDrafts.post', 'Post')}
+              {busy === 'post' ? <LoaderCircle className="size-4 animate-spin" /> : null}
+              {translate('auto.components.bots.commentDrafts.postNow', 'Post to ActiveCollab')}
             </Button>
           </div>
-        }
-      />
-      {error ? (
-        <p role="status" className="text-xs text-destructive">
-          {error}
-        </p>
-      ) : null}
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

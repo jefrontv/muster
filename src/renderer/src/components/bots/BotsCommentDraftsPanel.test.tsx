@@ -23,7 +23,17 @@ import { BotsCommentDraftCard } from './BotsCommentDraftCard'
 import { BotsCommentDraftsPanel } from './BotsCommentDraftsPanel'
 import { useBotsCommentDraftsPanel } from './use-bots-comment-drafts-panel'
 
-const holder = vi.hoisted(() => ({ editor: null as Editor | null }))
+const holder = vi.hoisted(() => ({
+  editor: null as Editor | null,
+  listUsers: vi.fn(),
+  listProjectMembers: vi.fn()
+}))
+
+vi.mock('@/runtime/runtime-activecollab-client', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  activeCollabListUsers: () => holder.listUsers(),
+  activeCollabListProjectMembers: (args: { projectId: number }) => holder.listProjectMembers(args)
+}))
 
 // happy-dom has no contenteditable, so tests type through the real editor instance.
 vi.mock('@tiptap/react', async (importOriginal) => {
@@ -262,7 +272,7 @@ describe('BotsCommentDraftEditor', () => {
       }
     })
     expect(mentions).toEqual([{ userId: 12, name: 'Ada Lovelace' }])
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument())
     expect(bots.updateCommentDraft).not.toHaveBeenCalled()
   })
@@ -275,10 +285,10 @@ describe('BotsCommentDraftEditor', () => {
     renderCard(draftFixture())
     const editor = await openEditor()
     typeAtEnd(editor, ' and more')
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
     expect(await screen.findByText('Bob updated this draft')).toBeInTheDocument()
     expect(editor.getText()).toContain('Hi and more')
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
     await waitFor(() => expect(bots.updateCommentDraft).toHaveBeenCalledTimes(2))
@@ -306,11 +316,52 @@ describe('BotsCommentDraftEditor', () => {
     renderCard(draftFixture())
     const editor = await openEditor()
     typeAtEnd(editor, ' there')
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Post to ActiveCollab' }))
     await waitFor(() => expect(bots.postCommentDraft).toHaveBeenCalledTimes(1))
     expect(bots.postCommentDraft.mock.calls[0][0]).toEqual({
       id: 'd1',
       edit: { bodyHtml: '<p>Hi there</p>', bodyText: 'Hi there', baseVersion: 1 }
     })
+  })
+})
+
+describe('BotsCommentDraftEditor mentions', () => {
+  const MEMBER = { id: 12, name: 'Ada Lovelace', avatarUrl: null }
+  const OUTSIDER = { id: 7, name: 'Grace Hopper', avatarUrl: null }
+
+  beforeEach(() => {
+    holder.listUsers.mockReset().mockResolvedValue({ ok: true, value: [MEMBER, OUTSIDER] })
+    holder.listProjectMembers.mockReset().mockResolvedValue({ ok: true, value: [MEMBER] })
+  })
+
+  const options = (): string[] =>
+    screen.queryAllByRole('option').map((option) => option.textContent ?? '')
+
+  it('suggests project members and never widens to the rest of the instance', async () => {
+    renderCard(draftFixture())
+    const editor = await openEditor()
+    typeAtEnd(editor, ' @')
+    await waitFor(() => expect(options().join()).toContain('Ada Lovelace'))
+    typeAtEnd(editor, 'Gra')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(options()).toEqual([])
+    expect(holder.listUsers).not.toHaveBeenCalled()
+  })
+
+  it('offers nobody rather than the whole instance when members cannot be read', async () => {
+    holder.listProjectMembers.mockResolvedValue({
+      ok: false,
+      kind: 'api',
+      error: 'members unavailable',
+      status: 500
+    })
+    // A project the earlier test has not cached members for.
+    renderCard(draftFixture({ projectId: 99 }))
+    const editor = await openEditor()
+    typeAtEnd(editor, ' @')
+    await waitFor(() => expect(holder.listProjectMembers).toHaveBeenCalledTimes(1))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(holder.listUsers).not.toHaveBeenCalled()
+    expect(options()).toEqual([])
   })
 })

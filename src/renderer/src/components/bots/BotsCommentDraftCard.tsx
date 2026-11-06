@@ -85,7 +85,8 @@ export function BotsCommentDraftCard({
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState<Action | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  // Tied to the version it was sent against, so it drops once the bot's amend arrives.
+  const [notice, setNotice] = useState<{ text: string; version: number } | null>(null)
 
   const run = async <T,>(
     action: Action,
@@ -112,11 +113,12 @@ export function BotsCommentDraftCard({
     ) {
       setNote('')
       setAsking(false)
-      setNotice(
-        translate('auto.components.bots.commentDrafts.askSent', 'Sent to {{value0}}', {
+      setNotice({
+        text: translate('auto.components.bots.commentDrafts.askSent', 'Sent to {{value0}}', {
           value0: draft.botName
-        })
-      )
+        }),
+        version: draft.version
+      })
     }
   }
 
@@ -166,13 +168,18 @@ export function BotsCommentDraftCard({
         </p>
       ) : null}
 
+      {/* Paragraph gaps collapse so a blank line never spends one of the three clamped lines. */}
+      <p className="line-clamp-3 text-[13px] leading-5 whitespace-pre-line text-foreground">
+        {draft.bodyText.replace(/\n{2,}/g, '\n')}
+      </p>
       {editing ? (
-        <BotsCommentDraftEditor draft={draft} onClose={() => setEditing(false)} />
-      ) : (
-        <p className="line-clamp-3 text-[13px] leading-5 whitespace-pre-line text-foreground">
-          {draft.bodyText}
-        </p>
-      )}
+        <BotsCommentDraftEditor
+          draft={draft}
+          task={task}
+          taskTitle={title}
+          onClose={() => setEditing(false)}
+        />
+      ) : null}
 
       {asking ? (
         <form
@@ -211,78 +218,72 @@ export function BotsCommentDraftCard({
         </form>
       ) : null}
 
-      {editing ? null : (
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            size="xs"
-            disabled={locked}
-            onClick={() =>
-              void run('post', () => window.api.bots.postCommentDraft(postArgs(draft)))
-            }
-          >
-            {busy === 'post' ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
-            {translate('auto.components.bots.commentDrafts.post', 'Post')}
-          </Button>
-          <Button
-            type="button"
-            size="xs"
-            variant="secondary"
-            disabled={locked}
-            onClick={() => setEditing(true)}
-          >
-            {translate('auto.components.bots.commentDrafts.edit', 'Edit')}
-          </Button>
-          <Button
-            type="button"
-            size="xs"
-            variant="ghost"
-            disabled={locked}
-            aria-expanded={asking}
-            className={cn('min-w-0 truncate text-chat-ink-secondary', asking && 'text-foreground')}
-            onClick={() => setAsking((open) => !open)}
-          >
-            {translate('auto.components.bots.commentDrafts.ask', 'Ask {{value0}} to change…', {
-              value0: draft.botName
-            })}
-          </Button>
-          <div className="ml-auto flex shrink-0 items-center">
-            {draft.canUndo ? (
-              <IconAction
-                label={translate('auto.components.bots.commentDrafts.undo', 'Undo last change')}
-                disabled={locked}
-                onClick={() => void run('undo', () => window.api.bots.undoCommentDraft(draft.id))}
-              >
-                <Undo2 className="size-3.5" />
-              </IconAction>
-            ) : null}
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          size="xs"
+          disabled={locked}
+          onClick={() => void run('post', () => window.api.bots.postCommentDraft(postArgs(draft)))}
+        >
+          {busy === 'post' ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
+          {translate('auto.components.bots.commentDrafts.post', 'Post')}
+        </Button>
+        <Button
+          type="button"
+          size="xs"
+          variant="secondary"
+          disabled={locked}
+          onClick={() => setEditing(true)}
+        >
+          {translate('auto.components.bots.commentDrafts.edit', 'Edit')}
+        </Button>
+        <Button
+          type="button"
+          size="xs"
+          variant="ghost"
+          disabled={locked}
+          aria-expanded={asking}
+          className={cn('min-w-0 truncate text-chat-ink-secondary', asking && 'text-foreground')}
+          onClick={() => setAsking((open) => !open)}
+        >
+          {translate('auto.components.bots.commentDrafts.ask', 'Ask {{value0}} to change…', {
+            value0: draft.botName
+          })}
+        </Button>
+        <div className="ml-auto flex shrink-0 items-center">
+          {draft.canUndo ? (
             <IconAction
-              label={translate('auto.components.bots.commentDrafts.openTask', 'Open task')}
-              onClick={() => onOpenTask(draft)}
-            >
-              <ExternalLink className="size-3.5" />
-            </IconAction>
-            <IconAction
-              label={translate('auto.components.bots.commentDrafts.discard', 'Discard')}
+              label={translate('auto.components.bots.commentDrafts.undo', 'Undo last change')}
               disabled={locked}
-              onClick={() =>
-                void run('discard', () => window.api.bots.discardCommentDraft(draft.id))
-              }
+              onClick={() => void run('undo', () => window.api.bots.undoCommentDraft(draft.id))}
             >
-              <Trash2 className="size-3.5" />
+              <Undo2 className="size-3.5" />
             </IconAction>
-          </div>
+          ) : null}
+          <IconAction
+            label={translate('auto.components.bots.commentDrafts.openTask', 'Open task')}
+            onClick={() => onOpenTask(draft)}
+          >
+            <ExternalLink className="size-3.5" />
+          </IconAction>
+          <IconAction
+            label={translate('auto.components.bots.commentDrafts.discard', 'Discard')}
+            disabled={locked}
+            onClick={() => void run('discard', () => window.api.bots.discardCommentDraft(draft.id))}
+          >
+            <Trash2 className="size-3.5" />
+          </IconAction>
         </div>
-      )}
+      </div>
 
       {error ? (
         <p role="alert" className="text-xs text-destructive">
           {error}
         </p>
       ) : null}
-      {notice ? (
+      {notice?.version === draft.version ? (
         <p role="status" className="text-xs text-chat-ink-tertiary">
-          {notice}
+          {notice.text}
         </p>
       ) : null}
     </article>
