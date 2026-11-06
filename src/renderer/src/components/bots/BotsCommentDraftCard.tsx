@@ -243,12 +243,15 @@ export function BotsCommentDraftCard({
           variant="ghost"
           disabled={locked}
           aria-expanded={asking}
-          className={cn('min-w-0 truncate text-chat-ink-secondary', asking && 'text-foreground')}
+          // Shrinks before the icon actions, so a long bot name never pushes them out of the card.
+          className={cn('min-w-0 shrink text-chat-ink-secondary', asking && 'text-foreground')}
           onClick={() => setAsking((open) => !open)}
         >
-          {translate('auto.components.bots.commentDrafts.ask', 'Ask {{value0}} to change…', {
-            value0: draft.botName
-          })}
+          <span className="truncate">
+            {translate('auto.components.bots.commentDrafts.ask', 'Ask {{value0}} to change…', {
+              value0: draft.botName
+            })}
+          </span>
         </Button>
         <div className="ml-auto flex shrink-0 items-center">
           {draft.canUndo ? (

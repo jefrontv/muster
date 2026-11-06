@@ -46,6 +46,20 @@ describe('useBotsCommentDrafts', () => {
     expect(bots.commentDraftTask).toHaveBeenCalledWith({ projectId: 7, taskId: 42 })
   })
 
+  it('lists the newest queued draft first', async () => {
+    bots.listCommentDrafts.mockResolvedValueOnce({
+      ok: true,
+      value: [
+        draftFixture({ id: 'old', queuedAt: 1000 }),
+        draftFixture({ id: 'new', queuedAt: 3000 }),
+        draftFixture({ id: 'mid', queuedAt: 2000 })
+      ]
+    })
+    const { result } = renderHook(() => useBotsCommentDrafts(true))
+    await waitFor(() => expect(result.current.loaded).toBe(true))
+    expect(result.current.drafts.map((draft) => draft.id)).toEqual(['new', 'mid', 'old'])
+  })
+
   it('stays empty and unsubscribed while the server is not running', () => {
     const { result } = renderHook(() => useBotsCommentDrafts(false))
     expect(result.current.drafts).toEqual([])

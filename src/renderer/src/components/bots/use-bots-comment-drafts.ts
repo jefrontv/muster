@@ -31,7 +31,8 @@ export function useBotsCommentDrafts(running: boolean): BotsCommentDraftsState {
       return
     }
     if (result.ok) {
-      setDrafts(result.value)
+      // Newest first, so a fresh draft lands at the top of the stack.
+      setDrafts([...result.value].sort((a, b) => b.queuedAt - a.queuedAt))
       setLoaded(true)
       setError(null)
     } else {
