@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { activeCollabCommentBodyHtml } from './activecollab-comment-body-html'
 import { createActiveCollabCommentExtensions } from './activecollab-comment-editor-schema'
 import {
+  activeCollabCommentHtmlForEditor,
   activeCollabEditorMentionToken,
   insertActiveCollabMention
 } from './activecollab-comment-mention-document'
@@ -202,6 +203,30 @@ describe('deleting a mention', () => {
     expect(mentionNames(instance)).toEqual([{ userId: 88, name: 'Alan Turing' }])
     expect(activeCollabCommentBodyHtml(instance.state.doc)).toBe(
       '<p><span class="new_mention" data-user-id="88" data-type="user">Alan Turing</span></p>'
+    )
+  })
+})
+
+describe('activeCollabCommentHtmlForEditor', () => {
+  it('loads comment HTML with its mentions as chips and serialises it back unchanged', () => {
+    const wire =
+      '<p>Hi <span class="new_mention" data-user-id="12" data-type="user">Ada Lovelace</span>, ' +
+      '<strong>see</strong> <a href="https://example.com">this</a></p><p>Thanks</p>'
+    const instance = editor(activeCollabCommentHtmlForEditor(wire))
+    expect(mentionNames(instance)).toEqual([{ userId: 12, name: 'Ada Lovelace' }])
+    expect(activeCollabCommentBodyHtml(instance.state.doc)).toBe(wire)
+  })
+
+  it('reads the server read format when it carries an id, and leaves id-less spans as text', () => {
+    const instance = editor(
+      activeCollabCommentHtmlForEditor(
+        '<p><span class="mention mention-user" data-user-id="88">@Alan Turing</span> ' +
+          '<span class="mention">Nobody</span></p>'
+      )
+    )
+    expect(mentionNames(instance)).toEqual([{ userId: 88, name: 'Alan Turing' }])
+    expect(activeCollabCommentBodyHtml(instance.state.doc)).toBe(
+      '<p><span class="new_mention" data-user-id="88" data-type="user">Alan Turing</span> Nobody</p>'
     )
   })
 })

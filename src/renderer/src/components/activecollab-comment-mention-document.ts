@@ -4,7 +4,11 @@
 import type { Editor } from '@tiptap/react'
 
 import type { ActiveCollabUser } from '../../../shared/activecollab-types'
-import { ACTIVECOLLAB_MENTION_NODE_NAME } from './activecollab-comment-mention-node'
+import {
+  ACTIVECOLLAB_MENTION_NAME_ATTRIBUTE,
+  ACTIVECOLLAB_MENTION_NODE_NAME,
+  ACTIVECOLLAB_MENTION_USER_ID_ATTRIBUTE
+} from './activecollab-comment-mention-node'
 import { activeCollabMentionToken } from './activecollab-comment-mentions'
 
 /**
@@ -87,4 +91,25 @@ export function insertActiveCollabMention(
     content.push({ type: 'text', text: ' ' })
   }
   editor.chain().focus().insertContentAt({ from: range.from, to: range.to }, content).run()
+}
+
+/**
+ * Comment HTML as editor starting content: ActiveCollab mention spans (anything carrying
+ * `data-user-id`) become the chip spans the mention node parses, so loaded mentions stay addressable.
+ */
+export function activeCollabCommentHtmlForEditor(html: string): string {
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html')
+  for (const span of Array.from(doc.body.querySelectorAll('span[data-user-id]'))) {
+    const userId = Number(span.getAttribute('data-user-id'))
+    const name = (span.textContent ?? '').trim().replace(/^@/, '')
+    if (!Number.isSafeInteger(userId) || userId <= 0 || !name) {
+      continue
+    }
+    const chip = doc.createElement('span')
+    chip.setAttribute(ACTIVECOLLAB_MENTION_USER_ID_ATTRIBUTE, String(userId))
+    chip.setAttribute(ACTIVECOLLAB_MENTION_NAME_ATTRIBUTE, name)
+    chip.textContent = `@${name}`
+    span.replaceWith(chip)
+  }
+  return doc.body.innerHTML
 }

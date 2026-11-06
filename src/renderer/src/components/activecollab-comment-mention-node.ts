@@ -14,8 +14,10 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 
 export const ACTIVECOLLAB_MENTION_NODE_NAME = 'activeCollabMention'
 
-const USER_ID_ATTRIBUTE = 'data-activecollab-mention-id'
-const NAME_ATTRIBUTE = 'data-activecollab-mention-name'
+export const ACTIVECOLLAB_MENTION_USER_ID_ATTRIBUTE = 'data-activecollab-mention-id'
+export const ACTIVECOLLAB_MENTION_NAME_ATTRIBUTE = 'data-activecollab-mention-name'
+const USER_ID_ATTRIBUTE = ACTIVECOLLAB_MENTION_USER_ID_ATTRIBUTE
+const NAME_ATTRIBUTE = ACTIVECOLLAB_MENTION_NAME_ATTRIBUTE
 
 /** Who a mention addresses, and the display name shown in its place. */
 export type ActiveCollabMentionAttributes = {

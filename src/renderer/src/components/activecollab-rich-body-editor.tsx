@@ -3,7 +3,7 @@
 // exactly the tools a comment is. Split as hook + frame: the hook owns the ProseMirror wiring,
 // the frame owns the bordered box, and each host keeps its own submit lifecycle around them.
 
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
 import { LoaderCircle } from 'lucide-react'
 
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { ActiveCollabCommentAttachmentStrip } from './activecollab-comment-attachment-strip'
 import { activeCollabCommentBodyHtml } from './activecollab-comment-body-html'
 import { createActiveCollabCommentExtensions } from './activecollab-comment-editor-schema'
+import { activeCollabCommentHtmlForEditor } from './activecollab-comment-mention-document'
 import { ActiveCollabMentionMenu } from './activecollab-comment-mention-menu'
 import { ActiveCollabCommentToolbar } from './activecollab-comment-toolbar'
 import type { ActiveCollabCommentAttachments } from './use-activecollab-comment-attachments'
@@ -39,12 +40,15 @@ export function useActiveCollabRichBody({
   projectId,
   disabled,
   placeholder,
-  ariaLabel
+  ariaLabel,
+  initialHtml
 }: {
   projectId: number | null
   disabled: boolean
   placeholder: string
   ariaLabel: string
+  /** Comment HTML to start from; read once at creation, with its mentions loaded as chips. */
+  initialHtml?: string
 }): ActiveCollabRichBody {
   const rootRef = useRef<HTMLDivElement | null>(null)
   // Why: `editorProps` is frozen when the editor is created, so the menu's live handler has to be
@@ -53,10 +57,16 @@ export function useActiveCollabRichBody({
 
   const extensions = useMemo(() => createActiveCollabCommentExtensions(placeholder), [placeholder])
 
+  // Only the first value seeds; a later change must not rebuild the editor mid-edit.
+  const [initialContent] = useState(() =>
+    initialHtml === undefined ? undefined : activeCollabCommentHtmlForEditor(initialHtml)
+  )
+
   const editor = useEditor(
     {
       immediatelyRender: false,
       extensions,
+      content: initialContent,
       editable: !disabled,
       editorProps: {
         attributes: {
