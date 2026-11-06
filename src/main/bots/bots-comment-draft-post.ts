@@ -12,10 +12,14 @@ export type PostComment = (args: {
   bodyHtml: string
 }) => Promise<ActiveCollabResult<unknown>>
 
+// Draft id -> version ActiveCollab already has; a retry after "posted-unmarked" only clears the draft.
+const postedNotCleared = new Map<string, number>()
+
 export async function postBotsCommentDraft(
   client: BotsCommentDraftsClient,
   postComment: PostComment,
-  { id, edit }: BotsCommentDraftPostArgs
+  { id, edit }: BotsCommentDraftPostArgs,
+  alreadyPosted: Map<string, number> = postedNotCleared
 ): Promise<BotsCommentDraftResult<BotsCommentDraft>> {
   let draft: BotsCommentDraft
   if (edit) {
@@ -36,12 +40,17 @@ export async function postBotsCommentDraft(
     }
     draft = found
   }
-  const posted = await postComment({ taskId: draft.taskId, bodyHtml: draft.bodyHtml })
-  if (!posted.ok) {
-    return { ok: false, reason: 'post-failed', failure: posted }
+  if (alreadyPosted.get(id) !== draft.version) {
+    const posted = await postComment({ taskId: draft.taskId, bodyHtml: draft.bodyHtml })
+    if (!posted.ok) {
+      return { ok: false, reason: 'post-failed', failure: posted }
+    }
+    alreadyPosted.set(id, draft.version)
   }
   const marked = await client.setStatus(id, 'posted')
-  if (!marked.ok) {
+  if (marked.ok) {
+    alreadyPosted.delete(id)
+  } else {
     return {
       ok: false,
       reason: 'posted-unmarked',

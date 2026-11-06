@@ -100,4 +100,23 @@ describe('postBotsCommentDraft', () => {
     const result = await postBotsCommentDraft(client, vi.fn(posted), { id: 'd1' })
     expect(result).toMatchObject({ ok: false, reason: 'posted-unmarked' })
   })
+
+  it('retries only the clear after a post that could not be cleared', async () => {
+    const seen = new Map<string, number>()
+    const postComment = vi.fn(posted)
+    const failing = fakeClient({
+      setStatus: vi.fn(async () => ({
+        ok: false as const,
+        reason: 'error' as const,
+        message: 'down'
+      }))
+    })
+    const first = await postBotsCommentDraft(failing, postComment, { id: 'd1' }, seen)
+    expect(first).toMatchObject({ ok: false, reason: 'posted-unmarked' })
+    const client = fakeClient()
+    const second = await postBotsCommentDraft(client, postComment, { id: 'd1' }, seen)
+    expect(postComment).toHaveBeenCalledTimes(1)
+    expect(second).toMatchObject({ ok: true, value: { status: 'posted' } })
+    expect(seen.size).toBe(0)
+  })
 })
