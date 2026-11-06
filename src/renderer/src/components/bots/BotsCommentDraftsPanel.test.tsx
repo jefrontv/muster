@@ -11,6 +11,7 @@ import {
   screen,
   waitFor
 } from '@testing-library/react'
+import type React from 'react'
 import type { Editor } from '@tiptap/react'
 import type * as TiptapReact from '@tiptap/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -184,6 +185,29 @@ describe('BotsCommentDraftsPanel', () => {
         onOpenTask={vi.fn()}
       />
     )
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('stays open on an empty state after the last draft goes, until collapsed', () => {
+    const panel = (drafts: BotsCommentDraft[], open: boolean): React.JSX.Element => (
+      <BotsCommentDraftsPanel
+        state={{ drafts, tasks: {}, error: null }}
+        open={open}
+        overlay={false}
+        onOpenChange={vi.fn()}
+        onOpenTask={vi.fn()}
+      />
+    )
+    const { container, rerender } = render(panel([draftFixture()], true), {
+      wrapper: TooltipProvider
+    })
+    rerender(panel([], true))
+    expect(screen.getByRole('status')).toHaveTextContent('All caught up')
+    expect(screen.getByRole('complementary', { name: 'Comment drafts' })).toBeInTheDocument()
+
+    rerender(panel([], false))
+    expect(container).toBeEmptyDOMElement()
+    rerender(panel([], true))
     expect(container).toBeEmptyDOMElement()
   })
 })

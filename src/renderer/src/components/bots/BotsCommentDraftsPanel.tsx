@@ -2,6 +2,7 @@
 // on narrow pages the open panel overlays the webview instead of taking a column.
 import { MessageSquareText, PanelRightClose } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
@@ -26,7 +27,14 @@ export function BotsCommentDraftsPanel({
   onOpenTask: (draft: BotsCommentDraft) => void
 }): React.JSX.Element | null {
   const count = state.drafts.length
-  if (count === 0) {
+  // Once open with drafts, the panel outlives the last one (an empty state) until it is collapsed.
+  const [kept, setKept] = useState(false)
+  if (open && count > 0 && !kept) {
+    setKept(true)
+  } else if (!open && kept) {
+    setKept(false)
+  }
+  if (count === 0 && !(open && kept)) {
     return null
   }
   const countLabel = translate(
@@ -49,9 +57,11 @@ export function BotsCommentDraftsPanel({
             className="relative"
           >
             <MessageSquareText className="size-4" />
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-2xs font-medium text-background tabular-nums">
-              {count}
-            </span>
+            {count > 0 ? (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-2xs font-medium text-background tabular-nums">
+                {count}
+              </span>
+            ) : null}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left">{countLabel}</TooltipContent>
@@ -83,9 +93,11 @@ export function BotsCommentDraftsPanel({
           <h2 className="text-[13px] font-medium text-foreground">
             {translate('auto.components.bots.commentDrafts.title', 'Comment drafts')}
           </h2>
-          <span className="rounded-full bg-foreground/[0.07] px-1.5 text-2xs font-medium text-chat-ink-secondary tabular-nums">
-            {count}
-          </span>
+          {count > 0 ? (
+            <span className="rounded-full bg-foreground/[0.07] px-1.5 text-2xs font-medium text-chat-ink-secondary tabular-nums">
+              {count}
+            </span>
+          ) : null}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -116,17 +128,35 @@ export function BotsCommentDraftsPanel({
             )}
           </p>
         ) : null}
-        <ol className="scrollbar-sleek flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-          {state.drafts.map((draft) => (
-            <li key={draft.id}>
-              <BotsCommentDraftCard
-                draft={draft}
-                task={state.tasks[draft.taskId]}
-                onOpenTask={onOpenTask}
-              />
-            </li>
-          ))}
-        </ol>
+        {count === 0 ? (
+          <div
+            role="status"
+            className="flex flex-1 flex-col items-center justify-center gap-1 px-6 pb-12 text-center"
+          >
+            <MessageSquareText className="mb-1 size-5 text-chat-ink-tertiary" />
+            <p className="text-[13px] font-medium text-foreground">
+              {translate('auto.components.bots.commentDrafts.emptyTitle', 'All caught up')}
+            </p>
+            <p className="text-xs text-chat-ink-tertiary">
+              {translate(
+                'auto.components.bots.commentDrafts.emptyBody',
+                'New comment drafts from your bots show up here.'
+              )}
+            </p>
+          </div>
+        ) : (
+          <ol className="scrollbar-sleek flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+            {state.drafts.map((draft) => (
+              <li key={draft.id}>
+                <BotsCommentDraftCard
+                  draft={draft}
+                  task={state.tasks[draft.taskId]}
+                  onOpenTask={onOpenTask}
+                />
+              </li>
+            ))}
+          </ol>
+        )}
       </aside>
     </>
   )
