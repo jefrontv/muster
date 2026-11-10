@@ -25,7 +25,7 @@ import {
 import {
   applyOnboardingDefaultView,
   availableOnboardingDefaultViews,
-  resolveOnboardingDefaultView,
+  initialOnboardingDefaultView,
   type OnboardingDefaultView
 } from './onboarding-default-view-step'
 
@@ -234,7 +234,9 @@ export function useOnboardingFlow(
   // No mode choice when Code is the only mode on offer.
   const skipDefaultView = defaultViews.length < 2
   const [defaultView, setDefaultView] = useState<OnboardingDefaultView>(() =>
-    skipDefaultView ? 'code' : resolveOnboardingDefaultView(useAppStore.getState().activeView)
+    skipDefaultView
+      ? 'code'
+      : initialOnboardingDefaultView(defaultViews, useAppStore.getState().activeView)
   )
 
   const skipIntegrations = shouldSkipIntegrationsStep(

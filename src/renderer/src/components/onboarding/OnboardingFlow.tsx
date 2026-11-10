@@ -48,8 +48,8 @@ export default function OnboardingFlow({
         )
       : currentStep.id === 'default_view' && flow.defaultViews.includes('bots')
         ? translate(
-            'auto.components.onboarding.OnboardingFlow.defaultViewSubtitleWithBots',
-            'Chat is a conversation desk. Code is worktrees and terminals. Bots run tasks across your apps. Switch any time from the sidebar.'
+            'auto.components.onboarding.OnboardingFlow.defaultViewSubtitleBotsCode',
+            'Bots run tasks for you across your apps. Code is worktrees, terminals and the classic IDE layout. Switch any time from the top bar.'
           )
         : copy.subtitle
   const [welcomeVisible, setWelcomeVisible] = useState(

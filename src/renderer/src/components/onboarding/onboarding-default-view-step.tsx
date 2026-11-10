@@ -7,15 +7,14 @@ import { botsSupported } from '@/lib/bots-platform'
 
 export type OnboardingDefaultView = 'chat' | 'code' | 'bots'
 
-/** The modes this install can open, in the order the step shows them. */
+/** The modes this install can open, in the order the step shows them; Bots takes Chat's place when it's on. */
 export function availableOnboardingDefaultViews(
   experimentalBots: boolean | undefined
 ): OnboardingDefaultView[] {
-  return [
-    ...(chatModeSupported() ? (['chat'] as const) : []),
-    'code' as const,
-    ...(experimentalBots === true && botsSupported() ? (['bots'] as const) : [])
-  ]
+  if (experimentalBots === true && botsSupported()) {
+    return ['bots', 'code']
+  }
+  return [...(chatModeSupported() ? (['chat'] as const) : []), 'code']
 }
 
 export function applyOnboardingDefaultView(view: OnboardingDefaultView): void {
@@ -39,6 +38,18 @@ export function resolveOnboardingDefaultView(
   activeView: string | undefined
 ): OnboardingDefaultView {
   return activeView === 'chat' || activeView === 'bots' ? activeView : 'code'
+}
+
+/** A first run sits on Code, so Bots is preselected when offered unless Chat or Bots was already open. */
+export function initialOnboardingDefaultView(
+  views: readonly OnboardingDefaultView[],
+  activeView: string | undefined
+): OnboardingDefaultView {
+  const current = resolveOnboardingDefaultView(activeView)
+  if (!views.includes(current)) {
+    return views[0] ?? 'code'
+  }
+  return views.includes('bots') && current === 'code' ? 'bots' : current
 }
 
 type OnboardingDefaultViewStepProps = {

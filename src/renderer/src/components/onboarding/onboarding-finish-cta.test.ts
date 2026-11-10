@@ -40,6 +40,11 @@ describe('onboarding finish CTA', () => {
     expect(onboardingFinishBusyLabel('code')).toBe('Opening new site…')
   })
 
+  it('finishes Bots mode on Bots', () => {
+    expect(onboardingFinishCtaLabel('bots')).toBe('Open Bots')
+    expect(onboardingFinishBusyLabel('bots')).toBe('Opening Bots…')
+  })
+
   it('opens the Chat workspace dialog for Chat Mode and New site for Code Mode', () => {
     openOnboardingFinishSurface('chat')
     expect(mocks.openChatPage).toHaveBeenCalled()

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   applyOnboardingDefaultView,
   availableOnboardingDefaultViews,
+  initialOnboardingDefaultView,
   resolveOnboardingDefaultView
 } from './onboarding-default-view-step'
 
@@ -51,10 +52,20 @@ describe('onboarding default view', () => {
     expect(mocks.openBotsPage).toHaveBeenCalledTimes(1)
   })
 
-  it('offers Bots only when it is switched on', () => {
-    expect(availableOnboardingDefaultViews(false)).not.toContain('bots')
-    expect(availableOnboardingDefaultViews(undefined)).not.toContain('bots')
-    expect(availableOnboardingDefaultViews(true)).toContain('bots')
-    expect(availableOnboardingDefaultViews(true)).toContain('code')
+  it('offers Bots in place of Chat when Bots is switched on', () => {
+    expect(availableOnboardingDefaultViews(true)).toEqual(['bots', 'code'])
+  })
+
+  it('preselects Bots on a first run and keeps a view already open', () => {
+    expect(initialOnboardingDefaultView(['bots', 'code'], 'terminal')).toBe('bots')
+    expect(initialOnboardingDefaultView(['bots', 'code'], 'bots')).toBe('bots')
+    expect(initialOnboardingDefaultView(['bots', 'code'], 'chat')).toBe('bots')
+    expect(initialOnboardingDefaultView(['chat', 'code'], 'terminal')).toBe('code')
+    expect(initialOnboardingDefaultView(['chat', 'code'], 'chat')).toBe('chat')
+  })
+
+  it('falls back to Chat and Code when Bots is off', () => {
+    expect(availableOnboardingDefaultViews(false)).toEqual(['chat', 'code'])
+    expect(availableOnboardingDefaultViews(undefined)).toEqual(['chat', 'code'])
   })
 })

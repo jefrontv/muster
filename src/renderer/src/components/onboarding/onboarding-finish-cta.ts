@@ -6,9 +6,13 @@ import { applyOnboardingDefaultView } from './onboarding-default-view-step'
 // Code mode finishes on a site, not a project: Muster users come to work on WordPress sites, and
 // "Add project" opened a dialog unrelated to the Sites page they had just set up folders for.
 export function onboardingFinishCtaLabel(defaultView: OnboardingDefaultView): string {
-  return defaultView === 'chat'
-    ? 'Add first workspace'
-    : translate('auto.components.onboarding.finish.firstSite', 'Set up your first site')
+  if (defaultView === 'chat') {
+    return 'Add first workspace'
+  }
+  if (defaultView === 'bots') {
+    return translate('auto.components.onboarding.finish.openBots', 'Open Bots')
+  }
+  return translate('auto.components.onboarding.finish.firstSite', 'Set up your first site')
 }
 
 export function onboardingFinishBusyLabel(defaultView: OnboardingDefaultView): string {
