@@ -1049,6 +1049,27 @@ export type BotsApi = {
     taskId: number
     assigneeId: number
   }) => Promise<BotsCommentDraftResult<null>>
+  /** Copies local files onto a waiting draft. */
+  addCommentDraftAttachments: (args: {
+    id: string
+    paths: string[]
+  }) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  /** A pasted image, as base64. */
+  addCommentDraftImage: (args: {
+    id: string
+    name: string
+    dataBase64: string
+  }) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  removeCommentDraftAttachment: (args: {
+    id: string
+    attachmentId: string
+  }) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  /** A data URL for an image file, for thumbnails and the large view. */
+  commentDraftAttachmentPreview: (args: {
+    id: string
+    attachmentId: string
+    mime: string
+  }) => Promise<BotsCommentDraftResult<string>>
   onCommentDraftsChanged: (callback: () => void) => () => void
 }
 

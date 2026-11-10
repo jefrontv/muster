@@ -14,6 +14,7 @@ import type {
   BotsCommentDraftTask
 } from '../../../../shared/bots-comment-draft-types'
 import { activeCollabStamp } from '../activecollab-task-timestamps'
+import { BotsCommentDraftAttachments, postLabelWithFiles } from './BotsCommentDraftAttachments'
 import { BotsCommentDraftEditor } from './BotsCommentDraftEditor'
 import { BotsCommentDraftPostButton } from './BotsCommentDraftPostButton'
 import { postCommentDraft } from './bots-comment-draft-post-action'
@@ -174,6 +175,7 @@ export function BotsCommentDraftCard({
       <p className="line-clamp-3 text-[13px] leading-5 whitespace-pre-line text-foreground">
         {draft.bodyText.replace(/\n{2,}/g, '\n')}
       </p>
+      <BotsCommentDraftAttachments draft={draft} />
       {editing ? (
         <BotsCommentDraftEditor
           draft={draft}
@@ -223,7 +225,10 @@ export function BotsCommentDraftCard({
       <div className="flex items-center gap-1">
         <BotsCommentDraftPostButton
           size="xs"
-          label={translate('auto.components.bots.commentDrafts.post', 'Post')}
+          label={postLabelWithFiles(
+            translate('auto.components.bots.commentDrafts.post', 'Post'),
+            draft
+          )}
           busy={busy === 'post'}
           disabled={locked}
           handBackTo={task?.handBackTo}

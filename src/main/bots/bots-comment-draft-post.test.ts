@@ -16,6 +16,9 @@ function fakeClient(overrides: Partial<BotsCommentDraftsClient> = {}): BotsComme
     })),
     undo: vi.fn(),
     feedback: vi.fn(),
+    addAttachments: vi.fn(),
+    removeAttachment: vi.fn(),
+    attachmentBytes: vi.fn(),
     ...overrides
   }
 }
@@ -165,5 +168,72 @@ describe('postBotsCommentDraft', () => {
       reassign
     )
     expect(reassign).not.toHaveBeenCalled()
+  })
+
+  describe('with files', () => {
+    const shot = { id: 'a1', name: 'shot.png', size: 3, mime: 'image/png', addedBy: 'bot' as const }
+    const withFiles = () =>
+      fakeClient({
+        list: vi.fn(async () => ({
+          ok: true as const,
+          value: [draftFixture({ attachments: [shot] })]
+        }))
+      })
+
+    it('uploads every file first and posts with the codes', async () => {
+      const postComment = vi.fn(posted)
+      const upload = vi.fn(async () => ({ ok: true as const, codes: ['c1'] }))
+      const result = await postBotsCommentDraft(
+        withFiles(),
+        postComment,
+        { id: 'd1' },
+        new Map(),
+        undefined,
+        upload
+      )
+      expect(upload).toHaveBeenCalledWith(expect.objectContaining({ attachments: [shot] }))
+      expect(postComment).toHaveBeenCalledWith({
+        taskId: 42,
+        bodyHtml: '<p>Hi</p>',
+        attachmentCodes: ['c1']
+      })
+      expect(result.ok).toBe(true)
+    })
+
+    it('posts nothing and keeps the draft waiting when an upload fails', async () => {
+      const client = withFiles()
+      const postComment = vi.fn(posted)
+      const upload = vi.fn(async () => ({ ok: false as const, message: 'shot.png was refused' }))
+      const result = await postBotsCommentDraft(
+        client,
+        postComment,
+        { id: 'd1' },
+        new Map(),
+        undefined,
+        upload
+      )
+      expect(result).toEqual({
+        ok: false,
+        reason: 'attachments-failed',
+        message: 'shot.png was refused'
+      })
+      expect(postComment).not.toHaveBeenCalled()
+      expect(client.setStatus).not.toHaveBeenCalled()
+    })
+
+    it('sends no codes for a draft without files', async () => {
+      const postComment = vi.fn(posted)
+      const upload = vi.fn()
+      await postBotsCommentDraft(
+        fakeClient(),
+        postComment,
+        { id: 'd1' },
+        new Map(),
+        undefined,
+        upload
+      )
+      expect(upload).not.toHaveBeenCalled()
+      expect(postComment).toHaveBeenCalledWith({ taskId: 42, bodyHtml: '<p>Hi</p>' })
+    })
   })
 })

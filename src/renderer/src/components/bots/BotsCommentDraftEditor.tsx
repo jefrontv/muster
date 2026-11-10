@@ -1,6 +1,6 @@
 // Editing a draft in a dialog with the ActiveCollab rich editor. A bot amend while editing never
 // replaces the person's text: it raises a banner offering the bot's version or keeping theirs.
-import { LoaderCircle } from 'lucide-react'
+import { LoaderCircle, Paperclip } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useEditorState } from '@tiptap/react'
@@ -27,7 +27,9 @@ import {
   useActiveCollabRichBody
 } from '../activecollab-rich-body-editor'
 import { describeBotsCommentDraftFailure } from './bots-comment-draft-failure-message'
+import { BotsCommentDraftAttachments, postLabelWithFiles } from './BotsCommentDraftAttachments'
 import { BotsCommentDraftPostButton } from './BotsCommentDraftPostButton'
+import { useBotsDraftAttachmentAdding } from './use-bots-draft-attachment-adding'
 import { postCommentDraft, type HandBackTo } from './bots-comment-draft-post-action'
 
 type Busy = 'save' | 'post' | null
@@ -60,6 +62,7 @@ export function BotsCommentDraftEditor({
     projectOnlyMentions: true
   })
   const { editor } = body
+  const files = useBotsDraftAttachmentAdding(draft)
   // The serialised seed, so an untouched editor posts without writing a new version.
   const seededHtml = useRef<string | null>(null)
   useEffect(() => {
@@ -223,18 +226,42 @@ export function BotsCommentDraftEditor({
             </div>
           </div>
         ) : null}
-        <div data-slot="bots-draft-editor">
+        <div
+          data-slot="bots-draft-editor"
+          className="flex flex-col gap-2"
+          onPaste={files.onPaste}
+          {...files.dropTargetProps}
+        >
           <ActiveCollabRichBodyFrame
             body={body}
             attachments={null}
             disabled={busy !== null}
-            dragging={false}
+            dragging={files.dragging}
             footer={null}
           />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              disabled={busy !== null || files.busy}
+              onClick={files.pick}
+              className="text-chat-ink-secondary"
+            >
+              <Paperclip className="size-3.5" />
+              {translate('auto.components.bots.commentDrafts.attachFiles', 'Attach files')}
+            </Button>
+            <BotsCommentDraftAttachments
+              draft={draft}
+              editable
+              busy={files.busy}
+              onRemove={files.remove}
+            />
+          </div>
         </div>
-        {error ? (
+        {error || files.error ? (
           <p role="status" className="text-xs text-destructive">
-            {error}
+            {error ?? files.error}
           </p>
         ) : null}
         <DialogFooter className="items-center sm:justify-between">
@@ -260,12 +287,12 @@ export function BotsCommentDraftEditor({
             </Button>
             <BotsCommentDraftPostButton
               size="sm"
-              label={translate(
-                'auto.components.bots.commentDrafts.postNow',
-                'Post to ActiveCollab'
+              label={postLabelWithFiles(
+                translate('auto.components.bots.commentDrafts.postNow', 'Post to ActiveCollab'),
+                draft
               )}
               busy={busy === 'post'}
-              disabled={busy !== null || !hasText || newer !== null}
+              disabled={busy !== null || files.busy || !hasText || newer !== null}
               handBackTo={task?.handBackTo}
               onPost={(handBackTo) => void post(handBackTo)}
             />

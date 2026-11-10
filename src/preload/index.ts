@@ -946,6 +946,13 @@ const api = {
     commentDraftFeedback: (args) => ipcRenderer.invoke('bots:commentDraftFeedback', args),
     postCommentDraft: (args) => ipcRenderer.invoke('bots:postCommentDraft', args),
     reassignCommentDraftTask: (args) => ipcRenderer.invoke('bots:reassignCommentDraftTask', args),
+    addCommentDraftAttachments: (args) =>
+      ipcRenderer.invoke('bots:addCommentDraftAttachments', args),
+    addCommentDraftImage: (args) => ipcRenderer.invoke('bots:addCommentDraftImage', args),
+    removeCommentDraftAttachment: (args) =>
+      ipcRenderer.invoke('bots:removeCommentDraftAttachment', args),
+    commentDraftAttachmentPreview: (args) =>
+      ipcRenderer.invoke('bots:commentDraftAttachmentPreview', args),
     onCommentDraftsChanged: (callback) => {
       const listener = (): void => callback()
       ipcRenderer.on('bots:commentDraftsChanged', listener)

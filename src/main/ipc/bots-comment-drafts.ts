@@ -1,4 +1,7 @@
 // IPC for the Bots comment drafts panel: list, edit, discard, undo, ask the bot, and post.
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { basename, join } from 'node:path'
 import { BrowserWindow, ipcMain } from 'electron'
 import type {
   BotsCommentDraftEdit,
@@ -6,7 +9,8 @@ import type {
   BotsCommentDraftResult
 } from '../../shared/bots-comment-draft-types'
 import { createBotsDraftTaskLookup } from '../bots/bots-comment-draft-tasks'
-import { postBotsCommentDraft } from '../bots/bots-comment-draft-post'
+import { postBotsCommentDraft, type UploadAttachments } from '../bots/bots-comment-draft-post'
+import { uploadAcCommentAttachments } from '../activecollab/comment-attachment-upload'
 import { botsCommentDrafts, onBotsCommentDraftsChanged } from '../bots/bots-sidecar'
 import { acClient } from './activecollab-operation-context'
 import { acListProjects, acListProjectTasks } from './activecollab-read-operations'
@@ -20,12 +24,23 @@ const CHANNELS = [
   'bots:undoCommentDraft',
   'bots:commentDraftFeedback',
   'bots:postCommentDraft',
-  'bots:reassignCommentDraftTask'
+  'bots:reassignCommentDraftTask',
+  'bots:addCommentDraftAttachments',
+  'bots:addCommentDraftImage',
+  'bots:removeCommentDraftAttachment',
+  'bots:commentDraftAttachmentPreview'
 ] as const
 
 const MAX_ID = 200
 const MAX_BODY = 200_000
 const MAX_NOTE = 2_000
+const MAX_PATHS = 20
+const MAX_PATH = 4_096
+const MAX_NAME = 255
+// Pasted images arrive as base64 from the renderer.
+const MAX_PASTE_BASE64 = Math.ceil((64 * 1024 * 1024 * 4) / 3)
+// Thumbnails and the large view only; bigger images show as a file chip.
+const MAX_PREVIEW_BYTES = 16 * 1024 * 1024
 
 class InvalidDraftArgument extends Error {}
 
@@ -97,6 +112,66 @@ const reassignTask = ({
   assigneeId: number
 }) => acUpdateTask({ projectId, taskId, update: { assigneeId } })
 
+function pathList(value: unknown): string[] {
+  if (
+    !Array.isArray(value) ||
+    value.length === 0 ||
+    value.length > MAX_PATHS ||
+    !value.every((path) => typeof path === 'string' && path && path.length <= MAX_PATH)
+  ) {
+    throw new InvalidDraftArgument(`Pick between 1 and ${MAX_PATHS} files.`)
+  }
+  return value as string[]
+}
+
+function fileName(value: unknown): string {
+  const name = basename(text(value, 'name', MAX_NAME)).trim()
+  if (!name || name === '.' || name === '..') {
+    throw new InvalidDraftArgument('The file needs a name.')
+  }
+  return name
+}
+
+// Each file gets its own folder so two files with one name both keep it on the ActiveCollab side.
+const uploadDraftAttachments: UploadAttachments = async (draft) => {
+  const folder = await mkdtemp(join(tmpdir(), 'muster-draft-files-'))
+  try {
+    const paths: string[] = []
+    for (const [index, file] of draft.attachments.entries()) {
+      const bytes = await botsCommentDrafts.attachmentBytes(draft.id, file.id)
+      if (!bytes.ok) {
+        return {
+          ok: false,
+          message: `${file.name} couldn't be read: ${'message' in bytes ? bytes.message : bytes.reason}`
+        }
+      }
+      const dir = join(folder, String(index))
+      await mkdir(dir)
+      const path = join(dir, basename(file.name) || `file-${index}`)
+      await writeFile(path, bytes.value)
+      paths.push(path)
+    }
+    const uploaded = await uploadAcCommentAttachments({ http: acClient().http, paths })
+    return { ok: true, codes: uploaded.map((file) => file.code) }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : String(error) }
+  } finally {
+    await rm(folder, { recursive: true, force: true })
+  }
+}
+
+async function addPastedImage(id: string, name: string, base64: string) {
+  const folder = await mkdtemp(join(tmpdir(), 'muster-draft-paste-'))
+  try {
+    const path = join(folder, name)
+    await writeFile(path, Buffer.from(base64, 'base64'))
+    // The bots server copies the file in, so the temp copy can go straight after.
+    return await botsCommentDrafts.addAttachments(id, [path])
+  } finally {
+    await rm(folder, { recursive: true, force: true })
+  }
+}
+
 let stopForwarding: (() => void) | null = null
 
 export function registerBotsCommentDraftHandlers(): void {
@@ -145,7 +220,14 @@ export function registerBotsCommentDraftHandlers(): void {
         reassignTo:
           input.reassignTo === undefined ? undefined : positiveInt(input.reassignTo, 'reassignTo')
       }
-      return postBotsCommentDraft(botsCommentDrafts, acPostComment, post, undefined, reassignTask)
+      return postBotsCommentDraft(
+        botsCommentDrafts,
+        acPostComment,
+        post,
+        undefined,
+        reassignTask,
+        uploadDraftAttachments
+      )
     })
   )
   ipcMain.handle('bots:reassignCommentDraftTask', (_event, args: unknown) =>
@@ -159,6 +241,48 @@ export function registerBotsCommentDraftHandlers(): void {
       return moved.ok
         ? { ok: true as const, value: null }
         : { ok: false as const, reason: 'error' as const, message: moved.error }
+    })
+  )
+  ipcMain.handle('bots:addCommentDraftAttachments', (_event, args: unknown) =>
+    guarded(() => {
+      const input = (args ?? {}) as Record<string, unknown>
+      return botsCommentDrafts.addAttachments(draftId(input.id), pathList(input.paths))
+    })
+  )
+  ipcMain.handle('bots:addCommentDraftImage', (_event, args: unknown) =>
+    guarded(() => {
+      const input = (args ?? {}) as Record<string, unknown>
+      return addPastedImage(
+        draftId(input.id),
+        fileName(input.name),
+        text(input.dataBase64, 'dataBase64', MAX_PASTE_BASE64)
+      )
+    })
+  )
+  ipcMain.handle('bots:removeCommentDraftAttachment', (_event, args: unknown) =>
+    guarded(() => {
+      const input = (args ?? {}) as Record<string, unknown>
+      return botsCommentDrafts.removeAttachment(draftId(input.id), draftId(input.attachmentId))
+    })
+  )
+  ipcMain.handle('bots:commentDraftAttachmentPreview', (_event, args: unknown) =>
+    guarded(async () => {
+      const input = (args ?? {}) as Record<string, unknown>
+      const mime = text(input.mime, 'mime', 200)
+      if (!/^image\/(png|jpeg|gif|webp)$/.test(mime)) {
+        throw new InvalidDraftArgument('Only images have a preview.')
+      }
+      const bytes = await botsCommentDrafts.attachmentBytes(
+        draftId(input.id),
+        draftId(input.attachmentId)
+      )
+      if (!bytes.ok) {
+        return bytes
+      }
+      if (bytes.value.byteLength > MAX_PREVIEW_BYTES) {
+        throw new InvalidDraftArgument('Too large to preview.')
+      }
+      return { ok: true, value: `data:${mime};base64,${bytes.value.toString('base64')}` }
     })
   )
   stopForwarding?.()

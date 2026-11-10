@@ -4,6 +4,14 @@ import type { ActiveCollabFailure } from './activecollab-api-types'
 
 export type BotsCommentDraftStatus = 'waiting' | 'posted' | 'discarded'
 
+export type BotsCommentDraftAttachment = {
+  id: string
+  name: string
+  size: number
+  mime: string
+  addedBy: 'bot' | 'user'
+}
+
 export type BotsCommentDraft = {
   id: string
   /** 1-based among waiting drafts, oldest first; null once posted or discarded. */
@@ -15,6 +23,8 @@ export type BotsCommentDraft = {
   taskId: number
   bodyHtml: string
   bodyText: string
+  /** Uploaded to ActiveCollab and attached when the draft posts. */
+  attachments: BotsCommentDraftAttachment[]
   status: BotsCommentDraftStatus
   version: number
   editedBy: 'bot' | 'user'
@@ -53,6 +63,8 @@ export type BotsCommentDraftFailure =
   | { ok: false; reason: 'post-failed'; failure: ActiveCollabFailure }
   /** The comment posted but the draft could not be marked posted. */
   | { ok: false; reason: 'posted-unmarked'; message: string }
+  /** A file could not go up to ActiveCollab; nothing posted and the draft stays waiting. */
+  | { ok: false; reason: 'attachments-failed'; message: string }
   /** The comment posted and the draft cleared, but the task could not be reassigned. */
   | { ok: false; reason: 'reassign-failed'; message: string; draft: BotsCommentDraft }
 

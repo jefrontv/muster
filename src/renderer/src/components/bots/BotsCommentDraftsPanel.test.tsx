@@ -73,6 +73,13 @@ function fakeBots(): {
     commentDraftFeedback: vi.fn(async () => ({ ok: true, value: null })),
     postCommentDraft: vi.fn(async () => ({ ok: true, value: draftFixture({ status: 'posted' }) })),
     reassignCommentDraftTask: vi.fn(async () => ({ ok: true, value: null })),
+    addCommentDraftAttachments: vi.fn(async () => ({ ok: true, value: draftFixture() })),
+    addCommentDraftImage: vi.fn(async () => ({ ok: true, value: draftFixture() })),
+    removeCommentDraftAttachment: vi.fn(async () => ({ ok: true, value: draftFixture() })),
+    commentDraftAttachmentPreview: vi.fn(async () => ({
+      ok: true,
+      value: 'data:image/png;base64,AA=='
+    })),
     onCommentDraftsChanged: vi.fn(() => () => {})
   }
 }
@@ -81,7 +88,10 @@ let bots: ReturnType<typeof fakeBots>
 
 beforeEach(() => {
   bots = fakeBots()
-  ;(window as unknown as { api: { bots: unknown } }).api = { bots }
+  ;(window as unknown as { api: { bots: unknown; ui: unknown } }).api = {
+    bots,
+    ui: { onFileDrop: vi.fn(() => () => {}) }
+  }
   holder.editor = null
   window.localStorage.clear()
 })
@@ -351,6 +361,24 @@ describe('BotsCommentDraftEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: "Use Bob's" }))
     expect(editor.getText()).toBe('Newer from Bob')
     expect(screen.queryByText('Bob updated this draft')).toBeNull()
+  })
+
+  it('shows the files and counts them on Post, and removes one from the editor', async () => {
+    const files = [
+      { id: 'a1', name: 'shot.png', size: 2048, mime: 'image/png', addedBy: 'bot' as const },
+      { id: 'a2', name: 'notes.pdf', size: 10, mime: 'application/pdf', addedBy: 'user' as const }
+    ]
+    renderCard(draftFixture({ attachments: files }))
+    expect(screen.getByRole('button', { name: 'Post (2 files)' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'View shot.png' })).toBeTruthy()
+    await openEditor()
+    fireEvent.click(screen.getByRole('button', { name: 'Remove notes.pdf' }))
+    await waitFor(() =>
+      expect(bots.removeCommentDraftAttachment).toHaveBeenCalledWith({
+        id: 'd1',
+        attachmentId: 'a2'
+      })
+    )
   })
 
   it('posts edited text from the editor by saving it first', async () => {

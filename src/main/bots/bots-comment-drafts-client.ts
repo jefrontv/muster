@@ -10,6 +10,8 @@ export type BotsServerConnection = { port: number; token: string }
 type Fetch = typeof fetch
 
 const REQUEST_TIMEOUT_MS = 10_000
+// Up to 64 MB comes back from loopback.
+const FILE_TIMEOUT_MS = 60_000
 export const BOTS_OWNER_HEADER = 'X-OpenMausBot-Desktop-Owner'
 
 export type BotsCommentDraftsClient = {
@@ -21,6 +23,13 @@ export type BotsCommentDraftsClient = {
   ) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
   undo: (id: string) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
   feedback: (id: string, note: string) => Promise<BotsCommentDraftResult<null>>
+  addAttachments: (id: string, paths: string[]) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  removeAttachment: (
+    id: string,
+    attachmentId: string
+  ) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  /** The file's bytes; a draft's files sit on the bots server's disk. */
+  attachmentBytes: (id: string, attachmentId: string) => Promise<BotsCommentDraftResult<Buffer>>
 }
 
 function isDraft(value: unknown): value is BotsCommentDraft {
@@ -33,6 +42,11 @@ function isDraft(value: unknown): value is BotsCommentDraft {
     typeof draft.bodyHtml === 'string' &&
     typeof draft.version === 'number'
   )
+}
+
+// A bots server from before attachments sends none.
+function withAttachments(draft: BotsCommentDraft): BotsCommentDraft {
+  return Array.isArray(draft.attachments) ? draft : { ...draft, attachments: [] }
 }
 
 function errorText(body: unknown, fallback: string): string {
@@ -98,14 +112,14 @@ export function createBotsCommentDraftsClient(
     }
     const draft = (answer.body as { draft?: unknown } | null)?.draft
     if (answer.status >= 200 && answer.status < 300 && isDraft(draft)) {
-      return { ok: true, value: draft }
+      return { ok: true, value: withAttachments(draft) }
     }
     if (answer.status === 409 && isDraft(draft)) {
       return {
         ok: false,
         reason: 'conflict',
         message: errorText(answer.body, 'The draft changed.'),
-        draft
+        draft: withAttachments(draft)
       }
     }
     if (answer.status === 410) {
@@ -138,7 +152,7 @@ export function createBotsCommentDraftsClient(
           message: errorText(answer.body, `The bots server answered HTTP ${answer.status}.`)
         }
       }
-      return { ok: true, value: drafts.filter(isDraft) }
+      return { ok: true, value: drafts.filter(isDraft).map(withAttachments) }
     },
     update: ({ id, bodyHtml, bodyText, baseVersion }) =>
       draftCall('PATCH', path(id), { bodyHtml, bodyText, baseVersion }),
@@ -156,6 +170,39 @@ export function createBotsCommentDraftsClient(
         ok: false,
         reason: answer.status === 410 ? 'gone' : 'error',
         message: errorText(answer.body, `The bots server answered HTTP ${answer.status}.`)
+      }
+    },
+    addAttachments: (id, paths) => draftCall('POST', path(id, '/attachments'), { paths }),
+    removeAttachment: (id, attachmentId) =>
+      draftCall('DELETE', path(id, `/attachments/${encodeURIComponent(attachmentId)}`)),
+    async attachmentBytes(id, attachmentId) {
+      const server = connection()
+      if (!server) {
+        return { ok: false, reason: 'unavailable', message: 'Muster Bots is not running.' }
+      }
+      try {
+        const response = await fetchImpl(
+          `http://127.0.0.1:${server.port}/api/muster/comment-drafts${path(id, `/attachments/${encodeURIComponent(attachmentId)}`)}`,
+          {
+            headers: { [BOTS_OWNER_HEADER]: server.token },
+            signal: AbortSignal.timeout(FILE_TIMEOUT_MS)
+          }
+        )
+        if (!response.ok) {
+          const body: unknown = await response.json().catch(() => null)
+          return {
+            ok: false,
+            reason: response.status === 404 ? 'gone' : 'error',
+            message: errorText(body, `The bots server answered HTTP ${response.status}.`)
+          }
+        }
+        return { ok: true, value: Buffer.from(await response.arrayBuffer()) }
+      } catch (error) {
+        return {
+          ok: false,
+          reason: 'error',
+          message: error instanceof Error ? error.message : String(error)
+        }
       }
     }
   }

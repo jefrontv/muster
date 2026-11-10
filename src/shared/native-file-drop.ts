@@ -15,6 +15,8 @@ export const NATIVE_FILE_DROP_TARGET = {
   /** The ActiveCollab create-task dialog. Distinct from the comment target because the detail
    * pane's composer can be mounted behind the open dialog and both subscribe by target value. */
   activeCollabTaskCreate: 'activecollab-task-create',
+  /** The Bots comment draft editor; files go onto the waiting draft straight away. */
+  botsCommentDraft: 'bots-comment-draft',
   fileExplorer: 'file-explorer',
   projectSidebar: 'project-sidebar'
 } as const
@@ -25,6 +27,7 @@ export type NativeDropResolution =
   | { target: typeof NATIVE_FILE_DROP_TARGET.composer }
   | { target: typeof NATIVE_FILE_DROP_TARGET.activeCollabComment }
   | { target: typeof NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate }
+  | { target: typeof NATIVE_FILE_DROP_TARGET.botsCommentDraft }
   | { target: typeof NATIVE_FILE_DROP_TARGET.fileExplorer; destinationDir: string }
   | { target: typeof NATIVE_FILE_DROP_TARGET.projectSidebar }
   | { target: 'rejected' }
@@ -40,6 +43,7 @@ export type NativeFileDropPayload =
   | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.composer }
   | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.activeCollabComment }
   | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate }
+  | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.botsCommentDraft }
   | {
       paths: string[]
       target: typeof NATIVE_FILE_DROP_TARGET.fileExplorer

@@ -10,7 +10,13 @@ import type { BotsCommentDraftsClient } from './bots-comment-drafts-client'
 export type PostComment = (args: {
   taskId: number
   bodyHtml: string
+  attachmentCodes?: string[]
 }) => Promise<ActiveCollabResult<unknown>>
+
+/** Sends a draft's files to ActiveCollab, answering one upload code per file. */
+export type UploadAttachments = (
+  draft: BotsCommentDraft
+) => Promise<{ ok: true; codes: string[] } | { ok: false; message: string }>
 
 export type ReassignTask = (args: {
   projectId: number
@@ -26,7 +32,8 @@ export async function postBotsCommentDraft(
   postComment: PostComment,
   { id, edit, reassignTo }: BotsCommentDraftPostArgs,
   alreadyPosted: Map<string, number> = postedNotCleared,
-  reassign?: ReassignTask
+  reassign?: ReassignTask,
+  upload?: UploadAttachments
 ): Promise<BotsCommentDraftResult<BotsCommentDraft>> {
   let draft: BotsCommentDraft
   if (edit) {
@@ -48,7 +55,22 @@ export async function postBotsCommentDraft(
     draft = found
   }
   if (alreadyPosted.get(id) !== draft.version) {
-    const posted = await postComment({ taskId: draft.taskId, bodyHtml: draft.bodyHtml })
+    let attachmentCodes: string[] | undefined
+    if (draft.attachments.length > 0) {
+      // Every file goes up before the comment, so a failed upload never leaves a comment missing its files.
+      const uploaded = upload
+        ? await upload(draft)
+        : { ok: false as const, message: 'Files cannot be uploaded from here.' }
+      if (!uploaded.ok) {
+        return { ok: false, reason: 'attachments-failed', message: uploaded.message }
+      }
+      attachmentCodes = uploaded.codes
+    }
+    const posted = await postComment({
+      taskId: draft.taskId,
+      bodyHtml: draft.bodyHtml,
+      ...(attachmentCodes ? { attachmentCodes } : {})
+    })
     if (!posted.ok) {
       return { ok: false, reason: 'post-failed', failure: posted }
     }

@@ -15040,7 +15040,15 @@
           "reassignFailedCard": "Posted, but the task couldn't be reassigned: {{value0}}",
           "reassigned": "Posted and reassigned to {{value0}}",
           "reassignFailed": "Posted, but couldn't reassign to {{value0}}",
-          "retryReassign": "Retry"
+          "retryReassign": "Retry",
+          "viewFile": "View {{value0}}",
+          "removeFile": "Remove {{value0}}",
+          "files": "Files",
+          "addingFiles": "Adding files",
+          "postWithFile": "{{value0}} (1 file)",
+          "postWithFiles": "{{value0}} ({{value1}} files)",
+          "attachFiles": "Attach files",
+          "attachmentsFailed": "Not posted. A file could not be uploaded: {{value0}}"
         }
       }
     },

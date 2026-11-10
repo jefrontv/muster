@@ -14,6 +14,12 @@ export function describeBotsCommentDraftFailure(failure: BotsCommentDraftFailure
         'auto.components.bots.commentDrafts.postedUnmarked',
         'Posted to ActiveCollab, but this draft could not be cleared. Discard it so it is not posted twice.'
       )
+    case 'attachments-failed':
+      return translate(
+        'auto.components.bots.commentDrafts.attachmentsFailed',
+        'Not posted. A file could not be uploaded: {{value0}}',
+        { value0: failure.message }
+      )
     case 'reassign-failed':
       return translate(
         'auto.components.bots.commentDrafts.reassignFailedCard',

@@ -12,6 +12,7 @@ export function draftFixture(overrides: Partial<BotsCommentDraft> = {}): BotsCom
     taskId: 42,
     bodyHtml: '<p>Hi</p>',
     bodyText: 'Hi',
+    attachments: [],
     status: 'waiting',
     version: 1,
     editedBy: 'bot',
