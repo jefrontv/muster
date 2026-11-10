@@ -1043,6 +1043,12 @@ export type BotsApi = {
   postCommentDraft: (
     args: BotsCommentDraftPostArgs
   ) => Promise<BotsCommentDraftResult<BotsCommentDraft>>
+  /** Retries the reassign after a post whose reassign failed. */
+  reassignCommentDraftTask: (args: {
+    projectId: number
+    taskId: number
+    assigneeId: number
+  }) => Promise<BotsCommentDraftResult<null>>
   onCommentDraftsChanged: (callback: () => void) => () => void
 }
 

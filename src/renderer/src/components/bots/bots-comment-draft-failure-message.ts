@@ -14,6 +14,12 @@ export function describeBotsCommentDraftFailure(failure: BotsCommentDraftFailure
         'auto.components.bots.commentDrafts.postedUnmarked',
         'Posted to ActiveCollab, but this draft could not be cleared. Discard it so it is not posted twice.'
       )
+    case 'reassign-failed':
+      return translate(
+        'auto.components.bots.commentDrafts.reassignFailedCard',
+        "Posted, but the task couldn't be reassigned: {{value0}}",
+        { value0: failure.message }
+      )
     case 'gone':
       return translate(
         'auto.components.bots.commentDrafts.gone',

@@ -30,7 +30,12 @@ describe('bots draft task lookup', () => {
       lookup.lookup({ projectId: 7, taskId: 1 }),
       lookup.lookup({ projectId: 7, taskId: 2 })
     ])
-    expect(first).toEqual({ title: 'Fix header', taskNumber: 101, projectName: 'Website' })
+    expect(first).toEqual({
+      title: 'Fix header',
+      taskNumber: 101,
+      projectName: 'Website',
+      handBackTo: null
+    })
     expect(second.title).toBe('Footer')
     await lookup.lookup({ projectId: 7, taskId: 1 })
     expect(from.listProjectTasks).toHaveBeenCalledTimes(1)
@@ -51,5 +56,31 @@ describe('bots draft task lookup', () => {
     now = 10 * 60_000
     await lookup.lookup({ projectId: 7, taskId: 99 })
     expect(from.listProjectTasks).toHaveBeenCalledTimes(2)
+  })
+
+  it('hands back to whoever assigned the task, else its creator, never the signed-in user', async () => {
+    const from = sources()
+    from.listProjectTasks.mockResolvedValue({
+      ok: true,
+      value: {
+        projectId: 7,
+        taskLists: [],
+        tasks: [
+          { ...task(1, 'Delegated'), delegatedById: 5, createdById: 6, createdByName: 'Cara' },
+          { ...task(2, 'Created'), delegatedById: null, createdById: 6, createdByName: 'Cara' },
+          { ...task(3, 'Mine'), delegatedById: 1, createdById: 6, createdByName: 'Cara' }
+        ]
+      }
+    })
+    const lookup = createBotsDraftTaskLookup({
+      ...from,
+      people: async () => ({ selfId: 1, names: new Map([[5, 'Sarah']]) })
+    })
+    const [one, two, three] = await Promise.all(
+      [1, 2, 3].map((taskId) => lookup.lookup({ projectId: 7, taskId }))
+    )
+    expect(one.handBackTo).toEqual({ userId: 5, name: 'Sarah' })
+    expect(two.handBackTo).toEqual({ userId: 6, name: 'Cara' })
+    expect(three.handBackTo).toBeNull()
   })
 })

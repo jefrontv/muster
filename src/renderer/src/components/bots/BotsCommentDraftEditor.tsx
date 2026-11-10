@@ -27,6 +27,8 @@ import {
   useActiveCollabRichBody
 } from '../activecollab-rich-body-editor'
 import { describeBotsCommentDraftFailure } from './bots-comment-draft-failure-message'
+import { BotsCommentDraftPostButton } from './BotsCommentDraftPostButton'
+import { postCommentDraft, type HandBackTo } from './bots-comment-draft-post-action'
 
 type Busy = 'save' | 'post' | null
 
@@ -122,19 +124,23 @@ export function BotsCommentDraftEditor({
     fail(result)
   }
 
-  const post = async (): Promise<void> => {
+  const post = async (handBackTo?: HandBackTo): Promise<void> => {
     const edit = currentEdit(baseVersion)
     if (!edit || !edit.bodyHtml) {
       return
     }
     setBusy('post')
     setError(null)
-    const result = await window.api.bots.postCommentDraft({
-      id: draft.id,
-      edit: edit.dirty
-        ? { bodyHtml: edit.bodyHtml, bodyText: edit.bodyText, baseVersion: edit.baseVersion }
-        : undefined
-    })
+    const result = await postCommentDraft(
+      draft,
+      {
+        id: draft.id,
+        edit: edit.dirty
+          ? { bodyHtml: edit.bodyHtml, bodyText: edit.bodyText, baseVersion: edit.baseVersion }
+          : undefined
+      },
+      handBackTo
+    )
     setBusy(null)
     if (result.ok) {
       onClose()
@@ -252,15 +258,17 @@ export function BotsCommentDraftEditor({
               {busy === 'save' ? <LoaderCircle className="size-4 animate-spin" /> : null}
               {translate('auto.components.bots.commentDrafts.saveDraft', 'Save draft')}
             </Button>
-            <Button
-              type="button"
+            <BotsCommentDraftPostButton
               size="sm"
+              label={translate(
+                'auto.components.bots.commentDrafts.postNow',
+                'Post to ActiveCollab'
+              )}
+              busy={busy === 'post'}
               disabled={busy !== null || !hasText || newer !== null}
-              onClick={() => void post()}
-            >
-              {busy === 'post' ? <LoaderCircle className="size-4 animate-spin" /> : null}
-              {translate('auto.components.bots.commentDrafts.postNow', 'Post to ActiveCollab')}
-            </Button>
+              handBackTo={task?.handBackTo}
+              onPost={(handBackTo) => void post(handBackTo)}
+            />
           </div>
         </DialogFooter>
       </DialogContent>

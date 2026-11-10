@@ -17,7 +17,10 @@ import type * as TiptapReact from '@tiptap/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { draftFixture } from '../../../../shared/bots-comment-draft-fixture'
-import type { BotsCommentDraft } from '../../../../shared/bots-comment-draft-types'
+import type {
+  BotsCommentDraft,
+  BotsCommentDraftTask
+} from '../../../../shared/bots-comment-draft-types'
 import type { PreloadApi } from '../../../../preload/api-types'
 import { ACTIVECOLLAB_MENTION_NODE_NAME } from '../activecollab-comment-mention-node'
 import { BotsCommentDraftCard } from './BotsCommentDraftCard'
@@ -69,6 +72,7 @@ function fakeBots(): {
     undoCommentDraft: vi.fn(),
     commentDraftFeedback: vi.fn(async () => ({ ok: true, value: null })),
     postCommentDraft: vi.fn(async () => ({ ok: true, value: draftFixture({ status: 'posted' }) })),
+    reassignCommentDraftTask: vi.fn(async () => ({ ok: true, value: null })),
     onCommentDraftsChanged: vi.fn(() => () => {})
   }
 }
@@ -84,12 +88,15 @@ beforeEach(() => {
 
 afterEach(cleanup)
 
-function renderCard(draft: BotsCommentDraft) {
+function renderCard(
+  draft: BotsCommentDraft,
+  handBackTo: BotsCommentDraftTask['handBackTo'] = null
+) {
   const view = render(
     <TooltipProvider>
       <BotsCommentDraftCard
         draft={draft}
-        task={{ title: 'Fix the header', taskNumber: 12, projectName: 'Website' }}
+        task={{ title: 'Fix the header', taskNumber: 12, projectName: 'Website', handBackTo }}
         onOpenTask={vi.fn()}
       />
     </TooltipProvider>
@@ -243,6 +250,16 @@ describe('BotsCommentDraftCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }))
     await waitFor(() => expect(bots.postCommentDraft).toHaveBeenCalledWith({ id: 'd1' }))
     expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('posts and hands the task back from the Post menu', async () => {
+    renderCard(draftFixture(), { userId: 5, name: 'Sarah' })
+    const trigger = screen.getByRole('button', { name: 'More post options' })
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Post & reassign to Sarah' }))
+    await waitFor(() =>
+      expect(bots.postCommentDraft).toHaveBeenCalledWith({ id: 'd1', reassignTo: 5 })
+    )
   })
 
   it('keeps the card and shows why when ActiveCollab refuses the post', async () => {

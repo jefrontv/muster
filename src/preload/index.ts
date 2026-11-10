@@ -945,6 +945,7 @@ const api = {
     undoCommentDraft: (id) => ipcRenderer.invoke('bots:undoCommentDraft', id),
     commentDraftFeedback: (args) => ipcRenderer.invoke('bots:commentDraftFeedback', args),
     postCommentDraft: (args) => ipcRenderer.invoke('bots:postCommentDraft', args),
+    reassignCommentDraftTask: (args) => ipcRenderer.invoke('bots:reassignCommentDraftTask', args),
     onCommentDraftsChanged: (callback) => {
       const listener = (): void => callback()
       ipcRenderer.on('bots:commentDraftsChanged', listener)

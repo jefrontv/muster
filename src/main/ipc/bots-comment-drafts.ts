@@ -8,8 +8,9 @@ import type {
 import { createBotsDraftTaskLookup } from '../bots/bots-comment-draft-tasks'
 import { postBotsCommentDraft } from '../bots/bots-comment-draft-post'
 import { botsCommentDrafts, onBotsCommentDraftsChanged } from '../bots/bots-sidecar'
+import { acClient } from './activecollab-operation-context'
 import { acListProjects, acListProjectTasks } from './activecollab-read-operations'
-import { acPostComment } from './activecollab-task-write-operations'
+import { acPostComment, acUpdateTask } from './activecollab-task-write-operations'
 
 const CHANNELS = [
   'bots:listCommentDrafts',
@@ -18,7 +19,8 @@ const CHANNELS = [
   'bots:discardCommentDraft',
   'bots:undoCommentDraft',
   'bots:commentDraftFeedback',
-  'bots:postCommentDraft'
+  'bots:postCommentDraft',
+  'bots:reassignCommentDraftTask'
 ] as const
 
 const MAX_ID = 200
@@ -74,8 +76,26 @@ async function guarded<T>(
 
 const taskLookup = createBotsDraftTaskLookup({
   listProjects: acListProjects,
-  listProjectTasks: acListProjectTasks
+  listProjectTasks: acListProjectTasks,
+  people: async () => {
+    const { userId, names } = acClient()
+    const directory = await names()
+    return {
+      selfId: userId,
+      names: new Map([...directory.users].map(([id, user]) => [id, user.name]))
+    }
+  }
 })
+
+const reassignTask = ({
+  projectId,
+  taskId,
+  assigneeId
+}: {
+  projectId: number
+  taskId: number
+  assigneeId: number
+}) => acUpdateTask({ projectId, taskId, update: { assigneeId } })
 
 let stopForwarding: (() => void) | null = null
 
@@ -121,9 +141,24 @@ export function registerBotsCommentDraftHandlers(): void {
       const input = (args ?? {}) as Record<string, unknown>
       const post: BotsCommentDraftPostArgs = {
         id: draftId(input.id),
-        edit: input.edit === undefined ? undefined : editBody(input.edit)
+        edit: input.edit === undefined ? undefined : editBody(input.edit),
+        reassignTo:
+          input.reassignTo === undefined ? undefined : positiveInt(input.reassignTo, 'reassignTo')
       }
-      return postBotsCommentDraft(botsCommentDrafts, acPostComment, post)
+      return postBotsCommentDraft(botsCommentDrafts, acPostComment, post, undefined, reassignTask)
+    })
+  )
+  ipcMain.handle('bots:reassignCommentDraftTask', (_event, args: unknown) =>
+    guarded(async () => {
+      const input = (args ?? {}) as Record<string, unknown>
+      const moved = await reassignTask({
+        projectId: positiveInt(input.projectId, 'projectId'),
+        taskId: positiveInt(input.taskId, 'taskId'),
+        assigneeId: positiveInt(input.assigneeId, 'assigneeId')
+      })
+      return moved.ok
+        ? { ok: true as const, value: null }
+        : { ok: false as const, reason: 'error' as const, message: moved.error }
     })
   )
   stopForwarding?.()

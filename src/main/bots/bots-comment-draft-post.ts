@@ -12,14 +12,21 @@ export type PostComment = (args: {
   bodyHtml: string
 }) => Promise<ActiveCollabResult<unknown>>
 
+export type ReassignTask = (args: {
+  projectId: number
+  taskId: number
+  assigneeId: number
+}) => Promise<ActiveCollabResult<unknown>>
+
 // Draft id -> version ActiveCollab already has; a retry after "posted-unmarked" only clears the draft.
 const postedNotCleared = new Map<string, number>()
 
 export async function postBotsCommentDraft(
   client: BotsCommentDraftsClient,
   postComment: PostComment,
-  { id, edit }: BotsCommentDraftPostArgs,
-  alreadyPosted: Map<string, number> = postedNotCleared
+  { id, edit, reassignTo }: BotsCommentDraftPostArgs,
+  alreadyPosted: Map<string, number> = postedNotCleared,
+  reassign?: ReassignTask
 ): Promise<BotsCommentDraftResult<BotsCommentDraft>> {
   let draft: BotsCommentDraft
   if (edit) {
@@ -57,6 +64,23 @@ export async function postBotsCommentDraft(
       message: `Posted to ActiveCollab, but the draft could not be cleared: ${
         'message' in marked ? marked.message : 'unknown error'
       }`
+    }
+  }
+  if (reassignTo === undefined || !reassign) {
+    return marked
+  }
+  // The comment is already in; a failed reassign is reported, never retried by posting again.
+  const moved = await reassign({
+    projectId: draft.projectId,
+    taskId: draft.taskId,
+    assigneeId: reassignTo
+  })
+  if (!moved.ok) {
+    return {
+      ok: false,
+      reason: 'reassign-failed',
+      message: `Posted, but couldn't reassign: ${moved.error}`,
+      draft: marked.value
     }
   }
   return marked

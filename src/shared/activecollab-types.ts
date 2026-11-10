@@ -72,6 +72,8 @@ export type ActiveCollabTask = {
   createdById: number | null
   /** Filled by the name-directory join when the wire omits it, like assigneeName. */
   createdByName: string | null
+  /** Who assigned it; only list rows parse it. */
+  delegatedById?: number | null
   labels: ActiveCollabLabel[]
   commentCount: number
   /** ActiveCollab's single priority flag; there is no priority ladder. */

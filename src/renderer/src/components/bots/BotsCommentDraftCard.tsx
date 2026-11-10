@@ -15,6 +15,8 @@ import type {
 } from '../../../../shared/bots-comment-draft-types'
 import { activeCollabStamp } from '../activecollab-task-timestamps'
 import { BotsCommentDraftEditor } from './BotsCommentDraftEditor'
+import { BotsCommentDraftPostButton } from './BotsCommentDraftPostButton'
+import { postCommentDraft } from './bots-comment-draft-post-action'
 import { describeBotsCommentDraftFailure } from './bots-comment-draft-failure-message'
 import { canonicalActiveCollabCommentHtml } from '../activecollab-comment-canonical-html'
 
@@ -219,15 +221,16 @@ export function BotsCommentDraftCard({
       ) : null}
 
       <div className="flex items-center gap-1">
-        <Button
-          type="button"
+        <BotsCommentDraftPostButton
           size="xs"
+          label={translate('auto.components.bots.commentDrafts.post', 'Post')}
+          busy={busy === 'post'}
           disabled={locked}
-          onClick={() => void run('post', () => window.api.bots.postCommentDraft(postArgs(draft)))}
-        >
-          {busy === 'post' ? <LoaderCircle className="size-3.5 animate-spin" /> : null}
-          {translate('auto.components.bots.commentDrafts.post', 'Post')}
-        </Button>
+          handBackTo={task?.handBackTo}
+          onPost={(handBackTo) =>
+            void run('post', () => postCommentDraft(draft, postArgs(draft), handBackTo))
+          }
+        />
         <Button
           type="button"
           size="xs"

@@ -119,4 +119,51 @@ describe('postBotsCommentDraft', () => {
     expect(second).toMatchObject({ ok: true, value: { status: 'posted' } })
     expect(seen.size).toBe(0)
   })
+
+  it('reassigns the task after the comment posts and the draft clears', async () => {
+    const client = fakeClient()
+    const reassign = vi.fn(async () => ({ ok: true as const, value: null }))
+    const result = await postBotsCommentDraft(
+      client,
+      vi.fn(posted),
+      { id: 'd1', reassignTo: 9 },
+      new Map(),
+      reassign
+    )
+    expect(reassign).toHaveBeenCalledWith({ projectId: 7, taskId: 42, assigneeId: 9 })
+    expect(result).toMatchObject({ ok: true })
+  })
+
+  it('reports a failed reassign without posting again', async () => {
+    const client = fakeClient()
+    const postComment = vi.fn(posted)
+    const failure = { ok: false as const, kind: 'api' as const, error: 'Forbidden', status: 403 }
+    const result = await postBotsCommentDraft(
+      client,
+      postComment,
+      { id: 'd1', reassignTo: 9 },
+      new Map(),
+      vi.fn(async () => failure)
+    )
+    expect(postComment).toHaveBeenCalledTimes(1)
+    expect(client.setStatus).toHaveBeenCalledWith('d1', 'posted')
+    expect(result).toMatchObject({
+      ok: false,
+      reason: 'reassign-failed',
+      message: "Posted, but couldn't reassign: Forbidden"
+    })
+  })
+
+  it('never reassigns when the comment fails', async () => {
+    const reassign = vi.fn()
+    const failure = { ok: false as const, kind: 'network' as const, error: 'offline', status: null }
+    await postBotsCommentDraft(
+      fakeClient(),
+      vi.fn(async () => failure),
+      { id: 'd1', reassignTo: 9 },
+      new Map(),
+      reassign
+    )
+    expect(reassign).not.toHaveBeenCalled()
+  })
 })

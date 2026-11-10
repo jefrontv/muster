@@ -1,7 +1,11 @@
 // Task title and project name for a draft card, cached per task.
 // Never the task detail read: that GET marks the task's ActiveCollab updates seen.
 import type { ActiveCollabResult } from '../../shared/activecollab-api-types'
-import type { ActiveCollabProject, ActiveCollabProjectTasks } from '../../shared/activecollab-types'
+import type {
+  ActiveCollabProject,
+  ActiveCollabProjectTasks,
+  ActiveCollabTask
+} from '../../shared/activecollab-types'
 import type { BotsCommentDraftTask } from '../../shared/bots-comment-draft-types'
 
 export type BotsDraftTaskSources = {
@@ -9,6 +13,20 @@ export type BotsDraftTaskSources = {
   listProjectTasks: (args: {
     projectId: number
   }) => Promise<ActiveCollabResult<ActiveCollabProjectTasks>>
+  /** Signed-in user id and user names, for the hand-back person. */
+  people?: () => Promise<{ selfId: number; names: Map<number, string> }>
+}
+
+function handBackTo(
+  row: Pick<ActiveCollabTask, 'delegatedById' | 'createdById' | 'createdByName'>,
+  people: { selfId: number; names: Map<number, string> } | null
+): BotsCommentDraftTask['handBackTo'] {
+  const userId = row.delegatedById ?? row.createdById
+  if (userId === null || userId === undefined || !people || userId === people.selfId) {
+    return null
+  }
+  const name = people.names.get(userId) ?? (userId === row.createdById ? row.createdByName : null)
+  return name ? { userId, name } : null
 }
 
 // A task missing from the open list (completed, moved) is retried after this, not on every refetch.
@@ -43,9 +61,10 @@ export function createBotsDraftTaskLookup(
       return pending
     }
     const load = (async () => {
-      const [result, names] = await Promise.all([
+      const [result, names, people] = await Promise.all([
         sources.listProjectTasks({ projectId }),
-        loadProjectNames()
+        loadProjectNames(),
+        sources.people?.().catch(() => null) ?? null
       ])
       if (!result.ok) {
         return
@@ -55,7 +74,8 @@ export function createBotsDraftTaskLookup(
           task: {
             title: row.name,
             taskNumber: row.taskNumber,
-            projectName: names.get(projectId) ?? (row.projectName || null)
+            projectName: names.get(projectId) ?? (row.projectName || null),
+            handBackTo: handBackTo(row, people)
           },
           missUntil: null
         })

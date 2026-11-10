@@ -81,6 +81,7 @@ function normaliseTask(value: unknown): ActiveCollabTask | null {
     assigneeName: assigneeNameOf(value),
     createdById: acNullableId(value.created_by_id),
     createdByName: asText(value.created_by_name) || null,
+    delegatedById: acNullableId(value.delegated_by_id),
     labels: acLabels(value.labels),
     commentCount: asNumber(value.comments_count) ?? 0,
     // `0` means "no estimate", not a zero-hour estimate — same sentinel rule as the ids.

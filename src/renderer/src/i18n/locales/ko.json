@@ -14493,7 +14493,9 @@
           "unwatch": "Stop watching",
           "watch": "Watch this task",
           "no_watchers": "Nobody",
-          "mention_menu_widened": "No one on this project matches — showing everyone"
+          "mention_menu_widened": "No one on this project matches — showing everyone",
+          "comment_bullet_list": "Bulleted list",
+          "comment_ordered_list": "Numbered list"
         },
         "task_list": {
           "row_name": "{{value0}} in {{value1}}",
@@ -14999,7 +15001,23 @@
           "gone": "This draft was already posted or discarded.",
           "unavailable": "Muster Bots is not running.",
           "conflict": "The bot changed this draft.",
-          "error": "Could not reach Muster Bots: {{value0}}"
+          "error": "Could not reach Muster Bots: {{value0}}",
+          "editTitle": "Edit comment",
+          "changedElsewhere": "This draft was changed in another window",
+          "useNewer": "Use that version",
+          "mentionHint": "Type @ to mention someone on the project",
+          "saveDraft": "Save draft",
+          "postNow": "Post to ActiveCollab",
+          "moreOptions": "More post options",
+          "noHandBack": "No one to hand this back to",
+          "postReassign": "Post & reassign to {{value0}}",
+          "postReassignNone": "Post & reassign",
+          "emptyTitle": "All caught up",
+          "emptyBody": "New comment drafts from your bots show up here.",
+          "reassignFailedCard": "Posted, but the task couldn't be reassigned: {{value0}}",
+          "reassigned": "Posted and reassigned to {{value0}}",
+          "reassignFailed": "Posted, but couldn't reassign to {{value0}}",
+          "retryReassign": "Retry"
         }
       }
     },

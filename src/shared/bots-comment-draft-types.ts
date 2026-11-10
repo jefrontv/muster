@@ -30,6 +30,8 @@ export type BotsCommentDraftTask = {
   title: string | null
   taskNumber: number | null
   projectName: string | null
+  /** Who assigned the task (else who created it); null when unknown or it's the signed-in user. */
+  handBackTo?: { userId: number; name: string } | null
 }
 
 export type BotsCommentDraftEdit = {
@@ -51,10 +53,17 @@ export type BotsCommentDraftFailure =
   | { ok: false; reason: 'post-failed'; failure: ActiveCollabFailure }
   /** The comment posted but the draft could not be marked posted. */
   | { ok: false; reason: 'posted-unmarked'; message: string }
+  /** The comment posted and the draft cleared, but the task could not be reassigned. */
+  | { ok: false; reason: 'reassign-failed'; message: string; draft: BotsCommentDraft }
 
 export type BotsCommentDraftResult<T> = { ok: true; value: T } | BotsCommentDraftFailure
 
 /** Post sends the stored body, or saves `edit` first when the editor holds unsaved text. */
-export type BotsCommentDraftPostArgs = { id: string; edit?: Omit<BotsCommentDraftEdit, 'id'> }
+export type BotsCommentDraftPostArgs = {
+  id: string
+  edit?: Omit<BotsCommentDraftEdit, 'id'>
+  /** After posting, assign the task to this user. */
+  reassignTo?: number
+}
 
 export const BOTS_COMMENT_DRAFTS_CHANGED_MESSAGE = 'muster:comment-drafts-changed'
