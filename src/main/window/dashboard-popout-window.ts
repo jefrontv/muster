@@ -7,12 +7,8 @@ import { sendToTrustedUIRenderer } from '../ipc/ui'
 import { installPrivilegedWindowNavigationPolicy } from './privileged-window-navigation'
 import { stepUIZoomLevel, type UIZoomDirection } from '../../shared/ui-zoom-level'
 import { nativeZoomCommandMatchesKeybindings } from '../../shared/window-shortcut-policy'
-import {
-  keybindingMatchesAction,
-  type KeybindingActionId,
-  type KeybindingInput,
-  type KeybindingOverrides
-} from '../../shared/keybindings'
+import type { KeybindingOverrides } from '../../shared/keybindings'
+import { resolveZoomShortcut } from './zoom-shortcut-input'
 
 const MIN_WIDTH = 480
 const MIN_HEIGHT = 360
@@ -42,27 +38,6 @@ export function isDashboardPopoutRenderer(sender: WebContents): boolean {
 function zoomDashboardPopout(window: BrowserWindow, direction: UIZoomDirection): void {
   const webContents = window.webContents
   webContents.setZoomLevel(stepUIZoomLevel(webContents.getZoomLevel(), direction))
-}
-
-const ZOOM_SHORTCUTS: readonly [KeybindingActionId, UIZoomDirection][] = [
-  ['zoom.in', 'in'],
-  ['zoom.out', 'out'],
-  ['zoom.reset', 'reset']
-]
-
-function resolveZoomShortcut(
-  input: KeybindingInput,
-  keybindings: KeybindingOverrides | undefined
-): UIZoomDirection | null {
-  // Why: this runs on every keydown; avoid scanning unrelated window shortcuts in the typing path.
-  for (const [actionId, direction] of ZOOM_SHORTCUTS) {
-    if (
-      keybindingMatchesAction(actionId, input, process.platform, keybindings, { context: 'app' })
-    ) {
-      return direction
-    }
-  }
-  return null
 }
 
 /**

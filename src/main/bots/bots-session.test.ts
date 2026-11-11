@@ -85,6 +85,45 @@ describe('bots session', () => {
     expect(isBotsWebviewAttach(BOTS_PARTITION, 'http://127.0.0.1:18899/')).toBe(false)
   })
 
+  it('forwards zoom chords typed in the guest to Muster', () => {
+    const handlers = new Map<
+      string,
+      (event: { preventDefault: () => void }, input: object) => void
+    >()
+    const guest = {
+      setWindowOpenHandler: vi.fn(),
+      on: (
+        name: string,
+        handler: (event: { preventDefault: () => void }, input: object) => void
+      ) => {
+        handlers.set(name, handler)
+      }
+    }
+    const onZoom = vi.fn()
+    attachBotsGuestPolicies(guest as never, { onZoom })
+    const key = (k: string, code: string) => ({
+      type: 'keyDown',
+      key: k,
+      code,
+      meta: process.platform === 'darwin',
+      control: process.platform !== 'darwin',
+      shift: false,
+      alt: false
+    })
+    const zoomIn = { preventDefault: vi.fn() }
+    handlers.get('before-input-event')!(zoomIn, key('=', 'Equal'))
+    expect(onZoom).toHaveBeenCalledWith('in')
+    expect(zoomIn.preventDefault).toHaveBeenCalled()
+    const typing = { preventDefault: vi.fn() }
+    handlers.get('before-input-event')!(typing, {
+      ...key('a', 'KeyA'),
+      meta: false,
+      control: false
+    })
+    expect(onZoom).toHaveBeenCalledTimes(1)
+    expect(typing.preventDefault).not.toHaveBeenCalled()
+  })
+
   it('keeps the guest on the server and opens other links outside', () => {
     let openHandler: ((details: { url: string }) => { action: string }) | undefined
     let navigate: ((event: { preventDefault: () => void }, url: string) => void) | undefined

@@ -485,7 +485,10 @@ export function createMainWindow(
   mainWindow.webContents.on('did-attach-webview', (_event, guest) => {
     // Why: attach guest popup/nav policy at creation; waiting for renderer registration races target=_blank/early redirects past it.
     if (isBotsGuest(guest)) {
-      attachBotsGuestPolicies(guest)
+      attachBotsGuestPolicies(guest, {
+        onZoom: (direction) => mainWindow.webContents.send('terminal:zoom', direction),
+        getKeybindings: opts?.getKeybindings
+      })
       return
     }
     browserManager.attachGuestPolicies(guest)

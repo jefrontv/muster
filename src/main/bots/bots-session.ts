@@ -3,6 +3,9 @@
 // without the token, and Muster's browser sessions already own their onBeforeRequest hook.
 import { session, shell, type Session, type WebContents } from 'electron'
 import { BOTS_PARTITION } from '../../shared/bots-types'
+import type { KeybindingOverrides } from '../../shared/keybindings'
+import type { UIZoomDirection } from '../../shared/ui-zoom-level'
+import { resolveZoomShortcut } from '../window/zoom-shortcut-input'
 import { BOTS_OWNER_HEADER, botsOwnerCapability } from './bots-sidecar'
 
 // Clipboard and notifications are what the Bots UI asks for; mic, camera and the rest stay denied.
@@ -56,7 +59,27 @@ export function isBotsGuest(guest: WebContents): boolean {
 }
 
 /** Keeps the Bots guest on the bots server; links elsewhere open in the user's browser. */
-export function attachBotsGuestPolicies(guest: WebContents): void {
+export function attachBotsGuestPolicies(
+  guest: WebContents,
+  zoom: {
+    onZoom?: (direction: UIZoomDirection) => void
+    getKeybindings?: () => KeybindingOverrides | undefined
+  } = {}
+): void {
+  // Why: keys typed in the guest skip the main window's before-input-event, so zoom chords never reached Muster.
+  const { onZoom } = zoom
+  if (onZoom) {
+    guest.on('before-input-event', (event, input) => {
+      if (input.type !== 'keyDown') {
+        return
+      }
+      const direction = resolveZoomShortcut(input, zoom.getKeybindings?.())
+      if (direction) {
+        event.preventDefault()
+        onZoom(direction)
+      }
+    })
+  }
   const openOutside = (url: string): void => {
     if (/^https?:\/\//i.test(url)) {
       void shell.openExternal(url)
