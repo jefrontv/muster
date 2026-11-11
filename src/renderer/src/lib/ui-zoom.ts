@@ -1,5 +1,12 @@
 const isMac = navigator.userAgent.includes('Mac')
 
+// Webviews keep their own zoom, so hosts listen for this to follow the UI scale.
+export const UI_ZOOM_APPLIED_EVENT = 'muster:ui-zoom-applied'
+
+export function currentUIZoomFactor(): number {
+  return Math.pow(1.2, window.api.ui.getZoomLevel())
+}
+
 /**
  * Apply a UI zoom level change: sets webFrame zoom via the preload API,
  * updates the CSS variable used to compensate the traffic-light pad,
@@ -12,6 +19,7 @@ export function applyUIZoom(level: number): void {
   if (isMac) {
     window.api.ui.syncTrafficLights(zoomFactor)
   }
+  window.dispatchEvent(new CustomEvent(UI_ZOOM_APPLIED_EVENT, { detail: { zoomFactor } }))
 }
 
 /**

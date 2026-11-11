@@ -16,6 +16,7 @@ import { connectBotsDictation } from './bots-dictation-bridge'
 import { botsDictationHost } from './bots-dictation-host'
 import { BOTS_TOGGLE_CHROME_TOP, watchBotsSidebarRoom } from './bots-guest-layout'
 import { syncBotsHostTheme } from './bots-host-theme'
+import { syncBotsWebviewZoom } from './bots-webview-zoom'
 import { useBotsStatus } from './use-bots-status'
 import { useBotsCommentDrafts } from './use-bots-comment-drafts'
 import { useBotsCommentDraftsPanel, useBotsDraftsOverlay } from './use-bots-comment-drafts-panel'
@@ -61,10 +62,12 @@ function useBotsWebview(
     })
     const stopRoom = watchBotsSidebarRoom(webview, setSidebarRoom)
     const stopDictation = connectBotsDictation(webview, botsDictationHost)
+    const stopZoom = syncBotsWebviewZoom(webview)
     stopThemeSyncRef.current = () => {
       stopTheme()
       stopRoom()
       stopDictation()
+      stopZoom()
     }
   }, [containerRef, url, partition])
   useEffect(
