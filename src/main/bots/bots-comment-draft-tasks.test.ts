@@ -34,7 +34,7 @@ describe('bots draft task lookup', () => {
       title: 'Fix header',
       taskNumber: 101,
       projectName: 'Website',
-      handBackTo: null
+      handBackPeople: []
     })
     expect(second.title).toBe('Footer')
     await lookup.lookup({ projectId: 7, taskId: 1 })
@@ -79,8 +79,11 @@ describe('bots draft task lookup', () => {
     const [one, two, three] = await Promise.all(
       [1, 2, 3].map((taskId) => lookup.lookup({ projectId: 7, taskId }))
     )
-    expect(one.handBackTo).toEqual({ userId: 5, name: 'Sarah' })
-    expect(two.handBackTo).toEqual({ userId: 6, name: 'Cara' })
-    expect(three.handBackTo).toBeNull()
+    expect(two.handBackPeople).toEqual([{ userId: 6, name: 'Cara', role: 'creator' }])
+    expect(one.handBackPeople).toEqual([
+      { userId: 5, name: 'Sarah', role: 'delegator' },
+      { userId: 6, name: 'Cara', role: 'creator' }
+    ])
+    expect(three.handBackPeople).toEqual([{ userId: 6, name: 'Cara', role: 'creator' }])
   })
 })

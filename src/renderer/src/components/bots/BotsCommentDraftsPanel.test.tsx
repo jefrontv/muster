@@ -104,13 +104,18 @@ afterEach(cleanup)
 
 function renderCard(
   draft: BotsCommentDraft,
-  handBackTo: BotsCommentDraftTask['handBackTo'] = null
+  handBackPeople: BotsCommentDraftTask['handBackPeople'] = []
 ) {
   const view = render(
     <TooltipProvider>
       <BotsCommentDraftCard
         draft={draft}
-        task={{ title: 'Fix the header', taskNumber: 12, projectName: 'Website', handBackTo }}
+        task={{
+          title: 'Fix the header',
+          taskNumber: 12,
+          projectName: 'Website',
+          handBackPeople
+        }}
       />
     </TooltipProvider>
   )
@@ -262,13 +267,42 @@ describe('BotsCommentDraftCard', () => {
   })
 
   it('posts and hands the task back from the Post menu', async () => {
-    renderCard(draftFixture(), { userId: 5, name: 'Sarah' })
+    renderCard(draftFixture(), [{ userId: 5, name: 'Sarah', role: 'delegator' }])
     const trigger = screen.getByRole('button', { name: 'More post options' })
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Post & reassign to Sarah' }))
     await waitFor(() =>
       expect(bots.postCommentDraft).toHaveBeenCalledWith({ id: 'd1', reassignTo: 5 })
     )
+  })
+
+  it('offers the person @mentioned in the draft ahead of the task creator', async () => {
+    renderCard(
+      draftFixture({
+        projectId: 31,
+        bodyHtml:
+          '<p>Hey <span class="new_mention" data-user-id="9" data-type="user">Felicity Lemke</span></p>'
+      }),
+      [{ userId: 5, name: 'Efront Feedback', role: 'creator' }]
+    )
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'More post options' }), {
+      button: 0,
+      ctrlKey: false
+    })
+    const items = (await screen.findAllByRole('menuitem')).map((item) => item.textContent)
+    expect(items.slice(0, 3)).toEqual([
+      'Post',
+      'Post & reassign to Felicity Lemke',
+      'Post & reassign to Efront Feedback'
+    ])
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Post & reassign to Felicity Lemke' }))
+    await waitFor(() =>
+      expect(bots.postCommentDraft).toHaveBeenCalledWith({ id: 'd1', reassignTo: 9 })
+    )
+    expect(JSON.parse(localStorage.getItem('muster.bots.reassign.31') ?? 'null')).toEqual({
+      userId: 9,
+      name: 'Felicity Lemke'
+    })
   })
 
   it('keeps the card and shows why when ActiveCollab refuses the post', async () => {

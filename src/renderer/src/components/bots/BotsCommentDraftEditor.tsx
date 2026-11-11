@@ -280,7 +280,11 @@ export function BotsCommentDraftEditor({
             )}
             busy={busy === 'post'}
             disabled={busy !== null || files.busy || !hasText || newer !== null}
-            handBackTo={task?.handBackTo}
+            projectId={draft.projectId}
+            handBackPeople={task?.handBackPeople}
+            getBodyHtml={() =>
+              editor ? activeCollabCommentBodyHtml(editor.state.doc) : draft.bodyHtml
+            }
             onPost={(handBackTo) => void post(handBackTo)}
           />
         </div>

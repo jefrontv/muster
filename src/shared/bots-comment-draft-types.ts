@@ -40,9 +40,11 @@ export type BotsCommentDraftTask = {
   title: string | null
   taskNumber: number | null
   projectName: string | null
-  /** Who assigned the task (else who created it); null when unknown or it's the signed-in user. */
-  handBackTo?: { userId: number; name: string } | null
+  /** Delegator then creator, each once and never the signed-in user. */
+  handBackPeople?: BotsHandBackPerson[]
 }
+
+export type BotsHandBackPerson = { userId: number; name: string; role: 'delegator' | 'creator' }
 
 export type BotsCommentDraftEdit = {
   id: string

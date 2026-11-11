@@ -6,7 +6,10 @@ import type {
   ActiveCollabProjectTasks,
   ActiveCollabTask
 } from '../../shared/activecollab-types'
-import type { BotsCommentDraftTask } from '../../shared/bots-comment-draft-types'
+import type {
+  BotsCommentDraftTask,
+  BotsHandBackPerson
+} from '../../shared/bots-comment-draft-types'
 
 export type BotsDraftTaskSources = {
   listProjects: () => Promise<ActiveCollabResult<ActiveCollabProject[]>>
@@ -17,16 +20,29 @@ export type BotsDraftTaskSources = {
   people?: () => Promise<{ selfId: number; names: Map<number, string> }>
 }
 
-function handBackTo(
+function handBackPeople(
   row: Pick<ActiveCollabTask, 'delegatedById' | 'createdById' | 'createdByName'>,
   people: { selfId: number; names: Map<number, string> } | null
-): BotsCommentDraftTask['handBackTo'] {
-  const userId = row.delegatedById ?? row.createdById
-  if (userId === null || userId === undefined || !people || userId === people.selfId) {
-    return null
+): BotsHandBackPerson[] {
+  if (!people) {
+    return []
   }
-  const name = people.names.get(userId) ?? (userId === row.createdById ? row.createdByName : null)
-  return name ? { userId, name } : null
+  const found: BotsHandBackPerson[] = []
+  const add = (userId: number | null | undefined, role: BotsHandBackPerson['role']): void => {
+    if (userId === null || userId === undefined || userId === people.selfId) {
+      return
+    }
+    if (found.some((person) => person.userId === userId)) {
+      return
+    }
+    const name = people.names.get(userId) ?? (userId === row.createdById ? row.createdByName : null)
+    if (name) {
+      found.push({ userId, name, role })
+    }
+  }
+  add(row.delegatedById, 'delegator')
+  add(row.createdById, 'creator')
+  return found
 }
 
 // A task missing from the open list (completed, moved) is retried after this, not on every refetch.
@@ -75,7 +91,7 @@ export function createBotsDraftTaskLookup(
             title: row.name,
             taskNumber: row.taskNumber,
             projectName: names.get(projectId) ?? (row.projectName || null),
-            handBackTo: handBackTo(row, people)
+            handBackPeople: handBackPeople(row, people)
           },
           missUntil: null
         })

@@ -15034,9 +15034,7 @@
           "saveDraft": "Save draft",
           "postNow": "Post to ActiveCollab",
           "moreOptions": "More post options",
-          "noHandBack": "No one to hand this back to",
           "postReassign": "Post & reassign to {{value0}}",
-          "postReassignNone": "Post & reassign",
           "emptyTitle": "All caught up",
           "emptyBody": "New comment drafts from your bots show up here.",
           "reassignFailedCard": "Posted, but the task couldn't be reassigned: {{value0}}",
@@ -15053,7 +15051,12 @@
           "attachmentsFailed": "Not posted. A file could not be uploaded: {{value0}}",
           "viewComment": "Comment",
           "viewTask": "Task",
-          "openOnTasksPage": "Open on Tasks page"
+          "openOnTasksPage": "Open on Tasks page",
+          "reassignSomeoneElse": "Post & reassign to someone else",
+          "reassignFilter": "Find a person",
+          "reassignLoading": "Loading people…",
+          "reassignFailedLoad": "Couldn't load the project's people",
+          "reassignNoMatch": "No one matches"
         }
       }
     },

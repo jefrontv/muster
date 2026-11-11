@@ -237,7 +237,9 @@ export function BotsCommentDraftCard({
           )}
           busy={busy === 'post'}
           disabled={locked}
-          handBackTo={task?.handBackTo}
+          projectId={draft.projectId}
+          handBackPeople={task?.handBackPeople}
+          getBodyHtml={() => draft.bodyHtml}
           onPost={(handBackTo) =>
             void run('post', () => postCommentDraft(draft, postArgs(draft), handBackTo))
           }

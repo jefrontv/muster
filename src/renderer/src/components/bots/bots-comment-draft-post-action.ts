@@ -5,10 +5,10 @@ import type {
   BotsCommentDraft,
   BotsCommentDraftPostArgs,
   BotsCommentDraftResult,
-  BotsCommentDraftTask
+  BotsHandBackPerson
 } from '../../../../shared/bots-comment-draft-types'
 
-export type HandBackTo = NonNullable<BotsCommentDraftTask['handBackTo']>
+export type HandBackTo = Pick<BotsHandBackPerson, 'userId' | 'name'>
 
 function retryReassign(draft: BotsCommentDraft, to: HandBackTo): void {
   void window.api.bots
