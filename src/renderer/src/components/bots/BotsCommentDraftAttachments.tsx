@@ -1,9 +1,10 @@
-// A draft's files: chips with image thumbnails, a large view, and (in the editor) add and remove.
+// A draft's files: square tiles with image thumbnails, a large view, and (in the editor) add and remove.
 import { FileText, LoaderCircle, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { formatBytes } from '@/components/status-bar/workspace-space-format'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type {
@@ -43,7 +44,13 @@ function usePreview(draftId: string, file: BotsCommentDraftAttachment): string |
   return url
 }
 
-function Chip({
+function extension(name: string): string {
+  const dot = name.lastIndexOf('.')
+  return dot > 0 ? name.slice(dot + 1, dot + 5).toUpperCase() : ''
+}
+
+// Every file is the same square tile; the name and size live in the tooltip.
+function Tile({
   draftId,
   file,
   onOpen,
@@ -58,32 +65,40 @@ function Chip({
 }): React.JSX.Element {
   const url = usePreview(draftId, file)
   const label = `${file.name}, ${formatBytes(file.size)}`
+  const ext = extension(file.name)
   return (
-    <li className="flex max-w-56 min-w-0 items-center gap-1.5 rounded-lg bg-foreground/[0.05] py-1 pr-1 pl-1.5 text-xs">
-      <button
-        type="button"
-        className="flex min-w-0 items-center gap-1.5 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-default"
-        disabled={!url}
-        onClick={() => url && onOpen(url)}
-        aria-label={
-          url
-            ? translate('auto.components.bots.commentDrafts.viewFile', 'View {{value0}}', {
-                value0: file.name
-              })
-            : label
-        }
-        title={label}
-      >
-        {url ? (
-          <img src={url} alt="" className="size-8 shrink-0 rounded-md object-cover" />
-        ) : (
-          <FileText aria-hidden className="size-4 shrink-0 text-chat-ink-tertiary" />
-        )}
-        <span className="truncate text-foreground">{file.name}</span>
-        <span className="shrink-0 text-chat-ink-tertiary tabular-nums">
-          {formatBytes(file.size)}
-        </span>
-      </button>
+    <li className="group/tile relative size-12 shrink-0">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="flex size-full flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-foreground/[0.05] ring-1 ring-inset ring-foreground/[0.06] outline-none focus-visible:ring-2 focus-visible:ring-ring/50 enabled:hover:bg-foreground/[0.08]"
+            aria-disabled={!url}
+            onClick={() => url && onOpen(url)}
+            aria-label={
+              url
+                ? translate('auto.components.bots.commentDrafts.viewFile', 'View {{value0}}', {
+                    value0: file.name
+                  })
+                : label
+            }
+          >
+            {url ? (
+              <img src={url} alt="" className="size-full object-cover" />
+            ) : (
+              <>
+                <FileText aria-hidden className="size-4 text-chat-ink-tertiary" />
+                {ext ? (
+                  <span className="text-[9px] leading-none font-medium text-chat-ink-tertiary">
+                    {ext}
+                  </span>
+                ) : null}
+              </>
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{label}</TooltipContent>
+      </Tooltip>
       {onRemove ? (
         <button
           type="button"
@@ -96,9 +111,9 @@ function Chip({
               value0: file.name
             }
           )}
-          className="flex size-5 shrink-0 items-center justify-center rounded-sm text-chat-ink-tertiary outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50"
+          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-foreground text-background opacity-0 shadow-sm outline-none group-hover/tile:opacity-100 group-focus-within/tile:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-0"
         >
-          <X className="size-3.5" />
+          <X className="size-2.5" strokeWidth={3} />
         </button>
       ) : null}
     </li>
@@ -124,29 +139,31 @@ export function BotsCommentDraftAttachments({
   }
   return (
     <>
-      <ul
-        aria-label={translate('auto.components.bots.commentDrafts.files', 'Files')}
-        className={cn('flex flex-wrap gap-1.5', className)}
-      >
-        {draft.attachments.map((file) => (
-          <Chip
-            key={file.id}
-            draftId={draft.id}
-            file={file}
-            disabled={busy}
-            onOpen={(url) => setOpen({ url, name: file.name })}
-            onRemove={editable && onRemove ? () => onRemove(file) : undefined}
-          />
-        ))}
-        {busy ? (
-          <li className="flex items-center px-1.5" aria-live="polite">
-            <LoaderCircle className="size-3.5 animate-spin text-chat-ink-tertiary" />
-            <span className="sr-only">
-              {translate('auto.components.bots.commentDrafts.addingFiles', 'Adding files')}
-            </span>
-          </li>
-        ) : null}
-      </ul>
+      <TooltipProvider delayDuration={300}>
+        <ul
+          aria-label={translate('auto.components.bots.commentDrafts.files', 'Files')}
+          className={cn('flex flex-wrap gap-2 pt-1.5', className)}
+        >
+          {draft.attachments.map((file) => (
+            <Tile
+              key={file.id}
+              draftId={draft.id}
+              file={file}
+              disabled={busy}
+              onOpen={(url) => setOpen({ url, name: file.name })}
+              onRemove={editable && onRemove ? () => onRemove(file) : undefined}
+            />
+          ))}
+          {busy ? (
+            <li className="flex size-12 items-center justify-center" aria-live="polite">
+              <LoaderCircle className="size-3.5 animate-spin text-chat-ink-tertiary" />
+              <span className="sr-only">
+                {translate('auto.components.bots.commentDrafts.addingFiles', 'Adding files')}
+              </span>
+            </li>
+          ) : null}
+        </ul>
+      </TooltipProvider>
       <Dialog open={open !== null} onOpenChange={(next) => (next ? undefined : setOpen(null))}>
         <DialogContent className="gap-2 sm:max-w-4xl">
           <DialogTitle className="truncate text-sm">{open?.name}</DialogTitle>
