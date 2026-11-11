@@ -1,18 +1,11 @@
-// Editing a draft in a dialog with the ActiveCollab rich editor. A bot amend while editing never
-// replaces the person's text: it raises a banner offering the bot's version or keeping theirs.
+// The draft's Comment view inside BotsDraftDialog, with the ActiveCollab rich editor. A bot amend
+// while editing never replaces the person's text: it raises a banner offering the bot's version.
 import { LoaderCircle, Paperclip } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useEditorState } from '@tiptap/react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
+import { DialogFooter } from '@/components/ui/dialog'
 import { translate } from '@/i18n/i18n'
 import { hasBoundedCommentBodyText } from '@/lib/comment-body-submit-state'
 import type {
@@ -34,16 +27,19 @@ import { postCommentDraft, type HandBackTo } from './bots-comment-draft-post-act
 
 type Busy = 'save' | 'post' | null
 
+/** Read by the dialog: Escape must not close it over an open @mention menu or mid-request. */
+export type BotsDraftEditorGuard = { menuOpen: boolean; busy: boolean }
+
 export function BotsCommentDraftEditor({
   draft,
   task,
-  taskTitle,
+  guard,
   onClose
 }: {
   /** The latest draft from the server; a newer version than the one being edited is a conflict. */
   draft: BotsCommentDraft
   task: BotsCommentDraftTask | undefined
-  taskTitle: string
+  guard: React.RefObject<BotsDraftEditorGuard>
   onClose: () => void
 }): React.JSX.Element {
   const [baseVersion, setBaseVersion] = useState(draft.version)
@@ -62,6 +58,9 @@ export function BotsCommentDraftEditor({
     projectOnlyMentions: true
   })
   const { editor } = body
+  useEffect(() => {
+    guard.current = { menuOpen: body.menuOpen, busy: busy !== null }
+  })
   const files = useBotsDraftAttachmentAdding(draft)
   // The serialised seed, so an untouched editor posts without writing a new version.
   const seededHtml = useRef<string | null>(null)
@@ -181,125 +180,111 @@ export function BotsCommentDraftEditor({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => (open ? undefined : close())}>
-      <DialogContent
-        // minmax(0,1fr): a long truncated subtitle otherwise widens the grid past the dialog.
-        className="grid-cols-[minmax(0,1fr)] gap-3 sm:max-w-2xl"
-        // Escape first closes an open @mention menu, not the whole dialog.
-        onEscapeKeyDown={(event) => (body.menuOpen ? event.preventDefault() : undefined)}
-      >
-        <DialogHeader>
-          <DialogTitle>
-            {translate('auto.components.bots.commentDrafts.editTitle', 'Edit comment')}
-          </DialogTitle>
-          <DialogDescription className="truncate">
-            {[taskTitle, task?.projectName, draft.botName].filter(Boolean).join(' · ')}
-          </DialogDescription>
-        </DialogHeader>
-        {newer ? (
-          <div
-            role="alert"
-            className="flex flex-col gap-2 rounded-xl border border-chat-warn bg-chat-warn-tint px-3 py-2 text-xs text-chat-warn-ink"
-          >
-            <span>
-              {newer.editedBy === 'user'
-                ? translate(
-                    'auto.components.bots.commentDrafts.changedElsewhere',
-                    'This draft was changed in another window'
-                  )
-                : translate(
-                    'auto.components.bots.commentDrafts.botUpdated',
-                    '{{value0}} updated this draft',
-                    { value0: newer.botName }
-                  )}
-            </span>
-            <div className="flex gap-2">
-              <Button size="xs" variant="secondary" onClick={useTheirs}>
-                {newer.editedBy === 'user'
-                  ? translate('auto.components.bots.commentDrafts.useNewer', 'Use that version')
-                  : translate('auto.components.bots.commentDrafts.useTheirs', "Use {{value0}}'s", {
-                      value0: newer.botName
-                    })}
-              </Button>
-              <Button size="xs" variant="outline" onClick={keepMine}>
-                {translate('auto.components.bots.commentDrafts.keepMine', 'Keep mine')}
-              </Button>
-            </div>
-          </div>
-        ) : null}
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {newer ? (
         <div
-          data-slot="bots-draft-editor"
-          className="flex flex-col gap-2"
-          onPaste={files.onPaste}
-          {...files.dropTargetProps}
+          role="alert"
+          className="flex flex-col gap-2 rounded-xl border border-chat-warn bg-chat-warn-tint px-3 py-2 text-xs text-chat-warn-ink"
         >
-          <ActiveCollabRichBodyFrame
-            body={body}
-            attachments={null}
-            disabled={busy !== null}
-            dragging={files.dragging}
-            footer={null}
-          />
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              disabled={busy !== null || files.busy}
-              onClick={files.pick}
-              className="text-chat-ink-secondary"
-            >
-              <Paperclip className="size-3.5" />
-              {translate('auto.components.bots.commentDrafts.attachFiles', 'Attach files')}
+          <span>
+            {newer.editedBy === 'user'
+              ? translate(
+                  'auto.components.bots.commentDrafts.changedElsewhere',
+                  'This draft was changed in another window'
+                )
+              : translate(
+                  'auto.components.bots.commentDrafts.botUpdated',
+                  '{{value0}} updated this draft',
+                  { value0: newer.botName }
+                )}
+          </span>
+          <div className="flex gap-2">
+            <Button size="xs" variant="secondary" onClick={useTheirs}>
+              {newer.editedBy === 'user'
+                ? translate('auto.components.bots.commentDrafts.useNewer', 'Use that version')
+                : translate('auto.components.bots.commentDrafts.useTheirs', "Use {{value0}}'s", {
+                    value0: newer.botName
+                  })}
             </Button>
-            <BotsCommentDraftAttachments
-              draft={draft}
-              editable
-              busy={files.busy}
-              onRemove={files.remove}
-            />
+            <Button size="xs" variant="outline" onClick={keepMine}>
+              {translate('auto.components.bots.commentDrafts.keepMine', 'Keep mine')}
+            </Button>
           </div>
         </div>
-        {error || files.error ? (
-          <p role="status" className="text-xs text-destructive">
-            {error ?? files.error}
-          </p>
-        ) : null}
-        <DialogFooter className="items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            {translate(
-              'auto.components.bots.commentDrafts.mentionHint',
-              'Type @ to mention someone on the project'
+      ) : null}
+      <div
+        data-slot="bots-draft-editor"
+        // The editor takes the dialog's spare height; a long comment scrolls inside it.
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [&_.ProseMirror]:min-h-[220px]"
+        onPaste={files.onPaste}
+        {...files.dropTargetProps}
+      >
+        <ActiveCollabRichBodyFrame
+          body={body}
+          attachments={null}
+          disabled={busy !== null}
+          dragging={files.dragging}
+          footer={null}
+        />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            disabled={busy !== null || files.busy}
+            onClick={files.pick}
+            className="text-chat-ink-secondary"
+          >
+            <Paperclip className="size-3.5" />
+            {translate('auto.components.bots.commentDrafts.attachFiles', 'Attach files')}
+          </Button>
+          <BotsCommentDraftAttachments
+            draft={draft}
+            editable
+            busy={files.busy}
+            onRemove={files.remove}
+          />
+        </div>
+      </div>
+      {error || files.error ? (
+        <p role="status" className="text-xs text-destructive">
+          {error ?? files.error}
+        </p>
+      ) : null}
+      <DialogFooter className="items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          {translate(
+            'auto.components.bots.commentDrafts.mentionHint',
+            'Type @ to mention someone on the project'
+          )}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={close}>
+            {translate('auto.components.bots.commentDrafts.cancel', 'Cancel')}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={busy !== null || !hasText || newer !== null}
+            onClick={() => void save(baseVersion)}
+          >
+            {busy === 'save' ? <LoaderCircle className="size-4 animate-spin" /> : null}
+            {translate('auto.components.bots.commentDrafts.saveDraft', 'Save draft')}
+          </Button>
+          <BotsCommentDraftPostButton
+            size="sm"
+            label={postLabelWithFiles(
+              translate('auto.components.bots.commentDrafts.postNow', 'Post to ActiveCollab'),
+              draft
             )}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={close}>
-              {translate('auto.components.bots.commentDrafts.cancel', 'Cancel')}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              disabled={busy !== null || !hasText || newer !== null}
-              onClick={() => void save(baseVersion)}
-            >
-              {busy === 'save' ? <LoaderCircle className="size-4 animate-spin" /> : null}
-              {translate('auto.components.bots.commentDrafts.saveDraft', 'Save draft')}
-            </Button>
-            <BotsCommentDraftPostButton
-              size="sm"
-              label={postLabelWithFiles(
-                translate('auto.components.bots.commentDrafts.postNow', 'Post to ActiveCollab'),
-                draft
-              )}
-              busy={busy === 'post'}
-              disabled={busy !== null || files.busy || !hasText || newer !== null}
-              handBackTo={task?.handBackTo}
-              onPost={(handBackTo) => void post(handBackTo)}
-            />
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            busy={busy === 'post'}
+            disabled={busy !== null || files.busy || !hasText || newer !== null}
+            handBackTo={task?.handBackTo}
+            onPost={(handBackTo) => void post(handBackTo)}
+          />
+        </div>
+      </DialogFooter>
+    </div>
   )
 }

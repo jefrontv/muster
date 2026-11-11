@@ -15,7 +15,7 @@ import type {
 } from '../../../../shared/bots-comment-draft-types'
 import { activeCollabStamp } from '../activecollab-task-timestamps'
 import { BotsCommentDraftAttachments, postLabelWithFiles } from './BotsCommentDraftAttachments'
-import { BotsCommentDraftEditor } from './BotsCommentDraftEditor'
+import { BotsDraftDialog, type BotsDraftDialogView } from './BotsDraftDialog'
 import { BotsCommentDraftPostButton } from './BotsCommentDraftPostButton'
 import { postCommentDraft } from './bots-comment-draft-post-action'
 import { describeBotsCommentDraftFailure } from './bots-comment-draft-failure-message'
@@ -82,14 +82,12 @@ function postArgs(draft: BotsCommentDraft): BotsCommentDraftPostArgs {
 
 export function BotsCommentDraftCard({
   draft,
-  task,
-  onOpenTask
+  task
 }: {
   draft: BotsCommentDraft
   task: BotsCommentDraftTask | undefined
-  onOpenTask: (draft: BotsCommentDraft) => void
 }): React.JSX.Element {
-  const [editing, setEditing] = useState(false)
+  const [dialogView, setDialogView] = useState<BotsDraftDialogView | null>(null)
   const [asking, setAsking] = useState(false)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState<Action | null>(null)
@@ -182,12 +180,14 @@ export function BotsCommentDraftCard({
         {draft.bodyText.replace(/\n{2,}/g, '\n')}
       </p>
       <BotsCommentDraftAttachments draft={draft} />
-      {editing ? (
-        <BotsCommentDraftEditor
+      {dialogView ? (
+        <BotsDraftDialog
           draft={draft}
           task={task}
           taskTitle={title}
-          onClose={() => setEditing(false)}
+          view={dialogView}
+          onViewChange={setDialogView}
+          onClose={() => setDialogView(null)}
         />
       ) : null}
 
@@ -247,7 +247,7 @@ export function BotsCommentDraftCard({
           size="xs"
           variant="secondary"
           disabled={locked}
-          onClick={() => setEditing(true)}
+          onClick={() => setDialogView('comment')}
         >
           {translate('auto.components.bots.commentDrafts.edit', 'Edit')}
         </Button>
@@ -277,7 +277,7 @@ export function BotsCommentDraftCard({
           ) : null}
           <IconAction
             label={translate('auto.components.bots.commentDrafts.openTask', 'Open task')}
-            onClick={() => onOpenTask(draft)}
+            onClick={() => setDialogView('task')}
           >
             <ExternalLink className="size-3.5" />
           </IconAction>

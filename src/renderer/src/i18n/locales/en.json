@@ -15050,7 +15050,10 @@
           "postWithFile": "{{value0}} (1 file)",
           "postWithFiles": "{{value0}} ({{value1}} files)",
           "attachFiles": "Attach files",
-          "attachmentsFailed": "Not posted. A file could not be uploaded: {{value0}}"
+          "attachmentsFailed": "Not posted. A file could not be uploaded: {{value0}}",
+          "viewComment": "Comment",
+          "viewTask": "Task",
+          "openOnTasksPage": "Open on Tasks page"
         }
       }
     },

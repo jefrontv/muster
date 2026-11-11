@@ -39,6 +39,10 @@ vi.mock('@/runtime/runtime-activecollab-client', async (importOriginal) => ({
   activeCollabListProjectMembers: (args: { projectId: number }) => holder.listProjectMembers(args)
 }))
 
+vi.mock('../ActiveCollabTaskWorkspace', () => ({
+  ActiveCollabTaskWorkspace: ({ taskId }: { taskId: number }) => <div>Task pane {taskId}</div>
+}))
+
 // happy-dom has no contenteditable, so tests type through the real editor instance.
 vi.mock('@tiptap/react', async (importOriginal) => {
   const actual = await importOriginal<typeof TiptapReact>()
@@ -107,7 +111,6 @@ function renderCard(
       <BotsCommentDraftCard
         draft={draft}
         task={{ title: 'Fix the header', taskNumber: 12, projectName: 'Website', handBackTo }}
-        onOpenTask={vi.fn()}
       />
     </TooltipProvider>
   )
@@ -119,7 +122,6 @@ function renderCard(
           <BotsCommentDraftCard
             draft={next}
             task={{ title: 'Fix the header', taskNumber: 12, projectName: 'Website' }}
-            onOpenTask={vi.fn()}
           />
         </TooltipProvider>
       )
@@ -165,7 +167,6 @@ describe('BotsCommentDraftsPanel', () => {
           open={open}
           overlay={false}
           onOpenChange={onOpenChange}
-          onOpenTask={vi.fn()}
         />
       </TooltipProvider>
     )
@@ -199,7 +200,6 @@ describe('BotsCommentDraftsPanel', () => {
         open
         overlay={false}
         onOpenChange={vi.fn()}
-        onOpenTask={vi.fn()}
       />
     )
     expect(container).toBeEmptyDOMElement()
@@ -212,7 +212,6 @@ describe('BotsCommentDraftsPanel', () => {
         open={open}
         overlay={false}
         onOpenChange={vi.fn()}
-        onOpenTask={vi.fn()}
       />
     )
     const { container, rerender } = render(panel([draftFixture()], true), {
@@ -391,6 +390,31 @@ describe('BotsCommentDraftEditor', () => {
       id: 'd1',
       edit: { bodyHtml: '<p>Hi there</p>', bodyText: 'Hi there', baseVersion: 1 }
     })
+  })
+})
+
+describe('BotsDraftDialog views', () => {
+  it('opens the task view from Open task without leaving the Bots view', () => {
+    renderCard(draftFixture({ taskId: 42 }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open task' }))
+    expect(screen.getByRole('tab', { name: 'Task' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('Task pane 42')).toBeVisible()
+    expect(screen.getByRole('dialog')).toHaveTextContent('Fix the header')
+  })
+
+  it('keeps typed text when flipping to the task and back', async () => {
+    renderCard(draftFixture())
+    const editor = await openEditor()
+    typeAtEnd(editor, ' kept')
+    fireEvent.keyDown(screen.getByRole('dialog'), {
+      key: '2',
+      metaKey: navigator.userAgent.includes('Mac'),
+      ctrlKey: !navigator.userAgent.includes('Mac')
+    })
+    expect(screen.getByRole('tab', { name: 'Task' })).toHaveAttribute('aria-selected', 'true')
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Comment' }))
+    expect(screen.getByRole('tab', { name: 'Comment' })).toHaveAttribute('aria-selected', 'true')
+    expect(holder.editor?.getText()).toContain('Hi kept')
   })
 })
 

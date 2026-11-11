@@ -2,13 +2,12 @@
 // partition, the only session that carries the server's owner token.
 import { Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from '../chat-mode/ChatModeToggle'
-import type { BotsCommentDraft } from '../../../../shared/bots-comment-draft-types'
 import { BotsCommentDraftsPanel } from './BotsCommentDraftsPanel'
 import { BotsFailedActions } from './BotsFailedActions'
 import { BotsIntroDialog } from './BotsIntroDialog'
@@ -114,11 +113,6 @@ export default function BotsPage({ active = true }: { active?: boolean }): React
   const draftsPanel = useBotsCommentDraftsPanel(drafts.loaded ? drafts.drafts.length : null)
   const [contentRow, setContentRow] = useState<HTMLDivElement | null>(null)
   const draftsOverlay = useBotsDraftsOverlay(contentRow)
-  const openDraftTask = useCallback((draft: BotsCommentDraft) => {
-    const store = useAppStore.getState()
-    store.requestActiveCollabTask({ projectId: draft.projectId, taskId: draft.taskId })
-    store.openTaskPage()
-  }, [])
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col bg-background', !active && 'hidden')}>
@@ -189,7 +183,6 @@ export default function BotsPage({ active = true }: { active?: boolean }): React
             open={draftsPanel.open}
             overlay={draftsOverlay}
             onOpenChange={draftsPanel.setOpen}
-            onOpenTask={openDraftTask}
           />
         ) : null}
       </div>

@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
-import type { BotsCommentDraft } from '../../../../shared/bots-comment-draft-types'
 import { BotsCommentDraftCard } from './BotsCommentDraftCard'
 import type { BotsCommentDraftsState } from './use-bots-comment-drafts'
 
@@ -17,14 +16,12 @@ export function BotsCommentDraftsPanel({
   state,
   open,
   overlay,
-  onOpenChange,
-  onOpenTask
+  onOpenChange
 }: {
   state: Pick<BotsCommentDraftsState, 'drafts' | 'tasks' | 'error'>
   open: boolean
   overlay: boolean
   onOpenChange: (open: boolean) => void
-  onOpenTask: (draft: BotsCommentDraft) => void
 }): React.JSX.Element | null {
   const count = state.drafts.length
   // Once open with drafts, the panel outlives the last one (an empty state) until it is collapsed.
@@ -148,11 +145,7 @@ export function BotsCommentDraftsPanel({
           <ol className="scrollbar-sleek flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
             {state.drafts.map((draft) => (
               <li key={draft.id}>
-                <BotsCommentDraftCard
-                  draft={draft}
-                  task={state.tasks[draft.taskId]}
-                  onOpenTask={onOpenTask}
-                />
+                <BotsCommentDraftCard draft={draft} task={state.tasks[draft.taskId]} />
               </li>
             ))}
           </ol>
