@@ -1,5 +1,5 @@
 // One waiting draft: what it is for, who wrote it, a short preview, and the actions on it.
-import { ExternalLink, LoaderCircle, Trash2, Undo2 } from 'lucide-react'
+import { ExternalLink, LoaderCircle, Trash2, Undo2, WandSparkles } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -27,11 +27,13 @@ function IconAction({
   label,
   onClick,
   disabled,
+  expanded,
   children
 }: {
   label: string
   onClick: () => void
   disabled?: boolean
+  expanded?: boolean
   children: React.ReactNode
 }): React.JSX.Element {
   return (
@@ -42,9 +44,13 @@ function IconAction({
           variant="ghost"
           size="icon-xs"
           aria-label={label}
+          aria-expanded={expanded}
           disabled={disabled}
           onClick={onClick}
-          className="text-chat-ink-tertiary hover:text-foreground"
+          className={cn(
+            'text-chat-ink-tertiary hover:text-foreground',
+            expanded && 'bg-foreground/[0.06] text-foreground'
+          )}
         >
           {children}
         </Button>
@@ -245,23 +251,21 @@ export function BotsCommentDraftCard({
         >
           {translate('auto.components.bots.commentDrafts.edit', 'Edit')}
         </Button>
-        <Button
-          type="button"
-          size="xs"
-          variant="ghost"
-          disabled={locked}
-          aria-expanded={asking}
-          // Shrinks before the icon actions, so a long bot name never pushes them out of the card.
-          className={cn('min-w-0 shrink text-chat-ink-secondary', asking && 'text-foreground')}
-          onClick={() => setAsking((open) => !open)}
-        >
-          <span className="truncate">
-            {translate('auto.components.bots.commentDrafts.ask', 'Ask {{value0}} to change…', {
-              value0: draft.botName
-            })}
-          </span>
-        </Button>
         <div className="ml-auto flex shrink-0 items-center">
+          <IconAction
+            label={translate(
+              'auto.components.bots.commentDrafts.ask',
+              'Ask {{value0}} to change…',
+              {
+                value0: draft.botName
+              }
+            )}
+            disabled={locked}
+            expanded={asking}
+            onClick={() => setAsking((open) => !open)}
+          >
+            <WandSparkles className="size-3.5" />
+          </IconAction>
           {draft.canUndo ? (
             <IconAction
               label={translate('auto.components.bots.commentDrafts.undo', 'Undo last change')}
