@@ -183,7 +183,8 @@ export function BotsCommentDraftEditor({
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : close())}>
       <DialogContent
-        className="gap-3 sm:max-w-2xl"
+        // minmax(0,1fr): a long truncated subtitle otherwise widens the grid past the dialog.
+        className="grid-cols-[minmax(0,1fr)] gap-3 sm:max-w-2xl"
         // Escape first closes an open @mention menu, not the whole dialog.
         onEscapeKeyDown={(event) => (body.menuOpen ? event.preventDefault() : undefined)}
       >
