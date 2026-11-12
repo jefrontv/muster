@@ -6,6 +6,7 @@ import type {
   BotsCommentDraftResult
 } from '../../shared/bots-comment-draft-types'
 import type { BotsCommentDraftsClient } from './bots-comment-drafts-client'
+import { spaceParagraphsForActiveCollab } from './activecollab-paragraph-spacing'
 
 export type PostComment = (args: {
   taskId: number
@@ -68,7 +69,7 @@ export async function postBotsCommentDraft(
     }
     const posted = await postComment({
       taskId: draft.taskId,
-      bodyHtml: draft.bodyHtml,
+      bodyHtml: spaceParagraphsForActiveCollab(draft.bodyHtml),
       ...(attachmentCodes ? { attachmentCodes } : {})
     })
     if (!posted.ok) {
