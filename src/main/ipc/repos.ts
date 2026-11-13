@@ -113,6 +113,7 @@ import {
 import { getGitCloneFailureMessage } from '../../shared/git-clone-failure-message'
 import { prepareLocalWorktreeRootForRepo } from '../worktree-root-preparation'
 import { runWithGitReadCacheInvalidation } from '../git/status'
+import { adoptSiteForProject } from '../sites/site-for-added-project'
 
 // Why: `method` is the IPC entry point the user took, not what they added (never path/URL/name); repos:create → 'folder_picker'.
 // Why: `isGitRepo` is a non-identifying git-vs-folder signal from the caller's detection; pass undefined when unknown, never default false.
@@ -230,8 +231,10 @@ export async function addLocalRepoFromPath(
             : {})
         }) ?? existing
       await prepareLocalWorktreeRootForRepo(store, migrated)
+      adoptSiteForProject(store, migrated)
       return { repo: migrated, alreadyExisted: true }
     }
+    adoptSiteForProject(store, existing)
     return { repo: existing, alreadyExisted: true }
   }
 
@@ -259,6 +262,7 @@ export async function addLocalRepoFromPath(
 
   store.addRepo(repo)
   await prepareLocalWorktreeRootForRepo(store, repo)
+  adoptSiteForProject(store, repo)
   return { repo, alreadyExisted: false }
 }
 

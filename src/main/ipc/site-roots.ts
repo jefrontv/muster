@@ -39,6 +39,7 @@ import {
   type SiteRootsWatcherHandle
 } from '../sites/site-roots-watcher'
 import { failure } from './sites-result'
+import { adoptSitesForProjects } from '../sites/site-for-added-project'
 
 const SITE_ROOTS_CHANNELS = [
   'siteRoots:list',
@@ -150,6 +151,13 @@ export function registerSiteRootsHandlers(store: Store): void {
     }
   })
   watcher = roots
+
+  // Projects added with Add Project before it made Site records still need theirs.
+  try {
+    adoptSitesForProjects(store)
+  } catch {
+    // A missing record only hides a Site tab; it must not stop the Sites handlers registering.
+  }
 
   // Folders created while the app was closed produce no watcher event, so catch up once here.
   // Flipping the toggle on is handled by the renderer running the same action directly — nothing
