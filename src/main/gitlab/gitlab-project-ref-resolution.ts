@@ -1,5 +1,7 @@
 import { gitExecFileAsync, glabExecFileAsync } from '../git/runner'
 import type { IssueSourcePreference } from '../../shared/types'
+import { readLocalGitConfigSignature } from '../git/local-git-config-signature'
+import { isStableMissingGitRemoteError } from '../git/stable-missing-git-remote-error'
 import { getSshGitProvider } from '../providers/ssh-git-dispatch'
 import { clearProjectRefInFlight, runProjectRefProbeOnce } from './project-ref-inflight'
 import {
@@ -25,7 +27,14 @@ export {
 export type { LocalGitExecOptions } from './gitlab-known-host-probe'
 
 const PROJECT_REF_CACHE_MAX_ENTRIES = 512
-const projectRefCache = new Map<string, ProjectRef | null>()
+const SIGNED_TTL_MS = 5 * 60_000
+const UNSIGNED_TTL_MS = 30_000
+type ProjectRefCacheEntry = {
+  value: ProjectRef | null
+  signature: string | undefined
+  expiresAt: number
+}
+const projectRefCache = new Map<string, ProjectRefCacheEntry>()
 
 /** @internal - exposed for tests only */
 export function _resetProjectRefCache(): void {
@@ -38,15 +47,24 @@ export function _getProjectRefCacheSize(): number {
   return projectRefCache.size
 }
 
-function rememberProjectRefCacheEntry(cacheKey: string, value: ProjectRef | null): void {
-  projectRefCache.set(cacheKey, value)
+function rememberProjectRefCacheEntry(
+  cacheKey: string,
+  value: ProjectRef | null,
+  signature: string | undefined
+): ProjectRef | null {
+  projectRefCache.set(cacheKey, {
+    value,
+    signature,
+    expiresAt: Date.now() + (signature === undefined ? UNSIGNED_TTL_MS : SIGNED_TTL_MS)
+  })
   while (projectRefCache.size > PROJECT_REF_CACHE_MAX_ENTRIES) {
     const oldestKey = projectRefCache.keys().next().value
     if (oldestKey === undefined) {
-      return
+      break
     }
     projectRefCache.delete(oldestKey)
   }
+  return value
 }
 
 export async function getProjectRefForRemote(
@@ -56,22 +74,33 @@ export async function getProjectRefForRemote(
   connectionId?: string | null,
   localGitOptions: LocalGitExecOptions = {}
 ): Promise<ProjectRef | null> {
-  const runtimeKey = connectionId ?? `local:${localGitOptions.wslDistro ?? 'host'}`
-  const cacheKey = `${runtimeKey}\0${repoPath}\0${remoteName}\0${knownHosts.join(',')}`
-  if (projectRefCache.has(cacheKey)) {
-    return projectRefCache.get(cacheKey)!
-  }
-
-  return runProjectRefProbeOnce(cacheKey, () =>
-    resolveProjectRefForRemote(
+  const runtimeKey = connectionId
+    ? `ssh:${connectionId}`
+    : localGitOptions.wslDistro
+      ? `wsl:${localGitOptions.wslDistro}`
+      : 'native'
+  const cacheKey = JSON.stringify([runtimeKey, repoPath, remoteName, knownHosts])
+  return runProjectRefProbeOnce(cacheKey, async () => {
+    const signature = await readLocalGitConfigSignature({
+      repoPath,
+      connectionId,
+      ...localGitOptions
+    })
+    const cached = projectRefCache.get(cacheKey)
+    if (cached && cached.expiresAt > Date.now() && cached.signature === signature) {
+      return cached.value
+    }
+    projectRefCache.delete(cacheKey)
+    return resolveProjectRefForRemote(
       repoPath,
       remoteName,
       knownHosts,
       connectionId,
       cacheKey,
+      signature,
       localGitOptions
     )
-  )
+  })
 }
 
 async function resolveProjectRefForRemote(
@@ -80,6 +109,7 @@ async function resolveProjectRefForRemote(
   knownHosts: readonly string[],
   connectionId: string | null | undefined,
   cacheKey: string,
+  signature: string | undefined,
   localGitOptions: LocalGitExecOptions
 ): Promise<ProjectRef | null> {
   try {
@@ -95,8 +125,7 @@ async function resolveProjectRefForRemote(
         })
     const result = parseGitLabProjectRef(stdout, knownHosts)
     if (result) {
-      rememberProjectRefCacheEntry(cacheKey, result)
-      return result
+      return rememberProjectRefCacheEntry(cacheKey, result, signature)
     }
     const remoteCandidate = parseRemoteProjectRefCandidate(stdout)
     if (
@@ -109,16 +138,14 @@ async function resolveProjectRefForRemote(
       ))
     ) {
       rememberGlabKnownHost(remoteCandidate.host, connectionId, localGitOptions)
-      rememberProjectRefCacheEntry(cacheKey, remoteCandidate)
-      return remoteCandidate
+      return rememberProjectRefCacheEntry(cacheKey, remoteCandidate, signature)
     }
-  } catch {
-    if (connectionId) {
+  } catch (error) {
+    if (!isStableMissingGitRemoteError(error)) {
       return null
     }
   }
-  rememberProjectRefCacheEntry(cacheKey, null)
-  return null
+  return rememberProjectRefCacheEntry(cacheKey, null, signature)
 }
 
 export async function getProjectRef(

@@ -11,9 +11,17 @@ const pin = JSON.parse(readFileSync(path.join(root, 'config', 'muster-bots.json'
 const target = path.join(root, 'resources', 'muster-bots')
 const manifestPath = path.join(target, 'manifest.json')
 
-if (existsSync(manifestPath)) {
-  const installed = JSON.parse(readFileSync(manifestPath, 'utf8'))
-  if (installed.version === pin.version && !process.argv.includes('--force')) {
+if (
+  !process.argv.includes('--force') &&
+  existsSync(path.join(target, 'server', 'desktop-entry.mjs'))
+) {
+  let installedVersion
+  try {
+    installedVersion = JSON.parse(readFileSync(manifestPath, 'utf8'))?.version
+  } catch {
+    // Replace missing or unreadable manifests with a verified artifact.
+  }
+  if (installedVersion === pin.version) {
     console.log(`muster-bots ${pin.version} already in resources/muster-bots`)
     process.exit(0)
   }

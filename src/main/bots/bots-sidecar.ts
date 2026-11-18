@@ -125,6 +125,10 @@ async function launch(): Promise<BotsSidecarStatus> {
     setStatus({ state: 'missing' })
     return status
   }
+  if ('error' in resources) {
+    setStatus({ state: 'failed', error: resources.error })
+    return status
+  }
   setStatus({ state: 'starting' })
   try {
     const dataDir = botsDataDir()

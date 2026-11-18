@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as Sidecar from './bots-sidecar'
+import type { BotsResourceResolution } from './bots-resources'
 
 class FakeProc extends EventEmitter {
   pid = 4242
@@ -20,7 +21,7 @@ const mocks = vi.hoisted(() => ({
     entry: '/res/muster-bots/server/desktop-entry.mjs',
     uiDir: '/res/muster-bots/ui',
     skillsDir: '/res/muster-bots/skills'
-  } as Record<string, string> | null,
+  } as BotsResourceResolution,
   waitForBotsServer: vi.fn(async () => {}),
   fork: vi.fn(),
   writeCredentials: vi.fn()
@@ -79,6 +80,14 @@ describe('bots sidecar', () => {
     mocks.resources = null
     const sidecar = await loadSidecar()
     expect(await sidecar.startBotsSidecar()).toEqual({ state: 'missing' })
+    expect(mocks.fork).not.toHaveBeenCalled()
+  })
+
+  it('shows a dev bundle diagnostic without spawning the sidecar', async () => {
+    const error = 'Muster Bots dev bundle is stale. Run pnpm fetch:muster-bots.'
+    mocks.resources = { error }
+    const sidecar = await loadSidecar()
+    expect(await sidecar.startBotsSidecar()).toEqual({ state: 'failed', error })
     expect(mocks.fork).not.toHaveBeenCalled()
   })
 

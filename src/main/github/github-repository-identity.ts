@@ -1,13 +1,13 @@
 import { gitExecFileAsync } from '../git/runner'
 import type { GitHubOwnerRepo, IssueSourcePreference } from '../../shared/types'
 import { getSshGitProvider } from '../providers/ssh-git-dispatch'
-import { readLocalGitConfigSignature } from './local-git-config-signature'
+import { readLocalGitConfigSignature } from '../git/local-git-config-signature'
 import {
   parseGitHubOwnerRepo,
   parseGitHubRemoteIdentity,
   type GitHubRemoteIdentity
 } from './github-remote-identity-parsing'
-import { isStableMissingGitRemoteError } from './stable-missing-git-remote-error'
+import { isStableMissingGitRemoteError } from '../git/stable-missing-git-remote-error'
 import { githubRepoIdentityKey } from '../../shared/github-repository-identity-key'
 
 export type OwnerRepo = GitHubOwnerRepo

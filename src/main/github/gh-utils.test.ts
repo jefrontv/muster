@@ -33,7 +33,7 @@ import {
 import {
   __resetLocalGitConfigSignatureCacheForTests,
   readLocalGitConfigSignature
-} from './local-git-config-signature'
+} from '../git/local-git-config-signature'
 
 describe('github owner/repo resolution', () => {
   beforeEach(() => {

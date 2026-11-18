@@ -3,6 +3,7 @@
   "include": [
     "../electron.vite.config.*",
     "../build-plugins/**/*",
+    "./muster-bots.json",
     "../src/main/**/*",
     "../src/preload/**/*",
     "../src/shared/**/*",

@@ -1,3 +1,7 @@
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { gitExecFileAsyncMock, glabExecFileAsyncMock, sshExecMock } = vi.hoisted(() => ({
@@ -201,6 +205,88 @@ describe('gitlab project ref resolution', () => {
       host: 'gitlab.com',
       path: 'remote/orca'
     })
+  })
+
+  it('refreshes remote edits in a native repo and its linked worktree without waiting for expiry', async () => {
+    const folder = mkdtempSync(path.join(tmpdir(), 'muster-gitlab-'))
+    const worktree = `${folder}-linked`
+    const git = (cwd: string, args: string[]) =>
+      execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+    gitExecFileAsyncMock.mockImplementation(async (args: string[], { cwd }: { cwd: string }) => ({
+      stdout: git(cwd, args)
+    }))
+    try {
+      await expect(getProjectRef(folder)).resolves.toBeNull()
+      git(folder, ['init', '--quiet'])
+      git(folder, [
+        '-c',
+        'user.name=Muster test',
+        '-c',
+        'user.email=test@example.invalid',
+        '-c',
+        'commit.gpgsign=false',
+        '-c',
+        'core.hooksPath=.',
+        'commit',
+        '--quiet',
+        '--allow-empty',
+        '-m',
+        'fixture'
+      ])
+      git(folder, ['worktree', 'add', '--detach', '--quiet', worktree])
+      await expect(getProjectRef(folder)).resolves.toBeNull()
+      await expect(getProjectRef(worktree)).resolves.toBeNull()
+
+      git(folder, ['remote', 'add', 'origin', 'https://gitlab.com/team/first.git'])
+      for (const repo of [folder, worktree]) {
+        await expect(getProjectRef(repo)).resolves.toEqual({
+          host: 'gitlab.com',
+          path: 'team/first'
+        })
+      }
+      git(worktree, ['remote', 'set-url', 'origin', 'https://gitlab.com/team/second.git'])
+      for (const repo of [folder, worktree]) {
+        await expect(getProjectRef(repo)).resolves.toEqual({
+          host: 'gitlab.com',
+          path: 'team/second'
+        })
+      }
+      git(worktree, ['remote', 'remove', 'origin'])
+      await expect(getProjectRef(folder)).resolves.toBeNull()
+      await expect(getProjectRef(worktree)).resolves.toBeNull()
+    } finally {
+      rmSync(folder, { recursive: true, force: true })
+      rmSync(worktree, { recursive: true, force: true })
+    }
+  })
+
+  it('expires unsigned hits and misses independently for SSH connections with the same path', async () => {
+    let now = 1_000
+    const clock = vi.spyOn(Date, 'now').mockImplementation(() => now)
+    const secondExec = vi
+      .fn()
+      .mockResolvedValueOnce({ stdout: 'git@gitlab.com:second/before.git' })
+      .mockRejectedValueOnce(new Error("error: No such remote 'origin'"))
+    sshExecMock
+      .mockRejectedValueOnce(new Error("error: No such remote 'origin'"))
+      .mockResolvedValueOnce({ stdout: 'git@gitlab.com:first/after.git' })
+    registerSshGitProvider('conn-1', { exec: sshExecMock } as never)
+    registerSshGitProvider('conn-2', { exec: secondExec } as never)
+    try {
+      const first = () => getProjectRef('/repo', undefined, 'conn-1')
+      const second = () => getProjectRef('/repo', undefined, 'conn-2')
+      await expect(first()).resolves.toBeNull()
+      await expect(second()).resolves.toMatchObject({ path: 'second/before' })
+      now += 29_999
+      await expect(first()).resolves.toBeNull()
+      await expect(second()).resolves.toMatchObject({ path: 'second/before' })
+      now += 1
+      await expect(first()).resolves.toMatchObject({ path: 'first/after' })
+      await expect(second()).resolves.toBeNull()
+    } finally {
+      clock.mockRestore()
+      unregisterSshGitProvider('conn-2')
+    }
   })
 })
 

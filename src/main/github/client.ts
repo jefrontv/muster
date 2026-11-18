@@ -73,7 +73,7 @@ import {
   type HostedReviewExecutionOptions
 } from '../source-control/hosted-review-git-options'
 import { shouldHideNonOpenReviewOnDefaultBranch } from '../source-control/repo-default-branch'
-import { readLocalGitConfigSignature } from './local-git-config-signature'
+import { readLocalGitConfigSignature } from '../git/local-git-config-signature'
 import {
   getGitHubApiRepositoryForRemote,
   getIssueGitHubApiRepository,

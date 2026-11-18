@@ -61,6 +61,10 @@ pnpm install
 pnpm dev
 ```
 
+The Bots tab checks the default dev bundle against `config/muster-bots.json`.
+Run `pnpm fetch:muster-bots` to install the pinned bundle. Set `MUSTER_BOTS_DIR`
+to test a different local bundle without changing the pin.
+
 Build a local macOS package:
 
 ```bash

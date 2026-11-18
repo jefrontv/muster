@@ -1,7 +1,6 @@
 import { readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
-import type { GitHubRepoContext } from './github-repository-identity'
 
 type LocalGitConfigPaths = {
   commonConfigPath: string
@@ -10,9 +9,11 @@ type LocalGitConfigPaths = {
 
 const localGitConfigSignatureInFlight = new Map<string, Promise<string | undefined>>()
 
-export async function readLocalGitConfigSignature(
-  context: GitHubRepoContext
-): Promise<string | undefined> {
+export async function readLocalGitConfigSignature(context: {
+  repoPath: string
+  connectionId?: string | null
+  wslDistro?: string
+}): Promise<string | undefined> {
   if (context.connectionId || context.wslDistro) {
     // Why: this signature only covers host filesystem config files; remote
     // runtimes are already separated by cache key and probed through git.
