@@ -3,6 +3,7 @@
 
 import type { ChildProcess } from 'node:child_process'
 import type { ChatThreadStreamEvent } from '../../shared/chat-thread-stream-types'
+import type { ClaudeStatusLineRateLimits } from '../../shared/claude-statusline-rate-limits'
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 import type { ChatThreadEngineOptions } from './chat-thread-stream-engine'
 
@@ -34,6 +35,7 @@ export type ChatThreadStreamDeps = {
   engine?: ChatThreadEngineOptions
   /** Managed Claude account for this launch (config dir, stripped API-key vars). */
   claudeAuth?: ClaudeRuntimeAuthPreparation | null
+  onClaudeQuota?: (event: ClaudeStatusLineRateLimits, provenance: string) => void
   /** Let the idle reaper stop this child (R14). */
   idleReap?: boolean
   /** PATH lookup for a direct spawn; null keeps the shell path. */

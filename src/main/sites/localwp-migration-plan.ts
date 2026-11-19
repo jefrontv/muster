@@ -18,6 +18,7 @@
 // runLocalWpMigration re-plans and refuses whenever `ok` is false.
 
 import path from 'node:path'
+import { isLocalWpHostname } from '../../shared/site-local-domain'
 import { listRootEntriesToMove, type LocalWpFileOperations } from './localwp-app-public'
 import { findLocalWpSiteId, isLocalWpAppRunning } from './localwp-detection'
 import {
@@ -106,10 +107,11 @@ async function findBlockingPrecondition(
   if (!isLocalWpSupported(host)) {
     return LOCALWP_UNSUPPORTED_PLATFORM
   }
-  // ocsites defaults this from the project folder name and refuses a blank one; the caller supplies
-  // that default, so an empty value here means the user cleared it.
-  if (request.domain.trim().length === 0) {
+  if (!request.domain.trim()) {
     return 'A LocalWP domain is required (e.g. acme.local).'
+  }
+  if (!isLocalWpHostname(request.domain)) {
+    return 'Enter a LocalWP hostname such as acme.local. Use letters, numbers, and hyphens.'
   }
   // ocsites' two bails, and the only two either setup shares: `_detect_localwp` (tui_deploy:2828)
   // and `site_already_registered` (:2757, :2835).

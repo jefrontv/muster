@@ -224,6 +224,7 @@ export function SiteSetupDialog({
     source: source(),
     stack: choices?.serve.stack ?? null,
     domain: choices?.serve.domain ?? '',
+    adoptingLocalWp: plan?.stack.alreadyLocalWp,
     enabled: choices?.serve.enabled === true && !lockedSteps.includes('serve')
   })
 

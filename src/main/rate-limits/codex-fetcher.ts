@@ -36,6 +36,7 @@ import {
   createAuthFilesystemOperation,
   type SharedAuthFilesystemOperation
 } from './auth-filesystem-operation'
+import { readRecentCodexSessionQuota } from './codex-session-quota'
 
 const RPC_TIMEOUT_MS = 10_000
 const WSL_RPC_TIMEOUT_MS = 25_000
@@ -57,6 +58,7 @@ const MAX_DIAGNOSTIC_OUTPUT_LENGTH = 100_000
 export type FetchCodexRateLimitsOptions = {
   codexHomePath?: string | null
   allowPtyFallback?: boolean
+  preferSessionSnapshot?: boolean
   signal?: AbortSignal
 }
 
@@ -330,6 +332,71 @@ async function readBackendAuth(authPath: string, signal: AbortSignal): Promise<s
     throw result.error
   }
   return result.content
+}
+
+async function readCodexSessionIdentity(home: string, signal: AbortSignal) {
+  const raw = await readBackendAuth(join(home, 'auth.json'), signal)
+  const { tokens } = JSON.parse(raw) as CodexAuthFile
+  const accountId = tokens?.account_id
+  const jwt = tokens?.access_token?.split('.')[1]
+  if (typeof accountId !== 'string' || !accountId || !jwt) {
+    return null
+  }
+  const claims = JSON.parse(Buffer.from(jwt, 'base64url').toString('utf8')) as {
+    'https://api.openai.com/auth'?: { chatgpt_user_id?: unknown; chatgpt_account_id?: unknown }
+  }
+  const auth = claims['https://api.openai.com/auth']
+  const userId = auth?.chatgpt_user_id
+  return auth?.chatgpt_account_id === accountId && typeof userId === 'string' && userId
+    ? { accountId, userId }
+    : null
+}
+
+async function fetchViaSession(
+  options: FetchCodexRateLimitsOptions
+): Promise<ProviderRateLimits | null> {
+  const signal = createBackendRequestSignal(options.signal, 750)
+  const home = getCodexHomePath(options.codexHomePath)
+  const snapshot = (async () => {
+    const identity = await readCodexSessionIdentity(home, signal)
+    if (!identity) {
+      return null
+    }
+    const quota = await readRecentCodexSessionQuota(home, identity, signal)
+    if (!quota || signal.aborted) {
+      return null
+    }
+    const current = await readCodexSessionIdentity(home, signal)
+    return current?.accountId === identity.accountId && current.userId === identity.userId
+      ? quota
+      : null
+  })()
+  let onAbort: () => void = () => {}
+  const timeout = new Promise<null>((resolve) => {
+    onAbort = () => resolve(null)
+    if (signal.aborted) {
+      onAbort()
+    } else {
+      signal.addEventListener('abort', onAbort, { once: true })
+    }
+  })
+  const quota = await Promise.race([snapshot.catch(() => null), timeout]).finally(() =>
+    signal.removeEventListener('abort', onAbort)
+  )
+  if (!quota || signal.aborted) {
+    return null
+  }
+  const windows = classifyCodexRateLimitWindows(quota.limits)
+  return {
+    provider: 'codex',
+    session: mapRpcWindow(windows.session, CODEX_SESSION_WINDOW_MINUTES),
+    weekly: mapRpcWindow(windows.weekly, CODEX_WEEKLY_WINDOW_MINUTES),
+    planType: quota.planType,
+    updatedAt: quota.observedAt,
+    error: null,
+    status: 'ok',
+    usageMetadata: { source: 'live-session' }
+  }
 }
 
 async function getCodexBackendAuthHeaders(
@@ -1104,6 +1171,15 @@ export async function fetchCodexRateLimits(
           ? 'Timed out while checking Codex sign-in status'
           : 'Codex sign-in status is unavailable',
       status: 'error'
+    }
+  }
+  if (options?.preferSessionSnapshot) {
+    const sessionResult = await fetchViaSession(options)
+    if (options.signal?.aborted) {
+      return abortedCodexRateLimitResult()
+    }
+    if (sessionResult) {
+      return sessionResult
     }
   }
 

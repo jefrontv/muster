@@ -251,13 +251,16 @@ describe('previewLocalWpMigration', () => {
     expect(plan.blockedReason).toContain('domain is required')
   })
 
-  it('blocks an empty domain', async () => {
+  it.each([
+    ['  ', 'domain is required'],
+    ['christopher_boots.local', 'Use letters, numbers, and hyphens']
+  ])('blocks an invalid domain %j', async (domain, message) => {
     const tree = plainProject()
-    const plan = await previewLocalWpMigration(request({ domain: '  ' }), {
+    const plan = await previewLocalWpMigration(request({ domain }), {
       host: fakeHost({ appRunning: true }),
       fileOperations: tree.operations
     })
-    expect(plan.blockedReason).toContain('domain is required')
+    expect(plan.blockedReason).toContain(message)
   })
 })
 

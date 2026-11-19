@@ -171,6 +171,25 @@ function asRateLimitWindow(window: FakeRateLimitWindow): RateLimitWindow {
 }
 
 describe('RateLimitService', () => {
+  it('publishes a local Codex snapshot while another provider is still fetching', async () => {
+    const claude = deferred<ProviderRateLimits>()
+    mockFreshBackgroundProviderFetches()
+    vi.mocked(fetchClaudeRateLimits).mockReturnValueOnce(claude.promise)
+    vi.mocked(fetchCodexRateLimits).mockResolvedValueOnce({
+      ...okProvider('codex', 38),
+      usageMetadata: { source: 'live-session' }
+    })
+    const service = new RateLimitService()
+    const refresh = serviceInternals(service).fetchAll()
+    try {
+      await flushMicrotasks(8)
+      expect(service.getState().codex?.session?.usedPercent).toBe(38)
+    } finally {
+      claude.resolve(okProvider('claude', 18))
+      await refresh
+    }
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(fetchGeminiRateLimits).mockResolvedValue(okProvider('gemini', 0, Date.now()))
@@ -605,7 +624,7 @@ describe('RateLimitService', () => {
     }
   })
 
-  it('lets a user-directed refresh bypass the Claude Retry-After gate', async () => {
+  it('honors Claude Retry-After on manual refresh even after a live report', async () => {
     vi.useFakeTimers()
     try {
       vi.mocked(fetchClaudeRateLimits)
@@ -622,6 +641,15 @@ describe('RateLimitService', () => {
       expect(fetchClaudeRateLimits).toHaveBeenCalledTimes(1)
       expect(service.getState().claude?.status).toBe('error')
 
+      service.ingestLiveClaudeRateLimits({
+        configDir: null,
+        fiveHour: { used_percentage: 25 },
+        sevenDay: null
+      })
+      await service.refresh()
+      expect(fetchClaudeRateLimits).toHaveBeenCalledTimes(1)
+      expect(service.getState().claude?.session?.usedPercent).toBe(25)
+      await vi.advanceTimersByTimeAsync(40 * 60 * 1000)
       await service.refresh()
       expect(fetchClaudeRateLimits).toHaveBeenCalledTimes(2)
       expect(service.getState().claude?.status).toBe('ok')

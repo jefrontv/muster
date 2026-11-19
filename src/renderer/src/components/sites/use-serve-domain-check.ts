@@ -2,6 +2,7 @@
 // The clash check waits for a pause in typing and drops answers a newer keystroke superseded.
 
 import { useEffect, useRef, useState } from 'react'
+import { isLocalWpHostname } from '../../../../shared/site-local-domain'
 import type { SiteLocalStack } from '../../../../shared/site-types'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
@@ -44,11 +45,13 @@ export function useServeDomainCheck({
   source,
   stack,
   domain,
+  adoptingLocalWp,
   enabled
 }: {
   source: SiteSetupSource | null
   stack: SiteLocalStack | null
   domain: string
+  adoptingLocalWp?: boolean
   enabled: boolean
 }): string {
   const sites = useAppStore((s) => s.sites)
@@ -56,7 +59,20 @@ export function useServeDomainCheck({
     source,
     (siteId) => sites.find((entry) => entry.site.id === siteId)?.site.path ?? ''
   )
-  const ruleError = enabled && stack === 'ddev' ? ddevNameError(ddevNameFromValue(domain)) : ''
+  let ruleError = ''
+  if (enabled && stack === 'ddev') {
+    ruleError = ddevNameError(ddevNameFromValue(domain))
+  } else if (
+    enabled &&
+    stack === 'localwp' &&
+    !adoptingLocalWp &&
+    !isLocalWpHostname(domain.trim())
+  ) {
+    ruleError = translate(
+      'auto.components.sites.useServeDomainCheck.invalidLocalWpHostname',
+      'Enter a LocalWP hostname such as acme.local. Use letters, numbers, and hyphens.'
+    )
+  }
   const [clash, setClash] = useState('')
   const requestRef = useRef(0)
 

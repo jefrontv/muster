@@ -34,7 +34,7 @@ export function applyClaudeEnvPatch(
   return baseEnv
 }
 
-export function hasClaudeAuthEnvConflict(env: Record<string, string> | undefined): boolean {
+export function hasClaudeAuthEnvConflict(env: NodeJS.ProcessEnv | undefined): boolean {
   if (!env) {
     return false
   }

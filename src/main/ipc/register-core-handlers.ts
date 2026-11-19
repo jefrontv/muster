@@ -263,7 +263,9 @@ export function registerCoreHandlers(
   registerPlanAnnotationHandlers()
   registerSiteSetupApprovalHandlers(store)
   registerSiteSetupAgentHandlers()
-  registerChatThreadStreamHandlers(store, commitMessageAgentEnv)
+  registerChatThreadStreamHandlers(store, commitMessageAgentEnv, (event, provenance) =>
+    rateLimits.ingestLiveClaudeRateLimits(event, provenance)
+  )
   registerBotsHandlers(commitMessageAgentEnv, store)
   registerChatEngineHandlers()
   registerChatThreadTitleHandlers({

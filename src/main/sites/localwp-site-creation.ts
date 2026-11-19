@@ -3,6 +3,7 @@
 //
 // The admin password is only ever put in the request body — it is never logged and never returned.
 
+import { isLocalWpHostname } from '../../shared/site-local-domain'
 import { cancelUnreadResponseBody } from '../lib/unread-response-body'
 import { isLocalWpSupported, LOCALWP_UNSUPPORTED_PLATFORM, type LocalWpHost } from './localwp-host'
 import {
@@ -66,6 +67,13 @@ export async function addLocalWpSite(
   const { host } = options
   if (!isLocalWpSupported(host)) {
     return { ok: false, siteId: '', message: LOCALWP_UNSUPPORTED_PLATFORM }
+  }
+  if (!isLocalWpHostname(request.domain)) {
+    return {
+      ok: false,
+      siteId: '',
+      message: 'Enter a LocalWP hostname such as acme.local. Use letters, numbers, and hyphens.'
+    }
   }
   const connection = await readLocalWpConnectionInfo(host)
   if (!connection) {

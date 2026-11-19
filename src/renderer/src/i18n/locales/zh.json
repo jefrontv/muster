@@ -14307,7 +14307,8 @@
           "nameCharacters": "Use letters, digits and hyphens, not starting or ending with a hyphen."
         },
         "useServeDomainCheck": {
-          "clash": "{{domain}} is already used by {{name}} ({{path}}). Choose another."
+          "clash": "{{domain}} is already used by {{name}} ({{path}}). Choose another.",
+          "invalidLocalWpHostname": "请输入 LocalWP 主机名，例如 acme.local。请使用英文字母、数字和连字符。"
         },
         "setupApproval": {
           "anAgent": "An agent",

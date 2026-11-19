@@ -8,7 +8,11 @@ import {
   parseSiteBindUrl
 } from './site-bind-url'
 import type { SiteBindFields } from '../../shared/site-bind-types'
-import { defaultLocalDomain, repoSlug as bitbucketRepoSlug } from '../../shared/site-local-domain'
+import {
+  defaultLocalDomain,
+  isLocalWpHostname,
+  repoSlug as bitbucketRepoSlug
+} from '../../shared/site-local-domain'
 
 const MINIMUM = 'hostname=dedicated-11.example.com&username=acme'
 
@@ -138,6 +142,14 @@ describe('parseSiteBindUrl parameter aliases', () => {
 })
 
 describe('local domain derivation', () => {
+  it('generates valid hostnames from repository and folder names', () => {
+    expect(defaultLocalDomain('Christopher_Boots')).toBe('christopher-boots.local')
+    expect(defaultLocalDomain('--A site__')).toBe('a-site.local')
+    expect(defaultLocalDomain('_')).toBe('site.local')
+    expect(isLocalWpHostname(defaultLocalDomain('a'.repeat(90)))).toBe(true)
+    expect(isLocalWpHostname('christopher_boots.local')).toBe(false)
+    expect(isLocalWpHostname('https://christopher-boots.local')).toBe(false)
+  })
   it('drops every label but the first, so acme.com.au becomes acme.local', () => {
     expect(defaultLocalDomain('acme.com.au')).toBe('acme.local')
     expect(defaultLocalDomain('acme')).toBe('acme.local')

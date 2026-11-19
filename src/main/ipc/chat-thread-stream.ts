@@ -17,6 +17,7 @@ import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
 import { chatEngine } from '../chat-mode/engine/chat-engine-singleton'
 import { setChatStreamFilesRoot } from '../chat-mode/chat-thread-stream-files'
 import { hasClaudeAuthEnvConflict } from '../claude-accounts/environment'
+import type { ChatThreadStreamDeps } from '../chat-mode/chat-thread-stream-deps'
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
 import { isClaudeAuthSwitchInProgress } from '../claude-accounts/live-pty-gate'
 import type { CommitMessageAgentEnvironmentResolvers } from '../text-generation/commit-message-agent-environment'
@@ -98,7 +99,8 @@ let stopReaper: (() => void) | null = null
 
 export function registerChatThreadStreamHandlers(
   store: Store,
-  agentEnv?: CommitMessageAgentEnvironmentResolvers
+  agentEnv?: CommitMessageAgentEnvironmentResolvers,
+  onClaudeQuota?: ChatThreadStreamDeps['onClaudeQuota']
 ): void {
   for (const channel of CHANNELS) {
     ipcMain.removeHandler(channel)
@@ -165,6 +167,7 @@ export function registerChatThreadStreamHandlers(
               isAgentStatusHooksEnabled(store.getSettings()) ? agentHookServer.buildPtyEnv() : {},
             ...(mcp ? { mcp } : {}),
             claudeAuth,
+            onClaudeQuota,
             // Off until the new thread view resumes parked chats; the old view shows them as ended.
             idleReap: false,
             engine: { engine: chatEngine(), initialize: {} }

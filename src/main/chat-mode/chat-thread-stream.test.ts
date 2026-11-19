@@ -248,6 +248,45 @@ describe('startChatThreadStream', () => {
     stopAllChatThreadStreams()
   })
 
+  it('forwards quota from the selected Claude account with model flags present', () => {
+    const child = createFakeChild()
+    const { sender } = createSender()
+    const onClaudeQuota = vi.fn()
+    const resetsAt = Math.floor(Date.now() / 1000) + 3600
+    const configDir = join(tmpdir(), 'claude-managed')
+    const result = startChatThreadStream(
+      {
+        threadId: 't1',
+        command: 'claude --model sonnet -p',
+        env: { ANTHROPIC_BASE_URL: '' },
+        sender
+      },
+      {
+        ...DIRECT_SPAWN,
+        spawn: () => child,
+        onClaudeQuota,
+        claudeAuth: {
+          configDir,
+          envPatch: { CLAUDE_CONFIG_DIR: configDir },
+          provenance: 'managed:account',
+          runtime: 'host',
+          stripAuthEnv: true
+        }
+      }
+    )
+    expect(result.ok).toBe(true)
+    const message = {
+      type: 'rate_limit_event',
+      rate_limit_info: { utilization: 0.25, resetsAt, rateLimitType: 'five_hour' }
+    }
+    child.stdout.write(`${JSON.stringify(message)}\n`)
+    expect(onClaudeQuota).toHaveBeenCalledWith(
+      { configDir, fiveHour: { used_percentage: 25, resets_at: resetsAt }, sevenDay: null },
+      'managed:account'
+    )
+    child.emit('close', 0)
+  })
+
   it.skipIf(process.platform === 'win32')(
     'refuses a missing workspace folder instead of spawning into ENOENT',
     () => {

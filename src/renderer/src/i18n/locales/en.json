@@ -14341,7 +14341,8 @@
           "nameCharacters": "Use letters, digits and hyphens, not starting or ending with a hyphen."
         },
         "useServeDomainCheck": {
-          "clash": "{{domain}} is already used by {{name}} ({{path}}). Choose another."
+          "clash": "{{domain}} is already used by {{name}} ({{path}}). Choose another.",
+          "invalidLocalWpHostname": "Enter a LocalWP hostname such as acme.local. Use letters, numbers, and hyphens."
         },
         "setupApproval": {
           "anAgent": "An agent",

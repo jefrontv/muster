@@ -12,7 +12,19 @@ export function defaultLocalDomain(name: string): string {
     base = base.slice(0, -'.local'.length)
   }
   const [first] = base.split('.')
-  return `${first || 'site'}.local`
+  const label = first
+    ?.replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+/, '')
+    .slice(0, 63)
+    .replace(/-+$/, '')
+  return `${label || 'site'}.local`
+}
+
+export function isLocalWpHostname(domain: string): boolean {
+  return (
+    domain.length <= 253 &&
+    domain.split('.').every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label))
+  )
 }
 
 /** Last path segment of `workspace/slug`, minus any `.git` suffix. */

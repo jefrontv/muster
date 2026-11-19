@@ -3,6 +3,10 @@
 // stdin carries user turns.
 
 import { spawn as nodeSpawn, type ChildProcess } from 'node:child_process'
+import { basename } from 'node:path'
+import { hasClaudeAuthEnvConflict } from '../claude-accounts/environment'
+import { parseClaudeStreamQuota } from '../rate-limits/claude-stream-quota'
+import { chatCommandArgv } from './chat-thread-stream-argv'
 import { buildChatThreadStreamSpawnPlan } from './chat-thread-stream-spawn-plan'
 import { chatThreadStreamPreflightFailure } from './chat-thread-stream-preflight'
 import { CHAT_THREAD_STREAM_EVENT_CHANNEL } from '../../shared/chat-thread-stream-types'
@@ -195,10 +199,29 @@ export function startChatThreadStream(
     }
   }
   const emit = entry.emit
+  const quotaCommand = deps.onClaudeQuota ? chatCommandArgv(args.command) : null
+  const quotaAuth =
+    deps.claudeAuth?.runtime === 'host' &&
+    quotaCommand?.[0] === 'claude' &&
+    (basename(plan.file)
+      .toLowerCase()
+      .replace(/\.exe$/, '') === 'claude' ||
+      plan.options.windowsVerbatimArguments) &&
+    !quotaCommand.some((arg) => /^--(?:settings|setting-sources)(?:=|$)/.test(arg)) &&
+    !plan.options.env.ANTHROPIC_BASE_URL &&
+    !hasClaudeAuthEnvConflict(plan.options.env)
+      ? deps.claudeAuth
+      : null
   const decoder = createChatThreadStreamDecoder(threadId, emit, (record) => {
     entry.lastActivityAt = Date.now()
     mcpAttach.observe(record)
     entry.engine?.observe(record)
+    if (quotaAuth && deps.onClaudeQuota && record.type === 'rate_limit_event') {
+      const quota = parseClaudeStreamQuota(record, plan.options.env.CLAUDE_CONFIG_DIR ?? null)
+      if (quota) {
+        deps.onClaudeQuota(quota, quotaAuth.provenance)
+      }
+    }
     // Learn every model the CLI reports so new models adapt without a release.
     for (const entry of resultModelWindows(record)) {
       void recordClaudeModelSighting({ model: entry.model, contextWindow: entry.contextWindow })

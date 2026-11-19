@@ -192,6 +192,7 @@ export class RateLimitService {
   private claudeFetchGeneration = 0
   // Why: statusline ingest must attribute live windows to the selected account without re-running the side-effectful auth sync per post.
   private lastClaudeAuthSnapshot: { configDir: string | null; provenance: string } | null = null
+  private claudeLiveWindowAt: { session?: number; weekly?: number } = {}
   private opencodeFetchGeneration = 0
   private minimaxFetchGeneration = 0
   private lastOpencodeConfigHash = ''
@@ -213,6 +214,7 @@ export class RateLimitService {
   private inactiveCodexAccountsResolver: (() => InactiveCodexAccountInfo[]) | null = null
   private networkProxySettingsResolver: (() => NetworkProxySettings) | null = null
   private inactiveClaudeCache = new Map<string, ProviderRateLimits>()
+  private claudeRetryAtByAccount = new Map<string, number>()
   private inactiveCodexCache = new Map<string, ProviderRateLimits>()
   private inactiveClaudeFetching = new Set<string>()
   private inactiveCodexFetching = new Set<string>()
@@ -546,6 +548,12 @@ export class RateLimitService {
           continue
         }
         try {
+          const accountKey = `managed:${account.id}`
+          if (this.getClaudeRetryAt(accountKey) !== undefined) {
+            this.inactiveClaudeFetching.delete(account.id)
+            this.pushToRenderer()
+            continue
+          }
           const fresh = await fetchManagedAccountUsage(account, {
             allowUsagePanelSupplement: this.shouldAllowClaudeUsagePanelSupplement(),
             networkProxySettings: this.networkProxySettingsResolver?.(),
@@ -564,6 +572,7 @@ export class RateLimitService {
             continue
           }
           const cached = this.inactiveClaudeCache.get(account.id) ?? null
+          this.rememberClaudeRetryAfter(accountKey, fresh)
           this.inactiveClaudeCache.set(account.id, this.applyStalePolicy(fresh, cached))
         } catch {
           // Why: per-account try/catch keeps one Keychain/network error from aborting the remaining accounts in the batch.
@@ -668,6 +677,7 @@ export class RateLimitService {
   }
 
   evictInactiveClaudeCache(accountId: string): void {
+    this.claudeRetryAtByAccount.delete(`managed:${accountId}`)
     this.inactiveClaudeAccountsGeneration += 1
     this.inactiveClaudeCache.delete(accountId)
     this.inactiveClaudeFetching.delete(accountId)
@@ -905,7 +915,7 @@ export class RateLimitService {
 
     try {
       let shouldContinue = true
-      // Why: only user-directed (force) fetches may bypass a provider's Retry-After gate; queued reruns inherit force because only forced calls queue them.
+      // Queued reruns inherit force because only forced calls queue them.
       let cycleForce = options?.force ?? false
       while (shouldContinue) {
         const signal = await this.runWithFetchAbortSignal((fetchSignal) =>
@@ -967,10 +977,12 @@ export class RateLimitService {
 
     try {
       let shouldContinue = true
+      let force = options?.force ?? false
       while (shouldContinue) {
         const signal = await this.runWithFetchAbortSignal((fetchSignal) =>
-          this.runFetchCodexOnlyCycle(fetchSignal)
+          this.runFetchCodexOnlyCycle(fetchSignal, force)
         )
+        force = true
         shouldContinue = false
         if (signal.aborted) {
           break
@@ -1372,8 +1384,38 @@ export class RateLimitService {
     )
   }
 
+  private getClaudeRetryAt(provenance: string): number | undefined {
+    const key = provenance.replace(/^(managed:[^:]+):wsl:.*$/, '$1')
+    const retryAt = this.claudeRetryAtByAccount.get(key)
+    if (retryAt !== undefined && retryAt > Date.now()) {
+      return retryAt
+    }
+    this.claudeRetryAtByAccount.delete(key)
+    return undefined
+  }
+
+  private rememberClaudeRetryAfter(provenance: string, limits: ProviderRateLimits): void {
+    const key = provenance.replace(/^(managed:[^:]+):wsl:.*$/, '$1')
+    const retryAt = limits.usageMetadata?.retryAtMs
+    if (retryAt !== undefined) {
+      this.claudeRetryAtByAccount.set(
+        key,
+        Math.max(retryAt, this.claudeRetryAtByAccount.get(key) ?? 0)
+      )
+    }
+  }
+
   private shouldSkipAutomatedClaudeFetch(limits: ProviderRateLimits | null): boolean {
-    return this.isRetryAfterActive(limits) || this.isLiveClaudeUsageFresh(limits)
+    const now = Date.now()
+    return (
+      this.isRetryAfterActive(limits) ||
+      (this.isLiveClaudeUsageFresh(limits) &&
+        now - (this.claudeLiveWindowAt.session ?? -Infinity) < MIN_REFETCH_MS &&
+        now - (this.claudeLiveWindowAt.weekly ?? -Infinity) < MIN_REFETCH_MS &&
+        [limits?.session, limits?.weekly].every(
+          (window) => window && (window.resetsAt === null || window.resetsAt > now)
+        ))
+    )
   }
 
   private resolveClaudeFetchApply(
@@ -1401,14 +1443,21 @@ export class RateLimitService {
     ) {
       return
     }
-    this.lastClaudeAuthSnapshot = {
+    const authSnapshot = {
       configDir: normalizeClaudeConfigDir(authPreparation?.envPatch.CLAUDE_CONFIG_DIR),
       provenance: authPreparation?.provenance ?? 'system'
     }
+    if (
+      authSnapshot.configDir !== this.lastClaudeAuthSnapshot?.configDir ||
+      authSnapshot.provenance !== this.lastClaudeAuthSnapshot?.provenance
+    ) {
+      this.claudeLiveWindowAt = {}
+    }
+    this.lastClaudeAuthSnapshot = authSnapshot
   }
 
   /** Live usage windows forwarded from a Claude session's statusLine command. */
-  ingestLiveClaudeRateLimits(event: ClaudeStatusLineRateLimits): void {
+  ingestLiveClaudeRateLimits(event: ClaudeStatusLineRateLimits, provenance?: string): void {
     // Why: attribution needs the selected account's config dir; until a fetch cycle captures it, drop posts rather than guess the account.
     const snapshot = this.lastClaudeAuthSnapshot
     if (!snapshot) {
@@ -1419,7 +1468,10 @@ export class RateLimitService {
       return
     }
     // Why: sessions of other accounts (or other runtimes) report their own quota; mixing them into the active account's bar would lie.
-    if (normalizeClaudeConfigDir(event.configDir) !== snapshot.configDir) {
+    if (
+      (provenance !== undefined && provenance !== snapshot.provenance) ||
+      normalizeClaudeConfigDir(event.configDir) !== snapshot.configDir
+    ) {
       console.debug('[rate-limits] dropped live Claude usage: configDir mismatch', {
         eventConfigDir: event.configDir,
         snapshotConfigDir: snapshot.configDir
@@ -1430,6 +1482,13 @@ export class RateLimitService {
     const freshWeekly = mapClaudeUsageWindow(event.sevenDay ?? undefined, 10080)
     if (!freshSession && !freshWeekly) {
       return
+    }
+    const now = Date.now()
+    if (freshSession) {
+      this.claudeLiveWindowAt.session = now
+    }
+    if (freshWeekly) {
+      this.claudeLiveWindowAt.weekly = now
     }
     const previous = this.state.claude
     // Why: statusline payloads can carry a single window; an absent one means "no update", not "cleared" — keep the other bar populated.
@@ -1448,13 +1507,14 @@ export class RateLimitService {
     this.updateState({
       ...this.state,
       claude: {
+        ...previous,
         provider: 'claude',
         session,
         weekly,
         // Why: the statusline payload has no Fable scoped window; keep the last OAuth-provided one visible.
         // Tradeoff: while live posts keep the OAuth poll gated, fableWeekly stays frozen until the session idles past the freshness window.
         fableWeekly: previous?.fableWeekly ?? null,
-        updatedAt: Date.now(),
+        updatedAt: now,
         error: null,
         status: 'ok',
         usageMetadata: {
@@ -1582,6 +1642,28 @@ export class RateLimitService {
     const missingWslCodexHome = codexHomePath
       ? null
       : this.getMissingWslCodexHomeResult(codexTarget)
+    const codexResultPromise = Promise.resolve(
+      missingWslCodexHome ??
+        fetchCodexRateLimits({
+          codexHomePath,
+          allowPtyFallback: this.shouldAllowCodexPtyFallback(),
+          preferSessionSnapshot: !options?.force,
+          signal
+        })
+    ).then((codex) => {
+      if (
+        !signal.aborted &&
+        codex.usageMetadata?.source === 'live-session' &&
+        codexGeneration === this.codexFetchGeneration &&
+        this.isSameCodexTarget(codexTarget, this.codexFetchTarget)
+      ) {
+        this.updateState({
+          ...this.state,
+          codex: this.resolveCodexFetchApply(codex, previousState.codex)
+        })
+      }
+      return codex
+    })
     const grokResultPromise = fetchGrokRateLimits({
       signal,
       authReadResult: grokAuthReadResult
@@ -1592,7 +1674,8 @@ export class RateLimitService {
 
     // Why: skip automated Claude fetches while a Retry-After window is open or a live session feed is fresher than the OAuth poll would be.
     const claudeFetchGated =
-      !options?.force && this.shouldSkipAutomatedClaudeFetch(previousState.claude)
+      this.getClaudeRetryAt(claudeProvenance) !== undefined ||
+      (!options?.force && this.shouldSkipAutomatedClaudeFetch(previousState.claude))
 
     const [claudeResult, codexResult, geminiResult, opencodeGoResult, kimiResult, miniMaxResult] =
       await Promise.allSettled([
@@ -1605,12 +1688,7 @@ export class RateLimitService {
               networkProxySettings: this.networkProxySettingsResolver?.(),
               signal
             }),
-        missingWslCodexHome ??
-          fetchCodexRateLimits({
-            codexHomePath,
-            allowPtyFallback: this.shouldAllowCodexPtyFallback(),
-            signal
-          }),
+        codexResultPromise,
         fetchGeminiRateLimits(geminiCliOAuthEnabled),
         fetchOpenCodeGoRateLimits(
           cookie,
@@ -1737,6 +1815,7 @@ export class RateLimitService {
     const shouldApplyOpencode = opencodeGeneration === this.opencodeFetchGeneration
     const shouldApplyMiniMax = miniMaxGeneration === this.minimaxFetchGeneration
 
+    this.rememberClaudeRetryAfter(claudeProvenance, claude)
     if (shouldApplyClaude) {
       this.trackActiveFailureStreak('claude', claude)
     }
@@ -1760,7 +1839,7 @@ export class RateLimitService {
         ? this.resolveClaudeFetchApply(claude, previousState.claude)
         : this.state.claude,
       codex: shouldApplyCodex
-        ? this.applyStalePolicy(codex, previousState.codex)
+        ? this.resolveCodexFetchApply(codex, previousState.codex)
         : this.state.codex,
       gemini: this.applyStalePolicy(gemini, previousState.gemini),
       opencodeGo: shouldApplyOpencode
@@ -1799,7 +1878,7 @@ export class RateLimitService {
     })
   }
 
-  private async runFetchCodexOnlyCycle(signal: AbortSignal): Promise<void> {
+  private async runFetchCodexOnlyCycle(signal: AbortSignal, force = true): Promise<void> {
     if (signal.aborted) {
       return
     }
@@ -1823,6 +1902,7 @@ export class RateLimitService {
         : fetchCodexRateLimits({
             codexHomePath,
             allowPtyFallback: this.shouldAllowCodexPtyFallback(),
+            preferSessionSnapshot: !force,
             signal
           })
     ).catch(
@@ -1850,7 +1930,9 @@ export class RateLimitService {
     }
     this.updateState({
       ...this.state,
-      codex: shouldApplyCodex ? this.applyStalePolicy(codex, previousState.codex) : this.state.codex
+      codex: shouldApplyCodex
+        ? this.resolveCodexFetchApply(codex, previousState.codex)
+        : this.state.codex
     })
   }
 
@@ -1874,6 +1956,21 @@ export class RateLimitService {
     }
     this.rememberClaudeAuthSnapshot(claudeAuthPreparation, claudeGeneration, claudeTarget)
     const claudeProvenance = claudeAuthPreparation?.provenance ?? 'system'
+    const retryAtMs = this.getClaudeRetryAt(claudeProvenance)
+    if (retryAtMs !== undefined) {
+      if (this.state.claude?.status === 'fetching') {
+        this.updateState({
+          ...this.state,
+          claude: {
+            ...this.state.claude,
+            status: 'error',
+            error: 'Claude usage is rate limited right now.',
+            usageMetadata: { failureKind: 'rate-limited', retryAtMs }
+          }
+        })
+      }
+      return
+    }
     const previousState = this.state
 
     this.updateState({
@@ -1912,6 +2009,7 @@ export class RateLimitService {
       claudeProvenance === latestClaudeProvenance &&
       this.isSameClaudeTarget(claudeTarget, this.claudeFetchTarget)
 
+    this.rememberClaudeRetryAfter(claudeProvenance, claude)
     if (shouldApplyClaude) {
       this.trackActiveFailureStreak('claude', claude)
     }
@@ -1959,6 +2057,29 @@ export class RateLimitService {
       ...this.state,
       grok: this.applyStalePolicy(grok, previousState.grok)
     })
+  }
+
+  private resolveCodexFetchApply(
+    fresh: ProviderRateLimits,
+    previous: ProviderRateLimits | null
+  ): ProviderRateLimits {
+    if (fresh.usageMetadata?.source === 'live-session' && previous) {
+      if (
+        previous.status === 'ok' &&
+        previous.updatedAt > fresh.updatedAt &&
+        [previous.session, previous.weekly].every(
+          (window) => window?.resetsAt == null || window.resetsAt > Date.now()
+        )
+      ) {
+        return previous
+      }
+      fresh = {
+        ...fresh,
+        planType: fresh.planType ?? previous.planType,
+        rateLimitResetCredits: previous.rateLimitResetCredits
+      }
+    }
+    return this.applyStalePolicy(fresh, previous)
   }
 
   private applyStalePolicy(
