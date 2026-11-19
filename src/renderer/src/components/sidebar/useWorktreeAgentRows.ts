@@ -10,6 +10,7 @@ import {
 } from './worktree-card-status-inputs'
 import { buildWorktreeAgentRows } from './worktree-agent-rows'
 import {
+  selectForegroundAgentsForWorktree,
   selectLiveAgentStatusEntriesForWorktree,
   selectMigrationUnsupportedEntriesForWorktree,
   selectRuntimeAgentOrchestrationForWorktree,
@@ -71,6 +72,9 @@ export function useWorktreeAgentRows(worktreeId: string, active = true): Dashboa
   const terminalLayoutsByTabId = useAppStore(
     useShallow((s) => (active ? selectTerminalLayoutsForWorktree(s, worktreeId) : {}))
   )
+  const foregroundAgentsByPaneKey = useAppStore(
+    useShallow((s) => (active ? selectForegroundAgentsForWorktree(s, worktreeId) : {}))
+  )
   const runtimeAgentOrchestrationByPaneKey = useAppStore(
     useShallow((s) => (active ? selectRuntimeAgentOrchestrationForWorktree(s, worktreeId) : {}))
   )
@@ -103,6 +107,7 @@ export function useWorktreeAgentRows(worktreeId: string, active = true): Dashboa
         runtimePaneTitlesByTabId,
         ptyIdsByTabId,
         terminalLayoutsByTabId,
+        foregroundAgentsByPaneKey,
         runtimeAgentOrchestrationByPaneKey,
         now
       })
@@ -117,6 +122,7 @@ export function useWorktreeAgentRows(worktreeId: string, active = true): Dashboa
     runtimePaneTitlesByTabId,
     ptyIdsByTabId,
     terminalLayoutsByTabId,
+    foregroundAgentsByPaneKey,
     runtimeAgentOrchestrationByPaneKey,
     agentFreshnessSignature
   ])

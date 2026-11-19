@@ -1,4 +1,5 @@
 import type { RetainedAgentEntry } from '@/store/slices/agent-status'
+import type { PaneForegroundAgentEntry } from '@/store/slices/pane-foreground-agent'
 import type { AppState } from '@/store/types'
 import type {
   AgentStatusEntry,
@@ -50,6 +51,11 @@ let tabWorktreeIndexCache: TabWorktreeIndexCache | null = null
 let liveEntriesByWorktreeCache: LiveEntriesByWorktreeCache | null = null
 let migrationUnsupportedByWorktreeCache: MigrationUnsupportedByWorktreeCache | null = null
 let retainedEntriesByWorktreeCache: RetainedEntriesByWorktreeCache | null = null
+let foregroundAgentsCache: {
+  entries: AppState['paneForegroundAgentByPaneKey']
+  tabOwners: Map<string, string>
+  byWorktree: Map<string, Record<string, PaneForegroundAgentEntry>>
+} | null = null
 
 // Why exported: WorktreeList reuses this exact-equality identity check to keep
 // derived arrays referentially stable across order-preserving epoch bumps so
@@ -275,4 +281,26 @@ export function selectTerminalLayoutsForWorktree(
     out[tab.id] = (state.terminalLayoutsByTabId ?? EMPTY_RECORD)[tab.id]
   }
   return out
+}
+
+export function selectForegroundAgentsForWorktree(
+  state: Pick<AppState, 'tabsByWorktree' | 'paneForegroundAgentByPaneKey'>,
+  worktreeId: string
+): Record<string, PaneForegroundAgentEntry> {
+  const entries = state.paneForegroundAgentByPaneKey ?? EMPTY_RECORD
+  const tabOwners = getTabIdToWorktreeId(state.tabsByWorktree ?? EMPTY_RECORD)
+  if (foregroundAgentsCache?.entries !== entries || foregroundAgentsCache.tabOwners !== tabOwners) {
+    const byWorktree = new Map<string, Record<string, PaneForegroundAgentEntry>>()
+    for (const [paneKey, entry] of Object.entries(entries)) {
+      const pane = parsePaneKey(paneKey)
+      const owner = pane && tabOwners.get(pane.tabId)
+      if (owner) {
+        const bucket = byWorktree.get(owner) ?? {}
+        bucket[paneKey] = entry
+        byWorktree.set(owner, bucket)
+      }
+    }
+    foregroundAgentsCache = { entries, tabOwners, byWorktree }
+  }
+  return foregroundAgentsCache.byWorktree.get(worktreeId) ?? EMPTY_RECORD
 }

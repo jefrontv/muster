@@ -4,6 +4,7 @@ import { CLAUDE_IDLE, containsBrailleSpinner } from '../../../../shared/agent-ti
 import { isClaudeSpinnerTitle } from '../../../../shared/claude-title-spinner'
 import { classifyTitleActivity, resolveTitleActivityLabel } from '@/lib/pane-agent-evidence'
 import { tabHasLivePty } from '@/lib/tab-has-live-pty'
+import type { PaneForegroundAgentEntry } from '@/store/slices/pane-foreground-agent'
 import type {
   AgentStatusEntry,
   AgentStatusOrchestrationContext,
@@ -69,6 +70,7 @@ export function buildTitleDerivedAgentRows(args: {
   runtimePaneTitlesByTabId?: Record<string, Record<number, string>>
   ptyIdsByTabId?: Record<string, string[]>
   terminalLayoutsByTabId?: Record<string, TerminalLayoutSnapshot | undefined>
+  foregroundAgentsByPaneKey?: Record<string, PaneForegroundAgentEntry>
   runtimeAgentOrchestrationByPaneKey?: Record<string, AgentStatusOrchestrationContext>
   seenPaneKeys: Set<string>
   now: number
@@ -89,49 +91,47 @@ export function buildTitleDerivedAgentRows(args: {
         ? Object.entries(paneTitles).sort(([a], [b]) => Number(a) - Number(b))
         : []
 
-    if (paneTitleEntries.length > 0) {
-      for (const [paneId, title] of paneTitleEntries) {
-        const leafId = resolveLeafIdForTitleFallback({
-          layout,
-          paneTitleEntries,
-          paneId: Number(paneId),
-          title
-        })
-        if (!leafId) {
-          continue
+    const titles = new Map<string, string>()
+    for (const [paneId, title] of paneTitleEntries) {
+      const leafId = resolveLeafIdForTitleFallback({
+        layout,
+        paneTitleEntries,
+        paneId: Number(paneId),
+        title
+      })
+      if (leafId && !titles.has(leafId)) {
+        titles.set(leafId, title)
+      }
+    }
+
+    const leafIds = collectLeafIds(layout?.root ?? null)
+    const activeLeafId = layout?.activeLeafId ?? leafIds[0]
+    if (paneTitleEntries.length === 0 && activeLeafId) {
+      titles.set(activeLeafId, tab.title)
+    }
+    for (const leafId of leafIds) {
+      if (!titles.has(leafId) && isTerminalLeafId(leafId)) {
+        const foreground = args.foregroundAgentsByPaneKey?.[makePaneKey(tab.id, leafId)]
+        if (foreground?.agent && !foreground.shellForeground) {
+          titles.set(leafId, '')
         }
-        const row = buildTitleDerivedAgentRow({
-          tab,
-          leafId,
-          title,
-          now: args.now,
-          runtimeAgentOrchestrationByPaneKey: args.runtimeAgentOrchestrationByPaneKey
-        })
-        if (!row || args.seenPaneKeys.has(row.paneKey)) {
-          continue
-        }
+      }
+    }
+
+    for (const [leafId, title] of titles) {
+      const row = buildTitleDerivedAgentRow({
+        tab,
+        leafId,
+        title,
+        now: args.now,
+        foregroundAgentsByPaneKey: args.foregroundAgentsByPaneKey,
+        runtimeAgentOrchestrationByPaneKey: args.runtimeAgentOrchestrationByPaneKey
+      })
+      if (row && !args.seenPaneKeys.has(row.paneKey)) {
         rows.push(row)
         args.seenPaneKeys.add(row.paneKey)
       }
-      continue
     }
-
-    const leafId = layout?.activeLeafId ?? collectLeafIds(layout?.root ?? null)[0]
-    if (!leafId) {
-      continue
-    }
-    const row = buildTitleDerivedAgentRow({
-      tab,
-      leafId,
-      title: tab.title,
-      now: args.now,
-      runtimeAgentOrchestrationByPaneKey: args.runtimeAgentOrchestrationByPaneKey
-    })
-    if (!row || args.seenPaneKeys.has(row.paneKey)) {
-      continue
-    }
-    rows.push(row)
-    args.seenPaneKeys.add(row.paneKey)
   }
 
   return rows
@@ -146,6 +146,7 @@ function buildTitleDerivedAgentRow(args: {
   leafId: string
   title: string
   now: number
+  foregroundAgentsByPaneKey?: Record<string, PaneForegroundAgentEntry>
   runtimeAgentOrchestrationByPaneKey?: Record<string, AgentStatusOrchestrationContext>
 }): DashboardAgentRow | null {
   const title = normalizeCompatibleAgentTitleForOwner(args.title, args.tab.launchAgent)
@@ -155,15 +156,22 @@ function buildTitleDerivedAgentRow(args: {
   // the management/list screen as active work.
   const status = isClaudeAgentsTitle ? 'idle' : classifyTitleActivity(title)
   const label = isClaudeAgentsTitle ? 'Claude Code' : resolveTitleActivityLabel(title)
-  if (!status || !label) {
-    return null
-  }
   if (!isTerminalLeafId(args.leafId)) {
     return null
   }
   const paneKey = makePaneKey(args.tab.id, args.leafId)
+  const foreground = args.foregroundAgentsByPaneKey?.[paneKey]
+  if (foreground?.shellForeground) {
+    return null
+  }
+  const foregroundAgent = resolveCompatibleAgentTypeForOwner(
+    foreground?.agent,
+    args.tab.launchAgent
+  )
   const orchestration = args.runtimeAgentOrchestrationByPaneKey?.[paneKey]
-  const titleAgentType = isClaudeAgentsTitle ? 'claude' : resolveTitleDerivedAgentType(title, label)
+  const titleAgentType = isClaudeAgentsTitle
+    ? 'claude'
+    : label && resolveTitleDerivedAgentType(title, label)
   // Why: a braille spinner proves activity, not identity, so the resolver drops
   // it. Hook-less agents over SSH (Codex, #8711) surface only spinner+cwd titles;
   // fall back to the tab's launch identity instead of hiding the pane. Gated on
@@ -172,16 +180,21 @@ function buildTitleDerivedAgentRow(args: {
   // title alone, so a non-agent title must never become a row. Residual: a split
   // pane whose own title carries a braille glyph is still attributed to launchAgent.
   const agentType =
+    foregroundAgent ??
     titleAgentType ??
     claudeIdleTopicTitleAgent(title, args.tab.launchAgent) ??
     (containsBrailleSpinner(title) ? (args.tab.launchAgent ?? null) : null)
-  if (!agentType) {
+  if (!agentType || (!foregroundAgent && (!status || !label))) {
     return null
   }
-  const rowLabel = titleAgentType ? label : formatAgentTypeLabel(agentType)
-  const rowState = titleStatusToRowState(status)
+  const rowLabel = (titleAgentType === agentType && label) || formatAgentTypeLabel(agentType)
+  const rowStatus =
+    foregroundAgent && titleAgentType && titleAgentType !== foregroundAgent
+      ? 'idle'
+      : (status ?? 'idle')
+  const rowState = titleStatusToRowState(rowStatus)
   const secondary =
-    status === 'permission' ? 'Needs input' : status === 'working' ? 'Running' : 'Idle'
+    rowStatus === 'permission' ? 'Needs input' : rowStatus === 'working' ? 'Running' : 'Idle'
   const entryState: AgentStatusState = rowState === 'waiting' ? 'waiting' : 'working'
   const entry: AgentStatusEntry = {
     paneKey,
