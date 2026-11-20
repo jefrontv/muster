@@ -12792,6 +12792,11 @@
               }
             }
           }
+        },
+        "saveAll": {
+          "failed": "{{count}} files failed to save. Try again.",
+          "saved": "Saved {{count}} files",
+          "untitledSkipped": "{{count}} new files need a name. Save them with Cmd/Ctrl+S."
         }
       },
       "diff": {

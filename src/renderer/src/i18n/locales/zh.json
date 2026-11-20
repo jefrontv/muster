@@ -12769,6 +12769,11 @@
               }
             }
           }
+        },
+        "saveAll": {
+          "failed": "{{count}} 个文件保存失败。请重试。",
+          "saved": "已保存 {{count}} 个文件",
+          "untitledSkipped": "{{count}} 个新文件需要命名。请用 Cmd/Ctrl+S 保存。"
         }
       },
       "diff": {

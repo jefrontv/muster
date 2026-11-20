@@ -5,6 +5,7 @@ import { TOGGLE_FLOATING_TERMINAL_EVENT } from '@/lib/floating-terminal'
 import { TOGGLE_QUICK_COMMANDS_MENU_EVENT } from '@/lib/quick-commands-menu-events'
 import { OPEN_WORKSPACE_BOARD_EVENT } from '@/components/sidebar/useWorkspaceBoardPanel'
 import { requestScrollToCurrentWorkspaceRevealAndRename } from '@/lib/scroll-to-current-workspace-status'
+import { saveAllDirtyEditorFiles } from '@/components/editor/editor-save-all'
 
 export type ActionPaletteInvoker = (state: AppState) => void
 
@@ -28,6 +29,7 @@ function revealRightSidebarTab(
  */
 export const ACTION_PALETTE_INVOKERS: Partial<Record<KeybindingActionId, ActionPaletteInvoker>> = {
   'app.settings': (state) => state.openSettingsPage(),
+  'editor.saveAll': () => void saveAllDirtyEditorFiles(),
   'worktree.quickOpen': (state) => {
     if (state.activeView === 'terminal' && state.activeWorktreeId !== null) {
       state.openModal('quick-open')

@@ -12769,6 +12769,11 @@
               }
             }
           }
+        },
+        "saveAll": {
+          "failed": "No se pudieron guardar {{count}} archivos. Inténtalo de nuevo.",
+          "saved": "Se guardaron {{count}} archivos",
+          "untitledSkipped": "{{count}} archivos nuevos necesitan un nombre. Guárdalos con Cmd/Ctrl+S."
         }
       },
       "diff": {

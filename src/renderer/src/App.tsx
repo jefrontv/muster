@@ -68,6 +68,7 @@ import { ZoomOverlay } from './components/ZoomOverlay'
 import { onOnboardingReopened } from './components/onboarding/show-onboarding-event'
 import { shouldShowOnboarding } from './components/onboarding/should-show-onboarding'
 import { MarkdownTemplatePicker } from './components/editor/MarkdownTemplatePicker'
+import { saveAllDirtyEditorFiles } from './components/editor/editor-save-all'
 import { FloatingTerminalToggleButton } from './components/floating-terminal/FloatingTerminalToggleButton'
 import { OrcaProfileSwitcher } from './components/orca-profiles/OrcaProfileSwitcher'
 import {
@@ -1750,6 +1751,13 @@ function App(): React.JSX.Element {
       }
 
       // Cmd/Ctrl+B — toggle left sidebar
+      if (matchShortcut('editor.saveAll')) {
+        input.preventDefault()
+        notifyTerminalCapture('editor.saveAll')
+        void saveAllDirtyEditorFiles()
+        return
+      }
+
       if (matchShortcut('sidebar.left.toggle')) {
         input.preventDefault()
         notifyTerminalCapture('sidebar.left.toggle')

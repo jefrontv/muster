@@ -12769,6 +12769,11 @@
               }
             }
           }
+        },
+        "saveAll": {
+          "failed": "파일 {{count}}개를 저장하지 못했습니다. 다시 시도하세요.",
+          "saved": "파일 {{count}}개를 저장했습니다",
+          "untitledSkipped": "새 파일 {{count}}개에 이름이 필요합니다. Cmd/Ctrl+S로 저장하세요."
         }
       },
       "diff": {

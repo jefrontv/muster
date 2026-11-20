@@ -87,6 +87,7 @@ export type KeybindingActionId =
   | 'editor.find'
   | 'editor.replace'
   | 'editor.save'
+  | 'editor.saveAll'
   | 'editor.markdownPreview'
   | 'editor.toggleWordWrap'
   | 'editor.copyContext'
@@ -809,6 +810,14 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
     scope: 'editor',
     searchKeywords: ['shortcut', 'editor', 'save'],
     defaultBindings: platformBindings(['Mod+S'])
+  },
+  {
+    id: 'editor.saveAll',
+    title: 'Save all files',
+    group: 'Editors',
+    scope: 'global',
+    searchKeywords: ['shortcut', 'editor', 'save', 'all', 'files'],
+    defaultBindings: platformBindings(['Mod+Alt+S'])
   },
   {
     id: 'editor.markdownPreview',
