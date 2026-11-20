@@ -28,7 +28,7 @@ export function siteStackAutodetectPatch(
     return {
       localStack: detection.stack,
       ...(domain ? { localDomain: domain } : {}),
-      ...ddevRootPatch(detection, site.localWpRoot)
+      ...docrootPatch(detection, site.localWpRoot)
     }
   }
   if (site.localStack !== detection.stack) {
@@ -36,22 +36,26 @@ export function siteStackAutodetectPatch(
   }
   const patch: SiteStackAutodetectPatch = {
     ...(domain && site.localDomain !== domain ? { localDomain: domain } : {}),
-    ...ddevRootPatch(detection, site.localWpRoot)
+    ...docrootPatch(detection, site.localWpRoot)
   }
   return Object.keys(patch).length > 0 ? patch : null
 }
 
 /**
- * DDEV names its docroot, and WP-CLI, eval-file and imports all run in path + localWpRoot. A site
- * moved off LocalWP kept `app/public`, so every MCP WP-CLI call failed in a folder that is gone.
+ * WP-CLI, eval-file and imports all run in path + localWpRoot. DDEV names its docroot (a site moved
+ * off LocalWP kept `app/public`); LocalWP's `app/public` is only ever added, never cleared, so an
+ * adopted LocalWP site stops importing into the site shell.
  */
-function ddevRootPatch(
+function docrootPatch(
   detection: { stack: SiteLocalStack; docroot?: string },
   current = ''
 ): { localWpRoot?: string } {
-  if (detection.stack !== 'ddev' || detection.docroot === undefined) {
+  if (detection.docroot === undefined) {
     return {}
   }
   const docroot = trimSlashes(detection.docroot)
+  if (detection.stack !== 'ddev' && !(detection.stack === 'localwp' && docroot !== '')) {
+    return {}
+  }
   return trimSlashes(current) === docroot ? {} : { localWpRoot: docroot }
 }

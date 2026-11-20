@@ -36,7 +36,10 @@ const getLocalFields = createLocalizedCatalog(() => [
   {
     key: 'localWpRoot' as const,
     label: translate('auto.components.sites.SiteDetailPanel.localWpRoot', 'WordPress subpath'),
-    placeholder: translate('auto.components.sites.SiteDetailPanel.localWpRootHint', 'app/public'),
+    placeholder: translate(
+      'auto.components.sites.SiteDetailPanel.localWpRootHint',
+      'e.g. app/public'
+    ),
     suggestAcrossSites: true
   },
   {

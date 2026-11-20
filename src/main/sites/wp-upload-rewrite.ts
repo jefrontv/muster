@@ -10,6 +10,7 @@
 // Both steps are best-effort, as in ocsites: a write failure is logged, not fatal. Cancellation is
 // still fatal.
 
+import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { SiteRunCancelledError, type SiteRunConfig, type SiteRunContext } from './pipeline-contract'
@@ -76,6 +77,16 @@ export async function applyWpUploadRewrite(
     return
   }
 
+  if (
+    !existsSync(path.join(config.wpDir, 'wp-load.php')) &&
+    !existsSync(path.join(config.wpDir, 'wp-config.php'))
+  ) {
+    // Why: a stray .htaccess outside the WordPress root does nothing and hides the real problem.
+    context.log(
+      `⚠ Skipping WP Upload Rewrite: no WordPress install at ${config.wpDir}. Check the site's WordPress subpath.`
+    )
+    return
+  }
   context.status('Adding WP Upload Rewrite Rule to .htaccess…')
   const block = buildUploadRewriteBlock(localDomain, liveDomain, liveDomainProtocol)
   try {

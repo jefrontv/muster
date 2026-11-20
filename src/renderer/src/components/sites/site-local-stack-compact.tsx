@@ -18,6 +18,25 @@ function docrootLabel(docroot: string): string {
   return trimmed.length === 0 || trimmed === '.' ? '' : trimmed
 }
 
+/** Imports use the saved subpath, so show that; detection only when it disagrees. */
+function docrootRowValue(saved: string, detected: string | undefined): string {
+  const savedLabel = docrootLabel(saved)
+  const detectedLabel = detected === undefined ? savedLabel : docrootLabel(detected)
+  if (detectedLabel === savedLabel) {
+    return savedLabel
+  }
+  const siteFolder = translate(
+    'auto.components.sites.SiteLocalStackCard.docrootSiteFolder',
+    'site folder'
+  )
+  return translate(
+    'auto.components.sites.SiteLocalStackCard.docrootMismatch',
+    '{{saved}} (detected {{detected}})'
+  )
+    .replace('{{saved}}', savedLabel || siteFolder)
+    .replace('{{detected}}', detectedLabel || siteFolder)
+}
+
 /** The schema first (what a person looks for), the port after it; never a password. */
 function databaseLabel(
   site: Pick<Site, 'localStack'>,
@@ -89,7 +108,7 @@ export function SiteLocalStackCompact({
   const busy = pending !== ''
   const running = detection?.socketReady === true
   const stackLabel = siteLocalStackLabel(site.localStack)
-  const docroot = docrootLabel(detection?.docroot ?? site.localWpRoot)
+  const docroot = docrootRowValue(site.localWpRoot, detection?.docroot)
   const database = databaseLabel(site, detection)
   const php = detection?.phpVersion || site.phpVersion
   const spinnerFor = (...kinds: string[]): boolean => spinning && kinds.includes(pending)

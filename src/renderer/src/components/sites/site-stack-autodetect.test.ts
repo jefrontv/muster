@@ -100,3 +100,23 @@ describe('siteStackAutodetectPatch DDEV docroot', () => {
     ).toBeNull()
   })
 })
+
+describe('siteStackAutodetectPatch LocalWP docroot', () => {
+  it('saves app/public when adopting a LocalWP site', () => {
+    expect(
+      siteStackAutodetectPatch(
+        { localStack: 'plain', localDomain: '', localWpRoot: '' },
+        { stack: 'localwp', domain: 'acme.local', docroot: 'app/public' }
+      )
+    ).toEqual({ localStack: 'localwp', localDomain: 'acme.local', localWpRoot: 'app/public' })
+  })
+
+  it('fills an empty subpath on a site already on LocalWP', () => {
+    expect(
+      siteStackAutodetectPatch(
+        { localStack: 'localwp', localDomain: 'acme.local', localWpRoot: '' },
+        { stack: 'localwp', domain: 'acme.local', docroot: 'app/public' }
+      )
+    ).toEqual({ localWpRoot: 'app/public' })
+  })
+})

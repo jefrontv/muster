@@ -11,7 +11,9 @@
 // connection health, snapshots, wp-cli, search-replace — gets working credentials without knowing
 // which stack it is on.
 
+import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { localWpWordPressRoot } from '../../shared/localwp-paths'
 import type { Site, SiteRunGroup } from '../../shared/site-types'
 import { providerFor } from './local-stack-provider'
 // Side-effect import: the agent-local provider registers itself with the registry on load.
@@ -24,7 +26,22 @@ export const SITE_RUN_CONFIG_STEP = 'run-config'
 
 export function resolveSiteWpDir(site: Site): string {
   const subPath = site.localWpRoot.replace(/^[/\\]+|[/\\]+$/g, '')
-  return subPath.length > 0 ? path.join(site.path, subPath) : site.path
+  const recorded = subPath.length > 0 ? path.join(site.path, subPath) : site.path
+  if (holdsWordPress(recorded)) {
+    return recorded
+  }
+  // Why: the saved subpath can disagree with disk (LocalWP adoption left it empty, a re-cloned
+  // site kept app/public), and import steps then wrote .htaccess into the wrong folder.
+  for (const candidate of [site.path, localWpWordPressRoot(site.path)]) {
+    if (candidate !== recorded && holdsWordPress(candidate)) {
+      return candidate
+    }
+  }
+  return recorded
+}
+
+function holdsWordPress(dir: string): boolean {
+  return existsSync(path.join(dir, 'wp-load.php')) || existsSync(path.join(dir, 'wp-config.php'))
 }
 
 export async function buildSiteRunConfig(

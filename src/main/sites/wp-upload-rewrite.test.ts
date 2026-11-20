@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -41,6 +41,7 @@ let wpDir: string
 
 beforeEach(() => {
   wpDir = mkdtempSync(path.join(tmpdir(), 'muster-htaccess-'))
+  writeFileSync(path.join(wpDir, 'wp-load.php'), '<?php\n')
 })
 
 afterEach(() => {
@@ -218,6 +219,16 @@ describe('applyWpUploadRewrite', () => {
     await applyWpUploadRewrite(context, createConfig())
 
     expect(htaccess().trim()).toBe(buildUploadRewriteBlock('acme.local', 'acme.com.au', 'https'))
+  })
+
+  it('skips a folder that holds no WordPress instead of leaving a stray .htaccess', async () => {
+    const { context, logs } = createTestContext()
+    rmSync(path.join(wpDir, 'wp-load.php'))
+
+    await applyWpUploadRewrite(context, createConfig())
+
+    expect(existsSync(path.join(wpDir, '.htaccess'))).toBe(false)
+    expect(logs.join('\n')).toContain('no WordPress install')
   })
 
   it('replaces its own previous block instead of stacking one per import', async () => {
