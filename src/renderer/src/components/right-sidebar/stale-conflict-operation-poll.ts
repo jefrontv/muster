@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import type { GitConflictOperation, Repo } from '../../../../shared/types'
-import { isGitRepoKind } from '../../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../../shared/repo-kind'
 import { getConnectionId } from '@/lib/connection-context'
 import { getRuntimeGitConflictOperation } from '@/runtime/runtime-git-client'
 import { createCoalescedPollRunner, type SlowTaskBackoffOptions } from './coalesced-poll-runner'
@@ -46,7 +46,7 @@ export function useStaleConflictOperationPolling(args: {
       const worktree = allWorktrees.find((entry) => entry.id === worktreeId)
       if (worktree) {
         const repo = repoMap.get(worktree.repoId)
-        if (repo && !isGitRepoKind(repo)) {
+        if (repo && !hasGitFeatures(repo)) {
           continue
         }
         result.push({ id: worktree.id, path: worktree.path })

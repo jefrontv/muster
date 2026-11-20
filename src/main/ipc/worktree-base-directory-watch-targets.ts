@@ -5,7 +5,7 @@ import type { Store } from '../persistence'
 import type { FileStat, IFilesystemProvider } from '../providers/types'
 import type { GlobalSettings, Repo } from '../../shared/types'
 import { getRepoExecutionHostId, LOCAL_EXECUTION_HOST_ID } from '../../shared/execution-host'
-import { isFolderRepo } from '../../shared/repo-kind'
+import { hasGitFeatures, isFolderRepo } from '../../shared/repo-kind'
 import {
   isRuntimePathAbsolute,
   isWindowsAbsolutePathLike,
@@ -126,6 +126,8 @@ async function maybeAddBaseTarget(
   settings: GlobalSettings,
   connectionId?: string
 ): Promise<void> {
+  // Why: git-backed folder projects (LocalWP sites) have no managed-worktree base dir; watch .git only.
+  const watchBase = !isFolderRepo(repo)
   const pathSettings = getWorktreePathSettings(repo, settings)
   const { workspaceRoot, nestWorkspaces } = getBaseWatchLayout(repo, pathSettings, connectionId)
   // Why: WSL UNC roots are unreliable for native watching; avoid project-level polling.
@@ -149,9 +151,11 @@ async function maybeAddBaseTarget(
     return
   }
   try {
-    const rootStat = remoteProvider
-      ? await remoteProvider.stat(workspaceRoot)
-      : await stat(workspaceRoot)
+    const rootStat = !watchBase
+      ? undefined
+      : remoteProvider
+        ? await remoteProvider.stat(workspaceRoot)
+        : await stat(workspaceRoot)
     if (isDirectoryStat(rootStat)) {
       await addTarget(targets, 'base', workspaceRoot, config, connectionId)
     }
@@ -182,7 +186,7 @@ export async function buildWorktreeBaseDirectoryWatchTargets(
   const settings = store.getSettings()
   const targets = new Map<string, WorktreeBaseWatchTarget>()
   for (const repo of store.getRepos()) {
-    if (isFolderRepo(repo)) {
+    if (!hasGitFeatures(repo)) {
       continue
     }
     const executionHostId = getRepoExecutionHostId(repo)

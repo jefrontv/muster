@@ -8,7 +8,7 @@ import { useRuntimeFileListForWorktree } from '@/components/quick-open-file-list
 import { folderRelativePathToIncludeGlob } from './file-search-include-pattern'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import { isGitRepoKind } from '../../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../../shared/repo-kind'
 import {
   getVisibleFileExplorerWorktreePath,
   shouldResetFileExplorerForVisibleWorktree
@@ -129,7 +129,7 @@ function FileExplorerFiles(): React.JSX.Element {
     worktreePath
   })
   const repoName = activeRepo?.displayName ?? (worktreePath ? basename(worktreePath) : '')
-  const activeRepoSupportsGit = activeRepo ? isGitRepoKind(activeRepo) : false
+  const activeRepoSupportsGit = activeRepo ? hasGitFeatures(activeRepo) : false
 
   const expanded = useMemo(
     () =>

@@ -29,7 +29,7 @@ import {
   ORCA_WORKTREE_FILE_CHANGE_EVENT,
   type WorktreeFileChangeEventDetail
 } from './worktree-file-change-event'
-import { isGitRepoKind } from '../../../shared/repo-kind'
+import { hasGitFeatures } from '../../../shared/repo-kind'
 import { markFileChangedOnDisk } from '@/components/editor/editor-changed-on-disk-mark'
 import { getDiskBaselineSignature } from '@/components/editor/diff-content-signature'
 
@@ -158,7 +158,7 @@ export function getEditorExternalWatchTargets(
   const sourceControlCanConsumeWatch =
     !!activeWorktreeId &&
     !!activeRepo &&
-    isGitRepoKind(activeRepo) &&
+    hasGitFeatures(activeRepo) &&
     !state.gitStatusHugeByWorktree[activeWorktreeId] &&
     (!activeRepo.connectionId ||
       state.sshConnectionStates.get(activeRepo.connectionId)?.status === 'connected')

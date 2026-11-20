@@ -49,6 +49,7 @@ async function usePollingOnce(
     expectStatusCall?: boolean
     stateOverrides?: Partial<PollState>
     documentStub?: object
+    repoOverrides?: { kind?: string; gitBacked?: boolean }
   } = {}
 ): Promise<{ state: PollState; gitStatus: ReturnType<typeof vi.fn> }> {
   vi.resetModules()
@@ -71,7 +72,11 @@ async function usePollingOnce(
     openFiles: []
   }
   Object.assign(state, options.stateOverrides)
-  const mockedRepo = { ...repo, connectionId: options.connectionId ?? null }
+  const mockedRepo = {
+    ...repo,
+    ...options.repoOverrides,
+    connectionId: options.connectionId ?? null
+  }
   const gitStatus = vi.fn().mockResolvedValue(status)
 
   vi.doMock('react', async () => {
@@ -153,6 +158,23 @@ describe('useGitStatusPolling', () => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     vi.useRealTimers()
+  })
+
+  it('polls git-backed folder projects', async () => {
+    const { gitStatus } = await usePollingOnce(
+      { entries: [], conflictOperation: 'unknown', head: 'abc123', branch: 'refs/heads/main' },
+      { repoOverrides: { kind: 'folder', gitBacked: true } }
+    )
+    expect(gitStatus).toHaveBeenCalled()
+  })
+
+  it('does not poll plain folder projects', async () => {
+    const { gitStatus } = await usePollingOnce(
+      { entries: [], conflictOperation: 'unknown', head: 'abc123', branch: 'refs/heads/main' },
+      { repoOverrides: { kind: 'folder' }, expectStatusCall: false }
+    )
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(gitStatus).not.toHaveBeenCalled()
   })
 
   it('uses upstream data from git status instead of spawning a separate upstream refresh', async () => {
