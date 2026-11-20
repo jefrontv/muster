@@ -7114,10 +7114,131 @@ export function CommitArea({
     </DropdownMenuContent>
   )
 
+  const generateButton = isGenerating ? (
+    // Why: while generating, the icon doubles as cancel — hover/focus swaps the spinner to a destructive Square via CSS group toggles (stateless in React).
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={() => onCancelGenerate()}
+          aria-label={translate(
+            'auto.components.right.sidebar.SourceControl.ddc1fbd690',
+            'Stop generating commit message'
+          )}
+          className="group inline-flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+        >
+          <RefreshCw className="size-3.5 animate-spin group-hover:hidden group-focus-visible:hidden" />
+          <Square className="hidden size-3.5 fill-current group-hover:block group-focus-visible:block" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>
+        {translate(
+          'auto.components.right.sidebar.SourceControl.37a81f29ad',
+          'Generating commit message. Click to stop.'
+        )}
+      </TooltipContent>
+    </Tooltip>
+  ) : (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-disabled={isGenerateDisabled}
+          onClick={(event) => {
+            if (isGenerateDisabled) {
+              event.preventDefault()
+              return
+            }
+            onGenerate()
+          }}
+          aria-label={translate(
+            'auto.components.right.sidebar.SourceControl.461575b9bc',
+            'Generate commit message with AI'
+          )}
+          className={cn(
+            'inline-flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            isGenerateDisabled &&
+              'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-muted-foreground'
+          )}
+        >
+          <Sparkles className="size-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>
+        {generateTooltip ?? generateFallbackTooltip}
+      </TooltipContent>
+    </Tooltip>
+  )
+  // Why: action + chevron form one split button; inside the composer card it sizes to its label, bare it fills the row.
+  const splitAction = (
+    <>
+      {/* Why: the style guide reserves the default variant for a flow's single affirmative action. */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={cn('flex', !showComposer && 'flex-1')}>
+            <Button
+              type="button"
+              variant="default"
+              size="xs"
+              disabled={primaryAction.disabled}
+              onClick={() => onPrimaryAction()}
+              className="w-full rounded-r-none pl-3 pr-2.5 text-xs"
+            >
+              {showSpinner ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : PrimaryIcon ? (
+                <PrimaryIcon className="size-3.5" aria-hidden="true" />
+              ) : null}
+              <span className="truncate">{primaryAction.label}</span>
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={6} className="flex max-w-72 items-center gap-2">
+          <span>{primaryAction.title}</span>
+          {primaryAction.kind === 'commit' ? (
+            <ShortcutKeyCombo keys={[getScreenSubmitModifierLabel(), 'Enter']} />
+          ) : null}
+        </TooltipContent>
+      </Tooltip>
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex shrink-0">
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="xs"
+                  className={cn(
+                    'rounded-l-none border-l border-primary-foreground/20 pl-1.5 pr-2 shrink-0',
+                    // Why: mirror the primary's disabled dimming for a unified look, but the chevron stays clickable (its push/fetch/pull stay valid when Commit is disabled).
+                    primaryAction.disabled && 'opacity-50'
+                  )}
+                  aria-label={moreCommitAndRemoteActionsLabel}
+                >
+                  {showChevronSpinner ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <ChevronDown className="size-3.5" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" sideOffset={6}>
+            {moreCommitAndRemoteActionsLabel}
+          </TooltipContent>
+        </Tooltip>
+        {dropdownMenuContent}
+      </DropdownMenu>
+    </>
+  )
+
   return (
     <div className="px-3 pb-2">
       {showComposer ? (
-        <div className="relative">
+        // Why: message, AI generate and the split action share one card so the commit loop reads as a single control.
+        <div className="mt-0.5 rounded-xl bg-foreground/[0.05] transition-shadow focus-within:ring-2 focus-within:ring-ring">
           <Textarea
             ref={commitMessageRef}
             rows={rows}
@@ -7130,136 +7251,17 @@ export function CommitArea({
               'Commit message'
             )}
             aria-describedby={describedBy || undefined}
-            // Why: pr-8 keeps text clear of the Generate icon; opacity stays full so generated text stays readable while locked.
-            className={cn(
-              'mt-0.5 min-h-14 resize-none px-2.5 py-1.5 text-xs disabled:opacity-100',
-              showGenerate && 'pr-8'
-            )}
+            // Why: opacity stays full so generated text stays readable while locked; the card owns the focus ring.
+            className="min-h-14 resize-none bg-transparent px-3 pb-1 pt-2.5 text-xs leading-5 focus-visible:ring-0 disabled:opacity-100"
           />
-          {showGenerate &&
-            (isGenerating ? (
-              // Why: while generating, the icon doubles as cancel — hover/focus swaps the spinner to a destructive Square via CSS group toggles (stateless in React).
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => onCancelGenerate()}
-                    aria-label={translate(
-                      'auto.components.right.sidebar.SourceControl.ddc1fbd690',
-                      'Stop generating commit message'
-                    )}
-                    className="group absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                  >
-                    <RefreshCw className="size-3.5 animate-spin group-hover:hidden group-focus-visible:hidden" />
-                    <Square className="hidden size-3.5 fill-current group-hover:block group-focus-visible:block" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={6}>
-                  {translate(
-                    'auto.components.right.sidebar.SourceControl.37a81f29ad',
-                    'Generating commit message. Click to stop.'
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-disabled={isGenerateDisabled}
-                    onClick={(event) => {
-                      if (isGenerateDisabled) {
-                        event.preventDefault()
-                        return
-                      }
-                      onGenerate()
-                    }}
-                    aria-label={translate(
-                      'auto.components.right.sidebar.SourceControl.461575b9bc',
-                      'Generate commit message with AI'
-                    )}
-                    className={cn(
-                      'absolute right-1.5 top-1.5 inline-flex size-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      isGenerateDisabled &&
-                        'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-muted-foreground'
-                    )}
-                  >
-                    <Sparkles className="size-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={6}>
-                  {generateTooltip ?? generateFallbackTooltip}
-                </TooltipContent>
-              </Tooltip>
-            ))}
+          <div className="flex items-center gap-1 px-1.5 pb-1.5">
+            {showGenerate ? generateButton : null}
+            <div className="ml-auto flex min-w-0 items-stretch">{splitAction}</div>
+          </div>
         </div>
-      ) : null}
-      {/* Why: action + chevron form one split button so the edit → commit → push loop stays in a single vertical band. */}
-      <div
-        className={cn(showComposer ? 'mt-1 flex items-stretch gap-1' : 'flex items-stretch gap-1')}
-      >
-        <div className="flex flex-1 items-stretch">
-          {/* Why: the style guide reserves the default variant for a flow's single affirmative action. */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="flex flex-1">
-                <Button
-                  type="button"
-                  variant="default"
-                  size="xs"
-                  disabled={primaryAction.disabled}
-                  onClick={() => onPrimaryAction()}
-                  className="w-full rounded-r-none px-3 text-xs"
-                >
-                  {showSpinner ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : PrimaryIcon ? (
-                    <PrimaryIcon className="size-3.5" aria-hidden="true" />
-                  ) : null}
-                  {primaryAction.label}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={6} className="flex max-w-72 items-center gap-2">
-              <span>{primaryAction.title}</span>
-              {primaryAction.kind === 'commit' ? (
-                <ShortcutKeyCombo keys={[getScreenSubmitModifierLabel(), 'Enter']} />
-              ) : null}
-            </TooltipContent>
-          </Tooltip>
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex shrink-0">
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="xs"
-                      className={cn(
-                        'rounded-l-none border-l border-primary-foreground/20 px-1.5 shrink-0',
-                        // Why: mirror the primary's disabled dimming for a unified look, but the chevron stays clickable (its push/fetch/pull stay valid when Commit is disabled).
-                        primaryAction.disabled && 'opacity-50'
-                      )}
-                      aria-label={moreCommitAndRemoteActionsLabel}
-                    >
-                      {showChevronSpinner ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <ChevronDown className="size-3.5" />
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={6}>
-                {moreCommitAndRemoteActionsLabel}
-              </TooltipContent>
-            </Tooltip>
-            {dropdownMenuContent}
-          </DropdownMenu>
-        </div>
-      </div>
+      ) : (
+        <div className="flex items-stretch">{splitAction}</div>
+      )}
       {commitError && commitFailureSummary ? (
         <SourceControlRecoveryNotice
           id="commit-area-error"

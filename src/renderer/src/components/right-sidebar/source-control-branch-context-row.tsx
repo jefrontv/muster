@@ -1,5 +1,5 @@
 import React from 'react'
-import { ExternalLink, Loader2, RefreshCw } from 'lucide-react'
+import { CornerDownRight, ExternalLink, GitBranch, Loader2, RefreshCw } from 'lucide-react'
 import type { GitBranchCompareSummary, GitUpstreamStatus } from '../../../../shared/types'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
@@ -32,7 +32,7 @@ function BaseRefButton({
   return (
     <button
       type="button"
-      className="min-w-0 max-w-full truncate rounded-md border-0 bg-transparent p-0 text-left font-mono text-[11px] font-medium text-foreground/90 underline decoration-border underline-offset-2 hover:text-foreground hover:decoration-foreground"
+      className="min-w-0 max-w-full truncate rounded-sm border-0 bg-transparent p-0 text-left text-xs text-muted-foreground underline decoration-transparent underline-offset-2 transition-colors hover:text-foreground hover:decoration-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onClick={onClick}
       title={`${title} (${baseRef})`}
       aria-label={accessibleName}
@@ -48,7 +48,7 @@ function ContextStat({
   stat: ReturnType<typeof buildSourceControlBranchContextStats>[number]
 }): React.JSX.Element {
   const className = cn(
-    'shrink-0 tabular-nums text-muted-foreground',
+    'inline-flex h-4 shrink-0 items-center rounded-full bg-foreground/[0.06] px-1.5 text-2xs font-medium tabular-nums text-muted-foreground',
     stat.tone === 'muted' && 'text-muted-foreground',
     stat.tone === 'ahead' && 'text-[color:var(--git-decoration-added)]',
     stat.tone === 'behind' && 'text-[color:var(--git-decoration-deleted)]'
@@ -129,12 +129,13 @@ function HeadIdentity({ display }: { display: WorktreeGitIdentityDisplay }): Rea
     <Tooltip>
       <TooltipTrigger asChild>
         <span
-          className="min-w-0 max-w-full truncate rounded-sm font-mono text-[11px] font-medium text-foreground/90 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-sm text-xs font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           tabIndex={0}
           aria-label={branchAriaLabel}
           data-testid="source-control-head-identity"
         >
-          {display.branchName}
+          <GitBranch className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="truncate">{display.branchName}</span>
         </span>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={6} className="max-w-72 break-all font-mono">
@@ -188,9 +189,11 @@ function BaseLine({
     <div className="flex min-w-0 items-center gap-1.5">
       {leading}
       {showArrow ? (
-        <span className="shrink-0 text-muted-foreground" aria-hidden="true">
-          →
-        </span>
+        // Why: size-3.5 box matches the branch icon above so the base ref lines up with the branch name.
+        <CornerDownRight
+          className="size-3.5 shrink-0 p-px text-muted-foreground/70"
+          aria-hidden="true"
+        />
       ) : (
         <span className="shrink-0 text-muted-foreground">
           {translate('auto.components.right.sidebar.SourceControl.e8a1c4b203', 'vs')}
@@ -243,7 +246,7 @@ function StackedCompareFlow({
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div className="min-w-0">
         <HeadIdentity display={headDisplay} />
       </div>

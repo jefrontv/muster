@@ -213,7 +213,7 @@ describe('CommitArea AI generation', () => {
 
     expect(markup).not.toContain('aria-label="Commit message"')
     expect(markup).not.toContain('aria-label="Generate commit message with AI"')
-    expect(markup).toMatch(/<button\b[^>]*data-slot="button"[\s\S]*?Commit<\/button>/)
+    expect(markup).toMatch(/<button\b[^>]*data-slot="button"[\s\S]*?Commit<\/span><\/button>/)
     expect(markup).toContain('aria-label="More commit and remote actions"')
   })
 })

@@ -85,8 +85,10 @@ function CreatePrHeaderButton({
     <Tooltip>
       <TooltipTrigger asChild>
         <span className="inline-flex shrink-0">
+          {/* Why: secondary so it doesn't compete with the composer's primary action below. */}
           <Button
             type="button"
+            variant="secondary"
             size="xs"
             disabled={action.disabled}
             onClick={onClick}
