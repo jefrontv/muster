@@ -137,6 +137,28 @@ describe('run_wp_cli', () => {
     expect(payload.blocked).toBe(true)
     expect(String(payload.safety_reason)).toContain('update_wp_fields')
   })
+
+  it('respects max_output_chars and tail options and declares concurrent: true', async () => {
+    expect(findSiteMcpTool('run_wp_cli')?.concurrent).toBe(true)
+    expect(findSiteMcpTool('run_remote_wp_cli')?.concurrent).toBe(true)
+    const { streamCommand } = await import('../../lib/stream-command')
+    vi.mocked(streamCommand).mockResolvedValueOnce({
+      code: 0,
+      stdout: `${'A'.repeat(1_500)}END_WP`,
+      stderr: '',
+      timedOut: false,
+      truncated: false,
+      stoppedEarly: false
+    })
+    const { payload } = await call('run_wp_cli', {
+      args: ['option', 'list'],
+      max_output_chars: 1_000,
+      tail: true
+    })
+    expect(payload.output_truncated).toBe(true)
+    expect(String(payload.stdout)).toHaveLength(1_000)
+    expect(String(payload.stdout).endsWith('END_WP')).toBe(true)
+  })
 })
 
 describe('run_remote_wp_cli', () => {

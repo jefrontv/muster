@@ -256,6 +256,21 @@ describe('runRemoteWpCli', () => {
     expect(result.stdoutTruncated).toBe(true)
     expect(result.stderrTruncated).toBe(false)
   })
+
+  it('supports custom maxOutputChars and tail mode', async () => {
+    const fake = createFakeSshSession(() => ({ stdout: `${'a'.repeat(1_500)}TAIL_MARKER` }))
+    const result = await runRemoteWpCli(fake.session, {
+      rootPath: 'public_html',
+      args: ['plugin', 'list'],
+      allowWrites: false,
+      environment: 'production',
+      maxOutputChars: 1_000,
+      tail: true
+    })
+    expect(result.stdout).toHaveLength(1_000)
+    expect(result.stdout.endsWith('TAIL_MARKER')).toBe(true)
+    expect(result.stdoutTruncated).toBe(true)
+  })
 })
 
 describe('runLocalWpCli', () => {

@@ -32,12 +32,12 @@ export const SITE_MCP_LOCAL_SETUP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'request_site_secret',
     description:
-      "Ask the user for an SSH or database password for one environment. They type it into Muster, or (SSH) use a muster:// configure link: they click it while the card is open, or copy it. The link also fills that environment's host, user, root path and live domain. The password goes straight to the keychain; you never see it. Collect with collect_setup_approval: `approved` means it is stored, and the result shows the environment's fields as saved. Use instead of ever asking for a password or a muster:// link in chat.",
+      'Prompt user in Muster for an SSH or DB password (or pasted muster:// link); passwords go straight to keychain. Collect via collect_setup_approval. Never ask for secrets in chat.',
     inputSchema: objectSchema(
       {
         ...SITE_PROPERTY,
-        env: { type: 'string', description: 'Environment the password belongs to.' },
-        kind: { type: 'string', enum: ['ssh', 'db'], description: 'SSH login or database.' }
+        env: { type: 'string', description: 'Target environment.' },
+        kind: { type: 'string', enum: ['ssh', 'db'], description: 'Credential kind.' }
       },
       ['env', 'kind']
     ),
@@ -95,13 +95,13 @@ export const SITE_MCP_LOCAL_SETUP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'set_up_local_site',
     description:
-      "Set a site up on a local stack (Agent Local, DDEV or LocalWP) so it runs on this machine. Refused when a stack already serves it (see detect_local_stack). Takes minutes: once approved it returns a `job_id` to poll with get_setup_job. For LocalWP, Muster sets a random WordPress admin password; use Local's one-click admin.",
+      'Set up a local stack (Agent Local, DDEV, LocalWP) for a site (refused if already served). Returns job_id to poll with get_setup_job.',
     inputSchema: objectSchema(
       {
         ...SITE_PROPERTY,
-        stack: { type: 'string', enum: [...STACKS], description: 'Local stack to use.' },
+        stack: { type: 'string', enum: [...STACKS], description: 'Local stack.' },
         domain: { type: 'string', description: 'Local domain, e.g. acme.local.' },
-        admin_email: { type: 'string', description: 'WordPress admin email. Required for LocalWP.' }
+        admin_email: { type: 'string', description: 'WP admin email (required for LocalWP).' }
       },
       ['stack', 'domain']
     ),
@@ -151,14 +151,13 @@ export const SITE_MCP_LOCAL_SETUP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'get_setup_job',
     description:
-      'Progress of a long setup job (a clone from create_project, or set_up_local_site): `running`, `succeeded` or `failed`, the current step and percent when known, and the last log lines. Waits up to `wait_seconds` for a change, so call it again rather than sleeping. Needs Muster open.',
+      'Long-poll a setup/clone job_id for state, progress percent, and tail log (waits up to wait_seconds; poll again instead of sleeping).',
     inputSchema: objectSchema(
       {
-        job_id: { type: 'string', description: 'The job_id a setup tool returned.' },
+        job_id: { type: 'string', description: 'The job_id returned by a setup tool.' },
         wait_seconds: {
           type: 'number',
-          description:
-            'Wait up to this long for the step or percent to change before answering. Default 20, max 110. Use this instead of sleeping.'
+          description: 'Wait up to this long for change (default 20, max 110).'
         }
       },
       ['job_id']
@@ -183,14 +182,14 @@ export const SITE_MCP_LOCAL_SETUP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'import_site_config',
     description:
-      'Bring in existing site configuration. `source: "ocsites"` imports every site from the legacy ocsites config (the card lists them first; stored passwords move to the keychain). `bind_link` hands a muster:// link without a password to Muster, which asks the user to confirm it. A link with a password is refused: ask the user to copy it and call request_site_secret instead.',
+      'Import sites from legacy ocsites config (source="ocsites") or apply a passwordless muster:// bind_link via confirmation prompt (links carrying passwords are refused; use request_site_secret).',
     inputSchema: objectSchema({
       source: {
         type: 'string',
         enum: ['ocsites'],
-        description: 'Import the legacy ocsites config.'
+        description: 'Import legacy ocsites config.'
       },
-      bind_link: { type: 'string', description: 'A muster:// configure link.' }
+      bind_link: { type: 'string', description: 'Passwordless muster:// configure link.' }
     }),
     requiresSiteSetup: true,
     async run(context, args) {

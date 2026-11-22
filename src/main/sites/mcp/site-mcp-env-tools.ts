@@ -89,7 +89,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'list_environments',
     description:
-      'List every environment for a site with redacted summaries, plus the environment the current git branch resolves to and why. Passwords appear only as set/not-set flags.',
+      'List all site environments (with password-set flags, never values) plus the branch-resolved target and reason.',
     inputSchema: objectSchema({ ...SITE_PROPERTY }),
     async run(context, args) {
       const site = resolveMcpSite(context, readString(args, 'site'))
@@ -99,12 +99,12 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'create_environment',
     description:
-      'Create a new environment for a site. With copy_from, the new environment is seeded from an existing one, including its stored passwords. Does not change which environment a run targets — the branch still decides.',
+      'Create a site environment, optionally cloning settings and stored passwords from copy_from.',
     inputSchema: objectSchema(
       {
         ...NAME_PROPERTY,
         ...SITE_PROPERTY,
-        copy_from: { type: 'string', description: 'Existing environment to seed the new one from.' }
+        copy_from: { type: 'string', description: 'Source environment to clone.' }
       },
       ['name']
     ),
@@ -134,8 +134,7 @@ export const SITE_MCP_ENV_TOOLS: readonly SiteMcpTool[] = [
   },
   {
     name: 'rename_environment',
-    description:
-      'Rename an environment, carrying its stored passwords across. Branch resolution then looks for the new name, so renaming can change what a deploy targets.',
+    description: 'Rename an environment and move its stored passwords.',
     inputSchema: objectSchema(
       {
         old_name: { type: 'string', description: 'Current environment name.' },

@@ -5,8 +5,19 @@
 // human-length wait must not stall every other sites tool behind it.
 
 import { formatPlanFeedback } from '../plan-review-feedback'
-import { describePlanProject, loadPlanText, PlanSourceError } from '../plan-review-source'
-import { readNumber, readRequiredString, readString, SiteMcpToolError } from './site-mcp-arguments'
+import {
+  describePlanProject,
+  loadPlanText,
+  MAX_PLAN_BYTES,
+  PlanSourceError
+} from '../plan-review-source'
+import {
+  readLongString,
+  readNumber,
+  readRequiredString,
+  readString,
+  SiteMcpToolError
+} from './site-mcp-arguments'
 import { siteMcpClientName } from './site-mcp-client-identity'
 import type { SiteMcpTool } from './site-mcp-context'
 import { HOLD_DEFAULT_SECONDS, HOLD_MAX_SECONDS, holdInSlices } from './site-mcp-held-wait'
@@ -42,16 +53,15 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'annotate_plan',
     description:
-      'Open a markdown plan in Muster for the user to review. Returns a `review_id` at once without waiting. Then call `collect_plan_review` with that id in a loop until it returns a decision: a review takes minutes, and `pending` in the meantime is normal. Do not end your turn while it is pending. Prefer `path` over `content`: a real file keeps the review stable across revisions, lets the user save edits back to disk, and survives your context being compacted.',
+      'Open a markdown plan in Muster for human review and return review_id at once; then poll collect_plan_review in a loop until a decision returns. Prefer path over content so edits save back to disk and survive compaction.',
     inputSchema: objectSchema({
       path: {
         type: 'string',
-        description:
-          'Path to a markdown plan. Relative paths resolve against the working directory.'
+        description: 'Path to a markdown plan (relative paths resolve from cwd).'
       },
       content: {
         type: 'string',
-        description: 'Plan markdown, for a plan not yet written to disk. Use `path` when you can.'
+        description: 'Inline plan markdown when not on disk; prefer path.'
       }
     }),
     // Still concurrent: opening is quick, but it must not queue behind a long collect.
@@ -61,7 +71,7 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
       try {
         plan = loadPlanText({
           path: readString(args, 'path'),
-          content: readString(args, 'content'),
+          content: readLongString(args, 'content', MAX_PLAN_BYTES),
           cwd: context.cwd
         })
       } catch (error) {
@@ -90,7 +100,7 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'collect_plan_review',
     description:
-      'Collect the verdict for a review opened by `annotate_plan`. Waits up to `wait_seconds` (default 25) and returns `status: "pending"` while the user is still reading. Pending is normal and can go on for many minutes: call it again straight away, as many times as it takes, and never sleep, re-open the plan or ask for a review in chat instead. On completion returns `decision` (annotated = revise and open a new review, approved = proceed, approved_with_notes = proceed using the notes, dismissed = no feedback given) plus their notes and any direct edits. `status: "unknown"` means the id was never issued or has expired: stop polling.',
+      'Poll the verdict for an annotate_plan review_id. Waits up to wait_seconds (default 25) and returns status="pending" while the user reads — keep calling straight away (do not sleep, re-open, or ask in chat). Returns decision (annotated | approved | approved_with_notes | dismissed) + feedback/edits; status="unknown" means stop polling.',
     inputSchema: objectSchema({
       review_id: {
         type: 'string',
@@ -98,7 +108,7 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
       },
       wait_seconds: {
         type: 'number',
-        description: `How long to wait before answering "pending". Default ${COLLECT_DEFAULT_SECONDS}, max ${COLLECT_MAX_SECONDS}. Only raise it if your client's request timeout is longer.`
+        description: `Wait slice in seconds (default ${COLLECT_DEFAULT_SECONDS}, max ${COLLECT_MAX_SECONDS}).`
       }
     }),
     // A person is the latency here; blocking the dispatch chain would stall every other sites tool.

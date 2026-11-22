@@ -16,16 +16,14 @@ export function objectSchema(
 export const SITE_PROPERTY = {
   site: {
     type: 'string',
-    description:
-      "Site name, id, or local path. Omit to use the site containing the agent's working directory."
+    description: 'Site name, id, or path (defaults to cwd).'
   }
 } as const
 
 export const ENV_PROPERTY = {
   env: {
     type: 'string',
-    description:
-      'Target this environment explicitly. Omitted means infer it from the checked-out git branch.'
+    description: 'Target environment (defaults to branch match).'
   }
 } as const
 
@@ -33,8 +31,7 @@ export const LOCATION_PROPERTY = {
   location: {
     type: 'string',
     enum: ['local', 'remote'],
-    description:
-      "Required. 'local' is this site's WordPress root (path + localWpRoot). 'remote' is an environment host. env=local is an environment name, not the checkout."
+    description: "Required: 'local' (checkout WP root) or 'remote' (environment host)."
   }
 } as const
 
@@ -42,7 +39,7 @@ export const TARGET_PROPERTY = {
   target: {
     type: 'object',
     description:
-      "ACF $post_id. kind: option (id optional custom post_id), post, term, user, comment (id required). 'options' is accepted as option."
+      "ACF $post_id: {kind: 'option'|'post'|'term'|'user'|'comment', id?}. id required except option."
   }
 } as const
 
@@ -50,8 +47,7 @@ export const COMPARE_LOCATION_PROPERTY = {
   location: {
     type: 'string',
     enum: ['local', 'remote', 'both'],
-    description:
-      "Required. 'local' is this site's WordPress root (path + localWpRoot). 'remote' is an environment host. 'both' reads each and returns one comparison. env=local is an environment name, not the checkout."
+    description: "Required: 'local', 'remote', or 'both' (reads both and compares)."
   }
 } as const
 
@@ -59,7 +55,7 @@ export const TARGETS_PROPERTY = {
   targets: {
     type: 'array',
     description:
-      'Up to 20 targets in one run, each {kind, id} like target. Not combinable with target. The response carries targets: [{target, ...envelope}] and nothing at the top level but ok, which is true only when every target succeeded, so read apply, results and revert per target. A target that fails keeps its own ok: false and error while the others still write.'
+      'Up to 20 {kind, id} targets (exclusive with target). Returns targets: [{target, ...envelope}]; top-level ok is true only if all succeed.'
   }
 } as const
 
@@ -68,7 +64,7 @@ export const RETURN_PROPERTY = {
     type: 'string',
     enum: ['full', 'values'],
     description:
-      "Default 'full'. 'values' strips what an agent can infer. A read's plain path becomes {path, value}, an error row keeps path, exists and error, and a pattern keeps path, exists, wildcard, count, skipped and truncated with field: {key, type} at the pattern level; a match under a mixed-layout clone chain keeps its own field, so read match.field ?? pattern.field. A write's results drop field and its ops drop row_layouts, nothing else. Muster also drops site_id, host, wp_root and command. ok, warnings, location, site, environment, counts and revert always stay."
+      "Default 'full'. 'values' drops host bookkeeping and per-path field metadata (keeps path/value, pattern field/skipped/truncated, counts, and revert)."
   }
 } as const
 
@@ -76,7 +72,7 @@ export const CONFIRM_PROPERTY = {
   confirm: {
     type: 'boolean',
     description:
-      'Proceed even though the branch matches no environment. Overrides nothing else — a missing credential or an empty step list still refuses.'
+      'Accept fallback environment when branch matches none (never overrides missing credentials or empty step lists).'
   }
 } as const
 

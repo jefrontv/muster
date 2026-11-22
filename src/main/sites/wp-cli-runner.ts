@@ -32,6 +32,7 @@ const WP_BINARY = 'wp'
 
 /** Caps ported verbatim: a huge `wp db export -` would otherwise flood the caller. */
 export const WP_CLI_MAX_OUTPUT_CHARS = 50_000
+export const WP_CLI_MIN_OUTPUT_CHARS = 1_000
 export const WP_CLI_MAX_ARGS = 30
 export const WP_CLI_DEFAULT_TIMEOUT_MS = 60_000
 const WP_CLI_MIN_TIMEOUT_MS = 5_000
@@ -164,6 +165,10 @@ export type WpCliRequest = {
   allowWrites: boolean
   /** Clamped to 5–120 s, as in ocsites. */
   timeoutMs?: number
+  /** Per-stream output limit (1,000–50,000 chars). Defaults to WP_CLI_MAX_OUTPUT_CHARS. */
+  maxOutputChars?: number
+  /** Keep the tail of stdout/stderr rather than the head when truncated. */
+  tail?: boolean
   signal?: AbortSignal
 }
 
@@ -244,7 +249,15 @@ export async function runLocalWpCli(
         : `WP-CLI (\`wp\`) could not be run in ${request.cwd}: ${detail}`
     )
   }
-  return finish('local', null, verdict, buildLocalCommandLine(localStack, args), result)
+  return finish(
+    'local',
+    null,
+    verdict,
+    buildLocalCommandLine(localStack, args),
+    result,
+    request.maxOutputChars,
+    request.tail
+  )
 }
 
 export type RemoteWpCliRequest = WpCliRequest & {
@@ -272,7 +285,15 @@ export async function runRemoteWpCli(
     const detail = error instanceof Error ? error.message : String(error)
     throw new SiteRunStepError(WP_CLI_STEP, `Remote WP-CLI failed: ${detail}`)
   }
-  return finish('remote', request.environment, verdict, command, result)
+  return finish(
+    'remote',
+    request.environment,
+    verdict,
+    command,
+    result,
+    request.maxOutputChars,
+    request.tail
+  )
 }
 
 /**
@@ -291,15 +312,30 @@ function buildLocalCommandLine(localStack: SiteLocalStack, args: readonly string
   return [...prefix, ...args].map(quoteShellArgument).join(' ')
 }
 
+function clampOutputChars(maxOutputChars: number | undefined): number {
+  if (maxOutputChars === undefined) {
+    return WP_CLI_MAX_OUTPUT_CHARS
+  }
+  return Math.min(
+    Math.max(Math.trunc(maxOutputChars), WP_CLI_MIN_OUTPUT_CHARS),
+    WP_CLI_MAX_OUTPUT_CHARS
+  )
+}
+
 function finish(
   location: 'local' | 'remote',
   environment: string | null,
   verdict: WpCliSafetyVerdict,
   command: string,
-  result: { code: number; stdout: string; stderr: string }
+  result: { code: number; stdout: string; stderr: string },
+  maxOutputChars?: number,
+  tail = false
 ): WpCliResult {
-  const stdout = result.stdout.slice(0, WP_CLI_MAX_OUTPUT_CHARS)
-  const stderr = result.stderr.slice(0, WP_CLI_MAX_OUTPUT_CHARS)
+  const limit = clampOutputChars(maxOutputChars)
+  const slice = (text: string): string =>
+    text.length <= limit ? text : tail ? text.slice(-limit) : text.slice(0, limit)
+  const stdout = slice(result.stdout)
+  const stderr = slice(result.stderr)
   return {
     location,
     blocked: false,

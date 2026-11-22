@@ -145,7 +145,7 @@ export const SITE_MCP_RUN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'preview_run',
     description:
-      'Dry-run an import or deploy: the resolved environment, the remote target, every step in execution order, and anything currently blocking the run. Connects to nothing. Use before run_import_functions / run_deploy_functions.',
+      'Dry-run an import/deploy without connecting: shows resolved environment, remote target, steps, and blockers. Run before import/deploy.',
     inputSchema: objectSchema({ ...SITE_PROPERTY, ...GROUP_PROPERTY, ...ENV_PROPERTY }),
     async run(context, args) {
       const group = readRunGroup(args, 'group')
@@ -155,7 +155,7 @@ export const SITE_MCP_RUN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'run_import_functions',
     description:
-      'Run the enabled import steps for a site (pull the server database and files down to local). With env omitted the environment is inferred from the checked-out git branch; if the branch matches no environment the call is REFUSED and returns the environment it would have used plus a dry-run preview, unless confirm=true. Returns a run_id to poll with get_job_status.',
+      'Start enabled import steps (server DB/files -> local). Unmatched branch refuses with preview unless env= or confirm=true. Returns run_id for get_job_status.',
     inputSchema: RUN_SCHEMA,
     run(context, args) {
       return startGroupRun(context, args, 'import')
@@ -164,7 +164,7 @@ export const SITE_MCP_RUN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'run_deploy_functions',
     description:
-      'Run the enabled deploy steps for a site (build and upload the theme, git pull on the server, clear caches). Deploys push code to a live host, so with env omitted and a branch matching no environment the call is REFUSED with a preview unless confirm=true. Prefer passing env= after showing the user preview_run. Returns a run_id to poll with get_job_status.',
+      'Start enabled deploy steps (local theme/code -> server). Unmatched branch refuses with preview unless env= or confirm=true. Returns run_id for get_job_status.',
     inputSchema: RUN_SCHEMA,
     run(context, args) {
       return startGroupRun(context, args, 'deploy')

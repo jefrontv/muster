@@ -13,7 +13,15 @@ import {
 import { ACF_FIELDS_PHP, parseAcfRunnerOutcome, type AcfReturnMode } from '../wp-acf-payload'
 import type { ToolArguments } from './site-mcp-arguments'
 import type { SiteMcpContext } from './site-mcp-context'
+import { withProgressHeartbeat } from './site-mcp-progress'
 import { openMcpRemoteWp, redactSecrets, resolveMcpLocalWp } from './site-mcp-wp-target'
+
+export type RunEvalOptions = {
+  collectOutputFile?: boolean
+  maxSidecarBytes?: number
+  maxOutputChars?: number
+  tail?: boolean
+}
 
 export async function runEval(
   context: SiteMcpContext,
@@ -23,73 +31,83 @@ export async function runEval(
   php: string,
   sidecar?: string,
   extraArgs: readonly string[] = [],
-  options: { collectOutputFile?: boolean; maxSidecarBytes?: number } = {}
+  options: RunEvalOptions = {}
 ): Promise<Record<string, unknown>> {
   // The walker is ours and outgrew both agent-facing caps; an agent's script keeps 64 KB in, 50,000 out.
   const bundled = php === ACF_FIELDS_PHP
   const maxPhpBytes = bundled ? WP_EVAL_BUNDLED_MAX_BYTES : WP_EVAL_FILE_MAX_BYTES
-  const maxOutputChars = bundled ? WP_EVAL_BUNDLED_MAX_OUTPUT_CHARS : undefined
-  if (location === 'local') {
-    const { site, wpDir, dbSocket } = resolveMcpLocalWp(context, args)
-    const result = await runLocalWpEvalFile({
-      wpDir,
-      php,
-      sidecar,
-      maxPhpBytes,
-      maxOutputChars,
-      ...options,
-      args: extraArgs,
-      localStack: site.localStack,
-      ...(dbSocket ? { dbSocket } : {})
-    })
-    return {
-      location: 'local',
-      site: site.displayName,
-      site_id: site.id,
-      environment: null,
-      host: site.localDomain || wpDir,
-      wp_root: wpDir,
-      exit_code: result.code,
-      stdout: result.stdout,
-      stderr: result.stderr,
-      command: result.command,
-      output_truncated: result.stdoutTruncated || result.stderrTruncated,
-      output_file_contents: result.outputFileContents
+  const maxOutputChars = bundled ? WP_EVAL_BUNDLED_MAX_OUTPUT_CHARS : options.maxOutputChars
+  const tail = bundled ? false : options.tail
+  const runOptions = {
+    ...(options.collectOutputFile === undefined
+      ? {}
+      : { collectOutputFile: options.collectOutputFile }),
+    ...(options.maxSidecarBytes === undefined ? {} : { maxSidecarBytes: options.maxSidecarBytes }),
+    ...(tail === undefined ? {} : { tail })
+  }
+  return withProgressHeartbeat(context, stepLabel, async () => {
+    if (location === 'local') {
+      const { site, wpDir, dbSocket } = resolveMcpLocalWp(context, args)
+      const result = await runLocalWpEvalFile({
+        wpDir,
+        php,
+        sidecar,
+        maxPhpBytes,
+        maxOutputChars,
+        ...runOptions,
+        args: extraArgs,
+        localStack: site.localStack,
+        ...(dbSocket ? { dbSocket } : {})
+      })
+      return {
+        location: 'local',
+        site: site.displayName,
+        site_id: site.id,
+        environment: null,
+        host: site.localDomain || wpDir,
+        wp_root: wpDir,
+        exit_code: result.code,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        command: result.command,
+        output_truncated: result.stdoutTruncated || result.stderrTruncated,
+        output_file_contents: result.outputFileContents
+      }
     }
-  }
-  const opened = await openMcpRemoteWp(context, args, { key: 'wp-eval-file', label: stepLabel })
-  if (!opened.ok) {
-    return opened.blocked
-  }
-  const { site, environment, config, session, layout } = opened.target
-  try {
-    const result = await runRemoteWpEvalFile(session, {
-      webroot: layout.webroot,
-      php,
-      sidecar,
-      maxPhpBytes,
-      maxOutputChars,
-      ...options,
-      args: extraArgs
-    })
-    const secrets = [config.sshPassword, config.dbPassword]
-    return {
-      location: 'remote',
-      site: site.displayName,
-      site_id: site.id,
-      environment,
-      host: `${config.environment.username}@${config.environment.hostname}`,
-      wp_root: layout.webroot,
-      exit_code: result.code,
-      stdout: redactSecrets(result.stdout, secrets),
-      stderr: redactSecrets(result.stderr, secrets),
-      command: result.command,
-      output_truncated: result.stdoutTruncated || result.stderrTruncated,
-      output_file_contents: result.outputFileContents
+    const opened = await openMcpRemoteWp(context, args, { key: 'wp-eval-file', label: stepLabel })
+    if (!opened.ok) {
+      return opened.blocked
     }
-  } finally {
-    await session.close().catch(() => undefined)
-  }
+    const { site, environment, config, session, layout } = opened.target
+    try {
+      const result = await runRemoteWpEvalFile(session, {
+        webroot: layout.webroot,
+        php,
+        sidecar,
+        maxPhpBytes,
+        maxOutputChars,
+        ...runOptions,
+        args: extraArgs
+      })
+      const secrets = [config.sshPassword, config.dbPassword]
+      return {
+        location: 'remote',
+        site: site.displayName,
+        site_id: site.id,
+        environment,
+        host: `${config.environment.username}@${config.environment.hostname}`,
+        wp_root: layout.webroot,
+        exit_code: result.code,
+        stdout: redactSecrets(result.stdout, secrets),
+        stderr: redactSecrets(result.stderr, secrets),
+        command: result.command,
+        output_truncated: result.stdoutTruncated || result.stderrTruncated,
+        output_file_contents: result.outputFileContents
+      }
+    } finally {
+      await session.close().catch(() => undefined)
+    }
+  })
 }
 
 export function fieldResult(

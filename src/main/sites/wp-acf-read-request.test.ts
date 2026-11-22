@@ -80,3 +80,35 @@ describe('checksum mode', () => {
     expect(() => readAcfGetRequest({ checksum: true, describe: true })).toThrow(/different modes/)
   })
 })
+
+describe('get pagination and value caps', () => {
+  it('parses max_value_chars, offset and limit on get reads', () => {
+    expect(
+      readAcfGetRequest({
+        fields: ['modules.*.body'],
+        max_value_chars: 500,
+        offset: 20,
+        limit: 50
+      })
+    ).toEqual({
+      mode: 'get',
+      fields: ['modules.*.body'],
+      maxValueChars: 500,
+      offset: 20,
+      limit: 50
+    })
+  })
+
+  it('rejects out-of-range bounds cleanly', () => {
+    expect(() => readAcfGetRequest({ fields: ['a'], max_value_chars: 10 })).toThrow(/between 50/)
+    expect(() => readAcfGetRequest({ fields: ['a.*'], limit: 0 })).toThrow(/between 1/)
+    expect(() => readAcfGetRequest({ fields: ['a.*'], offset: -1 })).toThrow(/between 0/)
+  })
+
+  it('refuses max_value_chars, offset and limit alongside describe or checksum', () => {
+    expect(() => readAcfGetRequest({ describe: true, limit: 10 })).toThrow(/plain 'get' reads/)
+    expect(() => readAcfGetRequest({ checksum: true, max_value_chars: 100 })).toThrow(
+      /plain 'get' reads/
+    )
+  })
+})

@@ -316,4 +316,22 @@ describe('restore_wp_fields', () => {
     expect(isError).toBe(true)
     expect(String(payload.error)).toContain('no roots to restore')
   })
+
+  it('restores snapshots larger than 256 KB without hitting the default sidecar cap', async () => {
+    const largeBody = 'm'.repeat(300_000)
+    const record = storedSnapshot({
+      payload: {
+        ok: true,
+        target: { kind: 'post', id: 672 },
+        roots: { modules: [{ acf_fc_layout: 'text', body: largeBody }] },
+        digests: { modules: 'digest-big' },
+        target_digest: 'root-big'
+      }
+    })
+    const { isError, payload } = await call('restore_wp_fields', { token: record.token })
+    expect(isError).toBe(false)
+    expect(payload.apply).toBe(false)
+    expect(evalPayloads[0]).toMatchObject({ mode: 'restore' })
+    expect(JSON.stringify(evalPayloads[0]).length).toBeGreaterThan(262_144)
+  })
 })

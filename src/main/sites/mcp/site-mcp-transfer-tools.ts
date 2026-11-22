@@ -14,10 +14,10 @@
 // Every upload is verified by checksum. A transfer that reports success while writing truncated
 // bytes is worse than one that fails, because the next thing to notice is production.
 
-import { createHash } from 'node:crypto'
-import { readFile, stat } from 'node:fs/promises'
-import { isAbsolute } from 'node:path'
+import { stat } from 'node:fs/promises'
+import { basename, isAbsolute } from 'node:path'
 import type { Site } from '../../../shared/site-types'
+import { hashLocalFileSha256 } from '../file-sha256'
 import { quoteShellArgument, type SiteSshSession } from '../pipeline-contract'
 import { buildSiteRunConfig } from '../site-run-config'
 import { buildSiteToolPlan, canStartRun } from '../site-run-plan'
@@ -29,6 +29,7 @@ import {
   type ToolArguments
 } from './site-mcp-arguments'
 import type { SiteMcpContext, SiteMcpTool } from './site-mcp-context'
+import { createTransferProgressReporter, withProgressHeartbeat } from './site-mcp-progress'
 import { CONFIRM_PROPERTY, ENV_PROPERTY, objectSchema, SITE_PROPERTY } from './site-mcp-schemas'
 
 /** Enough for a plugin directory's worth of files, short of a request that runs for an hour. */
@@ -69,10 +70,6 @@ function readPairs(args: ToolArguments, localKey: 'local', remoteKey: 'remote'):
     }
     return { local, remote }
   })
-}
-
-function sha256Of(bytes: Buffer): string {
-  return createHash('sha256').update(bytes).digest('hex')
 }
 
 /**
@@ -164,66 +161,77 @@ async function uploadFiles(
   const mode = readString(args, 'mode').trim()
 
   const config = await buildSiteRunConfig(target.site, target.environment, 'deploy')
-  const controller = new AbortController()
-  const session = await context.openSshSession(config, controller.signal)
-  const files: Record<string, unknown>[] = []
-  try {
-    for (const pair of pairs) {
-      const info = await stat(pair.local).catch(() => null)
-      if (!info?.isFile()) {
-        files.push({ remote: pair.remote, ok: false, error: `Not a readable file: ${pair.local}` })
-        continue
-      }
-      if (info.size > MAX_FILE_BYTES) {
+  return withProgressHeartbeat(context, `Uploading ${pairs.length} file(s)`, async () => {
+    const controller = new AbortController()
+    const session = await context.openSshSession(config, controller.signal)
+    const files: Record<string, unknown>[] = []
+    try {
+      for (const pair of pairs) {
+        const info = await stat(pair.local).catch(() => null)
+        if (!info?.isFile()) {
+          files.push({
+            remote: pair.remote,
+            ok: false,
+            error: `Not a readable file: ${pair.local}`
+          })
+          continue
+        }
+        if (info.size > MAX_FILE_BYTES) {
+          files.push({
+            remote: pair.remote,
+            ok: false,
+            error: `File is ${info.size} bytes, over the ${MAX_FILE_BYTES}-byte limit for this tool.`
+          })
+          continue
+        }
+        if (!overwrite && (await remoteExists(session, pair.remote))) {
+          files.push({
+            remote: pair.remote,
+            ok: false,
+            error: 'Remote path already exists. Pass overwrite=true to replace it.'
+          })
+          continue
+        }
+        if (makeParents) {
+          // dirname on the remote, not locally: the separator belongs to the remote host.
+          await session.exec(`mkdir -p "$(dirname ${quoteShellArgument(pair.remote)})"`)
+        }
+        const onProgress = createTransferProgressReporter(
+          context,
+          `Uploading ${basename(pair.local)}`
+        )
+        await session.upload(pair.local, pair.remote, onProgress)
+        if (mode.length > 0) {
+          await session.exec(`chmod ${quoteShellArgument(mode)} ${quoteShellArgument(pair.remote)}`)
+        }
+        const localDigest = await hashLocalFileSha256(pair.local)
+        const expected = localDigest?.sha256 ?? null
+        const actual = await remoteSha256(session, pair.remote)
+        const verified = expected === null || actual === null ? null : actual === expected
         files.push({
           remote: pair.remote,
-          ok: false,
-          error: `File is ${info.size} bytes, over the ${MAX_FILE_BYTES}-byte limit for this tool.`
+          local: pair.local,
+          ok: verified !== false,
+          bytes: info.size,
+          sha256: expected,
+          verified,
+          ...(verified === false
+            ? { error: 'Checksum mismatch — the remote copy does not match the local file.' }
+            : {})
         })
-        continue
       }
-      if (!overwrite && (await remoteExists(session, pair.remote))) {
-        files.push({
-          remote: pair.remote,
-          ok: false,
-          error: 'Remote path already exists. Pass overwrite=true to replace it.'
-        })
-        continue
+      return {
+        ok: files.every((file) => file.ok === true),
+        site: target.site.displayName,
+        site_id: target.site.id,
+        environment: target.environment,
+        host: `${config.environment.username}@${config.environment.hostname}`,
+        files
       }
-      if (makeParents) {
-        // dirname on the remote, not locally: the separator belongs to the remote host.
-        await session.exec(`mkdir -p "$(dirname ${quoteShellArgument(pair.remote)})"`)
-      }
-      await session.upload(pair.local, pair.remote)
-      if (mode.length > 0) {
-        await session.exec(`chmod ${quoteShellArgument(mode)} ${quoteShellArgument(pair.remote)}`)
-      }
-      const expected = sha256Of(await readFile(pair.local))
-      const actual = await remoteSha256(session, pair.remote)
-      files.push({
-        remote: pair.remote,
-        local: pair.local,
-        ok: actual === null || actual === expected,
-        bytes: info.size,
-        sha256: expected,
-        // Null when the host has no digest tool: transferred, but nobody checked.
-        verified: actual === null ? null : actual === expected,
-        ...(actual !== null && actual !== expected
-          ? { error: 'Checksum mismatch — the remote copy does not match the local file.' }
-          : {})
-      })
+    } finally {
+      await session.close().catch(() => undefined)
     }
-    return {
-      ok: files.every((file) => file.ok === true),
-      site: target.site.displayName,
-      site_id: target.site.id,
-      environment: target.environment,
-      host: `${config.environment.username}@${config.environment.hostname}`,
-      files
-    }
-  } finally {
-    await session.close().catch(() => undefined)
-  }
+  })
 }
 
 async function downloadFiles(
@@ -237,55 +245,60 @@ async function downloadFiles(
   }
 
   const config = await buildSiteRunConfig(target.site, target.environment, 'import')
-  const controller = new AbortController()
-  const session = await context.openSshSession(config, controller.signal)
-  const files: Record<string, unknown>[] = []
-  try {
-    for (const pair of pairs) {
-      if (!(await remoteExists(session, pair.remote))) {
-        files.push({ remote: pair.remote, ok: false, error: 'No such file on the remote host.' })
-        continue
+  return withProgressHeartbeat(context, `Downloading ${pairs.length} file(s)`, async () => {
+    const controller = new AbortController()
+    const session = await context.openSshSession(config, controller.signal)
+    const files: Record<string, unknown>[] = []
+    try {
+      for (const pair of pairs) {
+        if (!(await remoteExists(session, pair.remote))) {
+          files.push({ remote: pair.remote, ok: false, error: 'No such file on the remote host.' })
+          continue
+        }
+        const expected = await remoteSha256(session, pair.remote)
+        const onProgress = createTransferProgressReporter(
+          context,
+          `Downloading ${basename(pair.remote)}`
+        )
+        await session.download(pair.remote, pair.local, onProgress)
+        const localDigest = await hashLocalFileSha256(pair.local)
+        const actual = localDigest?.sha256 ?? null
+        files.push({
+          remote: pair.remote,
+          local: pair.local,
+          ok: localDigest !== null && (expected === null || actual === expected),
+          bytes: localDigest?.bytes ?? 0,
+          sha256: actual,
+          verified: expected === null || actual === null ? null : actual === expected,
+          ...(localDigest === null
+            ? { error: 'The local copy could not be read back after the transfer.' }
+            : expected !== null && actual !== expected
+              ? { error: 'Checksum mismatch — the local copy does not match the remote file.' }
+              : {})
+        })
       }
-      const expected = await remoteSha256(session, pair.remote)
-      await session.download(pair.remote, pair.local)
-      const written = await readFile(pair.local).catch(() => null)
-      const actual = written === null ? null : sha256Of(written)
-      files.push({
-        remote: pair.remote,
-        local: pair.local,
-        ok: written !== null && (expected === null || actual === expected),
-        bytes: written?.byteLength ?? 0,
-        sha256: actual,
-        verified: expected === null || actual === null ? null : actual === expected,
-        ...(written === null
-          ? { error: 'The local copy could not be read back after the transfer.' }
-          : expected !== null && actual !== expected
-            ? { error: 'Checksum mismatch — the local copy does not match the remote file.' }
-            : {})
-      })
+      return {
+        ok: files.every((file) => file.ok === true),
+        site: target.site.displayName,
+        site_id: target.site.id,
+        environment: target.environment,
+        host: `${config.environment.username}@${config.environment.hostname}`,
+        files
+      }
+    } finally {
+      await session.close().catch(() => undefined)
     }
-    return {
-      ok: files.every((file) => file.ok === true),
-      site: target.site.displayName,
-      site_id: target.site.id,
-      environment: target.environment,
-      host: `${config.environment.username}@${config.environment.hostname}`,
-      files
-    }
-  } finally {
-    await session.close().catch(() => undefined)
-  }
+  })
 }
 
 const FILES_PROPERTY = {
   type: 'array',
-  description:
-    'Pairs to transfer. Both paths must be absolute; `local` is on this machine, `remote` on the site host.',
+  description: 'Pairs to transfer (both paths must be absolute).',
   items: {
     type: 'object',
     properties: {
-      local: { type: 'string', description: 'Absolute path on this machine.' },
-      remote: { type: 'string', description: 'Absolute path on the remote host.' }
+      local: { type: 'string', description: 'Absolute local path.' },
+      remote: { type: 'string', description: 'Absolute remote path.' }
     },
     required: ['local', 'remote'],
     additionalProperties: false
@@ -296,7 +309,7 @@ export const SITE_MCP_TRANSFER_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'upload_files',
     description:
-      "Copy local files to a site's remote host over the stored SSH credential, verifying each one by SHA-256. Refuses to overwrite unless overwrite=true. Targets the environment the checked-out branch resolves to; a branch matching no environment refuses unless you pass env= or confirm=true, because the fallback is usually production.",
+      'Upload local files over stored SSH credentials and verify each by SHA-256 (max 50 files, 100 MB each). Refuses overwrite unless overwrite=true; unmatched branch refuses unless env= or confirm=true.',
     inputSchema: objectSchema(
       {
         ...SITE_PROPERTY,
@@ -304,35 +317,29 @@ export const SITE_MCP_TRANSFER_TOOLS: readonly SiteMcpTool[] = [
         files: FILES_PROPERTY,
         mkdir: {
           type: 'boolean',
-          description: 'Create missing parent directories on the remote host. Default true.'
+          description: 'Create missing remote parent dirs (default true).'
         },
         overwrite: {
           type: 'boolean',
-          description: 'Replace a remote path that already exists. Default false.'
+          description: 'Overwrite existing remote files (default false).'
         },
-        mode: {
-          type: 'string',
-          description: 'chmod to apply after upload, e.g. "0644". Left alone when omitted.'
-        },
+        mode: { type: 'string', description: 'Optional chmod after upload, e.g. "0644".' },
         ...CONFIRM_PROPERTY
       },
       ['files']
     ),
+    concurrent: true,
     run: uploadFiles
   },
   {
     name: 'download_files',
     description:
-      "Copy files from a site's remote host to this machine over the stored SSH credential, verifying each one by SHA-256. Targets the environment the checked-out branch resolves to; a branch matching no environment refuses unless you pass env= or confirm=true, so a read cannot silently come from production.",
+      'Download remote files over stored SSH credentials and verify each by SHA-256 (max 50 files). Unmatched branch refuses unless env= or confirm=true.',
     inputSchema: objectSchema(
-      {
-        ...SITE_PROPERTY,
-        ...ENV_PROPERTY,
-        files: FILES_PROPERTY,
-        ...CONFIRM_PROPERTY
-      },
+      { ...SITE_PROPERTY, ...ENV_PROPERTY, files: FILES_PROPERTY, ...CONFIRM_PROPERTY },
       ['files']
     ),
+    concurrent: true,
     run: downloadFiles
   }
 ]

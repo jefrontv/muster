@@ -17,26 +17,33 @@ import { buildSiteRunConfig } from '../site-run-config'
 import { buildSiteToolPlan, canStartRun } from '../site-run-plan'
 import {
   readBoolean,
+  readLongString,
+  readNumber,
   readString,
   resolveMcpSite,
   SiteMcpToolError,
   type ToolArguments
 } from './site-mcp-arguments'
 import type { SiteMcpContext, SiteMcpTool } from './site-mcp-context'
+import { withProgressHeartbeat } from './site-mcp-progress'
 import { CONFIRM_PROPERTY, ENV_PROPERTY, objectSchema, SITE_PROPERTY } from './site-mcp-schemas'
 
 /** Long enough for a real remote task (composer install, wp search-replace), short of hanging. */
 const SSH_COMMAND_TIMEOUT_MS = 300_000
+const MAX_SSH_COMMAND_CHARS = 32_768
+const MIN_OUTPUT_CHARS = 1_000
+const DEFAULT_OUTPUT_CHARS = 20_000
+const MAX_OUTPUT_CHARS = 50_000
 
-/** Output cap per stream. A model does not need a 40MB log to answer, and the wire is stdio. */
-const MAX_OUTPUT_CHARS = 20_000
-
-function clampOutput(value: string): { text: string; truncated: boolean } {
-  if (value.length <= MAX_OUTPUT_CHARS) {
+function clampOutput(
+  value: string,
+  maxChars: number,
+  tail: boolean
+): { text: string; truncated: boolean } {
+  if (value.length <= maxChars) {
     return { text: value, truncated: false }
   }
-  // Keep the TAIL: the end of a command's output is where the result and the error live.
-  return { text: value.slice(-MAX_OUTPUT_CHARS), truncated: true }
+  return { text: tail ? value.slice(-maxChars) : value.slice(0, maxChars), truncated: true }
 }
 
 /** Defence in depth: the connection layer already avoids echoing secrets, this catches the rest. */
@@ -54,10 +61,18 @@ async function runSshCommand(
   context: SiteMcpContext,
   args: ToolArguments
 ): Promise<Record<string, unknown>> {
-  const command = readString(args, 'command').trim()
+  const command = readLongString(args, 'command', MAX_SSH_COMMAND_CHARS).trim()
   if (command.length === 0) {
     throw new SiteMcpToolError('command is required.')
   }
+  const maxOutputChars = readNumber(
+    args,
+    'max_output_chars',
+    DEFAULT_OUTPUT_CHARS,
+    MAX_OUTPUT_CHARS,
+    MIN_OUTPUT_CHARS
+  )
+  const tail = readBoolean(args, 'tail', true)
   const site: Site = resolveMcpSite(context, readString(args, 'site'))
   const requested = readString(args, 'env')
   if (requested.length > 0 && !Object.hasOwn(site.environments, requested)) {
@@ -101,41 +116,51 @@ async function runSshCommand(
   }
 
   const config = await buildSiteRunConfig(site, plan.environment, 'deploy')
-  const controller = new AbortController()
-  const session = await context.openSshSession(config, controller.signal)
-  try {
-    const result = await session.exec(command, { timeoutMs: SSH_COMMAND_TIMEOUT_MS })
-    const secrets = [config.sshPassword, config.dbPassword]
-    const stdout = clampOutput(redactSecrets(result.stdout, secrets))
-    const stderr = clampOutput(redactSecrets(result.stderr, secrets))
-    return {
-      ok: result.code === 0,
-      site: site.displayName,
-      site_id: site.id,
-      environment: plan.environment,
-      host: `${config.environment.username}@${config.environment.hostname}`,
-      command,
-      exit_code: result.code,
-      stdout: stdout.text,
-      stderr: stderr.text,
-      output_truncated: stdout.truncated || stderr.truncated
+  return withProgressHeartbeat(context, 'Remote SSH command', async () => {
+    const controller = new AbortController()
+    const session = await context.openSshSession(config, controller.signal)
+    try {
+      const result = await session.exec(command, { timeoutMs: SSH_COMMAND_TIMEOUT_MS })
+      const secrets = [config.sshPassword, config.dbPassword]
+      const stdout = clampOutput(redactSecrets(result.stdout, secrets), maxOutputChars, tail)
+      const stderr = clampOutput(redactSecrets(result.stderr, secrets), maxOutputChars, tail)
+      return {
+        ok: result.code === 0,
+        site: site.displayName,
+        site_id: site.id,
+        environment: plan.environment,
+        host: `${config.environment.username}@${config.environment.hostname}`,
+        command,
+        exit_code: result.code,
+        stdout: stdout.text,
+        stderr: stderr.text,
+        output_truncated: stdout.truncated || stderr.truncated
+      }
+    } finally {
+      await session.close().catch(() => undefined)
     }
-  } finally {
-    await session.close().catch(() => undefined)
-  }
+  })
 }
 
 export const SITE_MCP_SSH_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'run_ssh_command',
     description:
-      "Run a shell command on a site's remote server over SSH, using the environment's stored credential. The command runs in the SSH user's default directory — cd into the site root yourself when you need it. With env omitted the environment is inferred from the checked-out git branch; a branch matching no environment REFUSES (it would otherwise fall back to what is usually production) unless env= is passed or confirm=true. Returns exit_code, stdout and stderr (tail-truncated at 20k chars each). Commands are not sandboxed: prefer read-only inspection, and tell the user what you are about to run before anything that writes.",
+      "Run a remote shell command via stored SSH credentials (starts in SSH user's home; cd into site root as needed). Unmatched branch refuses unless env= or confirm=true. Returns exit_code, stdout, stderr (default tail 20k chars each). Prefer read-only inspection; confirm mutating commands with the user first.",
     inputSchema: objectSchema(
       {
         command: {
           type: 'string',
           description:
-            "The shell command to run, e.g. 'wp option get home' or 'tail -n 50 error_log'."
+            "Shell command to run (up to 32k chars), e.g. 'wp option get home' or 'tail -n 50 error_log'."
+        },
+        max_output_chars: {
+          type: 'integer',
+          description: 'Per-stream limit, clamped 1000–50000 (default 20000).'
+        },
+        tail: {
+          type: 'boolean',
+          description: 'Keep tail instead of head when truncated (default true).'
         },
         ...SITE_PROPERTY,
         ...ENV_PROPERTY,
@@ -143,6 +168,7 @@ export const SITE_MCP_SSH_TOOLS: readonly SiteMcpTool[] = [
       },
       ['command']
     ),
+    concurrent: true,
     run: runSshCommand
   }
 ]

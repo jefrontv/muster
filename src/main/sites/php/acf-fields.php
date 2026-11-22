@@ -1367,7 +1367,32 @@ function muster_acf_wildcard_row_layout( $root_field, $root_value, $segments ) {
 	return null;
 }
 
-function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments ) {
+function muster_acf_truncate_string( $text, $max_chars, &$truncated_count ) {
+	$len = function_exists( 'mb_strlen' ) ? mb_strlen( $text, 'UTF-8' ) : strlen( $text );
+	if ( $len <= $max_chars ) {
+		return $text;
+	}
+	$cut   = function_exists( 'mb_substr' ) ? mb_substr( $text, 0, $max_chars, 'UTF-8' ) : substr( $text, 0, $max_chars );
+	$extra = $len - $max_chars;
+	$truncated_count++;
+	return $cut . "… [truncated {$extra} chars]";
+}
+
+function muster_acf_truncate_value( $value, $max_chars, &$truncated_count ) {
+	if ( is_string( $value ) ) {
+		return muster_acf_truncate_string( $value, $max_chars, $truncated_count );
+	}
+	if ( is_array( $value ) ) {
+		$out = array();
+		foreach ( $value as $k => $v ) {
+			$out[ $k ] = muster_acf_truncate_value( $v, $max_chars, $truncated_count );
+		}
+		return $out;
+	}
+	return $value;
+}
+
+function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments, $offset = 0, $limit = null, $max_value_chars = null, &$truncated_values = 0 ) {
 	$skipped  = array();
 	$expanded = muster_acf_expand_wildcards( $root_field, $root_value, $segments, array(), $skipped );
 	if ( isset( $expanded['error'] ) ) {
@@ -1377,13 +1402,13 @@ function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments 
 			'error'  => $expanded['error'],
 		);
 	}
+	$paging    = $offset > 0 || $limit !== null;
+	$cap       = $limit !== null ? max( 1, (int) $limit ) : 2000;
 	$matches   = array();
+	$seen      = 0;
+	$has_more  = false;
 	$truncated = false;
 	foreach ( $expanded['paths'] as $item ) {
-		if ( count( $matches ) >= 2000 ) {
-			$truncated = true;
-			break;
-		}
 		$walk = muster_acf_walk( $root_field, $root_value, $item['segments'], 'get' );
 		if ( isset( $walk['error'] ) ) {
 			$skipped[] = array(
@@ -1392,12 +1417,28 @@ function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments 
 			);
 			continue;
 		}
-		$leaf = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
+		if ( $seen < $offset ) {
+			$seen++;
+			continue;
+		}
+		if ( count( $matches ) >= $cap ) {
+			if ( $paging ) {
+				$has_more = true;
+			}
+			$truncated = true;
+			break;
+		}
+		$seen++;
+		$leaf  = is_array( $walk['leaf_field'] ) ? $walk['leaf_field'] : $root_field;
+		$value = muster_acf_present_at( $leaf, ! empty( $walk['leaf_is_row'] ), $walk['value'] );
+		if ( $max_value_chars !== null ) {
+			$value = muster_acf_truncate_value( $value, $max_value_chars, $truncated_values );
+		}
 		// Every match repeats the same field; name, label and parent are describe's job, not 2000 copies.
 		$matches[] = array(
 			'index_path' => $item['index_path'],
 			'path'       => muster_acf_path_string( $item['segments'] ),
-			'value'      => muster_acf_present_at( $leaf, ! empty( $walk['leaf_is_row'] ), $walk['value'] ),
+			'value'      => $value,
 			'field'      => array(
 				'key'  => isset( $walk['field']['key'] ) ? $walk['field']['key'] : '',
 				'type' => isset( $walk['field']['type'] ) ? $walk['field']['type'] : '',
@@ -1412,6 +1453,11 @@ function muster_acf_wildcard_result( $root_field, $root_value, $path, $segments 
 		'matches'  => $matches,
 		'skipped'  => $skipped,
 	);
+	if ( $paging ) {
+		$row['offset']   = $offset;
+		$row['limit']    = $cap;
+		$row['has_more'] = $has_more;
+	}
 	if ( $truncated ) {
 		$row['truncated'] = true;
 	}
@@ -2310,8 +2356,12 @@ function muster_acf_run( $payload ) {
 	if ( $mode === 'restore' ) {
 		return muster_acf_restore_run( $payload, $target, $post_id );
 	}
-	$return  = isset( $payload['return'] ) && $payload['return'] === 'values' ? 'values' : 'full';
-	$row_ops = isset( $payload['rows'] ) && is_array( $payload['rows'] ) ? $payload['rows'] : array();
+	$return           = isset( $payload['return'] ) && $payload['return'] === 'values' ? 'values' : 'full';
+	$max_value_chars  = ( $mode === 'get' && isset( $payload['max_value_chars'] ) && is_numeric( $payload['max_value_chars'] ) ) ? max( 1, intval( $payload['max_value_chars'], 10 ) ) : null;
+	$wildcard_offset  = ( $mode === 'get' && isset( $payload['offset'] ) && is_numeric( $payload['offset'] ) ) ? max( 0, intval( $payload['offset'], 10 ) ) : 0;
+	$wildcard_limit   = ( $mode === 'get' && isset( $payload['limit'] ) && is_numeric( $payload['limit'] ) ) ? max( 1, intval( $payload['limit'], 10 ) ) : null;
+	$truncated_values = 0;
+	$row_ops          = isset( $payload['rows'] ) && is_array( $payload['rows'] ) ? $payload['rows'] : array();
 	if ( count( $row_ops ) > 0 && $mode === 'get' ) {
 		return muster_acf_envelope( false, array( 'error' => 'row operations need preview or apply.' ) );
 	}
@@ -2362,7 +2412,16 @@ function muster_acf_run( $payload ) {
 			);
 		}
 		if ( muster_acf_has_wildcard( $segments ) ) {
-			$expanded = muster_acf_wildcard_result( $root_field, $roots[ $root_key ]['value'], $path, $segments );
+			$expanded = muster_acf_wildcard_result(
+				$root_field,
+				$roots[ $root_key ]['value'],
+				$path,
+				$segments,
+				$wildcard_offset,
+				$wildcard_limit,
+				$max_value_chars,
+				$truncated_values
+			);
 			if ( isset( $expanded['error'] ) ) {
 				$path_errors = true;
 			}
@@ -2552,7 +2611,14 @@ function muster_acf_run( $payload ) {
 	}
 
 	foreach ( $results as $i => $row ) {
-		$results[ $i ] = muster_acf_finalise_row( $row );
+		$row = muster_acf_finalise_row( $row );
+		if ( $mode === 'get' && $max_value_chars !== null && empty( $row['wildcard'] ) && array_key_exists( 'value', $row ) ) {
+			$row['value'] = muster_acf_truncate_value( $row['value'], $max_value_chars, $truncated_values );
+		}
+		$results[ $i ] = $row;
+	}
+	if ( $mode === 'get' && $truncated_values > 0 ) {
+		$warnings[] = "Truncated {$truncated_values} string value(s) to max_value_chars={$max_value_chars}.";
 	}
 
 	$extra = array(
@@ -2560,6 +2626,9 @@ function muster_acf_run( $payload ) {
 		'results'  => muster_acf_project_results( $results, $return, $mode ),
 		'apply'    => false,
 	);
+	if ( $mode === 'get' && $truncated_values > 0 ) {
+		$extra['values_truncated'] = true;
+	}
 	if ( $mode !== 'get' ) {
 		$extra['revert'] = muster_acf_revert_payload(
 			$target,

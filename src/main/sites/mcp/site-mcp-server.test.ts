@@ -419,6 +419,54 @@ describe('concurrent tools', () => {
     await harness.drain()
     expect(harness.frames.map((frame) => frame.id)).toEqual([1, 2])
   })
+
+  it('does not block list_sites behind an in-flight run_ssh_command and emits progress', async () => {
+    const gate: { release: (() => void) | null } = { release: null }
+    const harness = createHarness({
+      openSshSession: async () => ({
+        exec: async () => {
+          const { promise, resolve } = Promise.withResolvers<{
+            code: number
+            stdout: string
+            stderr: string
+          }>()
+          gate.release = () => resolve({ code: 0, stdout: 'remote-done', stderr: '' })
+          return promise
+        },
+        download: async () => undefined,
+        upload: async () => undefined,
+        writeSecureRemoteFile: async () => undefined,
+        removeRemoteFile: async () => undefined,
+        close: async () => undefined
+      })
+    })
+
+    harness.push(
+      `${JSON.stringify(
+        request(1, 'tools/call', {
+          name: 'run_ssh_command',
+          arguments: { command: 'sleep 5', env: 'main' },
+          _meta: { progressToken: 'ssh-prog-1' }
+        })
+      )}\n`
+    )
+    const during = await harness.send(request(2, 'tools/call', { name: 'list_sites' }))
+    expect(during.filter((frame) => 'id' in frame).map((frame) => frame.id)).toEqual([2])
+
+    gate.release?.()
+    await flushMicrotasks()
+
+    const responses = harness.frames.filter((frame) => 'id' in frame)
+    expect(responses.map((frame) => frame.id)).toEqual([2, 1])
+    const notifications = harness.frames.filter(
+      (frame) => frame.method === 'notifications/progress'
+    )
+    expect(
+      notifications.some(
+        (frame) => isPlainJsonObject(frame.params) && frame.params.progressToken === 'ssh-prog-1'
+      )
+    ).toBe(true)
+  })
 })
 
 describe('parseJsonRpcFrame', () => {

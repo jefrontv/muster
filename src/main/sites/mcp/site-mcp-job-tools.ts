@@ -11,6 +11,12 @@ import type { SiteRun } from '../../../shared/site-run-types'
 import { readNumber, readRequiredString, readString, resolveMcpSite } from './site-mcp-arguments'
 import type { SiteMcpContext, SiteMcpTool } from './site-mcp-context'
 import {
+  DEFAULT_JOB_LOG_MAX_BYTES,
+  DEFAULT_RUN_LOG_MAX_BYTES,
+  fitLogLinesToByteBudget,
+  MAX_LOG_BYTES
+} from './site-mcp-log-window'
+import {
   JOB_ID_PROPERTY,
   LIMIT_PROPERTY,
   objectSchema,
@@ -95,12 +101,16 @@ export const SITE_MCP_JOB_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'get_run_log',
     description:
-      'Read the persisted log for one run: the tail of its output, how many earlier lines were dropped, and the index of the first error line.',
+      'Read the persisted tail log for one run, fitted within max_lines and max_bytes, plus earlier drop count, first error index, and log_path.',
     inputSchema: objectSchema(
       {
         ...RUN_ID_PROPERTY,
         ...SITE_PROPERTY,
-        max_lines: { type: 'integer', description: 'Tail size; the most recent lines are kept.' }
+        max_lines: { type: 'integer', description: 'Tail size; newest lines kept (default 500).' },
+        max_bytes: {
+          type: 'integer',
+          description: 'Byte budget for returned lines (default 24000, max 200000).'
+        }
       },
       ['run_id']
     ),
@@ -110,14 +120,24 @@ export const SITE_MCP_JOB_TOOLS: readonly SiteMcpTool[] = [
       if (!located) {
         return Promise.resolve({ ok: false, error: `Run not found: ${runId}` })
       }
-      const maxLines = readNumber(args, 'max_lines', DEFAULT_LOG_LINES, MAX_LOG_LINES)
+      const maxLines = readNumber(args, 'max_lines', DEFAULT_LOG_LINES, MAX_LOG_LINES, 1)
+      const maxBytes = readNumber(
+        args,
+        'max_bytes',
+        DEFAULT_RUN_LOG_MAX_BYTES,
+        MAX_LOG_BYTES,
+        1_000
+      )
       const page = context.readRunLog(located.run.siteId, runId, maxLines)
+      const fitted = fitLogLinesToByteBudget(page.lines, page.truncatedEarlier, maxBytes)
       return Promise.resolve({
         ok: true,
         ...describeRun(located.run, located.live),
-        lines: page.lines,
-        truncated_earlier: page.truncatedEarlier,
-        first_error_index: page.firstErrorIndex
+        log_path: located.run.logPath || null,
+        lines: fitted.lines,
+        truncated_earlier: fitted.truncatedEarlier,
+        truncated_by_bytes: fitted.truncatedByBytes,
+        first_error_index: fitted.firstErrorIndex
       })
     }
   },
@@ -146,12 +166,16 @@ export const SITE_MCP_JOB_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'get_job_status',
     description:
-      "Return the status of an import/deploy job plus a tail of its log. Status is 'running', 'succeeded', 'failed', 'cancelled' or 'blocked'. If it is still running, report that and stop — do not poll again unless the user asked you to wait.",
+      "Return status ('running', 'succeeded', 'failed', 'cancelled', 'blocked') and a byte-capped log tail. If still running, report and stop unless asked to wait.",
     inputSchema: objectSchema(
       {
         ...JOB_ID_PROPERTY,
         ...SITE_PROPERTY,
-        max_log_lines: { type: 'integer', description: 'Log lines to include; 0 for none.' }
+        max_log_lines: { type: 'integer', description: 'Log lines to include; 0 for none.' },
+        max_bytes: {
+          type: 'integer',
+          description: 'Byte budget for included log lines (default 12000, max 200000).'
+        }
       },
       ['job_id']
     ),
@@ -162,16 +186,29 @@ export const SITE_MCP_JOB_TOOLS: readonly SiteMcpTool[] = [
         return Promise.resolve({ ok: false, error: `Job not found: ${jobId}` })
       }
       const maxLines = readNumber(args, 'max_log_lines', DEFAULT_JOB_LOG_LINES, MAX_LOG_LINES)
-      const page = context.readRunLog(located.run.siteId, jobId, maxLines)
+      const maxBytes = readNumber(
+        args,
+        'max_bytes',
+        DEFAULT_JOB_LOG_MAX_BYTES,
+        MAX_LOG_BYTES,
+        1_000
+      )
+      const page =
+        maxLines === 0
+          ? { lines: [], truncatedEarlier: 0, firstErrorIndex: -1 }
+          : context.readRunLog(located.run.siteId, jobId, maxLines)
+      const fitted = fitLogLinesToByteBudget(page.lines, page.truncatedEarlier, maxBytes)
       const progress = context.listActiveRuns().find((entry) => entry.run.id === jobId)?.progress
       return Promise.resolve({
         ok: true,
         ...describeRun(located.run, located.live),
         finished: TERMINAL_STATUSES.includes(located.run.status),
         progress: progress ?? null,
-        log: page.lines,
-        truncated_earlier: page.truncatedEarlier,
-        first_error_index: page.firstErrorIndex
+        log_path: located.run.logPath || null,
+        log: fitted.lines,
+        truncated_earlier: fitted.truncatedEarlier,
+        truncated_by_bytes: fitted.truncatedByBytes,
+        first_error_index: fitted.firstErrorIndex
       })
     }
   },

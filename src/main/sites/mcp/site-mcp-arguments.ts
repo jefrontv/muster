@@ -67,7 +67,8 @@ export function readNumber(
   args: ToolArguments,
   key: string,
   fallback: number,
-  max: number
+  max: number,
+  min = 0
 ): number {
   const value = args[key]
   if (value === undefined || value === null || value === '') {
@@ -77,7 +78,27 @@ export function readNumber(
   if (!Number.isFinite(parsed)) {
     throw new SiteMcpToolError(`'${key}' must be a number.`)
   }
-  return Math.min(Math.max(Math.trunc(parsed), 0), max)
+  return Math.min(Math.max(Math.trunc(parsed), min), max)
+}
+
+export function readOptionalBoundedInteger(
+  args: ToolArguments,
+  key: string,
+  min: number,
+  max: number
+): number | undefined {
+  const value = args[key]
+  if (value === undefined || value === null || value === '') {
+    return undefined
+  }
+  const parsed = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) {
+    throw new SiteMcpToolError(`'${key}' must be an integer between ${min} and ${max}.`)
+  }
+  if (parsed < min || parsed > max) {
+    throw new SiteMcpToolError(`'${key}' must be an integer between ${min} and ${max}.`)
+  }
+  return parsed
 }
 
 export function readRecord(args: ToolArguments, key: string): Record<string, unknown> {

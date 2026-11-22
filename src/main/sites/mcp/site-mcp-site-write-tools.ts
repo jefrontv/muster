@@ -119,11 +119,11 @@ export const SITE_MCP_SITE_WRITE_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'register_site',
     description:
-      'Make a project or folder a Muster site so it can be configured, imported and deployed. Pass `project` or an absolute `path`. An existing site at that path is reused, not duplicated. The user approves it in Muster first.',
+      'Register a project or absolute path as a Muster site after user approval (reuses existing site at same path).',
     inputSchema: objectSchema({
       ...PROJECT_PROPERTY,
-      path: { type: 'string', description: 'Absolute checkout path, when it is not a project.' },
-      name: { type: 'string', description: 'Site display name. Default: the folder name.' }
+      path: { type: 'string', description: 'Absolute checkout path when not a sidebar project.' },
+      name: { type: 'string', description: 'Display name (defaults to folder name).' }
     }),
     requiresSiteSetup: true,
     async run(context, args) {
@@ -161,7 +161,7 @@ export const SITE_MCP_SITE_WRITE_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'configure_site',
     description:
-      'Set up several environments of a site in one approved batch. Each entry names an environment (created if missing, optionally copied from another) with `fields` as set_deployment_fields takes them and `toggles` as set_deployment_toggles takes them. Passwords are refused: use request_site_secret. A site the user approved for this session skips the card.',
+      'Batch-create/update site environments (fields and toggles per entry) behind one approval. Password fields refused (use request_site_secret).',
     inputSchema: objectSchema(
       {
         ...SITE_PROPERTY,

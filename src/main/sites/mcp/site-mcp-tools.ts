@@ -8,6 +8,7 @@
 // working after the Python daemon is decommissioned.
 
 import { SiteMcpToolError } from './site-mcp-arguments'
+import { formatSiteMcpToolResult, type SiteMcpToolResult } from './site-mcp-response-guard'
 import { SITE_MCP_APPROVAL_TOOLS } from './site-mcp-approval-tools'
 import { SITE_MCP_CONFIG_TOOLS } from './site-mcp-config-tools'
 import type { SiteMcpContext, SiteMcpJsonSchema, SiteMcpTool } from './site-mcp-context'
@@ -81,16 +82,7 @@ export function findSiteMcpTool(name: string): SiteMcpTool | null {
   return SITE_MCP_TOOLS.find((tool) => tool.name === name) ?? null
 }
 
-/** MCP's tool result shape. `isError` keeps a failure inside the conversation instead of the protocol. */
-export type SiteMcpToolResult = {
-  content: { type: 'text'; text: string }[]
-  isError?: true
-}
-
-function toolResult(payload: unknown, isError: boolean): SiteMcpToolResult {
-  const content = [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }]
-  return isError ? { content, isError: true } : { content }
-}
+export type { SiteMcpToolResult }
 
 /** Keys a closed schema does not declare; clients are not required to enforce the schema. */
 function unknownArgumentKeys(tool: SiteMcpTool, args: Record<string, unknown>): string[] {
@@ -115,7 +107,8 @@ export async function dispatchSiteMcpTool(
   args: Record<string, unknown>
 ): Promise<SiteMcpToolResult> {
   if (!isToolAvailable(tool, context)) {
-    return toolResult(
+    return formatSiteMcpToolResult(
+      tool.name,
       {
         ok: false,
         error: `${tool.name} is off. The user can turn on "Let agents create and set up projects" in Muster's Agent Capabilities settings. Nothing was run.`
@@ -126,7 +119,8 @@ export async function dispatchSiteMcpTool(
   const unknown = unknownArgumentKeys(tool, args)
   if (unknown.length > 0) {
     // A misspelled `environment` on a deploy used to be dropped and the branch's env deployed.
-    return toolResult(
+    return formatSiteMcpToolResult(
+      tool.name,
       {
         ok: false,
         error: `Unknown argument(s) for ${tool.name}: ${unknown.join(', ')}. Nothing was run.`,
@@ -136,12 +130,17 @@ export async function dispatchSiteMcpTool(
     )
   }
   try {
-    return toolResult(await tool.run(context, args), false)
+    return formatSiteMcpToolResult(tool.name, await tool.run(context, args), false)
   } catch (error) {
     if (error instanceof SiteMcpToolError) {
-      return toolResult({ ok: false, error: error.message, ...error.details }, true)
+      return formatSiteMcpToolResult(
+        tool.name,
+        { ok: false, error: error.message, ...error.details },
+        true
+      )
     }
-    return toolResult(
+    return formatSiteMcpToolResult(
+      tool.name,
       {
         ok: false,
         error: error instanceof Error ? error.message : String(error)

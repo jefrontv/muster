@@ -67,6 +67,20 @@ describe('annotate_plan', () => {
     expect(result.plan_path).toBeNull()
   })
 
+  it('accepts inline markdown plans larger than 4 KB', async () => {
+    const largeMarkdown = `# Large Plan\n\n${'Step details line.\n'.repeat(400)}`
+    expect(largeMarkdown.length).toBeGreaterThan(4_096)
+    const seen: { content?: string }[] = []
+    await tool.run(
+      context((request) => {
+        seen.push(request)
+        return Promise.resolve({ requestId: 'r1', round: 1 })
+      }),
+      { content: largeMarkdown }
+    )
+    expect(seen[0]?.content).toBe(largeMarkdown)
+  })
+
   it('refuses both path and content, since only one can be the source of truth', async () => {
     const outcome = await dispatchSiteMcpTool(context(approved), tool, {
       path: join(dir, 'a.md'),

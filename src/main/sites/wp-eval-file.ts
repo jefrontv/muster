@@ -63,6 +63,7 @@ export type WpEvalFileRequest = {
   sidecar?: string
   maxPhpBytes?: number
   maxOutputChars?: number
+  tail?: boolean
   maxSidecarBytes?: number
   collectOutputFile?: boolean
   timeoutMs?: number
@@ -113,10 +114,14 @@ function clampTimeout(timeoutMs: number | undefined): number {
 function finish(
   command: string,
   result: { code: number; stdout: string; stderr: string },
-  maxOutputChars: number = WP_CLI_MAX_OUTPUT_CHARS
+  maxOutputChars: number = WP_CLI_MAX_OUTPUT_CHARS,
+  tail = false
 ): WpEvalFileResult {
-  const stdout = result.stdout.slice(0, maxOutputChars)
-  const stderr = result.stderr.slice(0, maxOutputChars)
+  const cap = Math.max(1, maxOutputChars)
+  const slice = (text: string): string =>
+    text.length <= cap ? text : tail ? text.slice(-cap) : text.slice(0, cap)
+  const stdout = slice(result.stdout)
+  const stderr = slice(result.stderr)
   return {
     command,
     code: result.code,
@@ -255,7 +260,7 @@ export async function runLocalWpEvalFile(
           : `WP-CLI (\`wp\`) could not be run in ${request.wpDir}: ${detail}`
       )
     }
-    const finished = finish(command, result, request.maxOutputChars)
+    const finished = finish(command, result, request.maxOutputChars, request.tail)
     if (!request.collectOutputFile) {
       return finished
     }
@@ -309,7 +314,7 @@ export async function runRemoteWpEvalFile(
       written.push(jsonPath)
     }
     const result = await session.exec(command, { timeoutMs: clampTimeout(request.timeoutMs) })
-    const finished = finish(command, result, request.maxOutputChars)
+    const finished = finish(command, result, request.maxOutputChars, request.tail)
     if (!request.collectOutputFile) {
       return finished
     }

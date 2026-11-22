@@ -275,6 +275,35 @@ describe('buildAcfPayload', () => {
       buildAcfPayload({ mode: 'apply', target: { kind: 'option' }, fields: [], rows })
     ).toThrow(/byte cap/)
   })
+
+  it('allows larger restore payloads when maxBytes override is supplied', () => {
+    const bigRoots = { body: 'x'.repeat(300_000) }
+    expect(() =>
+      buildAcfPayload({ mode: 'restore', target: { kind: 'option' }, fields: [], roots: bigRoots })
+    ).toThrow(/262144-byte cap/)
+    const json = buildAcfPayload({
+      mode: 'restore',
+      target: { kind: 'option' },
+      fields: [],
+      roots: bigRoots,
+      maxBytes: 1024 * 1024
+    })
+    expect(Buffer.byteLength(json, 'utf8')).toBeGreaterThan(262_144)
+  })
+
+  it('serialises max_value_chars, offset and limit only when defined', () => {
+    const parsed = JSON.parse(
+      buildAcfPayload({
+        mode: 'get',
+        target: { kind: 'option' },
+        fields: ['modules.*.body'],
+        maxValueChars: 200,
+        offset: 10,
+        limit: 25
+      })
+    )
+    expect(parsed).toMatchObject({ max_value_chars: 200, offset: 10, limit: 25 })
+  })
 })
 
 describe('bundled PHP', () => {

@@ -68,10 +68,10 @@ function fieldProperties(): Record<string, Record<string, unknown>> {
       field.kind === 'number'
         ? { type: ['number', 'string', 'null'], description: field.description }
         : field.kind === 'boolean'
-          ? { type: ['boolean', 'string'], description: `${field.description} (per environment)` }
+          ? { type: ['boolean', 'string'], description: `${field.description} (env)` }
           : {
               type: 'string',
-              description: `${field.description}${field.target === 'environment' ? ' (per environment)' : ''}`,
+              description: `${field.description}${field.target === 'environment' ? ' (env)' : ''}`,
               ...(field.choices ? { enum: [...field.choices] } : {})
             }
     ])
@@ -177,7 +177,7 @@ export const SITE_MCP_CONFIG_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'get_deployment_config',
     description:
-      'Return the full deployment config for a site: every non-secret field value, password set-status flags, and the state of every import/deploy toggle. Passwords are never returned.',
+      'Return non-secret deployment config, password set-status flags, and import/deploy toggle states for a site.',
     inputSchema: objectSchema({ ...WRITE_SCHEMA_SUFFIX }),
     async run(context, args) {
       const site = resolveMcpSite(context, readString(args, 'site'))
@@ -193,8 +193,7 @@ export const SITE_MCP_CONFIG_TOOLS: readonly SiteMcpTool[] = [
   },
   {
     name: 'list_deployment_toggles',
-    description:
-      'List every deployment toggle and field with a human-readable description. Call this before set_deployment_toggles or set_deployment_fields to discover valid keys.',
+    description: 'List all deployment toggle and field keys with descriptions.',
     inputSchema: objectSchema({}),
     run(_context, _args) {
       return Promise.resolve({

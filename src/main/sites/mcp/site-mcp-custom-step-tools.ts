@@ -58,7 +58,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'create_custom_step',
     description:
-      "Create a repeatable import or deploy step for a site. The step appears as a checkbox in the site panel and runs as part of that group's pipeline. Give EITHER 'command' for a one-liner, where placeholders {{sitePath}}, {{wpDir}}, {{remoteRoot}}, {{liveDomain}}, {{localDomain}}, {{environment}} are substituted shell-quoted at run time, OR 'script_path' for anything complex. Secrets are never available to either.",
+      "Create an import/deploy custom step checkbox. Pass EITHER 'command' (one-liner; supports {{sitePath}}, {{wpDir}}, {{remoteRoot}}, {{liveDomain}}, {{localDomain}}, {{environment}}) OR 'script_path' for scripts. Secrets are never exposed.",
     inputSchema: objectSchema(
       {
         name: {
@@ -71,7 +71,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         },
         script_path: {
           type: 'string',
-          description: `Repo-relative bash script inside the checkout, conventionally under '${CUSTOM_STEP_SCRIPT_DIR}/'. Preferred for multi-line work: it is version-controlled, runs standalone, and crosses SSH as a file so quoting cannot break it. Values arrive as $MUSTER_SITE_PATH, $MUSTER_WP_DIR, $MUSTER_REMOTE_ROOT, $MUSTER_LIVE_DOMAIN, $MUSTER_LOCAL_DOMAIN and $MUSTER_ENVIRONMENT — never substituted into the text, so braces are safe. Write the file first; call list_custom_steps for the absolute script_dir. No execute bit needed.`
+          description: `Repo-relative bash script under '${CUSTOM_STEP_SCRIPT_DIR}/'. Receives $MUSTER_SITE_PATH, $MUSTER_WP_DIR, $MUSTER_REMOTE_ROOT, $MUSTER_LIVE_DOMAIN, $MUSTER_LOCAL_DOMAIN, $MUSTER_ENVIRONMENT. Write the file first (call list_custom_steps for script_dir).`
         },
         group: { type: 'string', description: "'import' or 'deploy'." },
         runs_on: {
@@ -80,8 +80,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         },
         position: {
           type: 'string',
-          description:
-            "'before' or 'after' the built-in steps of the group (default 'after'). Use 'before' for things like enabling maintenance mode."
+          description: "'before' or 'after' built-in steps (default 'after')."
         },
         description: {
           type: 'string',
@@ -89,8 +88,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
         },
         enabled: {
           type: 'boolean',
-          description:
-            'Whether it is ticked. Default false: a step an agent creates runs on the next deploy anyone starts, so it stays off until someone ticks it.'
+          description: 'Enabled on next run (default false).'
         },
         ...SITE_PROPERTY
       },
@@ -195,7 +193,7 @@ export const SITE_MCP_CUSTOM_STEP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'copy_custom_step',
     description:
-      "Copy a custom step from another site onto this one — 'bring site X's import step over here'. Passing the same site duplicates the step. The copy always gets a new id and records where it came from, so editing it never affects the original.",
+      'Copy a custom step from another site (or duplicate on the same site) with a new id and origin metadata.',
     inputSchema: objectSchema(
       {
         from_site: {

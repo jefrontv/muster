@@ -41,21 +41,21 @@ export const SITE_MCP_PROJECT_WRITE_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'create_project',
     description:
-      "Add a project to Muster's Code sidebar: clone `clone_url` into `parent_dir` (default: the primary site root from discover_site_folders), or add an existing folder at `path`. The user approves it in Muster first; the result says how to collect the approval. An approved clone returns a `job_id` straight away: poll get_setup_job until it succeeds (its result is the new project) and tell the user the progress.",
+      'Clone clone_url (into parent_dir, default primary_root) or add existing folder path to Muster sidebar after approval. Approved clones return job_id to poll via get_setup_job.',
     inputSchema: objectSchema({
       clone_url: {
         type: 'string',
-        description: 'Git URL to clone (list_clone_sources gives these).'
+        description: 'Git URL to clone (from list_clone_sources).'
       },
       parent_dir: { type: 'string', description: 'Absolute folder to clone into.' },
       path: {
         type: 'string',
-        description: 'Absolute path of an existing folder or checkout to add.'
+        description: 'Absolute path to an existing checkout or folder.'
       },
       kind: {
         type: 'string',
         enum: ['git', 'folder', 'auto'],
-        description: 'For `path`. Default auto.'
+        description: 'Project kind for path (default auto).'
       }
     }),
     requiresSiteSetup: true,
@@ -110,18 +110,17 @@ export const SITE_MCP_PROJECT_WRITE_TOOLS: readonly SiteMcpTool[] = [
   },
   {
     name: 'update_project',
-    description:
-      "Rename a sidebar project and/or set its icon to a website's favicon. `use_site_favicon` takes the favicon from the linked site's live domain. The user approves it in Muster first.",
+    description: 'Rename a sidebar project or set its favicon icon (needs approval).',
     inputSchema: objectSchema({
       ...PROJECT_PROPERTY,
       name: { type: 'string', description: 'New display name.' },
       favicon_domain: {
         type: 'string',
-        description: 'Website to take the favicon from, e.g. acme.com.'
+        description: 'Domain for favicon, e.g. acme.com.'
       },
       use_site_favicon: {
         type: 'boolean',
-        description: "Use the linked site's live domain favicon."
+        description: "Use linked site's live domain favicon."
       }
     }),
     requiresSiteSetup: true,

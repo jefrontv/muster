@@ -13,11 +13,13 @@ import {
 import { readAcfGetLocation, readAcfGetRequest } from '../wp-acf-read-request'
 import { readAcfRowOps } from '../wp-acf-row-ops'
 import { readAcfTargetSelection } from '../wp-acf-target'
+import { WP_CLI_MAX_OUTPUT_CHARS, WP_CLI_MIN_OUTPUT_CHARS } from '../wp-cli-runner'
 import { withPhpOpenTag, WP_EVAL_FILE_MAX_BYTES } from '../wp-eval-file'
 import {
   readBoolean,
   readLocation,
   readLongString,
+  readNumber,
   readOptionalStringArray,
   readString,
   SiteMcpToolError,
@@ -37,6 +39,8 @@ import {
 } from './site-mcp-schemas'
 import { fieldResult, runEval } from './site-mcp-wp-eval-run'
 import { runAcfUndo, storeAcfRevert } from './site-mcp-wp-undo'
+
+const DEFAULT_EVAL_OUTPUT_CHARS = 20_000
 
 async function getWpFields(
   context: SiteMcpContext,
@@ -125,6 +129,14 @@ async function wpEvalFile(
     )
   }
   const extra = readOptionalStringArray(args, 'args', 20, 512)
+  const maxOutputChars = readNumber(
+    args,
+    'max_output_chars',
+    DEFAULT_EVAL_OUTPUT_CHARS,
+    WP_CLI_MAX_OUTPUT_CHARS,
+    WP_CLI_MIN_OUTPUT_CHARS
+  )
+  const tail = readBoolean(args, 'tail', false)
   const transport = await runEval(
     context,
     args,
@@ -132,7 +144,8 @@ async function wpEvalFile(
     'WP eval-file',
     body,
     undefined,
-    extra
+    extra,
+    { maxOutputChars, tail }
   )
   if (transport.blocked === true) {
     return transport
@@ -157,7 +170,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'get_wp_fields',
     description:
-      "Read ACF field values on local or remote WordPress. Required location: 'local' (this site's WP root) or 'remote' (environment host; unmatched branch refuses unless env= or confirm=true). Paths are dotted and 0-based: modules.0 is the first flex row, spacing_templates.9.name matches options_spacing_templates_9_name. A missing field name is an error, not an empty option. A container path (flex row, repeater, group) returns its values keyed by sub-field name, and modules.N.acf_fc_layout reads that row's layout. A * segment reads every row at that position: modules.*.section_id returns one result for the pattern with count and matches: [{index_path, path, value, field: {key, type}}], plus skipped: [{index_path, layout}] for rows whose layout has no such sub-field. Each pattern counts as one of the 40 paths and is read-only. Set describe: true to see the shape of a target instead of its values, or checksum: true for digests. location 'both' reads local and the resolved environment and returns one comparison: differs_count at the top, then per path {path, field?, local, remote, differs}, or for a pattern {path, field, count, matches: [{index_path, local, remote, differs}], only_local, only_remote}. differs is null where one side errored, exists says which side is missing, and a side's own error stays under that side. Gutenberg ACF blocks are refused.",
+      "Read ACF fields locally or remotely (location='both' compares them and reports differs_count). Use dotted 0-based paths (modules.0, modules.*.section_id, modules.N.acf_fc_layout; max 40 paths). Wildcards expand matching rows with skipped layouts and support offset/limit paging; max_value_chars truncates huge string values on get. describe=true returns schema/row layouts instead of values; checksum=true returns SHA-1 digests. Unmatched remote branch refuses unless env= or confirm=true. Gutenberg blocks refused.",
     inputSchema: objectSchema(
       {
         ...COMPARE_LOCATION_PROPERTY,
@@ -167,22 +180,35 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
           type: 'array',
           items: { type: 'string' },
           description:
-            'Dotted 0-based ACF paths, e.g. ["modules.6.bottom_spacing"] or ["modules.*.acf_fc_layout"]. Required unless describe or checksum is true, where it names the roots or containers to cover and takes no wildcards.'
+            'Dotted 0-based ACF paths (max 40). Required for get; optional root/container names for describe/checksum (no wildcards).'
         },
         describe: {
           type: 'boolean',
           description:
-            "Default false. true returns each path's shape instead of its value: field, rows for a repeater or flexible field, sub_fields for a repeater or group, layouts with their own sub_fields for a flexible field, and row_layouts giving every row's index and layout. Omit fields to describe every field on the target. Labels are plain text cut to 80 characters, and a clone shows as {name, type: 'clone'} beside the children it flattened, wherever ACF nests them."
+            'Default false. true returns field schema, layouts, sub_fields, and row_layouts (omit fields for all groups).'
         },
         checksum: {
           type: 'boolean',
           description:
-            "Default false. true answers {path, digest} per path instead of values; a failed path is {path, exists: false, error} and a wildcard is refused. Omit fields to digest every usable root and get target_digest as well. The digest is sha1 of the JSON form of the walker-normalised value: associative keys sorted recursively, lists in order, scalars compared as strings, anything ACF treats as empty removed so absent, null and '' are one state, slashes and unicode unescaped. target_digest is the same hash over the key-sorted map of root name to root digest. Both hosts run the same walker, so digests compare across them; pair it with location 'both' to ask whether staging still matches."
+            'Default false. true returns normalized SHA-1 digests per path (omit fields for target_digest).'
         },
         layout_filter: {
           type: 'string',
           description:
-            'Only with describe: true. One flexible-content layout name, which narrows the answer to that layout: layouts holds only it and row_layouts only its rows, while rows still counts the whole field and where: {layout, indexes} lists the rows using it. An unknown name is a per-path error listing the real ones.'
+            'With describe=true: narrow output and row_layouts/where.indexes to one flexible-content layout.'
+        },
+        max_value_chars: {
+          type: 'integer',
+          description:
+            'For get mode only (50–100000): truncate returned string values to avoid blowing response limits.'
+        },
+        offset: {
+          type: 'integer',
+          description: 'For wildcard get reads (0–100000): match index to start from.'
+        },
+        limit: {
+          type: 'integer',
+          description: 'For wildcard get reads (1–2000): max matches to return per page.'
         },
         ...RETURN_PROPERTY,
         ...SITE_PROPERTY,
@@ -191,12 +217,13 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
       },
       ['location']
     ),
+    concurrent: true,
     run: getWpFields
   },
   {
     name: 'update_wp_fields',
     description:
-      "Preview or apply ACF field writes via update_field (never raw wp option update). Required location local|remote. Paths are 0-based. apply defaults to false (preview, returns old→new). apply=true writes; a typo'd field name or a bad row operation is a hard error and nothing is written. fields sets leaf values, rows adds, removes, reorders or copies rows of a repeater or flexible field; pass either or both. ok is false when nothing was applied because a path failed; a preview keeps ok true. apply is true whenever writes were issued, and each result row's applied says whether the re-read matched: a mismatch warns 'write issued but the re-read did not match: <path>' and keeps that path out of revert. Every result row and op carries its own warnings, and the mismatch warning lands there as well as at the top level. Preview and apply both return revert: {target, fields: [{path, value}], rows: [op, …]}, already in reverse application order, and an apply also returns revert_token, which update_wp_fields undo=<token> replays later from any session. To undo, replay revert.rows as rows with apply=true first, then revert.fields as fields with apply=true, because row operations move the indexes a field path uses. targets writes the same fields and rows to up to 20 targets in one run; each target is atomic on its own, not across targets, and ok is true only when every one succeeded. location stays local or remote here; use get_wp_fields for 'both'. After apply, page-cache plugins may still serve stale HTML. Gutenberg ACF blocks are refused.",
+      'Preview (apply=false) or apply ACF field/row updates via update_field (never raw option updates). Bad paths/ops abort the whole target atomically. Supports leaf fields, row ops (append/insert/delete/move/duplicate), multi-target (up to 20 atomic per target), and undo=<token> from previous apply/list_wp_reverts (verified by root checksum; replays once). Gutenberg blocks refused.',
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
@@ -205,12 +232,12 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
         fields: {
           type: 'array',
           description:
-            '[{path, value}, …]. value is JSON in ACF input format (image = ID, not the array get_field returns). Optional when rows is given. Wildcard paths are refused here; expand them with get_wp_fields first.'
+            '[{path, value}, …] using ACF input format (e.g. image=ID). No wildcards; optional if rows is provided.'
         },
         rows: {
           type: 'array',
           description:
-            "Row operations, at most 40. path names the repeater or flexible field itself, never one of its rows. append adds a row at the end: {op:'append', path, layout, values}. insert puts one at index and shifts the rest down: {op:'insert', path, index, layout, values}. delete removes the row at index: {op:'delete', path, index}. move takes the row at index and puts it at to: {op:'move', path, index, to}. duplicate copies the row at index to to, or to just after it: {op:'duplicate', path, index, to}. layout names the flexible-content layout; it is required for a flexible field and refused for a repeater. values are keyed by sub-field name and omitted sub-fields keep ACF's defaults. Previewed unless apply=true, applied atomically alongside fields, and undone with the same revert payload. The response carries a top-level rows array beside results, one entry per operation: op, path, before_count, after_count, row_layouts, applied, and error when one failed. The counts are that op's own, in sequence, and row_layouts lists only the row it touched: the landing row for append, insert and duplicate, the row at to for move, nothing for delete. Use describe or modules.*.acf_fc_layout for the whole list. applied is a subset match, so sub-fields ACF filled in for you are ignored."
+            'Up to 40 row ops on repeater/flexible containers: {op: append|insert|delete|move|duplicate, path, index?, to?, layout?, values?}. Runs atomically with fields and emits revert ops.'
         },
         apply: {
           type: 'boolean',
@@ -219,7 +246,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
         undo: {
           type: 'string',
           description:
-            'Replay a stored revert by its token, taking no fields, rows or targets. It honours apply, so a preview previews the undo, and it runs the rows half before the fields half. Muster checksums the roots the original write touched and refuses if any changed since, rather than writing over an edit somebody else made. A token replays once. list_wp_reverts shows what is held.'
+            'Replay a stored revert token (takes no fields/rows/targets; honors apply; verifies root checksums before writing).'
         },
         ...RETURN_PROPERTY,
         ...SITE_PROPERTY,
@@ -228,24 +255,32 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
       },
       ['location']
     ),
+    concurrent: true,
     run: updateWpFields
   },
   {
     name: 'wp_eval_file',
     description:
-      'Run a PHP file body with `wp eval-file` on local or remote WordPress, then delete the temp file. Required location. The opening `<?php` tag is optional: Muster prepends one when the body does not already start with `<?php` or `<?=`. 64KB cap, measured after that line is added. Extra args are argv, not a shell string. Prefer update_wp_fields for ACF. Tell the user what the script does before confirm on a production-ish host. Always cleaned up.',
+      'Run a PHP body (up to 64 KB) via `wp eval-file` locally or remotely and clean up the temp file afterwards (opening <?php tag added if omitted). Prefer update_wp_fields for ACF edits. Tell the user before confirm on production.',
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
         php: {
           type: 'string',
-          description:
-            'PHP file body (not a path). The opening `<?php` tag is optional and prepended when missing. Max 64KB. Always written to a temp file and deleted after.'
+          description: 'PHP code (max 64 KB; <?php prepended if absent).'
         },
         args: {
           type: 'array',
           items: { type: 'string' },
           description: 'Extra argv forwarded to the file as WP-CLI $args.'
+        },
+        max_output_chars: {
+          type: 'integer',
+          description: 'Per-stream limit, clamped 1000–50000 (default 20000).'
+        },
+        tail: {
+          type: 'boolean',
+          description: 'Keep tail instead of head when truncated (default false).'
         },
         ...SITE_PROPERTY,
         ...ENV_PROPERTY,
@@ -253,6 +288,7 @@ export const SITE_MCP_WP_FIELD_TOOLS: readonly SiteMcpTool[] = [
       },
       ['location', 'php']
     ),
+    concurrent: true,
     run: wpEvalFile
   }
 ]

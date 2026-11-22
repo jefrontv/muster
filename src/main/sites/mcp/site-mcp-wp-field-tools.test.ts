@@ -256,6 +256,27 @@ describe('wp_eval_file', () => {
   it('drops a BOM ahead of the tag instead of echoing three stray bytes', async () => {
     expect(await evalBody('\uFEFF<?php echo 1;')).toBe('<?php echo 1;')
   })
+
+  it('applies max_output_chars and tail on wp_eval_file', async () => {
+    vi.mocked(streamCommand).mockResolvedValueOnce({
+      code: 0,
+      stdout: `${'B'.repeat(1_400)}EVAL_END`,
+      stderr: '',
+      timedOut: false,
+      truncated: false,
+      stoppedEarly: false
+    })
+    const { isError, payload } = await call('wp_eval_file', {
+      location: 'local',
+      php: 'echo 1;',
+      max_output_chars: 1_000,
+      tail: true
+    })
+    expect(isError).toBe(false)
+    expect(payload.output_truncated).toBe(true)
+    expect(String(payload.stdout)).toHaveLength(1_000)
+    expect(String(payload.stdout).endsWith('EVAL_END')).toBe(true)
+  })
 })
 
 describe('return projection', () => {
@@ -573,6 +594,27 @@ describe('get_wp_fields describe mode', () => {
     })
     expect(isError).toBe(true)
     expect(String(payload.error)).toContain("'fields'")
+  })
+
+  it('forwards max_value_chars, offset and limit on get reads', async () => {
+    evalFiles.length = 0
+    const { isError } = await call('get_wp_fields', {
+      location: 'remote',
+      env: 'main',
+      target: { kind: 'post', id: 672 },
+      fields: ['modules.*.body'],
+      max_value_chars: 120,
+      offset: 5,
+      limit: 10
+    })
+    expect(isError).toBe(false)
+    const sidecar = evalFiles.find((file) => file.path.endsWith('.json'))
+    expect(JSON.parse(sidecar?.contents ?? '{}')).toMatchObject({
+      mode: 'get',
+      max_value_chars: 120,
+      offset: 5,
+      limit: 10
+    })
   })
 })
 

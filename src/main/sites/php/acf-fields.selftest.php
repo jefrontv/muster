@@ -1692,5 +1692,57 @@ $GLOBALS['muster_acf_cli_args'] = array();
 muster_acf_test_reset();
 muster_acf_assert( $MUSTER_FORMATTED_READS === 0, 'never reads formatted values' );
 
+// --- 43. Value truncation and wildcard pagination on get reads only. --------
+muster_acf_test_reset();
+$MUSTER_DB['options_av_modules'][0]['field_av_body'] = str_repeat( 'A', 150 );
+$before_digest = muster_acf_test_checksum( array( 'av_modules.0.body' ) )['results'][0]['digest'];
+$truncated_get = muster_acf_run(
+	array(
+		'mode'            => 'get',
+		'target'          => array( 'kind' => 'option' ),
+		'fields'          => array( 'av_modules.0.body' ),
+		'max_value_chars' => 50,
+	)
+);
+muster_acf_assert( $truncated_get['values_truncated'] === true, 'get marks values_truncated when trimmed' );
+muster_acf_assert( substr( $truncated_get['results'][0]['value'], 0, 50 ) === str_repeat( 'A', 50 ), 'prefix keeps max_value_chars' );
+muster_acf_assert( strpos( $truncated_get['results'][0]['value'], '[truncated 100 chars]' ) !== false, 'suffix notes trimmed char count' );
+muster_acf_assert( muster_acf_test_has_warning( $truncated_get['warnings'], 'max_value_chars=50' ), 'warning names max_value_chars' );
+$after_digest = muster_acf_test_checksum( array( 'av_modules.0.body' ) )['results'][0]['digest'];
+muster_acf_assert( $after_digest === $before_digest, 'checksum stays unaffected by get truncation' );
+
+$many_rows = array();
+for ( $i = 0; $i < 5; $i++ ) {
+	$many_rows[] = array( 'field_st_name' => 'row-' . $i . '-' . str_repeat( 'z', 80 ) );
+}
+$MUSTER_DB['options_spacing_templates'] = $many_rows;
+$paged = muster_acf_run(
+	array(
+		'mode'            => 'get',
+		'target'          => array( 'kind' => 'option' ),
+		'fields'          => array( 'spacing_templates.*.name' ),
+		'offset'          => 1,
+		'limit'           => 2,
+		'max_value_chars' => 50,
+	)
+);
+$paged_row = $paged['results'][0];
+muster_acf_assert( $paged_row['count'] === 2 && $paged_row['offset'] === 1 && $paged_row['limit'] === 2, 'wildcard respects offset and limit' );
+muster_acf_assert( $paged_row['has_more'] === true && $paged_row['truncated'] === true, 'wildcard reports has_more when matches remain' );
+muster_acf_assert( $paged_row['matches'][0]['path'] === 'spacing_templates.1.name' && $paged_row['matches'][1]['path'] === 'spacing_templates.2.name', 'page slices from offset' );
+muster_acf_assert( strpos( $paged_row['matches'][0]['value'], '[truncated' ) !== false, 'wildcard matches apply max_value_chars' );
+
+$last_page = muster_acf_run(
+	array(
+		'mode'   => 'get',
+		'target' => array( 'kind' => 'option' ),
+		'fields' => array( 'spacing_templates.*.name' ),
+		'offset' => 3,
+		'limit'  => 2,
+	)
+);
+$last_row = $last_page['results'][0];
+muster_acf_assert( $last_row['count'] === 2 && $last_row['has_more'] === false && ! isset( $last_row['truncated'] ), 'final exact page reports has_more false' );
+
 fwrite( STDOUT, "ok\n" );
 exit( 0 );

@@ -99,6 +99,19 @@ describe('runLocalWpEvalFile', () => {
     })
     expect(raised.stdout).toHaveLength(120_000)
     expect(raised.stdoutTruncated).toBe(false)
+
+    streamCommandMock.mockResolvedValueOnce(
+      commandResult({ stdout: `${'h'.repeat(1_200)}END_TAIL` })
+    )
+    const tailed = await runLocalWpEvalFile({
+      wpDir: '/sites/acme',
+      php: '<?php echo 1;',
+      maxOutputChars: 1_000,
+      tail: true
+    })
+    expect(tailed.stdout).toHaveLength(1_000)
+    expect(tailed.stdout.endsWith('END_TAIL')).toBe(true)
+    expect(tailed.stdoutTruncated).toBe(true)
   })
 
   it('refuses an oversize PHP body', async () => {

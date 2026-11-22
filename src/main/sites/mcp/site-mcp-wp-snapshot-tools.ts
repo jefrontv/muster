@@ -217,7 +217,8 @@ async function restoreWpFields(
     target: record.target as AcfTarget,
     fields: [],
     roots,
-    applyFlag: apply
+    applyFlag: apply,
+    maxBytes: WP_EVAL_RESTORE_SIDECAR_MAX_BYTES
   })
   const transport = await runEval(
     context,
@@ -247,14 +248,14 @@ export const SITE_MCP_WP_SNAPSHOT_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'list_wp_reverts',
     description:
-      'List the ACF revert tokens Muster still holds for a site, newest first. Every update_wp_fields apply stores one; the newest 20 per site are kept for 24 hours. Each entry carries token, target, location, environment, when, summary and consumed. Replay one with update_wp_fields undo=<token>.',
+      'List stored ACF revert tokens (newest 20/site kept 24h) with token, target, host, and consumed flag. Replay via update_wp_fields undo=<token>.',
     inputSchema: objectSchema({ ...SITE_PROPERTY, ...LIMIT_PROPERTY }, []),
     run: listWpReverts
   },
   {
     name: 'snapshot_wp_fields',
     description:
-      'Capture every ACF root on a target, or only the roots named in fields, and store it under a token. Values travel as a file rather than in the response, so a 260-row page is not subject to the output ceiling; the response carries the token, the root names, a digest per root and one for the whole target. The newest 10 snapshots per site are kept for 7 days. Restore one with restore_wp_fields. This reads only; it writes nothing to WordPress.',
+      'Read-only: capture all or named ACF root fields to a stored snapshot token with per-root and target digests (newest 10/site kept 7d; bypasses stdout size limits). Restore via restore_wp_fields.',
     inputSchema: objectSchema(
       {
         ...LOCATION_PROPERTY,
@@ -263,7 +264,7 @@ export const SITE_MCP_WP_SNAPSHOT_TOOLS: readonly SiteMcpTool[] = [
           type: 'array',
           items: { type: 'string' },
           description:
-            'Root field names to capture, e.g. ["modules"]. A dotted path is refused because a snapshot captures whole roots. Omit it to capture every usable root on the target.'
+            'Root field names only (e.g. ["modules"]). Omit to capture every usable root.'
         },
         ...SITE_PROPERTY,
         ...ENV_PROPERTY,
@@ -271,12 +272,13 @@ export const SITE_MCP_WP_SNAPSHOT_TOOLS: readonly SiteMcpTool[] = [
       },
       ['location', 'target']
     ),
+    concurrent: true,
     run: snapshotWpFields
   },
   {
     name: 'restore_wp_fields',
     description:
-      "Write a stored snapshot back. apply defaults to false: a preview reports per root whether it would change, the row count before and after, and the digest before and after, without writing. apply=true writes each root through update_field, which rebuilds the rows and drops any beyond the snapshot's count, then verifies each root's digest against the snapshot and reports applied per root. Before it writes, apply=true snapshots the same roots where it is about to write and returns that as pre_restore_token; restore it to undo. No values come back either way. A root that cannot be resolved means nothing is written, and a preview says which one. Values never go through raw meta: add_post_meta unslashes serialized values and is not a safe route. location defaults to the host the snapshot came from, and env must then match the snapshot's environment or be omitted; overriding location restores across hosts, which needs the same post ID on both sides.",
+      "Preview (apply=false) or apply a snapshot token back via update_field, rebuilding rows and verifying digests. apply=true saves a pre_restore_token first and refuses if any root fails to resolve. Never uses raw post meta. location overrides host; omitted uses the snapshot's host.",
     inputSchema: objectSchema(
       {
         token: {
@@ -290,8 +292,7 @@ export const SITE_MCP_WP_SNAPSHOT_TOOLS: readonly SiteMcpTool[] = [
         location: {
           type: 'string',
           enum: ['local', 'remote'],
-          description:
-            'Override the host to restore onto. Omitted means the one the snapshot was taken from.'
+          description: 'Override target host; defaults to snapshot origin.'
         },
         ...SITE_PROPERTY,
         ...ENV_PROPERTY,
@@ -299,6 +300,7 @@ export const SITE_MCP_WP_SNAPSHOT_TOOLS: readonly SiteMcpTool[] = [
       },
       ['token']
     ),
+    concurrent: true,
     run: restoreWpFields
   }
 ]

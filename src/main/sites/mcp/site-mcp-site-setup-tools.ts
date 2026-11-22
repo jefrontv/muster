@@ -74,23 +74,23 @@ export const SITE_MCP_SITE_SETUP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'open_site_setup',
     description:
-      "Set up a site in Muster: opens Muster's Set up dialog filled in for the user to check, then they press Set up site and Muster clones, registers, serves, adds HTTPS and imports in one run with its own progress bar. Pass `clone_url` (from list_clone_sources) for a new site, or `site` to finish setting up one that exists. The dialog is the approval, so there is no card. The user can click the site's muster:// link while it is open to add the server login and password. Then call wait_for_site_setup with the returned setup_id until it finishes. Use this instead of create_project plus register_site whenever the goal is a working site.",
+      'Open prefilled Set up site dialog in Muster (clones/registers/serves/HTTPS/imports in one user-triggered run; no separate approval card). Pass clone_url or existing site, then poll wait_for_site_setup with setup_id. Prefer over create_project + register_site.',
     inputSchema: objectSchema({
-      clone_url: { type: 'string', description: 'Git URL of the repo to clone into a new site.' },
+      clone_url: { type: 'string', description: 'Git URL to clone for a new site.' },
       ...SITE_PROPERTY,
       stack: {
         type: 'string',
         enum: ['agent-local', 'ddev', 'localwp'],
-        description: "Suggested local stack. Leave out to use Muster's default."
+        description: 'Suggested stack (defaults to Muster preference).'
       },
-      domain: { type: 'string', description: 'Suggested local domain, e.g. aidc.test.' },
+      domain: { type: 'string', description: 'Suggested local domain (e.g. aidc.test).' },
       serve: {
         type: 'boolean',
-        description: 'Suggest running the site locally. Default: Muster decides.'
+        description: 'Suggest serving locally.'
       },
       import: {
         type: 'boolean',
-        description: 'Suggest importing the database and files. Default: Muster decides.'
+        description: 'Suggest running initial import.'
       }
     }),
     requiresSiteSetup: true,
@@ -123,13 +123,13 @@ export const SITE_MCP_SITE_SETUP_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'wait_for_site_setup',
     description:
-      'Wait on a setup opened by open_site_setup. Holds the call until something changes (the user starts it, a step starts, it finishes, fails or is closed) or `wait_seconds` runs out, reporting progress meanwhile. Returns `state`: reviewing, running (with step and percent), attention (a step failed and the user can retry), done (with what each step did), cancelled or failed. Call it again until done, cancelled or failed; never sleep between calls.',
+      'Long-poll setup_id from open_site_setup until state changes or wait_seconds elapses (emits progress). Poll again until done, cancelled, or failed — never sleep.',
     inputSchema: objectSchema(
       {
         setup_id: { type: 'string', description: 'The setup_id open_site_setup returned.' },
         wait_seconds: {
           type: 'number',
-          description: `How long to wait for a change. Default ${WAIT_DEFAULT_SECONDS}, max ${WAIT_MAX_SECONDS}. Only raise it if your client's request timeout is longer.`
+          description: `Wait limit in seconds (default ${WAIT_DEFAULT_SECONDS}, max ${WAIT_MAX_SECONDS}).`
         }
       },
       ['setup_id']

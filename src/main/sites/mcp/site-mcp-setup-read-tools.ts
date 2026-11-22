@@ -74,10 +74,9 @@ function shapeRepoResults(
 export const SITE_MCP_SETUP_READ_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'list_projects',
-    description:
-      "List the projects in Muster's Code sidebar: path, kind (git or folder), host, and the site linked to each, if any. Needs Muster open.",
+    description: 'List sidebar projects (path, kind, host, linked site). Needs Muster open.',
     inputSchema: objectSchema({
-      query: { type: 'string', description: 'Case-insensitive substring of the name or path.' },
+      query: { type: 'string', description: 'Case-insensitive substring of name/path.' },
       ...LIMIT_PROPERTY
     }),
     async run(context, args) {
@@ -96,13 +95,13 @@ export const SITE_MCP_SETUP_READ_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'list_clone_sources',
     description:
-      'Find a git repository to clone when a project is not in Muster yet. With `query` (a project or client name), searches every connected host (GitHub, Bitbucket) at once and returns matching repos with clone URLs. Search here before asking the user for a repo URL. Without arguments: which hosts are connected. Needs Muster open.',
+      'Search connected git hosts (GitHub/Bitbucket) for repos + clone URLs by query, or list connected providers when query omitted. Needs Muster open.',
     inputSchema: objectSchema({
-      query: { type: 'string', description: 'Project or client name to search repo names for.' },
+      query: { type: 'string', description: 'Search query (project/client name).' },
       provider: {
         type: 'string',
         enum: ['bitbucket', 'github'],
-        description: 'Search one host only.'
+        description: 'Limit to one host.'
       },
       ...LIMIT_PROPERTY
     }),
@@ -137,7 +136,7 @@ export const SITE_MCP_SETUP_READ_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'discover_site_folders',
     description:
-      'Scan the site root folders for checkouts that are not Muster sites yet. Also reports the roots scanned and `primary_root`, where a new project should be cloned. Needs Muster open.',
+      'Scan site root folders for unregistered checkouts and report primary_root for new clones. Needs Muster open.',
     inputSchema: objectSchema({}),
     async run(context) {
       const answer = (await context.readSetup('site-folders', {})) as SiteDiscoveryResult & {

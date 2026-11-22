@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { join } from 'node:path'
 import type { SiteActiveRun, SiteRun } from '../../../shared/site-run-types'
 import { CUSTOM_STEP_SCRIPT_DIR, SITE_LOCAL_STACKS } from '../../../shared/site-types'
-import { SITE_MCP_TOOLS } from './site-mcp-tools'
+import { listSiteMcpToolDescriptors, SITE_MCP_TOOLS } from './site-mcp-tools'
 import {
   acfState,
   call,
@@ -162,6 +162,11 @@ describe('site MCP tool table', () => {
         expect(typeof (property as { type?: unknown }).type, tool.name).toBe('string')
       }
     }
+  })
+
+  it('keeps the full tools/list schema payload within a tight byte budget', () => {
+    const bytes = Buffer.byteLength(JSON.stringify(listSiteMcpToolDescriptors()), 'utf8')
+    expect(bytes).toBeLessThan(46_000)
   })
 })
 
@@ -623,6 +628,62 @@ describe('jobs and run history', () => {
     const { payload } = await call(context, 'cancel_job', { job_id: RUN_ID })
     expect(payload).toMatchObject({ ok: true, status: 'cancelling' })
     expect(context.cancelled).toEqual([RUN_ID])
+  })
+
+  it('caps run/job log lines by byte budget and returns log_path', async () => {
+    const context = createFakeContext()
+    context.readRunLog = () => ({
+      run: PERSISTED_RUN,
+      lines: [
+        { at: 1, level: 'info', text: 'line-0-'.padEnd(800, 'a') },
+        { at: 2, level: 'error', text: 'recent-error' },
+        { at: 3, level: 'info', text: 'tail' }
+      ],
+      truncatedEarlier: 0,
+      firstErrorIndex: 1
+    })
+    const runRes = await call(context, 'get_run_log', { run_id: RUN_ID, max_bytes: 1_000 })
+    expect(runRes.payload).toMatchObject({
+      ok: true,
+      log_path: PERSISTED_RUN.logPath,
+      truncated_by_bytes: false,
+      truncated_earlier: 0,
+      first_error_index: 1
+    })
+
+    context.readRunLog = () => ({
+      run: PERSISTED_RUN,
+      lines: Array.from({ length: 12 }, (_, index) => ({
+        at: index,
+        level: index === 10 ? 'error' : 'info',
+        text: `entry-${index}-${'z'.repeat(300)}`
+      })),
+      truncatedEarlier: 0,
+      firstErrorIndex: 10
+    })
+    const jobRes = await call(context, 'get_job_status', { job_id: RUN_ID, max_bytes: 1_000 })
+    expect(jobRes.payload.truncated_by_bytes).toBe(true)
+    expect(Number(jobRes.payload.truncated_earlier)).toBeGreaterThan(0)
+    expect(jobRes.payload.log_path).toBe(PERSISTED_RUN.logPath)
+
+    const zeroLog = await call(context, 'get_job_status', { job_id: RUN_ID, max_log_lines: 0 })
+    expect(zeroLog.payload.log).toEqual([])
+  })
+
+  it('allows run_ssh_command up to 32k chars and supports tail=false', async () => {
+    const longCmd = `echo ${'x'.repeat(5_000)}`
+    const { isError, payload } = await call(createFakeContext(), 'run_ssh_command', {
+      command: longCmd,
+      tail: false
+    })
+    expect(isError).toBe(false)
+    expect(String(payload.command).length).toBe(longCmd.length)
+
+    const tooLong = await call(createFakeContext(), 'run_ssh_command', {
+      command: 'y'.repeat(33_000)
+    })
+    expect(tooLong.isError).toBe(true)
+    expect(String(tooLong.payload.error)).toContain('32768')
   })
 })
 

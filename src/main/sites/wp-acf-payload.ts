@@ -126,9 +126,13 @@ export function buildAcfPayload(input: {
   fields: (string | AcfFieldWrite)[]
   layoutFilter?: string
   returnMode?: AcfReturnMode
+  maxValueChars?: number
+  offset?: number
+  limit?: number
   rows?: readonly AcfRowOp[]
   roots?: Record<string, unknown>
   applyFlag?: boolean
+  maxBytes?: number
 }): string {
   const writing = input.mode === 'preview' || input.mode === 'apply'
   const fields = writing
@@ -140,12 +144,16 @@ export function buildAcfPayload(input: {
     fields,
     ...(input.layoutFilter ? { layout_filter: input.layoutFilter } : {}),
     ...(input.returnMode === 'values' ? { return: 'values' } : {}),
+    ...(input.maxValueChars === undefined ? {} : { max_value_chars: input.maxValueChars }),
+    ...(input.offset === undefined ? {} : { offset: input.offset }),
+    ...(input.limit === undefined ? {} : { limit: input.limit }),
     ...(input.rows && input.rows.length > 0 ? { rows: input.rows } : {}),
     ...(input.roots ? { roots: input.roots } : {}),
     ...(input.applyFlag === undefined ? {} : { apply: input.applyFlag })
   })
-  if (Buffer.byteLength(json, 'utf8') > ACF_MAX_PAYLOAD_BYTES) {
-    throw new SiteMcpToolError(`Field payload is over the ${ACF_MAX_PAYLOAD_BYTES}-byte cap.`)
+  const maxBytes = input.maxBytes ?? ACF_MAX_PAYLOAD_BYTES
+  if (Buffer.byteLength(json, 'utf8') > maxBytes) {
+    throw new SiteMcpToolError(`Field payload is over the ${maxBytes}-byte cap.`)
   }
   return json
 }

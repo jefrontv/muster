@@ -264,4 +264,44 @@ describe('download_files', () => {
     expect(result.files[0]?.error).toContain('No such file')
     expect(() => readFileSync(local)).toThrow()
   })
+
+  it('forwards SFTP progress and streams local SHA-256 verification', async () => {
+    expect(uploadTool.concurrent).toBe(true)
+    expect(downloadTool.concurrent).toBe(true)
+
+    const large = 'chunk-'.repeat(40_000)
+    const local = join(dir, 'large.txt')
+    writeFileSync(local, large)
+    const updates: { progress: number; message: string }[] = []
+
+    const ctx = context({
+      progress: (entry: { progress: number; message: string }) => updates.push(entry),
+      openSshSession: async () => ({
+        ...session(),
+        upload: vi.fn(
+          async (
+            localPath: string,
+            remotePath: string,
+            onProgress?: (transferred: number, total: number) => void
+          ) => {
+            const raw = readFileSync(localPath, 'utf8')
+            onProgress?.(raw.length, raw.length)
+            remote.set(remotePath, raw)
+          }
+        )
+      })
+    })
+
+    const result = (await uploadTool.run(ctx, {
+      files: [{ local, remote: '/srv/large.txt' }]
+    })) as { ok: boolean; files: { verified: boolean; sha256: string; bytes: number }[] }
+
+    expect(result.ok).toBe(true)
+    expect(result.files[0]).toMatchObject({
+      verified: true,
+      sha256: sha256(large),
+      bytes: large.length
+    })
+    expect(updates.some((u) => u.message.includes('100%'))).toBe(true)
+  })
 })

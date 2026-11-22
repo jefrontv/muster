@@ -47,15 +47,15 @@ export const SITE_MCP_APPROVAL_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'collect_setup_approval',
     description:
-      'Collect the answer to an approval card opened by a project or site setup tool. Waits up to `wait_seconds` and returns `status: "pending"` while the user decides. Pending is normal: call it again straight away until it settles, and never sleep or ask in chat instead. On approval the staged change runs and its result is returned. `denied` or `expired` means nothing was written. `unknown` means the id was never issued here or has aged out: stop polling.',
+      'Poll the user decision for a setup approval_id. Returns pending while waiting (call again immediately until approved/denied/expired; never sleep or ask in chat). unknown means stop.',
     inputSchema: objectSchema({
       approval_id: {
         type: 'string',
-        description: 'The approval_id a setup tool returned.'
+        description: 'The approval_id returned by a setup tool.'
       },
       wait_seconds: {
         type: 'number',
-        description: `How long to wait before answering "pending". Default ${HOLD_DEFAULT_SECONDS}, max ${HOLD_MAX_SECONDS}. Only raise it if your client's request timeout is longer.`
+        description: `Wait slice in seconds (default ${HOLD_DEFAULT_SECONDS}, max ${HOLD_MAX_SECONDS}).`
       }
     }),
     requiresSiteSetup: true,
