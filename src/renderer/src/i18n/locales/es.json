@@ -4884,6 +4884,11 @@
           "hiddenMany": "{{value0}} hidden workspaces",
           "needsInput": "{{value0}} needs input",
           "working": "{{value0}} working"
+        },
+        "ConvertProjectToSite": {
+          "label": "Convertir en sitio",
+          "done": "Convertido en sitio",
+          "failed": "No se pudo convertir en sitio"
         }
       },
       "shared": {

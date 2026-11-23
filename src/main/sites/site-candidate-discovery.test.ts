@@ -335,3 +335,31 @@ describe('discoverSiteCandidates', () => {
     expect(result.primaryRoot).toBe('/Users/jake/Documents/Sites')
   })
 })
+
+describe('discoverSiteCandidates without wp-config.php', () => {
+  it('lists a LocalWP site whose repo in app/public has no wp-config.php', async () => {
+    const root = await tempRoot()
+    const site = join(root, 'shop')
+    await makeGitRepo(join(site, 'app', 'public'))
+    await mkdir(join(site, 'conf'), { recursive: true })
+
+    const result = await discover({ roots: [root], configuredPaths: [] })
+
+    expect(result.candidates).toEqual([
+      { path: site, displayName: 'shop', kind: 'localwp', isGitRepo: true }
+    ])
+  })
+
+  it('lists a WordPress folder found by core files and skips a bare app/public', async () => {
+    const root = await tempRoot()
+    await mkdir(join(root, 'bedrock', 'web'), { recursive: true })
+    await writeFile(join(root, 'bedrock', 'web', 'wp-config.php'), '<?php\n')
+    await mkdir(join(root, 'laravel-ish', 'app', 'public'), { recursive: true })
+
+    const result = await discover({ roots: [root], configuredPaths: [] })
+
+    expect(result.candidates.map((candidate) => [candidate.displayName, candidate.kind])).toEqual([
+      ['bedrock', 'wordpress']
+    ])
+  })
+})

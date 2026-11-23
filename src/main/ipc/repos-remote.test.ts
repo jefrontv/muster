@@ -26,6 +26,10 @@ const {
   handleMock: vi.fn(),
   mockStore: {
     getRepos: vi.fn().mockReturnValue([]),
+    getConfiguredSiteRoots: vi.fn(() => []),
+    findSiteByPath: vi.fn(() => null),
+    upsertSite: vi.fn((site: unknown) => site),
+    updateSite: vi.fn(() => null),
     addRepo: vi.fn(),
     removeProject: vi.fn(),
     getRepo: vi.fn(),
@@ -1843,16 +1847,17 @@ describe('repos:add + repos:clone', () => {
       kind: 'folder'
     })
 
+    // LocalWP projects stay folder kind so New workspace reuses the one path Local serves.
     expect(mockStore.updateRepo).toHaveBeenCalledWith(
       existing.id,
       expect.objectContaining({
         path: appPublic,
-        kind: 'git'
+        kind: 'folder'
       })
     )
     expect(mockStore.addRepo).not.toHaveBeenCalled()
     expect(result).toMatchObject({
-      repo: expect.objectContaining({ path: appPublic, kind: 'git' })
+      repo: expect.objectContaining({ path: appPublic, kind: 'folder' })
     })
   })
 

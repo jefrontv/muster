@@ -67,3 +67,34 @@ describe('adoptSiteForProject', () => {
     expect(store.sites).toEqual([{ ...existing, repoId: 'repo-1' }])
   })
 })
+
+describe('adoptSiteForProject without wp-config.php', () => {
+  const shop = path.join('/local', 'shop')
+  const appPublic = path.join(shop, 'app', 'public')
+
+  it('adopts a LocalWP checkout whose wp-config.php is gitignored', () => {
+    const exists = onDisk(appPublic, path.join(shop, 'conf'), path.join(appPublic, '.git'))
+    expect(adoptSiteForProject(fakeStore(), repo(appPublic), exists)?.path).toBe(shop)
+  })
+
+  it('adopts a project still on the LocalWP site folder itself', () => {
+    const exists = onDisk(appPublic, path.join(shop, 'logs'))
+    expect(adoptSiteForProject(fakeStore(), repo(shop), exists)?.path).toBe(shop)
+  })
+
+  it('adopts a Bedrock or core-only WordPress project anywhere', () => {
+    const bedrock = onDisk(path.join('/w/bed', 'web', 'wp-config.php'))
+    expect(adoptSiteForProject(fakeStore(), repo('/w/bed'), bedrock)?.path).toBe('/w/bed')
+    const core = onDisk(path.join('/w/core', 'wp-includes'))
+    expect(adoptSiteForProject(fakeStore(), repo('/w/core'), core)?.path).toBe('/w/core')
+  })
+
+  it('picks up projects added before the update on the next start', () => {
+    const store = {
+      ...fakeStore(),
+      getRepos: () => [repo(shop, { id: 'old-project' }), repo('/code/tool', { id: 'tool' })]
+    }
+    adoptSitesForProjects(store, onDisk(appPublic, path.join(shop, 'conf')))
+    expect(store.sites.map((site) => [site.path, site.repoId])).toEqual([[shop, 'old-project']])
+  })
+})

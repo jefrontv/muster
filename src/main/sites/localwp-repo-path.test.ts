@@ -336,3 +336,61 @@ describe('rewriteWorkspaceSessionWorktreePath', () => {
     expect(rewritten.lastVisitedAtByWorktreeId).toEqual({ [next]: 42, 'other::/x': 1 })
   })
 })
+
+describe('migrateLocalWpRepoPathIfNeeded without wp-config.php', () => {
+  function storeFor(sitePath: string) {
+    return {
+      getAllWorktreeMeta: () => ({}),
+      setWorktreeMeta: vi.fn(),
+      removeWorktreeMeta: vi.fn(),
+      updateRepo: vi.fn((id: string, updates: Record<string, unknown>) => ({
+        id,
+        path: sitePath,
+        displayName: 'shop',
+        badgeColor: '#000',
+        addedAt: 0,
+        kind: 'folder' as const,
+        ...updates
+      }))
+    }
+  }
+
+  it('moves an existing folder project on a LocalWP site folder into app/public', async () => {
+    const site = await makeTempRoot()
+    const appPublic = join(site, 'app', 'public')
+    await mkdir(appPublic, { recursive: true })
+    await mkdir(join(site, 'conf'))
+    execFileSync('git', ['init'], { cwd: appPublic, stdio: 'ignore' })
+
+    const migrated = migrateLocalWpRepoPathIfNeeded(storeFor(site) as never, {
+      id: 'repo-shop',
+      path: site,
+      displayName: 'shop',
+      badgeColor: '#000',
+      addedAt: 0,
+      kind: 'folder'
+    })
+
+    expect(migrated.path).toBe(appPublic)
+    expect(migrated.kind).toBe('folder')
+  })
+
+  it('leaves a git project already on app/public alone when wp-config.php is missing', async () => {
+    const site = await makeTempRoot()
+    const appPublic = join(site, 'app', 'public')
+    await mkdir(appPublic, { recursive: true })
+    await mkdir(join(site, 'conf'))
+    const store = storeFor(appPublic)
+    const repo = {
+      id: 'repo-git',
+      path: appPublic,
+      displayName: 'shop',
+      badgeColor: '#000',
+      addedAt: 0,
+      kind: 'git' as const
+    }
+
+    expect(migrateLocalWpRepoPathIfNeeded(store as never, repo)).toBe(repo)
+    expect(store.updateRepo).not.toHaveBeenCalled()
+  })
+})

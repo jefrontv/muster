@@ -46,3 +46,13 @@ export function findSiteForProject(
   }
   return null
 }
+
+/** Folder a Site should be keyed on for a project: the LocalWP root above `app/public`, else itself. */
+export function siteFolderForProjectPath(projectPath: string): string {
+  const trimmed = projectPath.replace(/[/\\]+$/, '')
+  const parts = trimmed.split(/[/\\]/)
+  if (parts.length > 2 && parts.at(-1) === 'public' && parts.at(-2) === 'app') {
+    return trimmed.slice(0, trimmed.length - '/app/public'.length)
+  }
+  return trimmed
+}

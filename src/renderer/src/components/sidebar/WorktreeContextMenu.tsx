@@ -64,6 +64,7 @@ import {
   worktreeWorkspaceKey
 } from '../../../../shared/workspace-scope'
 import { isFolderRepo } from '../../../../shared/repo-kind'
+import { ConvertProjectToSiteMenuItem } from './ConvertProjectToSiteMenuItem'
 
 type Props = {
   worktree: Worktree
@@ -894,6 +895,7 @@ const WorktreeContextMenu = React.memo(function WorktreeContextMenu({
                       )}
                     </DropdownMenuItem>
                   ) : null}
+                  <ConvertProjectToSiteMenuItem repo={repo} disabled={isDeleting} />
                 </>
               ) : null}
               <DropdownMenuSeparator />

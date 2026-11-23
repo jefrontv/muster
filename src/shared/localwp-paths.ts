@@ -14,8 +14,66 @@ export function localWpConfigPath(sitePath: string): string {
   return path.join(localWpWordPressRoot(sitePath), 'wp-config.php')
 }
 
+type RelativeExists = (...segments: string[]) => boolean
+
 /**
- * True when `dirPath` looks like Local's WordPress root (`…/app/public` with wp-config.php).
+ * Any one marks a WordPress root. wp-config.php alone was too strict: it is often gitignored, sits
+ * one level up, or lives under web/ (Bedrock), and a fresh clone has none.
+ */
+export const WORDPRESS_ROOT_MARKERS: readonly (readonly string[])[] = [
+  ['wp-config.php'],
+  ['wp-load.php'],
+  ['wp-includes'],
+  ['wp-content'],
+  ['web', 'wp-config.php'],
+  ['config', 'application.php']
+]
+
+/** Local's own folders beside app/. Any one, plus app/public, marks a LocalWP site folder. */
+export const LOCALWP_SHELL_MARKERS: readonly (readonly string[])[] = [
+  ['conf'],
+  ['logs'],
+  ['app', 'wp-config.php']
+]
+
+export function looksLikeWordPressRootAt(has: RelativeExists): boolean {
+  return WORDPRESS_ROOT_MARKERS.some((marker) => has(...marker))
+}
+
+/** `has` resolves against the candidate site folder. */
+export function isLocalWpSiteShellAt(has: RelativeExists): boolean {
+  if (looksLikeWordPressRootAt((...segments) => has('app', 'public', ...segments))) {
+    return true
+  }
+  return has('app', 'public') && LOCALWP_SHELL_MARKERS.some((marker) => has(...marker))
+}
+
+export function looksLikeWordPressRoot(
+  dirPath: string,
+  pathExists: (targetPath: string) => boolean
+): boolean {
+  return looksLikeWordPressRootAt((...segments) => pathExists(path.join(dirPath, ...segments)))
+}
+
+/**
+ * A LocalWP site folder: app/public plus WordPress inside it or Local's conf/ or logs/ beside it.
+ * A bare app/public (Laravel, etc.) is not enough.
+ */
+export function isLocalWpSiteShell(
+  sitePath: string,
+  pathExists: (targetPath: string) => boolean
+): boolean {
+  return isLocalWpSiteShellAt((...segments) => pathExists(path.join(sitePath, ...segments)))
+}
+
+/** True when `dirPath` is `…/app/public` by shape alone (no disk). */
+export function pathLooksLikeLocalWpWordPressRoot(dirPath: string): boolean {
+  const normalized = path.normalize(dirPath)
+  return path.basename(normalized) === 'public' && path.basename(path.dirname(normalized)) === 'app'
+}
+
+/**
+ * True when `dirPath` is Local's WordPress root (`…/app/public` of a LocalWP site folder).
  * Used to keep LocalWP projects in folder mode after import so "New workspace" does not open
  * Create worktree.
  */
@@ -23,14 +81,10 @@ export function isLocalWpWordPressRootPath(
   dirPath: string,
   pathExists: (targetPath: string) => boolean
 ): boolean {
-  const normalized = path.normalize(dirPath)
-  if (path.basename(normalized) !== 'public') {
+  if (!pathLooksLikeLocalWpWordPressRoot(dirPath)) {
     return false
   }
-  if (path.basename(path.dirname(normalized)) !== 'app') {
-    return false
-  }
-  return pathExists(path.join(normalized, 'wp-config.php'))
+  return isLocalWpSiteShell(localWpSitePathFromWordPressRoot(dirPath), pathExists)
 }
 
 /** Site folder for a WordPress root at `…/app/public` (two levels up). */
@@ -65,9 +119,8 @@ export function resolveLocalWpImportProjectPath(
     }
   }
   const wordPressRoot = localWpWordPressRoot(selectedPath)
-  // Why: wp-config under app/public is the same LocalWP signal site-candidate-discovery uses;
-  // a bare app/public (Laravel, etc.) must not steal the project root.
-  if (!pathExists(localWpConfigPath(selectedPath))) {
+  // Why: same LocalWP signal site-candidate-discovery uses; a bare app/public must not steal the root.
+  if (!isLocalWpSiteShell(selectedPath, pathExists)) {
     return {
       projectPath: selectedPath,
       displayNameSourcePath: selectedPath,

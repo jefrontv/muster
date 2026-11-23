@@ -4884,6 +4884,11 @@
           "hiddenMany": "{{value0}} hidden workspaces",
           "needsInput": "{{value0}} needs input",
           "working": "{{value0}} working"
+        },
+        "ConvertProjectToSite": {
+          "label": "사이트로 변환",
+          "done": "사이트로 변환됨",
+          "failed": "사이트로 변환할 수 없습니다"
         }
       },
       "shared": {

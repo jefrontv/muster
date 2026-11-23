@@ -236,6 +236,7 @@ import type { PendingSidebarRowReveal, PendingSidebarWorktreeReveal } from '@/st
 import { getRepositoryIconSectionId } from '@/components/settings/repository-settings-targets'
 import { keybindingMatchesAction } from '../../../../shared/keybindings'
 import { ProjectGroupNameDialog } from './ProjectGroupNameDialog'
+import { ConvertProjectToSiteMenuItem } from './ConvertProjectToSiteMenuItem'
 import { ProjectGroupDeleteDialog } from './ProjectGroupDeleteDialog'
 import { selectProjectGroupRemovalTargets } from '@/store/slices/project-group-removal-targets'
 import { isGitRepoKind } from '../../../../shared/repo-kind'
@@ -4846,6 +4847,7 @@ const VirtualizedWorktreeViewport = React.memo(function VirtualizedWorktreeViewp
                                 )}
                               </DropdownMenuItem>
                             ) : null}
+                            <ConvertProjectToSiteMenuItem repo={row.repo} />
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               variant="destructive"

@@ -6,7 +6,11 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { localWpConfigPath, resolveLocalWpImportProjectPath } from '../../shared/localwp-paths'
+import {
+  isLocalWpSiteShell,
+  pathLooksLikeLocalWpWordPressRoot,
+  resolveLocalWpImportProjectPath
+} from '../../shared/localwp-paths'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import type { Repo, WorktreeMeta } from '../../shared/types'
 import { FOLDER_WORKSPACE_INSTANCE_SEPARATOR } from '../../shared/worktree-id'
@@ -19,7 +23,7 @@ export { rewriteWorkspaceSessionWorktreePath } from './localwp-workspace-session
 // Why: repos:list + worktrees:list* hit every project on a timer. After the first pass this
 // process, disk probes and rewrites are pure waste — cache "already evaluated" by repo id.
 //
-// The cached value is the wp-config marker as it stood when we decided. A bare Set was wrong: it
+// The cached value is the site-folder signal as it stood when we decided. A bare Set was wrong: it
 // made "not a LocalWP shell" permanent for the process, but a LocalWP setup relocates a project
 // mid-session and the import then lands wp-config.php. The stale answer left the repo record
 // pointing at a folder with no .git, so creating a worktree failed with "no base branch found".
@@ -27,7 +31,7 @@ export { rewriteWorkspaceSessionWorktreePath } from './localwp-workspace-session
 const localWpMigrationCheckedRepoIds = new Map<string, boolean>()
 
 function localWpConfigPresent(repoPath: string): boolean {
-  return existsSync(localWpConfigPath(repoPath))
+  return isLocalWpSiteShell(repoPath, existsSync)
 }
 
 function migrationCheckIsCurrent(repo: Repo): boolean {
@@ -42,12 +46,6 @@ function rememberMigrationCheck(repo: Repo): void {
 /** Test-only: clear the process-local migration check cache. */
 export function resetLocalWpRepoPathMigrationCacheForTests(): void {
   localWpMigrationCheckedRepoIds.clear()
-}
-
-/** True when path is `…/app/public` by shape alone (no disk). */
-function pathLooksLikeAppPublicRoot(dirPath: string): boolean {
-  const normalized = path.normalize(dirPath)
-  return path.basename(normalized) === 'public' && path.basename(path.dirname(normalized)) === 'app'
 }
 
 export type ResolvedLocalProjectImportPath = {
@@ -161,7 +159,16 @@ export function migrateLocalWpRepoPathIfNeeded(store: Store, repo: Repo): Repo {
   }
 
   // Why: ~all LocalWP fleets after migration are folder@app/public; basename checks only.
-  if (repo.kind === 'folder' && pathLooksLikeAppPublicRoot(repo.path)) {
+  if (repo.kind === 'folder' && pathLooksLikeLocalWpWordPressRoot(repo.path)) {
+    rememberMigrationCheck(repo)
+    return repo
+  }
+  // Why: the looser site signal moves shell projects, but must not flip a git project already on
+  // app/public to folder unless the old wp-config signal said so.
+  if (
+    pathLooksLikeLocalWpWordPressRoot(repo.path) &&
+    !existsSync(path.join(repo.path, 'wp-config.php'))
+  ) {
     rememberMigrationCheck(repo)
     return repo
   }

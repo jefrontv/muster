@@ -809,6 +809,7 @@ import {
   getRecentDriftSubjects
 } from '../git/repo'
 import { resolveLocalProjectImportPath } from '../sites/localwp-repo-path'
+import { adoptSiteForProject } from '../sites/site-for-added-project'
 import { hasCommitObjectViaGitExec } from '../git/commit-object-ref'
 import { hasWorktreeBaseCommitRef } from '../git/worktree-base-ref-probe'
 import { resolveLocalGitUsername } from '../git/git-username'
@@ -1073,6 +1074,10 @@ type RuntimeStore = {
   listAutomationRuns?: Store['listAutomationRuns']
   createAutomation?: Store['createAutomation']
   updateAutomation?: Store['updateAutomation']
+  findSiteByPath?: Store['findSiteByPath']
+  upsertSite?: Store['upsertSite']
+  updateSite?: Store['updateSite']
+  getConfiguredSiteRoots?: Store['getConfiguredSiteRoots']
   deleteAutomation?: Store['deleteAutomation']
   getSparsePresets?: Store['getSparsePresets']
   saveSparsePreset?: Store['saveSparsePreset']
@@ -15722,11 +15727,13 @@ export class OrcaRuntimeService {
                 }
               : {})
           }) ?? existing
+        this.adoptSiteForAddedRepo(migrated)
         this.invalidateResolvedWorktreeCache()
         this.invalidateWorktreeScanCacheForRepo(existing.id)
         this.notifyReposChanged()
         return migrated
       }
+      this.adoptSiteForAddedRepo(existing)
       return existing
     }
 
@@ -15751,10 +15758,38 @@ export class OrcaRuntimeService {
     }
     this.store.addRepo(repo)
     await prepareLocalWorktreeRootForRepo(this.store, repo)
+    this.adoptSiteForAddedRepo(repo)
     this.invalidateResolvedWorktreeCache()
     this.invalidateWorktreeScanCacheForRepo(repo.id)
     this.notifyReposChanged()
     return this.store.getRepo(repo.id) ?? repo
+  }
+
+  /** Same Site record Add Project makes, so `muster open` and MCP setup show the Site tab too. */
+  private adoptSiteForAddedRepo(repo: Repo): void {
+    const store = this.store
+    if (
+      !store?.findSiteByPath ||
+      !store.upsertSite ||
+      !store.updateSite ||
+      !store.getConfiguredSiteRoots
+    ) {
+      return
+    }
+    try {
+      adoptSiteForProject(
+        {
+          findSiteByPath: (sitePath) => store.findSiteByPath!(sitePath),
+          upsertSite: (site) => store.upsertSite!(site),
+          updateSite: (siteId, updates) => store.updateSite!(siteId, updates),
+          getConfiguredSiteRoots: () => store.getConfiguredSiteRoots!()
+        },
+        repo
+      )
+    } catch (error) {
+      // A missing Site record only hides the Site tab; the project itself was added.
+      console.warn('[runtime] could not adopt site for added project:', error)
+    }
   }
 
   async createRepo(

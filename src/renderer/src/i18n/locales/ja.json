@@ -4884,6 +4884,11 @@
           "hiddenMany": "{{value0}} hidden workspaces",
           "needsInput": "{{value0}} needs input",
           "working": "{{value0}} working"
+        },
+        "ConvertProjectToSite": {
+          "label": "サイトに変換",
+          "done": "サイトに変換しました",
+          "failed": "サイトに変換できませんでした"
         }
       },
       "shared": {

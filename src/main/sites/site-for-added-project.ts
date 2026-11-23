@@ -5,9 +5,10 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import {
+  isLocalWpSiteShell,
   isLocalWpWordPressRootPath,
-  localWpConfigPath,
-  localWpSitePathFromWordPressRoot
+  localWpSitePathFromWordPressRoot,
+  looksLikeWordPressRoot
 } from '../../shared/localwp-paths'
 import type { Site } from '../../shared/site-types'
 import type { Repo } from '../../shared/types'
@@ -32,7 +33,7 @@ export function siteFolderForProject(
   if (isLocalWpWordPressRootPath(projectPath, exists)) {
     return localWpSitePathFromWordPressRoot(projectPath)
   }
-  if (exists(localWpConfigPath(projectPath)) || exists(path.join(projectPath, 'wp-config.php'))) {
+  if (isLocalWpSiteShell(projectPath, exists) || looksLikeWordPressRoot(projectPath, exists)) {
     return projectPath
   }
   const parent = normalizeRuntimePathForComparison(path.dirname(projectPath))

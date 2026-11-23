@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest'
 import type { SiteSummary } from '../../../../shared/site-types'
-import { findSiteForProject } from './site-for-project'
+import { findSiteForProject, siteFolderForProjectPath } from './site-for-project'
 
 function makeSummary(path: string, localWpRoot: string): SiteSummary {
   return {
@@ -79,5 +79,20 @@ describe('findSiteForProject', () => {
   it('compares Windows drive paths case-insensitively', () => {
     const summary = makeSummary('C:\\Sites\\acme', 'app/public')
     expect(findSiteForProject([summary], 'c:/sites/acme/App/Public')).toBe(summary)
+  })
+})
+
+describe('siteFolderForProjectPath', () => {
+  it('keys a LocalWP checkout on the folder above app/public', () => {
+    expect(siteFolderForProjectPath('/local/shop/app/public')).toBe('/local/shop')
+    expect(siteFolderForProjectPath('/local/shop/app/public/')).toBe('/local/shop')
+    expect(siteFolderForProjectPath('C:\\Local Sites\\shop\\app\\public')).toBe(
+      'C:\\Local Sites\\shop'
+    )
+  })
+
+  it('keys any other project on its own folder', () => {
+    expect(siteFolderForProjectPath('/w/client')).toBe('/w/client')
+    expect(siteFolderForProjectPath('/w/public')).toBe('/w/public')
   })
 })

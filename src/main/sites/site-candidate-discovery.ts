@@ -4,7 +4,7 @@
 // repos live under the one folder the user just picked" with a deep, gitignore-aware traversal, and
 // it is allowed to be slow because a human is waiting on a dialog. This one answers "what is on
 // disk right now" and reruns on every watch tick, so it stays one listing per root plus four
-// cheap existence probes per child.
+// cheap existence probes per child (a few more only for children that may still be sites).
 import { readdir, stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import {
@@ -14,6 +14,12 @@ import {
   type SiteDiscoveryResult
 } from '../../shared/site-discovery-types'
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
+import {
+  isLocalWpSiteShellAt,
+  LOCALWP_SHELL_MARKERS,
+  looksLikeWordPressRootAt,
+  WORDPRESS_ROOT_MARKERS
+} from '../../shared/localwp-paths'
 import { localWpWordPressRoot } from './localwp-host'
 
 type SiteCandidateDirectoryEntry = {
@@ -69,22 +75,59 @@ type ClassifiedDirectory = {
   isGitRepo: boolean
 }
 
+/** Existence of each relative probe under dirPath, keyed by its segments joined with '/'. */
+async function probeRelative(
+  dirPath: string,
+  filesystem: SiteCandidateFilesystem,
+  probes: readonly (readonly string[])[]
+): Promise<(...segments: string[]) => boolean> {
+  const found = new Set<string>()
+  await Promise.all(
+    probes.map(async (segments) => {
+      const target = segments.reduce((parent, child) => filesystem.joinPath(parent, child), dirPath)
+      if (await filesystem.pathExists(target)) {
+        found.add(segments.join('/'))
+      }
+    })
+  )
+  return (...segments) => found.has(segments.join('/'))
+}
+
 async function classifyDirectory(
   dirPath: string,
   filesystem: SiteCandidateFilesystem
 ): Promise<ClassifiedDirectory | null> {
-  const [hasLocalWpConfig, hasWpConfig, hasGitEntry, hasNestedGitEntry] = await Promise.all([
-    filesystem.pathExists(filesystem.joinPath(localWpWordPressRoot(dirPath), 'wp-config.php')),
-    filesystem.pathExists(filesystem.joinPath(dirPath, 'wp-config.php')),
-    filesystem.pathExists(filesystem.joinPath(dirPath, '.git')),
-    filesystem.pathExists(filesystem.joinPath(localWpWordPressRoot(dirPath), '.git'))
-  ])
+  const [hasAppPublic, hasAppPublicConfig, hasWpConfig, hasGitEntry, hasNestedGitEntry] =
+    await Promise.all([
+      filesystem.pathExists(localWpWordPressRoot(dirPath)),
+      filesystem.pathExists(filesystem.joinPath(localWpWordPressRoot(dirPath), 'wp-config.php')),
+      filesystem.pathExists(filesystem.joinPath(dirPath, 'wp-config.php')),
+      filesystem.pathExists(filesystem.joinPath(dirPath, '.git')),
+      filesystem.pathExists(filesystem.joinPath(localWpWordPressRoot(dirPath), '.git'))
+    ])
+  // Why staged: this reruns every watch tick, so the wider marker probes only run for folders that
+  // could still be sites after the cheap ones.
+  const hasLocalWpConfig =
+    hasAppPublicConfig ||
+    (hasAppPublic &&
+      isLocalWpSiteShellAt(
+        await probeRelative(dirPath, filesystem, [
+          ['app', 'public'],
+          ...WORDPRESS_ROOT_MARKERS.map((marker) => ['app', 'public', ...marker]),
+          ...LOCALWP_SHELL_MARKERS
+        ])
+      ))
+  const looksLikeWordPress =
+    hasWpConfig ||
+    (!hasLocalWpConfig &&
+      !hasGitEntry &&
+      looksLikeWordPressRootAt(await probeRelative(dirPath, filesystem, WORDPRESS_ROOT_MARKERS)))
   // Why: a LocalWP site keeps the WordPress install two levels down, so it can also carry a
   // top-level wp-config.php left over from a migration. Local's layout is the more specific
   // answer and the one the Sites page can actually start and stop, so it wins.
   const kind: DiscoveredSiteKind | null = hasLocalWpConfig
     ? 'localwp'
-    : hasWpConfig
+    : looksLikeWordPress
       ? 'wordpress'
       : hasGitEntry
         ? 'git'

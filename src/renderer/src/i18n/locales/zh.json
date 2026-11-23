@@ -4884,6 +4884,11 @@
           "hiddenMany": "{{value0}} hidden workspaces",
           "needsInput": "{{value0}} needs input",
           "working": "{{value0}} working"
+        },
+        "ConvertProjectToSite": {
+          "label": "转换为站点",
+          "done": "已转换为站点",
+          "failed": "无法转换为站点"
         }
       },
       "shared": {
