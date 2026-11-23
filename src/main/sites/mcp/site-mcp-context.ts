@@ -82,6 +82,11 @@ export type SiteMcpContext = {
     requestId: string
     waitMs: number
   }) => Promise<SiteSetupApprovalOutcome>
+  /** Comment draft tools, answered by the GUI's draft store. Absent in tests and old transports. */
+  commentDraftTool?: (
+    op: 'queue' | 'list' | 'amend',
+    args: Record<string, unknown>
+  ) => Promise<unknown>
   /** A read-only setup lookup the GUI answers (projects, clone sources, stacks). Needs Muster open. */
   readSetup: (op: SiteSetupReadOp, args: Record<string, unknown>) => Promise<unknown>
   /** Runs an approved setup write in the GUI, which spends `approvalId` before acting. */

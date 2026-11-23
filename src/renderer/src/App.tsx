@@ -94,6 +94,7 @@ import { LinkRoutingPreferenceDialogProvider } from './components/link-routing-p
 import RecentTabSwitcher from './components/tab-bar/RecentTabSwitcher'
 import { useGitStatusPolling } from './components/right-sidebar/useGitStatusPolling'
 import { useNarrowWindowRightSidebarCollapse } from './components/right-sidebar/narrow-window-collapse'
+import { useAgentDraftArrivalToast } from './components/comment-drafts/use-agent-draft-arrival-toast'
 import { requestCommitMessageFocus } from './components/right-sidebar/source-control-commit-message-focus'
 import { useEditorExternalWatch } from './hooks/useEditorExternalWatch'
 import { useSiteRootsRefresh } from './lib/use-site-roots-refresh'
@@ -460,6 +461,7 @@ function App(): React.JSX.Element {
   useRadixBodyPointerEventsRecovery()
   useWebSessionTabsSync()
   useNarrowWindowRightSidebarCollapse()
+  useAgentDraftArrivalToast()
   const [floatingTerminalOpen, setFloatingTerminalOpen] = useState(false)
   const floatingWorkspaceTourInteractionSnapshotRef = useRef<{
     wasPreviouslyInteracted?: boolean

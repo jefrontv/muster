@@ -37,8 +37,10 @@ import {
 import {
   collectPlanAnnotationThroughBridge,
   openPlanAnnotationThroughBridge,
-  PlanBridgeUnavailableError
+  PlanBridgeUnavailableError,
+  postToGuiBridge
 } from './site-mcp-plan-bridge'
+import { siteMcpClientName } from './site-mcp-client-identity'
 
 export type SiteMcpEngineOptions = {
   store: SiteMcpStore
@@ -74,9 +76,12 @@ function requireBridgeFile(
 }
 
 const NO_GUI_FOR_SETUP = 'No Muster window is running. Open Muster and try again.'
+const NO_GUI_FOR_DRAFTS =
+  'No Muster window is running, so nobody can review the comment. Open Muster and try again.'
 
 export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpContext {
   const { store } = options
+  const cwd = options.cwd ?? process.cwd()
   const runs = createSiteRunService({
     baseDir: options.runsBaseDir,
     // No renderer is attached to an MCP-hosted run. Progress still reaches the caller through the
@@ -132,7 +137,7 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
   }
 
   return {
-    cwd: options.cwd ?? process.cwd(),
+    cwd,
     store,
     updateSite: (siteId, updates, environmentPatches) => {
       const body = { siteId, updates, ...(environmentPatches ? { environmentPatches } : {}) }
@@ -172,6 +177,26 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
         approvalId,
         args
       }),
+    commentDraftTool: async (op, args) => {
+      const answer = (await postToGuiBridge({
+        bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_DRAFTS),
+        path: '/drafts/tool',
+        body: {
+          op,
+          args,
+          source: {
+            cwd,
+            agent: siteMcpClientName() ?? 'agent',
+            // Set by Muster on every terminal it spawns; the agent and this process inherit them.
+            worktreeId: process.env.ORCA_WORKTREE_ID || null,
+            terminalHandle: process.env.ORCA_TERMINAL_HANDLE || null
+          }
+        },
+        noGui: NO_GUI_FOR_DRAFTS,
+        refusedLabel: 'comment draft'
+      })) as { value?: unknown }
+      return answer.value
+    },
     readSetup: (op, args) =>
       readSetupThroughBridge({
         bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_SETUP),

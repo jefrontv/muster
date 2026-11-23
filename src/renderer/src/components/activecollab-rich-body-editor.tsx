@@ -129,13 +129,15 @@ export function ActiveCollabRichBodyFrame({
   attachments,
   disabled,
   dragging,
-  footer
+  footer,
+  className
 }: {
   body: ActiveCollabRichBody
   attachments: ActiveCollabCommentAttachments | null
   disabled: boolean
   dragging: boolean
   footer: React.ReactNode
+  className?: string
 }): React.JSX.Element {
   const { editor, rootRef, menu, link, menuOpen } = body
   return (
@@ -147,7 +149,8 @@ export function ActiveCollabRichBodyFrame({
       className={cn(
         'relative rounded-xl bg-foreground/[0.05] transition-[color,box-shadow] focus-within:ring-2 focus-within:ring-ring',
         dragging && 'ring-2 ring-ring/30',
-        disabled && 'pointer-events-none opacity-50'
+        disabled && 'pointer-events-none opacity-50',
+        className
       )}
     >
       <ActiveCollabCommentToolbar

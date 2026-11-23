@@ -11,7 +11,7 @@ import type {
 import { createBotsDraftTaskLookup } from '../bots/bots-comment-draft-tasks'
 import { postBotsCommentDraft, type UploadAttachments } from '../bots/bots-comment-draft-post'
 import { uploadAcCommentAttachments } from '../activecollab/comment-attachment-upload'
-import { botsCommentDrafts, onBotsCommentDraftsChanged } from '../bots/bots-sidecar'
+import { commentDrafts, onCommentDraftsChanged } from '../comment-drafts/comment-drafts'
 import { acClient } from './activecollab-operation-context'
 import { acListProjects, acListProjectTasks } from './activecollab-read-operations'
 import { acPostComment, acUpdateTask } from './activecollab-task-write-operations'
@@ -138,7 +138,7 @@ const uploadDraftAttachments: UploadAttachments = async (draft) => {
   try {
     const paths: string[] = []
     for (const [index, file] of draft.attachments.entries()) {
-      const bytes = await botsCommentDrafts.attachmentBytes(draft.id, file.id)
+      const bytes = await commentDrafts.attachmentBytes(draft.id, file.id)
       if (!bytes.ok) {
         return {
           ok: false,
@@ -166,7 +166,7 @@ async function addPastedImage(id: string, name: string, base64: string) {
     const path = join(folder, name)
     await writeFile(path, Buffer.from(base64, 'base64'))
     // The bots server copies the file in, so the temp copy can go straight after.
-    return await botsCommentDrafts.addAttachments(id, [path])
+    return await commentDrafts.addAttachments(id, [path])
   } finally {
     await rm(folder, { recursive: true, force: true })
   }
@@ -178,7 +178,7 @@ export function registerBotsCommentDraftHandlers(): void {
   for (const channel of CHANNELS) {
     ipcMain.removeHandler(channel)
   }
-  ipcMain.handle('bots:listCommentDrafts', () => botsCommentDrafts.list('waiting'))
+  ipcMain.handle('bots:listCommentDrafts', () => commentDrafts.list('waiting'))
   ipcMain.handle('bots:commentDraftTask', (_event, ref: unknown) =>
     guarded(async () => {
       const input = (ref ?? {}) as Record<string, unknown>
@@ -192,14 +192,14 @@ export function registerBotsCommentDraftHandlers(): void {
   ipcMain.handle('bots:updateCommentDraft', (_event, args: unknown) =>
     guarded(() => {
       const input = (args ?? {}) as Record<string, unknown>
-      return botsCommentDrafts.update({ id: draftId(input.id), ...editBody(input) })
+      return commentDrafts.update({ id: draftId(input.id), ...editBody(input) })
     })
   )
   ipcMain.handle('bots:discardCommentDraft', (_event, id: unknown) =>
-    guarded(() => botsCommentDrafts.setStatus(draftId(id), 'discarded'))
+    guarded(() => commentDrafts.setStatus(draftId(id), 'discarded'))
   )
   ipcMain.handle('bots:undoCommentDraft', (_event, id: unknown) =>
-    guarded(() => botsCommentDrafts.undo(draftId(id)))
+    guarded(() => commentDrafts.undo(draftId(id)))
   )
   ipcMain.handle('bots:commentDraftFeedback', (_event, args: unknown) =>
     guarded(() => {
@@ -208,7 +208,7 @@ export function registerBotsCommentDraftHandlers(): void {
       if (!note) {
         throw new InvalidDraftArgument('Write what to change first.')
       }
-      return botsCommentDrafts.feedback(draftId(input.id), note)
+      return commentDrafts.feedback(draftId(input.id), note)
     })
   )
   ipcMain.handle('bots:postCommentDraft', (_event, args: unknown) =>
@@ -221,7 +221,7 @@ export function registerBotsCommentDraftHandlers(): void {
           input.reassignTo === undefined ? undefined : positiveInt(input.reassignTo, 'reassignTo')
       }
       return postBotsCommentDraft(
-        botsCommentDrafts,
+        commentDrafts,
         acPostComment,
         post,
         undefined,
@@ -246,7 +246,7 @@ export function registerBotsCommentDraftHandlers(): void {
   ipcMain.handle('bots:addCommentDraftAttachments', (_event, args: unknown) =>
     guarded(() => {
       const input = (args ?? {}) as Record<string, unknown>
-      return botsCommentDrafts.addAttachments(draftId(input.id), pathList(input.paths))
+      return commentDrafts.addAttachments(draftId(input.id), pathList(input.paths))
     })
   )
   ipcMain.handle('bots:addCommentDraftImage', (_event, args: unknown) =>
@@ -262,7 +262,7 @@ export function registerBotsCommentDraftHandlers(): void {
   ipcMain.handle('bots:removeCommentDraftAttachment', (_event, args: unknown) =>
     guarded(() => {
       const input = (args ?? {}) as Record<string, unknown>
-      return botsCommentDrafts.removeAttachment(draftId(input.id), draftId(input.attachmentId))
+      return commentDrafts.removeAttachment(draftId(input.id), draftId(input.attachmentId))
     })
   )
   ipcMain.handle('bots:commentDraftAttachmentPreview', (_event, args: unknown) =>
@@ -272,7 +272,7 @@ export function registerBotsCommentDraftHandlers(): void {
       if (!/^image\/(png|jpeg|gif|webp)$/.test(mime)) {
         throw new InvalidDraftArgument('Only images have a preview.')
       }
-      const bytes = await botsCommentDrafts.attachmentBytes(
+      const bytes = await commentDrafts.attachmentBytes(
         draftId(input.id),
         draftId(input.attachmentId)
       )
@@ -286,7 +286,7 @@ export function registerBotsCommentDraftHandlers(): void {
     })
   )
   stopForwarding?.()
-  stopForwarding = onBotsCommentDraftsChanged(() => {
+  stopForwarding = onCommentDraftsChanged(() => {
     for (const window of BrowserWindow.getAllWindows()) {
       if (!window.isDestroyed()) {
         window.webContents.send('bots:commentDraftsChanged')

@@ -37,6 +37,7 @@ export function useBotsDraftAttachmentAdding(draft: BotsCommentDraft) {
   const [dragging, setDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const id = draft.id
+  const agentSource = draft.agentSource
 
   const run = useCallback(
     async (call: () => Promise<BotsCommentDraftResult<unknown> | null>) => {
@@ -45,7 +46,7 @@ export function useBotsDraftAttachmentAdding(draft: BotsCommentDraft) {
       try {
         const result = await call()
         if (mounted.current && result && !result.ok) {
-          setError(describeBotsCommentDraftFailure(result))
+          setError(describeBotsCommentDraftFailure(result, { agentSource }))
         }
       } catch (failure) {
         if (mounted.current) {
@@ -57,7 +58,7 @@ export function useBotsDraftAttachmentAdding(draft: BotsCommentDraft) {
         }
       }
     },
-    [mounted]
+    [mounted, agentSource]
   )
 
   const addPaths = useCallback(

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
-import { BotsCommentDraftCard } from './BotsCommentDraftCard'
+import { CommentDraftList } from '../comment-drafts/CommentDraftList'
 import type { BotsCommentDraftsState } from './use-bots-comment-drafts'
 
 const PANEL_WIDTH = 'w-[340px]'
@@ -142,13 +142,9 @@ export function BotsCommentDraftsPanel({
             </p>
           </div>
         ) : (
-          <ol className="scrollbar-sleek flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-            {state.drafts.map((draft) => (
-              <li key={draft.id}>
-                <BotsCommentDraftCard draft={draft} task={state.tasks[draft.taskId]} />
-              </li>
-            ))}
-          </ol>
+          <div className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto p-1.5">
+            <CommentDraftList drafts={state.drafts} tasks={state.tasks} />
+          </div>
         )}
       </aside>
     </>

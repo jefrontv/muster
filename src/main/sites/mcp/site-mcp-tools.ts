@@ -27,6 +27,7 @@ import { SITE_MCP_SITE_WRITE_TOOLS } from './site-mcp-site-write-tools'
 import { SITE_MCP_SSH_TOOLS } from './site-mcp-ssh-tools'
 import { SITE_MCP_TRANSFER_TOOLS } from './site-mcp-transfer-tools'
 import { SITE_MCP_PLAN_TOOLS } from './site-mcp-plan-tools'
+import { SITE_MCP_COMMENT_DRAFT_TOOLS } from './site-mcp-comment-draft-tools'
 import { SITE_MCP_WP_CLI_TOOLS } from './site-mcp-wp-cli-tools'
 import { SITE_MCP_WP_FIELD_TOOLS } from './site-mcp-wp-field-tools'
 import { SITE_MCP_WP_SNAPSHOT_TOOLS } from './site-mcp-wp-snapshot-tools'
@@ -48,6 +49,7 @@ export const SITE_MCP_TOOLS: readonly SiteMcpTool[] = [
   ...SITE_MCP_JOB_TOOLS,
   ...SITE_MCP_PIPELINE_TOOLS,
   ...SITE_MCP_PLAN_TOOLS,
+  ...SITE_MCP_COMMENT_DRAFT_TOOLS,
   ...SITE_MCP_SETUP_READ_TOOLS,
   ...SITE_MCP_PROJECT_WRITE_TOOLS,
   ...SITE_MCP_SITE_WRITE_TOOLS,

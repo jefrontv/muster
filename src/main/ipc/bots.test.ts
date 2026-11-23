@@ -4,6 +4,7 @@ import type { GlobalSettings } from '../../shared/types'
 const { stopBotsSidecar } = vi.hoisted(() => ({ stopBotsSidecar: vi.fn(async () => {}) }))
 
 vi.mock('electron', () => ({
+  app: { getPath: () => '/tmp' },
   BrowserWindow: { getAllWindows: () => [] },
   ipcMain: { handle: vi.fn(), removeHandler: vi.fn(), on: vi.fn() }
 }))

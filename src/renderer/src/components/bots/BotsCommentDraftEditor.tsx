@@ -22,6 +22,7 @@ import {
 import { describeBotsCommentDraftFailure } from './bots-comment-draft-failure-message'
 import { BotsCommentDraftAttachments, postLabelWithFiles } from './BotsCommentDraftAttachments'
 import { BotsCommentDraftPostButton } from './BotsCommentDraftPostButton'
+import { commentDraftAuthorLabel } from '../comment-drafts/comment-draft-author'
 import { useBotsDraftAttachmentAdding } from './use-bots-draft-attachment-adding'
 import { postCommentDraft, type HandBackTo } from './bots-comment-draft-post-action'
 
@@ -98,7 +99,7 @@ export function BotsCommentDraftEditor({
       setConflict(failure.draft)
       return
     }
-    setError(describeBotsCommentDraftFailure(failure))
+    setError(describeBotsCommentDraftFailure(failure, draft))
   }
 
   const save = async (version: number): Promise<void> => {
@@ -195,7 +196,7 @@ export function BotsCommentDraftEditor({
               : translate(
                   'auto.components.bots.commentDrafts.botUpdated',
                   '{{value0}} updated this draft',
-                  { value0: newer.botName }
+                  { value0: commentDraftAuthorLabel(newer) }
                 )}
           </span>
           <div className="flex gap-2">
@@ -203,7 +204,7 @@ export function BotsCommentDraftEditor({
               {newer.editedBy === 'user'
                 ? translate('auto.components.bots.commentDrafts.useNewer', 'Use that version')
                 : translate('auto.components.bots.commentDrafts.useTheirs', "Use {{value0}}'s", {
-                    value0: newer.botName
+                    value0: commentDraftAuthorLabel(newer)
                   })}
             </Button>
             <Button size="xs" variant="outline" onClick={keepMine}>
@@ -215,7 +216,7 @@ export function BotsCommentDraftEditor({
       <div
         data-slot="bots-draft-editor"
         // The editor takes the dialog's spare height; a long comment scrolls inside it.
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [&_.ProseMirror]:min-h-[220px]"
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [&_.ProseMirror]:min-h-[140px]"
         onPaste={files.onPaste}
         {...files.dropTargetProps}
       >
@@ -225,8 +226,23 @@ export function BotsCommentDraftEditor({
           disabled={busy !== null}
           dragging={files.dragging}
           footer={null}
+          // A ring here is clipped by the scroll area; a slightly lighter fill reads as focus instead.
+          className="transition-colors focus-within:bg-foreground/[0.08] focus-within:ring-0"
         />
-        <div className="flex flex-wrap items-center gap-1.5">
+        <p className="text-2xs text-muted-foreground">
+          {translate(
+            'auto.components.bots.commentDrafts.mentionHint',
+            'Type @ to mention someone on the project'
+          )}
+        </p>
+      </div>
+      {error || files.error ? (
+        <p role="status" className="text-xs text-destructive">
+          {error ?? files.error}
+        </p>
+      ) : null}
+      <DialogFooter className="items-center gap-3 border-t border-border pt-3 sm:justify-between">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <Button
             type="button"
             variant="ghost"
@@ -245,26 +261,13 @@ export function BotsCommentDraftEditor({
             onRemove={files.remove}
           />
         </div>
-      </div>
-      {error || files.error ? (
-        <p role="status" className="text-xs text-destructive">
-          {error ?? files.error}
-        </p>
-      ) : null}
-      <DialogFooter className="items-center sm:justify-between">
-        <p className="text-xs text-muted-foreground">
-          {translate(
-            'auto.components.bots.commentDrafts.mentionHint',
-            'Type @ to mention someone on the project'
-          )}
-        </p>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={close}>
             {translate('auto.components.bots.commentDrafts.cancel', 'Cancel')}
           </Button>
           <Button
             type="button"
-            variant="secondary"
+            variant="ghost"
             size="sm"
             disabled={busy !== null || !hasText || newer !== null}
             onClick={() => void save(baseVersion)}

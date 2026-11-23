@@ -27,6 +27,11 @@ import {
   isSetupBridgeRoute,
   type SetupBridgeCallbacks
 } from './site-write-bridge-setup-routes'
+import {
+  answerDraftBridgeRoute,
+  DRAFT_BRIDGE_ROUTE,
+  type DraftBridgeCallbacks
+} from './site-write-bridge-draft-routes'
 
 /** Discovery file the MCP process reads; absent means "no GUI, write to disk". */
 export const SITE_WRITE_BRIDGE_FILE_NAME = 'site-write-bridge.json'
@@ -74,7 +79,8 @@ type StartArgs = {
     | { status: 'pending'; openedMs: number }
     | { status: 'unknown' }
   >
-} & SetupBridgeCallbacks
+} & SetupBridgeCallbacks &
+  DraftBridgeCallbacks
 
 export class SiteWriteBridgeServer {
   private server: Server | null = null
@@ -123,19 +129,29 @@ export class SiteWriteBridgeServer {
     const isPlanCollect = req.method === 'POST' && req.url === '/plan/collect'
     const isSecrets = req.method === 'POST' && req.url === '/site/secrets'
     const setupRoute = req.method === 'POST' && isSetupBridgeRoute(req.url) ? req.url : null
+    const isDraftTool = req.method === 'POST' && req.url === DRAFT_BRIDGE_ROUTE
     if (
       !isSiteUpdate &&
       !isLibraryUpdate &&
       !isPlanAnnotate &&
       !isPlanCollect &&
       !isSecrets &&
-      !setupRoute
+      !setupRoute &&
+      !isDraftTool
     ) {
       reply(404, { error: 'not found' })
       return
     }
     if (req.headers['x-muster-site-bridge-token'] !== this.token) {
       reply(401, { error: 'unauthorized' })
+      return
+    }
+    if (isDraftTool) {
+      try {
+        await answerDraftBridgeRoute(await readJsonBody(req), reply, args)
+      } catch (error) {
+        reply(500, { error: error instanceof Error ? error.message : String(error) })
+      }
       return
     }
     if (setupRoute) {

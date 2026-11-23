@@ -117,6 +117,9 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   get_site_pipelines: {},
   // Muster-native, not an ocsites port — the census covers the whole table, not just the migration.
   annotate_plan: { content: '# Plan\n\nDo the thing.' },
+  queue_task_comment: { project_id: 1, task_id: 2, body_html: '<p>Done.</p>' },
+  list_comment_drafts: {},
+  amend_comment_draft: { draft: '1', body_html: '<p>Shorter.</p>' },
   collect_plan_review: { review_id: 'r1' },
   collect_setup_approval: { approval_id: 'approval-1', wait_seconds: 0 },
   list_projects: {},
@@ -166,7 +169,7 @@ describe('site MCP tool table', () => {
 
   it('keeps the full tools/list schema payload within a tight byte budget', () => {
     const bytes = Buffer.byteLength(JSON.stringify(listSiteMcpToolDescriptors()), 'utf8')
-    expect(bytes).toBeLessThan(46_000)
+    expect(bytes).toBeLessThan(47_000)
   })
 })
 

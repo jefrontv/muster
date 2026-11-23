@@ -1,9 +1,19 @@
 // Card copy for a failed draft action; a conflict is shown as its own banner, not as an error.
 import { translate } from '@/i18n/i18n'
-import type { BotsCommentDraftFailure } from '../../../../shared/bots-comment-draft-types'
+import type {
+  BotsCommentDraft,
+  BotsCommentDraftFailure
+} from '../../../../shared/bots-comment-draft-types'
 import { describeActiveCollabFailure } from '../activecollab-failure-message'
 
-export function describeBotsCommentDraftFailure(failure: BotsCommentDraftFailure): string {
+export function describeBotsCommentDraftFailure(
+  failure: BotsCommentDraftFailure,
+  draft?: Pick<BotsCommentDraft, 'agentSource'>
+): string {
+  // Agent drafts live in Muster, so the Bots wording would be wrong; their messages are written for people.
+  if (draft?.agentSource && (failure.reason === 'unavailable' || failure.reason === 'error')) {
+    return failure.message
+  }
   switch (failure.reason) {
     case 'post-failed':
       return translate('auto.components.bots.commentDrafts.postFailed', 'Not posted. {{value0}}', {

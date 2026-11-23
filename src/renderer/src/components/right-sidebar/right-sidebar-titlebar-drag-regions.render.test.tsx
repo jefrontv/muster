@@ -246,7 +246,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
 
     expectNoDrag(buttonOpeningTag(markup, 'Explorer'))
     expectNoDrag(buttonOpeningTag(markup, 'Source control'))
-    expectNoDrag(buttonOpeningTag(markup, 'Checks'))
+    expect(markup).not.toContain('aria-label="Checks')
     expect(buttonOpeningTag(markup, 'Toggle right sidebar')).toContain('sidebar-toggle')
     expect(markup).toContain(RIGHT_SIDEBAR_HEADER_NO_DRAG_CLASS_NAME)
   })
@@ -307,7 +307,7 @@ describe('rendered right sidebar titlebar drag regions', () => {
 
     expectNoDrag(buttonOpeningTag(markup, 'Explorer'))
     expectNoDrag(buttonOpeningTag(markup, 'Source control'))
-    expectNoDrag(buttonOpeningTag(markup, 'Checks'))
+    expect(markup).not.toContain('aria-label="Checks')
     expect(buttonOpeningTag(markup, 'Toggle right sidebar')).toContain('sidebar-toggle')
   })
 
