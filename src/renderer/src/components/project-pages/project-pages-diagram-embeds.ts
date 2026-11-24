@@ -80,6 +80,10 @@ function embed(pageId: string, preview: Extract<Preview, { state: 'ready' }>): H
     ? 'Empty diagram. Open it to draw.'
     : `Diagram · ${preview.title || 'Untitled'}`
   anchor.append(canvas, caption)
+  // Wide trees usually root in the middle; start there instead of on an empty left edge.
+  requestAnimationFrame(() => {
+    canvas.scrollLeft = (canvas.scrollWidth - canvas.clientWidth) / 2
+  })
   return anchor
 }
 
