@@ -1,6 +1,7 @@
 // Muster Pages over the chat connector: the same tools terminal agents get, scoped by the
 // chat's workspace folder, so a chat in a project folder works on that project's pages.
 import type { Tool } from '@modelcontextprotocol/sdk/types.js'
+import { splitToolImage } from '../../shared/tool-result-image'
 import { pagesToolOp, SITE_MCP_PAGES_TOOLS } from '../sites/mcp/site-mcp-pages-tools'
 import {
   toolFail,
@@ -47,7 +48,9 @@ export async function callChatConnectorPagesTool(
       worktreeId: null,
       terminalHandle: null
     })
-    return toolOk(JSON.stringify(value, null, 2))
+    const { rest, image } = splitToolImage(value)
+    const result = toolOk(JSON.stringify(rest, null, 2))
+    return image ? { content: [...result.content, { type: 'image', ...image }] } : result
   } catch (error) {
     const revision = (error as { revision?: unknown }).revision
     const message = error instanceof Error ? error.message : String(error)

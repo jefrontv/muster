@@ -137,6 +137,10 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   related_pages: { page: 'Launch' },
   list_page_tags: {},
   page_blocks: {},
+  diagram_shapes: {},
+  read_diagram: { page: 'Map' },
+  edit_diagram: { page: 'Map', add: [{ label: 'A' }] },
+  render_diagram: { page: 'Map' },
   attach_page_file: { path: '/tmp/shot.png' },
   collect_plan_review: { review_id: 'r1' },
   collect_setup_approval: { approval_id: 'approval-1', wait_seconds: 0 },
@@ -191,8 +195,8 @@ describe('site MCP tool table', () => {
     const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
     // Pages tools only appear once the user turns Pages on, so they get their own budget.
     expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
-    // Seventeen pages tools, each with the project selector.
-    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(9_500)
+    // Twenty-one pages tools (four for diagrams), each with the project selector.
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(12_500)
   })
 })
 

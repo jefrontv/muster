@@ -1,7 +1,7 @@
 // Which project and page an agent's pages tool call means, and whether it may reach them.
 import { normalizeRuntimePathForComparison } from '../../shared/cross-platform-path'
 import { ancestorsOf, childrenOf } from '../../shared/project-pages-tree'
-import type { ProjectPageMeta } from '../../shared/project-pages-types'
+import type { ProjectPageAuthor, ProjectPageMeta } from '../../shared/project-pages-types'
 import { getRepoIdFromWorktreeId } from '../../shared/worktree-id'
 import { ProjectPagesError } from './project-pages-store'
 
@@ -123,4 +123,41 @@ export function resolvePageRef(pages: readonly ProjectPageMeta[], ref: string): 
     throw new ProjectPagesError('invalid', 'page is required.')
   }
   return found
+}
+
+function editor(author: ProjectPageAuthor): string {
+  return author.kind === 'user' ? 'user' : author.agent
+}
+
+/** The page row agents get back from every pages tool. */
+export function pageRow(
+  pages: readonly ProjectPageMeta[],
+  page: ProjectPageMeta
+): Record<string, unknown> {
+  return {
+    id: page.id,
+    path: pagePath(pages, page.id),
+    revision: page.revision,
+    edited_by: editor(page.editedBy),
+    updated_at: new Date(page.updatedAt).toISOString()
+  }
+}
+
+/** Pages under parentId, depth-first, down to depth levels. */
+export function pagesBelow(
+  pages: ProjectPageMeta[],
+  parentId: string | null,
+  depth: number
+): ProjectPageMeta[] {
+  const listed: ProjectPageMeta[] = []
+  const walk = (id: string | null, level: number): void => {
+    for (const child of childrenOf(pages, id)) {
+      listed.push(child)
+      if (level + 1 < depth) {
+        walk(child.id, level + 1)
+      }
+    }
+  }
+  walk(parentId, 0)
+  return listed
 }

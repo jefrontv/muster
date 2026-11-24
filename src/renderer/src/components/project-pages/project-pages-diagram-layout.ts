@@ -32,6 +32,53 @@ function descendantEdges(parent: Cell): Cell[] {
     .flatMap((child) => (child.isEdge() ? [child] : descendantEdges(child)))
 }
 
+const PORTS: Record<LayoutDirection, [number, number, number, number]> = {
+  north: [0.5, 1, 0.5, 0],
+  south: [0.5, 0, 0.5, 1],
+  west: [1, 0.5, 0, 0.5],
+  east: [0, 0.5, 1, 0.5]
+}
+
+// Edges running back loop round the outside: under a left-to-right flow, beside a top-down one.
+const BACK_PORTS: Record<LayoutDirection, [number, number, number, number]> = {
+  north: [1, 0.5, 1, 0.5],
+  south: [0, 0.5, 0, 0.5],
+  west: [0.5, 1, 0.5, 1],
+  east: [0.5, 0, 0.5, 0]
+}
+
+function absoluteBox(cell: Cell): { x: number; y: number; width: number; height: number } {
+  const g = cell.getGeometry()!
+  const box = { x: g.x, y: g.y, width: g.width, height: g.height }
+  for (let p = cell.getParent(); p; p = p.getParent()) {
+    box.x += p.getGeometry()?.x ?? 0
+    box.y += p.getGeometry()?.y ?? 0
+  }
+  return box
+}
+
+/** An edge running with the flow leaves the far side and enters the near side, so it passes between
+ * ranks instead of through the shapes beside it. */
+function pinFlowPorts(graph: Graph, edge: Cell, direction: LayoutDirection): void {
+  const source = edge.getTerminal(true)
+  const target = edge.getTerminal(false)
+  if (!source?.getGeometry() || !target?.getGeometry()) {
+    return
+  }
+  const a = absoluteBox(source)
+  const b = absoluteBox(target)
+  const forward = {
+    north: b.y >= a.y + a.height,
+    south: b.y + b.height <= a.y,
+    west: b.x >= a.x + a.width,
+    east: b.x + b.width <= a.x
+  }[direction]
+  const values = forward ? PORTS[direction] : BACK_PORTS[direction]
+  ;(['exitX', 'exitY', 'entryX', 'entryY'] as const).forEach((key, i) =>
+    graph.setCellStyles(key, values[i] as never, [edge])
+  )
+}
+
 /**
  * Lays out parent's direct children only. An edge into a nested container ranks that container,
  * through a temporary edge, so nested shapes stay where their own container put them.
@@ -80,6 +127,7 @@ export function flowLayout(graph: Graph, parent: Cell, direction: LayoutDirectio
     // The layout's waypoints fight the elbow router; it routes cleanly from the new positions alone.
     for (const edge of descendantEdges(parent)) {
       graph.resetEdge(edge)
+      pinFlowPorts(graph, edge, direction)
     }
   })
 }
@@ -101,9 +149,12 @@ export function runLayout(
     } else if (kind === 'organic') {
       const layout = new FastOrganicLayout(graph)
       layout.forceConstant = 120
+      layout.disableEdgeStyle = false
       layout.execute(parent)
     } else {
-      new CircleLayout(graph).execute(parent)
+      const layout = new CircleLayout(graph)
+      layout.disableEdgeStyle = false
+      layout.execute(parent)
     }
     if (parent !== graph.getDefaultParent()) {
       graph.updateGroupBounds([parent], 20, false, 30)

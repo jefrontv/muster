@@ -31,6 +31,7 @@ import type {
   ProjectPageDiagram,
   ProjectPageDiagramSave
 } from '../shared/project-pages-diagram-types'
+import type { DiagramWorkMessage, DiagramWorkResponse } from '../shared/project-pages-diagram-agent'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
 import type {
   BrowserExtensionAddResult,
@@ -1096,6 +1097,9 @@ export type ProjectPagesApi = {
     extension: 'svg' | 'png',
     data: string | Uint8Array
   ) => Promise<{ ok: true; path: string } | { ok: false; cancelled?: boolean; message?: string }>
+  /** Agent diagram work sent by the main process; the renderer owns the diagram model. */
+  onDiagramWork: (callback: (request: DiagramWorkMessage) => void) => () => void
+  respondDiagramWork: (response: DiagramWorkResponse) => void
   enableDatabase: (
     scopeKey: string,
     pageId: string

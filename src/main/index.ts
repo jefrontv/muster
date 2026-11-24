@@ -18,9 +18,11 @@ import {
   projectPages,
   projectPagesAttachments,
   projectPagesDatabases,
+  projectPagesDiagrams,
   projectPagesSearch
 } from './project-pages/project-pages'
 import { projectPagesActiveCollab } from './project-pages/project-pages-activecollab-lookup'
+import { requestDiagramWork } from './project-pages/project-pages-diagram-relay'
 import { runProjectPagesToolOp } from './project-pages/project-pages-tool-ops'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
@@ -870,6 +872,8 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
                   databases: projectPagesDatabases(),
                   attachments: projectPagesAttachments(),
                   activeCollab: projectPagesActiveCollab(),
+                  diagrams: projectPagesDiagrams(),
+                  diagramWorker: requestDiagramWork,
                   repos: () => bridgeStore.getRepos(),
                   settings: () => bridgeStore.getSettings()
                 },

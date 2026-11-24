@@ -16,6 +16,7 @@ export function renderSvg(
 ): Rendered {
   const view = graph.getView()
   const saved = { scale: view.scale, x: view.translate.x, y: view.translate.y }
+  const restoreLabels = options.html ? null : plainTextLabels(graph)
   view.scaleAndTranslate(1, 0, 0)
   try {
     const bounds = graph.getGraphBounds()
@@ -51,10 +52,46 @@ export function renderSvg(
     return { svg: new XMLSerializer().serializeToString(root), width, height }
   } finally {
     view.scaleAndTranslate(saved.scale, saved.x, saved.y)
+    restoreLabels?.()
   }
 }
 
-async function pngBytes({ svg, width, height }: Rendered, scale: number): Promise<Uint8Array> {
+const ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  nbsp: ' ',
+  '#39': "'"
+}
+
+/** SVG text cannot hold HTML, so labels draw as plain lines until the returned restore runs. */
+function plainTextLabels(graph: Graph): () => void {
+  const isHtml = graph.isHtmlLabel.bind(graph)
+  const getLabel = graph.getLabel.bind(graph)
+  graph.isHtmlLabel = () => false
+  graph.getLabel = (cell) => {
+    const label = getLabel(cell)
+    return typeof label === 'string' && cell && isHtml(cell)
+      ? label
+          .replace(/<br\s*\/?>|<\/(div|p|li)>/gi, '\n')
+          .replace(/<[^>]*>/g, '')
+          .replace(/&(amp|lt|gt|quot|nbsp|#39);/g, (_m, name: string) => ENTITIES[name])
+          .trim()
+      : label
+  }
+  graph.refresh()
+  return () => {
+    graph.isHtmlLabel = isHtml
+    graph.getLabel = getLabel
+    graph.refresh()
+  }
+}
+
+export async function pngBytes(
+  { svg, width, height }: Rendered,
+  scale: number
+): Promise<Uint8Array> {
   const image = new Image()
   image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
   await image.decode()

@@ -2,6 +2,7 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { preloadE2EConfig } from './e2e-config'
+import type { DiagramWorkMessage } from '../shared/project-pages-diagram-agent'
 import { glApi } from './gitlab'
 import type { AppIdentity } from '../shared/app-identity'
 import type {
@@ -990,6 +991,14 @@ const api = {
       ipcRenderer.invoke('projectPages:saveDiagram', scopeKey, pageId, input),
     exportDiagramFile: (name, extension, data) =>
       ipcRenderer.invoke('projectPages:exportDiagramFile', name, extension, data),
+    onDiagramWork: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, request: DiagramWorkMessage) =>
+        callback(request)
+      ipcRenderer.on('projectPages:diagramWork', listener)
+      return () => ipcRenderer.removeListener('projectPages:diagramWork', listener)
+    },
+    respondDiagramWork: (response) =>
+      ipcRenderer.send('projectPages:diagramWorkResponse', response),
     enableDatabase: (scopeKey, pageId) =>
       ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),
     updateDatabase: (scopeKey, pageId, schema) =>

@@ -15,7 +15,11 @@ export const MAX_CHAT_CONNECTOR_NAME_LENGTH = 120
 export const MAX_CHAT_CONNECTOR_TITLE_LENGTH = 200
 
 export type ChatConnectorToolResult = {
-  content: { type: 'text'; text: string }[]
+  /** Text first; an image block, when a tool returns one, follows it. */
+  content: [
+    { type: 'text'; text: string },
+    ...({ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string })[]
+  ]
   isError?: boolean
 }
 

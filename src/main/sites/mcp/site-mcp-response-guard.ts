@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { splitToolImage } from '../../../shared/tool-result-image'
 
 export const SITE_MCP_MAX_INLINE_BYTES = 48 * 1024
 export const SITE_MCP_SPILL_DIR = join(tmpdir(), 'muster-mcp-results')
@@ -44,7 +45,11 @@ const PRESERVED_SCALAR_KEYS: readonly string[] = [
 
 /** MCP's tool result shape. `isError` keeps a failure inside the conversation instead of the protocol. */
 export type SiteMcpToolResult = {
-  content: { type: 'text'; text: string }[]
+  /** Text first; an image block, when a tool returns one, follows it. */
+  content: [
+    { type: 'text'; text: string },
+    ...({ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string })[]
+  ]
   isError?: true
 }
 
@@ -168,11 +173,17 @@ export function formatSiteMcpToolResult(
   isError: boolean,
   options: ResponseGuardOptions = {}
 ): SiteMcpToolResult {
+  const { rest, image } = splitToolImage(payload)
+  if (image) {
+    // The image travels as its own block; the size guard applies to the text beside it.
+    const result = formatSiteMcpToolResult(toolName, rest, isError, options)
+    return { ...result, content: [...result.content, { type: 'image', ...image }] }
+  }
   const text = JSON.stringify(payload) ?? 'null'
   const totalBytes = Buffer.byteLength(text, 'utf8')
   const maxInlineBytes = options.maxInlineBytes ?? SITE_MCP_MAX_INLINE_BYTES
   if (totalBytes <= maxInlineBytes) {
-    const content = [{ type: 'text' as const, text }]
+    const content: SiteMcpToolResult['content'] = [{ type: 'text', text }]
     return isError ? { content, isError: true } : { content }
   }
   const spill = writeSpillFile(
@@ -188,6 +199,6 @@ export function formatSiteMcpToolResult(
     maxInlineBytes,
     spill
   )
-  const content = [{ type: 'text' as const, text: summaryText }]
+  const content: SiteMcpToolResult['content'] = [{ type: 'text', text: summaryText }]
   return isError ? { content, isError: true } : { content }
 }

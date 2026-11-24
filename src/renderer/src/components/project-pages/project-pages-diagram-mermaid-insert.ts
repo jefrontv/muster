@@ -51,7 +51,7 @@ function edgeStyle(edge: MermaidEdge): CellStyle {
   } as CellStyle
 }
 
-function commonParent(a: Cell, b: Cell): Cell {
+export function commonParent(a: Cell, b: Cell): Cell {
   const above = new Set<Cell>()
   for (let cell = a.getParent(); cell; cell = cell.getParent()) {
     above.add(cell)

@@ -24,7 +24,7 @@ export const PAGE_BLOCKS: PageBlockExample[] = [
   {
     block: 'Diagram (Mermaid)',
     markdown: '```mermaid\nflowchart LR\n  A[Request] --> B{Approved?}\n  B -->|yes| C[Ship]\n```',
-    note: 'Renders as a diagram. Also sequenceDiagram, erDiagram, gantt, classDiagram, stateDiagram-v2.'
+    note: 'Quick, read-only and kept in the text. Also sequenceDiagram, erDiagram, gantt, classDiagram, stateDiagram-v2. For a diagram people will rearrange, link or keep editing, make a diagram page instead (create_page with diagram: true, then edit_diagram); a [[link]] to it on its own line shows a live preview.'
   },
   { block: 'Math', markdown: 'Inline $x^2$ and a block:\n\n$$\nE = mc^2\n$$' },
   {

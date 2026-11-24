@@ -13,6 +13,17 @@ const MARKDOWN = {
   description: 'Markdown; [[Title]] links a page, #tag tags it. page_blocks lists all blocks.'
 }
 const STRINGS = { type: 'array', items: { type: 'string' } }
+const ROWS = (description: string) => ({ type: 'array', items: { type: 'object' }, description })
+const DIAGRAM_EDIT = {
+  add: ROWS('[{label, shape?, id?, in?, x?, y?, color?, link?}]; no x/y: placed by its links.'),
+  connect: ROWS('[{from, to, label?, dashed?, arrow?: end|both|none}]'),
+  update: ROWS('[{target, label?, shape?, color?, link?, dashed?, arrow?}]'),
+  move: ROWS('[{target, x?, y?, dx?, dy?, width?, height?, in?}]'),
+  remove: STRINGS,
+  layout: { type: 'string', description: 'down|right|tree|organic|circle' },
+  mermaid: { type: 'string', description: 'Mermaid flowchart to add.' }
+}
+const ANY_ROWS = { type: 'array', items: { type: 'object' } }
 const OPS_BY_TOOL = new Map<string, ProjectPagesToolOp>()
 const READ_TOOL_OPS = new Set<ProjectPagesToolOp>([
   'list',
@@ -21,7 +32,10 @@ const READ_TOOL_OPS = new Set<ProjectPagesToolOp>([
   'query_database',
   'related',
   'tags',
-  'blocks'
+  'blocks',
+  'diagram_shapes',
+  'read_diagram',
+  'render_diagram'
 ])
 
 /** The pages op behind a tool name, for other MCP surfaces that reuse this catalog. */
@@ -88,6 +102,11 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
       parent: PARENT,
       markdown: MARKDOWN,
       folder: { type: 'boolean', description: 'A folder lists its child pages.' },
+      diagram: { type: 'boolean', description: 'Diagram page; draw it with edit_diagram fields.' },
+      shapes: ANY_ROWS,
+      connect: ANY_ROWS,
+      layout: { type: 'string' },
+      mermaid: { type: 'string' },
       properties: { type: 'object', description: 'Row values, by name, under a database.' },
       allow_duplicate: { type: 'boolean' }
     },
@@ -192,6 +211,33 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     'blocks',
     'Markdown for every page block: callouts, toggles, tables, math, checklists, images, links.',
     {}
+  ),
+  pagesTool(
+    'diagram_shapes',
+    'diagram_shapes',
+    'Shape names, colours and layouts for diagrams.',
+    {}
+  ),
+  pagesTool(
+    'read_diagram',
+    'read_diagram',
+    'A diagram as shape rows and connector rows.',
+    { page: PAGE, detail: { type: 'boolean', description: 'Add geometry.' } },
+    ['page']
+  ),
+  pagesTool(
+    'edit_diagram',
+    'edit_diagram',
+    'Edit a diagram in one call: remove, add, connect, update, move, layout. Shapes go by id or label, even ones added in the same call.',
+    { page: PAGE, ...DIAGRAM_EDIT },
+    ['page']
+  ),
+  pagesTool(
+    'render_diagram',
+    'render_diagram',
+    'PNG of a diagram, to check for overlaps before finishing.',
+    { page: PAGE, scale: { type: 'number', description: '1 or 2' } },
+    ['page']
   ),
   pagesTool(
     'attach_page_file',

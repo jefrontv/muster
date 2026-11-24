@@ -44,7 +44,10 @@ describe('chat connector pages tools', () => {
       'query_database',
       'related_pages',
       'list_page_tags',
-      'page_blocks'
+      'page_blocks',
+      'diagram_shapes',
+      'read_diagram',
+      'render_diagram'
     ])
     expect(chatConnectorPagesToolDefs(deps('write').deps).map((tool) => tool.name)).toContain(
       'append_to_page'

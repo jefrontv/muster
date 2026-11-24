@@ -17,6 +17,15 @@ import {
 } from './project-pages-database-tool-ops'
 import type { ProjectPagesActiveCollab } from './project-pages-activecollab-lookup'
 import type { ProjectPagesAttachments } from './project-pages-attachments'
+import type { DiagramWorker } from './project-pages-diagram-relay'
+import type { ProjectPagesDiagrams } from './project-pages-diagram-store'
+import {
+  finishDiagramPage,
+  isProjectPagesDiagramOp,
+  PROJECT_PAGES_DIAGRAM_OPS,
+  PROJECT_PAGES_DIAGRAM_READ_OPS,
+  runProjectPagesDiagramOp
+} from './project-pages-diagram-tool-ops'
 import {
   isProjectPagesBlockOp,
   PROJECT_PAGES_BLOCK_OPS,
@@ -36,6 +45,8 @@ import { toolCount, toolText, type ToolArgs } from './project-pages-tool-args'
 import {
   callerRepo,
   pagePath,
+  pageRow as row,
+  pagesBelow,
   resolvePageRef,
   resolveTargetRepo,
   type PagesToolRepo,
@@ -56,7 +67,8 @@ export const PROJECT_PAGES_TOOL_OPS = [
   'archive',
   ...PROJECT_PAGES_DATABASE_OPS,
   ...PROJECT_PAGES_LINK_OPS,
-  ...PROJECT_PAGES_BLOCK_OPS
+  ...PROJECT_PAGES_BLOCK_OPS,
+  ...PROJECT_PAGES_DIAGRAM_OPS
 ] as const
 export type ProjectPagesToolOp = (typeof PROJECT_PAGES_TOOL_OPS)[number]
 const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
@@ -66,7 +78,8 @@ const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
   'query_database',
   'related',
   'tags',
-  'blocks'
+  'blocks',
+  ...PROJECT_PAGES_DIAGRAM_READ_OPS
 ])
 
 export function isProjectPagesToolOp(value: unknown): value is ProjectPagesToolOp {
@@ -81,20 +94,8 @@ export type ProjectPagesToolDeps = {
   databases?: ProjectPagesDatabases
   attachments?: ProjectPagesAttachments
   activeCollab?: ProjectPagesActiveCollab
-}
-
-function editor(author: ProjectPageAuthor): string {
-  return author.kind === 'user' ? 'user' : author.agent
-}
-
-function row(pages: readonly ProjectPageMeta[], page: ProjectPageMeta): Record<string, unknown> {
-  return {
-    id: page.id,
-    path: pagePath(pages, page.id),
-    revision: page.revision,
-    edited_by: editor(page.editedBy),
-    updated_at: new Date(page.updatedAt).toISOString()
-  }
+  diagrams?: ProjectPagesDiagrams
+  diagramWorker?: DiagramWorker
 }
 
 export async function runProjectPagesToolOp(
@@ -166,21 +167,22 @@ export async function runProjectPagesToolOp(
   if (isProjectPagesDatabaseOp(op)) {
     return runProjectPagesDatabaseOp(op, databaseContext)
   }
+  const diagramContext = {
+    ...databaseContext,
+    diagrams: deps.diagrams,
+    worker: deps.diagramWorker,
+    pages,
+    row: (meta: ProjectPageMeta) => row(pages(), meta)
+  }
+  if (isProjectPagesDiagramOp(op)) {
+    return runProjectPagesDiagramOp(op, diagramContext)
+  }
   switch (op) {
     case 'list': {
       const all = pages().filter((p) => p.archivedAt === null)
       const parentRef = toolText(args, 'parent')
-      const depth = toolCount(args, 'depth') ?? Number.POSITIVE_INFINITY
-      const listed: ProjectPageMeta[] = []
-      const walk = (parentId: string | null, level: number): void => {
-        for (const child of childrenOf(all, parentId)) {
-          listed.push(child)
-          if (level + 1 < depth) {
-            walk(child.id, level + 1)
-          }
-        }
-      }
-      walk(parentRef ? resolvePageRef(all, parentRef).id : null, 0)
+      const parentId = parentRef ? resolvePageRef(all, parentRef).id : null
+      const listed = pagesBelow(all, parentId, toolCount(args, 'depth') ?? Number.POSITIVE_INFINITY)
       return { project, count: listed.length, pages: listed.map((p) => row(all, p)) }
     }
     case 'search': {
@@ -223,6 +225,9 @@ export async function runProjectPagesToolOp(
       }
       const input = { parentId, title, markdown: md('markdown'), folder: args.folder === true }
       const doc = store.createPage(scopeKey, input, author)
+      if (args.diagram === true) {
+        return { created: true, ...(await finishDiagramPage(diagramContext, doc.meta)) }
+      }
       const row = createdRowProperties(databaseContext, doc.meta)
       return { created: true, ...written(doc.meta), ...row }
     }
