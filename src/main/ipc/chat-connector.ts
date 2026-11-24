@@ -21,6 +21,7 @@ import { projectPagesAgentAccess } from '../../shared/agent-capabilities'
 import {
   projectPages,
   projectPagesAttachments,
+  projectPagesComments,
   projectPagesDatabases,
   projectPagesDiagrams,
   projectPagesSearch
@@ -102,6 +103,7 @@ function buildChatConnectorToolDeps(store: Store): ChatConnectorToolDeps {
             activeCollab: projectPagesActiveCollab(),
             diagrams: projectPagesDiagrams(),
             diagramWorker: requestDiagramWork,
+            comments: projectPagesComments(),
             repos: () => store.getRepos(),
             settings: () => store.getSettings()
           },

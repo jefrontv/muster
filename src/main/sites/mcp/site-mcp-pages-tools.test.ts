@@ -20,6 +20,7 @@ describe('pages MCP tools', () => {
       'list_pages',
       'search_pages',
       'read_page',
+      'list_page_comments',
       'query_database',
       'related_pages',
       'list_page_tags',

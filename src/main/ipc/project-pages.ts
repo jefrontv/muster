@@ -13,6 +13,7 @@ import { registerProjectPagesDatabaseHandlers } from './project-pages-databases'
 import { registerProjectPagesDiagramHandlers } from './project-pages-diagrams'
 import { registerProjectPagesTransferHandlers } from './project-pages-transfer'
 import { registerProjectPagesAttachmentHandlers } from './project-pages-attachments'
+import { registerProjectPagesCommentHandlers } from './project-pages-comments'
 import { sendToTrustedUIRenderer } from './ui'
 
 const CHANNELS = [
@@ -177,6 +178,7 @@ export function registerProjectPagesHandlers(): void {
   registerProjectPagesDiagramHandlers()
   registerProjectPagesTransferHandlers()
   registerProjectPagesAttachmentHandlers()
+  registerProjectPagesCommentHandlers()
   stopForwarding?.()
   stopForwarding = pages().onChanged((change) =>
     sendToTrustedUIRenderer('projectPages:changed', change)

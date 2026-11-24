@@ -22,6 +22,7 @@ import {
   type ProjectPagesSearchIndex
 } from './project-pages-search-index'
 import { createProjectPagesStore, type ProjectPagesStore } from './project-pages-store'
+import { createProjectPagesComments, type ProjectPagesComments } from './project-pages-comments'
 
 let rootDir: string | null = null
 let store: ProjectPagesStore | null = null
@@ -29,6 +30,7 @@ let searchIndex: ProjectPagesSearchIndex | null = null
 let databases: ProjectPagesDatabases | null = null
 let attachments: ProjectPagesAttachments | null = null
 let diagrams: ProjectPagesDiagrams | null = null
+let comments: ProjectPagesComments | null = null
 
 // Switching profiles relaunches the app, so the folder is resolved once.
 function pagesRoot(): string {
@@ -43,6 +45,11 @@ function pagesRoot(): string {
 export function projectPages(): ProjectPagesStore {
   store ??= createProjectPagesStore({ rootDir: pagesRoot() })
   return store
+}
+
+export function projectPagesComments(): ProjectPagesComments {
+  comments ??= createProjectPagesComments({ rootDir: pagesRoot() })
+  return comments
 }
 
 export function projectPagesSearch(): ProjectPagesSearchIndex {

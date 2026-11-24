@@ -12,7 +12,6 @@ import type { ProjectPagesDatabases } from './project-pages-database-store'
 import {
   createdRowProperties,
   isProjectPagesDatabaseOp,
-  PROJECT_PAGES_DATABASE_OPS,
   runProjectPagesDatabaseOp
 } from './project-pages-database-tool-ops'
 import type { ProjectPagesActiveCollab } from './project-pages-activecollab-lookup'
@@ -22,22 +21,17 @@ import type { ProjectPagesDiagrams } from './project-pages-diagram-store'
 import {
   finishDiagramPage,
   isProjectPagesDiagramOp,
-  PROJECT_PAGES_DIAGRAM_OPS,
-  PROJECT_PAGES_DIAGRAM_READ_OPS,
   runProjectPagesDiagramOp
 } from './project-pages-diagram-tool-ops'
-import {
-  isProjectPagesBlockOp,
-  PROJECT_PAGES_BLOCK_OPS,
-  runProjectPagesBlockOp
-} from './project-pages-block-tool-ops'
+import { isProjectPagesBlockOp, runProjectPagesBlockOp } from './project-pages-block-tool-ops'
 import {
   isProjectPagesLinkOp,
   pageConnections,
-  PROJECT_PAGES_LINK_OPS,
   runProjectPagesLinkOp
 } from './project-pages-link-tool-ops'
 import { tickChecklist } from './project-pages-checklist-ops'
+import type { ProjectPagesComments } from './project-pages-comments'
+import { isProjectPagesCommentOp, runProjectPagesCommentOp } from './project-pages-comment-tool-ops'
 import { appendMarkdown, readSection, replaceAnchor } from './project-pages-markdown-ops'
 import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
@@ -53,38 +47,16 @@ import {
   type ProjectPagesToolSource
 } from './project-pages-tool-target'
 import { resolveWikiLinks } from './project-pages-wiki-links'
+import {
+  PROJECT_PAGES_READ_OPS as READ_OPS,
+  type ProjectPagesToolOp
+} from './project-pages-tool-op-names'
 
-export const PROJECT_PAGES_TOOL_OPS = [
-  'list',
-  'search',
-  'read',
-  'create',
-  'update',
-  'edit',
-  'append',
-  'check',
-  'move',
-  'archive',
-  ...PROJECT_PAGES_DATABASE_OPS,
-  ...PROJECT_PAGES_LINK_OPS,
-  ...PROJECT_PAGES_BLOCK_OPS,
-  ...PROJECT_PAGES_DIAGRAM_OPS
-] as const
-export type ProjectPagesToolOp = (typeof PROJECT_PAGES_TOOL_OPS)[number]
-const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
-  'list',
-  'search',
-  'read',
-  'query_database',
-  'related',
-  'tags',
-  'blocks',
-  ...PROJECT_PAGES_DIAGRAM_READ_OPS
-])
-
-export function isProjectPagesToolOp(value: unknown): value is ProjectPagesToolOp {
-  return PROJECT_PAGES_TOOL_OPS.includes(value as ProjectPagesToolOp)
-}
+export {
+  isProjectPagesToolOp,
+  PROJECT_PAGES_TOOL_OPS,
+  type ProjectPagesToolOp
+} from './project-pages-tool-op-names'
 
 export type ProjectPagesToolDeps = {
   store: ProjectPagesStore
@@ -96,6 +68,7 @@ export type ProjectPagesToolDeps = {
   activeCollab?: ProjectPagesActiveCollab
   diagrams?: ProjectPagesDiagrams
   diagramWorker?: DiagramWorker
+  comments?: ProjectPagesComments
 }
 
 export async function runProjectPagesToolOp(
@@ -146,6 +119,18 @@ export async function runProjectPagesToolOp(
   })
   if (isProjectPagesBlockOp(op)) {
     return runProjectPagesBlockOp(op, { attachments: deps.attachments, scopeKey, project, args })
+  }
+  if (isProjectPagesCommentOp(op)) {
+    const pagePathOf = (id: string): string => pagePath(pages(), id)
+    return runProjectPagesCommentOp(op, {
+      ...deps,
+      scopeKey,
+      author,
+      project,
+      args,
+      page,
+      pagePath: pagePathOf
+    })
   }
   if (isProjectPagesLinkOp(op)) {
     return runProjectPagesLinkOp(op, {
@@ -209,6 +194,7 @@ export async function runProjectPagesToolOp(
           .backlinks(scopeKey, doc.meta.id)
           .map((p) => ({ id: p.id, path: pagePath(pages(), p.id) })),
         ...pageConnections(deps.search, scopeKey, doc.meta.id, pages()),
+        open_comments: deps.comments?.openCount(scopeKey, doc.meta.id) ?? 0,
         ...(activecollab?.length ? { activecollab } : {})
       }
     }

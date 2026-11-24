@@ -1018,6 +1018,23 @@ const api = {
       ): void => callback(change)
       ipcRenderer.on('projectPages:changed', listener)
       return () => ipcRenderer.removeListener('projectPages:changed', listener)
+    },
+    comments: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:comments', scopeKey, pageId),
+    addComment: (scopeKey, pageId, input) =>
+      ipcRenderer.invoke('projectPages:addComment', scopeKey, pageId, input),
+    replyComment: (scopeKey, pageId, threadId, input) =>
+      ipcRenderer.invoke('projectPages:replyComment', scopeKey, pageId, threadId, input),
+    setCommentStatus: (scopeKey, pageId, threadId, status) =>
+      ipcRenderer.invoke('projectPages:setCommentStatus', scopeKey, pageId, threadId, status),
+    deleteComment: (scopeKey, pageId, threadId) =>
+      ipcRenderer.invoke('projectPages:deleteComment', scopeKey, pageId, threadId),
+    onCommentsChanged: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        change: Parameters<typeof callback>[0]
+      ): void => callback(change)
+      ipcRenderer.on('projectPages:commentsChanged', listener)
+      return () => ipcRenderer.removeListener('projectPages:commentsChanged', listener)
     }
   } satisfies PreloadApi['projectPages'],
 

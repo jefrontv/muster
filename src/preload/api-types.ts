@@ -24,6 +24,12 @@ import type {
 } from '../shared/project-pages-types'
 import type { PagesGraph } from '../shared/project-pages-graph-types'
 import type {
+  PageCommentCreateInput,
+  PageCommentsChange,
+  PageCommentStatus,
+  PageCommentThread
+} from '../shared/project-pages-comment-types'
+import type {
   PageDatabaseSchema,
   ProjectPageDatabase
 } from '../shared/project-pages-database-types'
@@ -1128,6 +1134,30 @@ export type ProjectPagesApi = {
   /** Asks for .drawio/.xml/.svg/.canvas (or .md) files and adds each as a top-level page. */
   importFiles: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
   onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
+  comments: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<PageCommentThread[]>>
+  addComment: (
+    scopeKey: string,
+    pageId: string,
+    input: PageCommentCreateInput
+  ) => Promise<ProjectPagesResult<PageCommentThread>>
+  replyComment: (
+    scopeKey: string,
+    pageId: string,
+    threadId: string,
+    input: { body: string; attachments?: string[] }
+  ) => Promise<ProjectPagesResult<PageCommentThread>>
+  setCommentStatus: (
+    scopeKey: string,
+    pageId: string,
+    threadId: string,
+    status: PageCommentStatus
+  ) => Promise<ProjectPagesResult<PageCommentThread>>
+  deleteComment: (
+    scopeKey: string,
+    pageId: string,
+    threadId: string
+  ) => Promise<ProjectPagesResult<void>>
+  onCommentsChanged: (callback: (change: PageCommentsChange) => void) => () => void
 }
 
 export type BotsApi = {
