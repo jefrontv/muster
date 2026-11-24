@@ -8,6 +8,7 @@ import {
   UndoManager,
   VertexHandler,
   type Cell,
+  type CellEditorHandler,
   type CellStyle,
   type ConnectionHandler,
   type EventObject,
@@ -83,6 +84,8 @@ export function createDiagramEditor(container: HTMLElement, onChange: () => void
   graph.setDropEnabled(true)
   graph.setSplitEnabled(false)
   graph.gridSize = 10
+  // Leaving the text editor (e.g. for the format panel) commits it, so formatting shows at once.
+  graph.getPlugin<CellEditorHandler>('CellEditorHandler')!.blurEnabled = true
   const selection = graph.getPlugin<SelectionHandler>('SelectionHandler')!
   selection.guidesEnabled = true
   // Drag and resize the shapes themselves, as draw.io does, instead of a dashed outline.

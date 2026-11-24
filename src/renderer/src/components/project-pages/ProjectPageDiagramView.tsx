@@ -178,7 +178,7 @@ export function ProjectPageDiagramView({
               }
             }}
           />
-          {editor && lone && selection.box ? (
+          {editor && lone && selection.box && !selection.moving ? (
             <ProjectPageDiagramQuickConnect graph={editor.graph} cell={lone} box={selection.box} />
           ) : null}
           <div

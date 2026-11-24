@@ -12,6 +12,8 @@ export type DiagramSelection = {
   translate: { x: number; y: number }
   canUndo: boolean
   canRedo: boolean
+  /** A drag, resize, or pan is under way, so screen boxes are stale until it ends. */
+  moving: boolean
 }
 
 const EMPTY: DiagramSelection = {
@@ -20,7 +22,8 @@ const EMPTY: DiagramSelection = {
   scale: 1,
   translate: { x: 0, y: 0 },
   canUndo: false,
-  canRedo: false
+  canRedo: false,
+  moving: false
 }
 
 export function useProjectPageDiagramSelection(
@@ -37,15 +40,28 @@ export function useProjectPageDiagramSelection(
       const cells = graph.getSelectionCells()
       const view = graph.getView()
       const lone = cells.length === 1 && cells[0].isVertex() ? view.getState(cells[0]) : null
-      setState({
+      setState((before) => ({
+        moving: before.moving,
         cells,
         box: lone ? { x: lone.x, y: lone.y, width: lone.width, height: lone.height } : null,
         scale: view.scale,
         translate: { x: view.translate.x, y: view.translate.y },
         canUndo: undo?.canUndo() ?? false,
         canRedo: undo?.canRedo() ?? false
-      })
+      }))
     }
+    const setMoving = (moving: boolean): void =>
+      setState((before) => (before.moving === moving ? before : { ...before, moving }))
+    const gesture = {
+      mouseDown: () => {},
+      mouseMove: () => {
+        if (graph.isMouseDown) {
+          setMoving(true)
+        }
+      },
+      mouseUp: () => setMoving(false)
+    }
+    graph.addMouseListener(gesture)
     const selection = graph.getSelectionModel()
     const model = graph.getDataModel()
     const view = graph.getView()
@@ -63,6 +79,7 @@ export function useProjectPageDiagramSelection(
       selection.removeListener(update)
       model.removeListener(update)
       view.removeListener(update)
+      graph.removeMouseListener(gesture)
     }
   }, [graph, undo])
 
