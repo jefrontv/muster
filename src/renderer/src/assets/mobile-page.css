@@ -1117,9 +1117,7 @@
   gap: 8px;
 }
 
-.mobile-page-root .mp-app-brand .mp-orca-logo {
-  width: 28px;
-  height: 18px;
+.mobile-page-root .mp-app-brand .mp-muster-mark {
   color: var(--m-text-primary);
 }
 

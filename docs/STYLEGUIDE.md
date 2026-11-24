@@ -4,7 +4,7 @@ This is the **UI/visual design** doc for Muster — color tokens, typography, co
 
 ## Overview
 
-Muster is an Electron desktop app for orchestrating coding agents across git worktrees. The visual identity is **monochrome and quiet** — neutral grays carry the chrome, color is reserved for state (selection ring, destructive, git decorations). The product spends most of its time hosting other people's tools (Monaco, xterm, Markdown previews), so Muster's own UI should recede and frame.
+Muster is an Electron desktop app for orchestrating coding agents across git worktrees. The visual identity is **monochrome and quiet** — neutral grays carry the chrome, color is reserved for state (selection ring, destructive, git decorations), plus one brand coral (`--brand`) that marks the live unit in the mark and the dot motif (see Brand). The product spends most of its time hosting other people's tools (Monaco, xterm, Markdown previews), so Muster's own UI should recede and frame.
 
 When in doubt:
 
@@ -93,6 +93,59 @@ background: color-mix(in srgb, var(--primary) 12%, var(--background));
 ```
 
 This keeps light/dark parity automatic.
+
+## Brand
+
+The mark is Formation: a 5x5 dot grid where the outer columns and two row-2 dots draw an M, and one coral centre dot marks the live unit (the agent or person acting now). It is the only custom glyph; everything else is lucide.
+
+### Mark
+
+Use `components/brand/muster-mark.tsx`, never an `<img>` of the logo and never a CSS `filter` to recolour it.
+
+| Variant               | Props                         | Use                                                                        |
+| --------------------- | ----------------------------- | -------------------------------------------------------------------------- |
+| Tile, full (25 dots)  | `size >= 48`                  | Landing (80px), onboarding welcome                                         |
+| Tile, small (13 dots) | `size < 48`                   | Stone dots drop automatically; the centre takes Coral deep                 |
+| Glyph                 | `variant="glyph"`, 16 to 32px | Titlebar, menus, settings nav. Dots in `currentColor`, centre in `--brand` |
+| Dark tile             | `tone="dark"`                 | Light surfaces where the Paper tile would vanish                           |
+
+- Never below 16px. Never recolour the M dots, rotate the grid or move the coral dot.
+- The wordmark is `components/brand/muster-wordmark.tsx`: Geist 700 at -0.04em, outlined. Never set "Muster" as live text in a brand position.
+- App icons, tray images and favicons are rendered from `config/scripts/formation-mark-geometry.mjs` by `pnpm build:icons`. Change the geometry there.
+
+### Brand tokens
+
+| Token                                                | Light                           | Dark      | Use                                            |
+| ---------------------------------------------------- | ------------------------------- | --------- | ---------------------------------------------- |
+| `--brand`                                            | `#E25630`                       | `#EF7A5A` | Dots, fills, non-text indicators (3:1)         |
+| `--brand-ink`                                        | `#B8421F`                       | `#EF7A5A` | Coral text, links, icons (4.5:1)               |
+| `--brand-foreground`                                 | `#17181C`                       | `#17181C` | Text on a `--brand` fill. Never white (2.76:1) |
+| `--brand-tint`                                       | 12% of `--brand`                | same      | Soft washes                                    |
+| `--brand-paper`, `--brand-stone`, `--brand-mark-ink` | `#ECE9E3`, `#CBC9C4`, `#17181C` | same      | Inside the mark only                           |
+
+- The brand colour is `--brand`, never `--accent` (that is the hover and current-row fill).
+- No coral text on hovered rows in dark (`--brand` on `--accent` is 3.75:1).
+- Never put coral next to a destructive action: in dark it is 1.04:1 from `--destructive`.
+
+### Dot motif
+
+| Use                                                                 | Component                   |
+| ------------------------------------------------------------------- | --------------------------- |
+| First launch: 25 dots settle into the M once, 600ms                 | `brand/formation-intro.tsx` |
+| Full-surface loading: 3x3 block, one coral dot stepping round       | `brand/dot-loader.tsx`      |
+| Empty states: 64px faded grid with one coral dot, above the heading | `brand/dot-empty-mark.tsx`  |
+| Step progress: ink done, coral current, faded to come               | `brand/step-dots.tsx`       |
+| Avatars without an image: mirrored 5x5 identicon, ink on Paper      | `brand/dot-identicon.tsx`   |
+
+Rules:
+
+1. One coral dot per composition. Never two.
+2. Coral means "live" or "you are here". It is never a state: success, attention, danger and info keep `--status-*`, and agent "working" keeps the attention colour plus the spinner.
+3. The motif never sits behind text, code, terminals or diffs.
+4. Dots only spell the M. No dot-matrix headlines or numbers.
+5. One motif animates per view, in steps of 160ms or less on `ease-chat` (only the first-launch animation runs longer). A still frame under `prefers-reduced-motion`.
+6. Dots stay on the grid (dot 2, gap 1) and never render under 2px.
+7. Inline spinners stay `Loader2`; the dot loader is for full surfaces only. Determinate progress stays a bar (`ui/progress.tsx`).
 
 ## Typography
 

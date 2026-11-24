@@ -21,7 +21,8 @@ import { OnboardingSkipConfirmationDialog } from './OnboardingSkipConfirmationDi
 import { OnboardingFooter } from './OnboardingFooter'
 import { stepCopy, stepTooltipLabels } from './onboarding-step-copy'
 import { shouldRequestOnboardingSkipConfirmation } from './onboarding-dismiss-target'
-import logo from '../../../../../resources/logo.svg'
+import { MusterMark } from '../brand/muster-mark'
+import { MusterWordmark } from '../brand/muster-wordmark'
 import { translate } from '@/i18n/i18n'
 
 type OnboardingFlowProps = {
@@ -176,16 +177,15 @@ export default function OnboardingFlow({
               <OnboardingWelcome key={welcomeReplayKey} onContinue={dismissWelcome} />
             ) : (
               <div className="onboarding-welcome-handoff flex min-h-0 flex-1 flex-col">
-                <div className="flex items-center gap-3 text-base font-semibold tracking-tight">
-                  <img
-                    src={logo}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-7 w-auto shrink-0 invert dark:invert-0"
-                  />
-                  <span>
-                    {translate('auto.components.onboarding.OnboardingFlow.a249f81538', 'Muster')}
-                  </span>
+                <div
+                  className="flex items-center gap-2.5 text-foreground"
+                  aria-label={translate(
+                    'auto.components.onboarding.OnboardingFlow.a249f81538',
+                    'Muster'
+                  )}
+                >
+                  <MusterMark variant="glyph" size={20} />
+                  <MusterWordmark height={17} />
                 </div>
 
                 <div className="mt-10 flex items-center gap-2 transition-[margin-top] duration-[760ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none">

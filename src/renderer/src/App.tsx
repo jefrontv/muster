@@ -20,7 +20,7 @@ import {
   PanelLeft,
   PanelRight
 } from 'lucide-react'
-import logo from '../../../resources/logo.svg'
+import { MusterMark } from './components/brand/muster-mark'
 import { SYNC_FIT_PANES_EVENT, TOGGLE_TERMINAL_PANE_EXPAND_EVENT } from '@/constants/terminal'
 import { syncZoomCSSVar } from '@/lib/ui-zoom'
 import { DISPLAY_SLEEP_LIKELY_HIDDEN_MS as GITHUB_REFRESH_MIN_HIDDEN_MS } from '@/components/terminal-pane/use-terminal-window-wake-recovery'
@@ -2015,7 +2015,7 @@ function App(): React.JSX.Element {
         ) : hasCustomTitleBar ? (
           /* Why: Windows/Linux remove the native title bar, so render the logo plus a ··· button that pops the application menu (as Alt does). */
           <>
-            <img src={logo} alt="" aria-hidden className="titlebar-logo" />
+            <MusterMark variant="glyph" size={16} className="titlebar-logo" />
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -2044,6 +2044,7 @@ function App(): React.JSX.Element {
                     className="titlebar-app-name"
                     aria-label={translate('auto.App.5096cbbc86', 'Muster')}
                   >
+                    <MusterMark variant="glyph" size={16} />
                     <span className="titlebar-app-name-main">
                       {translate('auto.App.5096cbbc86', 'Muster')}
                     </span>

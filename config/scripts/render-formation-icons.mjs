@@ -107,8 +107,17 @@ function writeIcns() {
   }
 }
 
+// The renderer HTML entries (desktop, web client, popout) link these as favicons.
+function writeFavicons() {
+  const brand = join(projectDir, 'src', 'renderer', 'src', 'assets', 'brand')
+  writeFile(join(brand, 'favicon.svg'), shapesToSvg(16, fullBleed(16)))
+  writeFile(join(brand, 'favicon-32.png'), png(32, fullBleed(32)))
+  writeFile(join(brand, 'apple-touch-icon.png'), png(180, fullBleed(180)))
+}
+
 function main() {
   writeSvgMasters()
+  writeFavicons()
   writeIconComposerAssets()
   writeFile(join(resources, 'build', 'icon.png'), png(1024, macCanvasShapes(1024)))
   writeFile(join(resources, 'icon.png'), png(256, macCanvasShapes(256)))

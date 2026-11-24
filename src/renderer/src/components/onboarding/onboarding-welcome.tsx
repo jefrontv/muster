@@ -3,7 +3,7 @@ import { CornerDownLeft } from 'lucide-react'
 import { isEditableTarget } from '@/lib/editable-target'
 import { getScreenSubmitModifierLabel, isScreenSubmitShortcut } from '@/lib/screen-submit-shortcut'
 import { translate } from '@/i18n/i18n'
-import logo from '../../../../../resources/logo.svg'
+import { MusterMark } from '../brand/muster-mark'
 import {
   resolveOnboardingWelcomeExitMs,
   splitOnboardingWelcomeTitle
@@ -69,12 +69,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps): React
             aria-hidden
             className="onboarding-welcome-ring absolute inset-[-22px] rounded-[28%]"
           />
-          <img
-            src={logo}
-            alt=""
-            aria-hidden="true"
-            className="relative h-[5.5rem] w-[5.5rem] rounded-[22%] shadow-xs invert dark:invert-0"
-          />
+          <MusterMark size={88} className="relative" />
         </div>
 
         <p className="onboarding-welcome-kicker mb-4 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">

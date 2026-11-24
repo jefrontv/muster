@@ -12,7 +12,7 @@ import {
   Settings
 } from 'lucide-react'
 import { toast } from 'sonner'
-import logo from '../../../../../resources/logo.svg'
+import { MusterMark } from '../brand/muster-mark'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -241,12 +241,8 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
               )}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={openMilestones}>
-              <img
-                src={logo}
-                alt=""
-                aria-hidden="true"
-                className="size-3.5 object-contain invert opacity-55 dark:invert-0"
-              />
+              {/* Why: the mark's 16px floor; -mx-px keeps the label aligned with 14px icons. */}
+              <MusterMark variant="glyph" size={16} className="-mx-px text-muted-foreground" />
               {translate(
                 'auto.components.sidebar.SidebarSettingsHelpMenu.setupGuide',
                 'Setup guide'

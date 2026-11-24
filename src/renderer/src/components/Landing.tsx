@@ -10,7 +10,8 @@ import {
 } from './landing-preflight-dismissal'
 import { ShortcutKeyCombo } from './ShortcutKeyCombo'
 import { useShortcutKeyDetails, type ShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
-import logo from '../../../../resources/logo.svg'
+import { MusterMark } from './brand/muster-mark'
+import { MusterWordmark } from './brand/muster-wordmark'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import {
@@ -212,18 +213,15 @@ export default function Landing(): React.JSX.Element {
     >
       <div className="w-full max-w-lg px-6">
         <div className="flex flex-col items-center gap-4 py-8">
-          <div
-            className="flex items-center justify-center size-20 rounded-2xl border border-border/80 shadow-floating shadow-black/40"
-            style={{ backgroundColor: '#12181e' }}
+          <MusterMark
+            size={80}
+            title={translate('auto.components.Landing.520304a067', 'Muster logo')}
+          />
+          <h1
+            className="text-foreground"
+            aria-label={translate('auto.components.Landing.6ca6ff404e', 'Muster')}
           >
-            <img
-              src={logo}
-              alt={translate('auto.components.Landing.520304a067', 'Muster logo')}
-              className="size-12"
-            />
-          </div>
-          <h1 className="text-4xl font-semibold text-foreground tracking-tight">
-            {translate('auto.components.Landing.6ca6ff404e', 'Muster')}
+            <MusterWordmark height={30} />
           </h1>
 
           {preflightIssues.length > 0 && <PreflightBanner issues={preflightIssues} repos={repos} />}

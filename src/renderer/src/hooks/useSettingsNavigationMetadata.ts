@@ -32,7 +32,7 @@ import {
   UserCog,
   Wrench
 } from 'lucide-react'
-import { OrcaLogoSettingsIcon } from '@/components/settings/orca-logo-settings-icon'
+import { MusterMarkSettingsIcon } from '@/components/settings/muster-mark-settings-icon'
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import type { Repo } from '../../../shared/types'
 import { getRepoKindLabel } from '../../../shared/repo-kind'
@@ -249,7 +249,7 @@ export function buildSettingsNavigationMetadata({
         'auto.hooks.useSettingsNavigationMetadata.setupGuideDescription',
         'Finish the setup guide for core Muster workflows.'
       ),
-      icon: OrcaLogoSettingsIcon,
+      icon: MusterMarkSettingsIcon,
       searchEntries: [
         {
           title: translate(
