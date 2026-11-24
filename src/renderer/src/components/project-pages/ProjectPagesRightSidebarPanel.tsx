@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { lastPageIn, rememberPagesLocation } from './project-pages-location'
+import { buildProjectPagesTabId } from './project-pages-tab'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
@@ -14,6 +15,12 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
   const openPagesPage = useAppStore((s) => s.openPagesPage)
   const openProjectPagesTab = useAppStore((s) => s.openProjectPagesTab)
   const worktreeId = useAppStore((s) => s.activeWorktreeId)
+  const tabPageId = useAppStore((s) =>
+    s.activeWorktreeId
+      ? s.openFiles.find((f) => f.id === buildProjectPagesTabId(s.activeWorktreeId!))?.projectPages
+          ?.pageId
+      : undefined
+  )
   const { options, activeKey } = useProjectPagesScopes()
   const { pages, loaded } = useProjectPagesTree(activeKey)
   const projectName = options.find((option) => option.key === activeKey)?.label
@@ -67,7 +74,7 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
         className="flex-1"
         pages={pages}
         loaded={loaded}
-        selectedId={lastPageIn(activeKey) ?? null}
+        selectedId={tabPageId ?? lastPageIn(activeKey) ?? null}
         onSelect={open}
         onCreate={(parentId, folder) =>
           void window.api.projectPages.create(activeKey, { parentId, folder }).then((result) => {

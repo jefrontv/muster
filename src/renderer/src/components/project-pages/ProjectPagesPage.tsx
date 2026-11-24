@@ -148,23 +148,26 @@ export default function ProjectPagesPage({
       className={`flex min-h-0 flex-1 flex-col bg-background ${isEmbedded ? '' : 'border-l border-border'}`}
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-border py-3 pr-5 pl-3">
+        {/* In a tab the right sidebar holds the page tree, so the in-page tree is left out. */}
         {isEmbedded ? null : (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="shrink-0 text-muted-foreground"
-            aria-label={backLabel}
-            onClick={closePagesPage}
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0 text-muted-foreground"
+              aria-label={backLabel}
+              onClick={closePagesPage}
+            >
+              <ArrowLeft className="size-4" />
+            </Button>
+            <PagesPanelToggle
+              collapsed={sidebarCollapsed}
+              onToggle={toggleSidebar}
+              showLabel={translate('auto.components.projectPages.showSidebar', 'Show pages')}
+              hideLabel={translate('auto.components.projectPages.hideSidebar', 'Hide pages')}
+            />
+          </>
         )}
-        <PagesPanelToggle
-          collapsed={sidebarCollapsed}
-          onToggle={toggleSidebar}
-          showLabel={translate('auto.components.projectPages.showSidebar', 'Show pages')}
-          hideLabel={translate('auto.components.projectPages.hideSidebar', 'Hide pages')}
-        />
         <FileText className="size-4 shrink-0 text-muted-foreground" />
         <span className="text-sm font-medium">
           {translate('auto.components.projectPages.title', 'Pages')}
@@ -285,7 +288,10 @@ export default function ProjectPagesPage({
         </p>
       ) : (
         <div className="flex min-h-0 flex-1">
-          <PagesPanelSlot collapsed={sidebarCollapsed} width="w-[clamp(14rem,26%,18rem)]">
+          <PagesPanelSlot
+            collapsed={isEmbedded || sidebarCollapsed}
+            width="w-[clamp(14rem,26%,18rem)]"
+          >
             <ProjectPagesSidebar
               className="w-full min-w-56 shrink-0 border-r border-border"
               pages={pages}
