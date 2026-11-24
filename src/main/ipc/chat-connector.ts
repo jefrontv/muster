@@ -20,6 +20,7 @@ import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
 import { projectPagesAgentAccess } from '../../shared/agent-capabilities'
 import {
   projectPages,
+  projectPagesAttachments,
   projectPagesDatabases,
   projectPagesSearch
 } from '../project-pages/project-pages'
@@ -94,6 +95,7 @@ function buildChatConnectorToolDeps(store: Store): ChatConnectorToolDeps {
             store: projectPages(),
             search: projectPagesSearch(),
             databases: projectPagesDatabases(),
+            attachments: projectPagesAttachments(),
             repos: () => store.getRepos(),
             settings: () => store.getSettings()
           },

@@ -1067,6 +1067,11 @@ export type ProjectPagesApi = {
     name: string,
     bytes: Uint8Array
   ) => Promise<ProjectPagesResult<string>>
+  /** Copies local images (e.g. dropped from Finder) into the project's page files. */
+  attachPaths: (
+    scopeKey: string,
+    paths: string[]
+  ) => Promise<ProjectPagesResult<{ file: string; alt: string }[]>>
   readFile: (
     scopeKey: string,
     ref: string

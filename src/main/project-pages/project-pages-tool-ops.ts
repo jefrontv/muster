@@ -14,6 +14,12 @@ import {
   PROJECT_PAGES_DATABASE_OPS,
   runProjectPagesDatabaseOp
 } from './project-pages-database-tool-ops'
+import type { ProjectPagesAttachments } from './project-pages-attachments'
+import {
+  isProjectPagesBlockOp,
+  PROJECT_PAGES_BLOCK_OPS,
+  runProjectPagesBlockOp
+} from './project-pages-block-tool-ops'
 import {
   isProjectPagesLinkOp,
   pageConnections,
@@ -23,6 +29,7 @@ import {
 import { appendMarkdown, readSection, replaceAnchor } from './project-pages-markdown-ops'
 import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
+import { toolCount, toolText, type ToolArgs } from './project-pages-tool-args'
 import {
   callerRepo,
   pagePath,
@@ -44,7 +51,8 @@ export const PROJECT_PAGES_TOOL_OPS = [
   'move',
   'archive',
   ...PROJECT_PAGES_DATABASE_OPS,
-  ...PROJECT_PAGES_LINK_OPS
+  ...PROJECT_PAGES_LINK_OPS,
+  ...PROJECT_PAGES_BLOCK_OPS
 ] as const
 export type ProjectPagesToolOp = (typeof PROJECT_PAGES_TOOL_OPS)[number]
 const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
@@ -53,7 +61,8 @@ const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
   'read',
   'query_database',
   'related',
-  'tags'
+  'tags',
+  'blocks'
 ])
 
 export function isProjectPagesToolOp(value: unknown): value is ProjectPagesToolOp {
@@ -66,33 +75,7 @@ export type ProjectPagesToolDeps = {
   repos: () => readonly PagesToolRepo[]
   settings: () => GlobalSettings | null | undefined
   databases?: ProjectPagesDatabases
-}
-
-type Args = Record<string, unknown>
-
-function text(args: Args, key: string, required = false): string {
-  const value = args[key]
-  if (value === undefined || value === null || value === '') {
-    if (required) {
-      throw new ProjectPagesError('invalid', `${key} is required.`)
-    }
-    return ''
-  }
-  if (typeof value !== 'string') {
-    throw new ProjectPagesError('invalid', `${key} must be a string.`)
-  }
-  return value
-}
-
-function count(args: Args, key: string): number | undefined {
-  const value = args[key]
-  if (value === undefined || value === null) {
-    return undefined
-  }
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
-    throw new ProjectPagesError('invalid', `${key} must be a whole number.`)
-  }
-  return value
+  attachments?: ProjectPagesAttachments
 }
 
 function editor(author: ProjectPageAuthor): string {
@@ -112,7 +95,7 @@ function row(pages: readonly ProjectPageMeta[], page: ProjectPageMeta): Record<s
 export async function runProjectPagesToolOp(
   deps: ProjectPagesToolDeps,
   op: ProjectPagesToolOp,
-  args: Args,
+  args: ToolArgs,
   source: ProjectPagesToolSource
 ): Promise<unknown> {
   const settings = deps.settings()
@@ -128,7 +111,7 @@ export async function runProjectPagesToolOp(
   const repos = deps.repos()
   const repo = resolveTargetRepo({
     repos,
-    selector: text(args, 'project'),
+    selector: toolText(args, 'project'),
     caller: callerRepo(repos, source),
     crossProjectAllowed: isCrossProjectPagesAllowed(settings)
   })
@@ -141,12 +124,12 @@ export async function runProjectPagesToolOp(
   }
   const { store } = deps
   const pages = (): ProjectPageMeta[] => store.listPages(scopeKey).pages
-  const page = (): ProjectPageMeta => resolvePageRef(pages(), text(args, 'page', true))
+  const page = (): ProjectPageMeta => resolvePageRef(pages(), toolText(args, 'page', true))
   const project = { id: repo.id, name: repo.displayName }
   const unlinked = new Set<string>()
   // Markdown from the agent with [[Title]] links resolved; misses are reported back.
   const md = (key: string, required = false): string => {
-    const resolved = resolveWikiLinks(text(args, key, required), pages())
+    const resolved = resolveWikiLinks(toolText(args, key, required), pages())
     resolved.unresolved.forEach((ref) => unlinked.add(ref))
     return resolved.markdown
   }
@@ -155,6 +138,9 @@ export async function runProjectPagesToolOp(
     page: row(pages(), meta),
     ...(unlinked.size > 0 ? { unresolved_links: [...unlinked] } : {})
   })
+  if (isProjectPagesBlockOp(op)) {
+    return runProjectPagesBlockOp(op, { attachments: deps.attachments, scopeKey, project, args })
+  }
   if (isProjectPagesLinkOp(op)) {
     return runProjectPagesLinkOp(op, {
       snapshot: deps.search.snapshot(scopeKey),
@@ -171,14 +157,14 @@ export async function runProjectPagesToolOp(
       author,
       project,
       args,
-      pageRef: (key) => resolvePageRef(pages(), text(args, key, true))
+      pageRef: (key) => resolvePageRef(pages(), toolText(args, key, true))
     })
   }
   switch (op) {
     case 'list': {
       const all = pages().filter((p) => p.archivedAt === null)
-      const parentRef = text(args, 'parent')
-      const depth = count(args, 'depth') ?? Number.POSITIVE_INFINITY
+      const parentRef = toolText(args, 'parent')
+      const depth = toolCount(args, 'depth') ?? Number.POSITIVE_INFINITY
       const listed: ProjectPageMeta[] = []
       const walk = (parentId: string | null, level: number): void => {
         for (const child of childrenOf(all, parentId)) {
@@ -194,15 +180,15 @@ export async function runProjectPagesToolOp(
     case 'search': {
       const all = pages()
       const hits = deps.search
-        .search(scopeKey, text(args, 'query', true))
+        .search(scopeKey, toolText(args, 'query', true))
         .map((hit) => ({ ...row(all, hit.page), snippet: hit.snippet }))
       return { project, count: hits.length, results: hits }
     }
     case 'read': {
       const doc = store.readPage(scopeKey, page().id)
-      const section = text(args, 'section')
+      const section = toolText(args, 'section')
       const body = section ? readSection(doc.markdown, section) : doc.markdown
-      const max = count(args, 'max_chars') ?? 50_000
+      const max = toolCount(args, 'max_chars') ?? 50_000
       return {
         project,
         page: row(pages(), doc.meta),
@@ -216,8 +202,8 @@ export async function runProjectPagesToolOp(
       }
     }
     case 'create': {
-      const title = text(args, 'title', true)
-      const parentRef = text(args, 'parent')
+      const title = toolText(args, 'title', true)
+      const parentRef = toolText(args, 'parent')
       const parentId = parentRef ? resolvePageRef(pages(), parentRef).id : null
       const existing = childrenOf(
         pages().filter((p) => p.archivedAt === null),
@@ -232,11 +218,11 @@ export async function runProjectPagesToolOp(
     }
     case 'update': {
       const target = page()
-      const baseRevision = count(args, 'base_revision')
+      const baseRevision = toolCount(args, 'base_revision')
       if (baseRevision === undefined) {
         throw new ProjectPagesError('invalid', 'base_revision is required; read_page reports it.')
       }
-      const title = args.title === undefined ? undefined : text(args, 'title')
+      const title = args.title === undefined ? undefined : toolText(args, 'title')
       const markdown = args.markdown === undefined ? undefined : md('markdown')
       try {
         return written(
@@ -259,11 +245,11 @@ export async function runProjectPagesToolOp(
       const current = store.readPage(scopeKey, target.id)
       const markdown =
         op === 'edit'
-          ? replaceAnchor(current.markdown, text(args, 'old_text', true), md('new_text'))
+          ? replaceAnchor(current.markdown, toolText(args, 'old_text', true), md('new_text'))
           : appendMarkdown(
               current.markdown,
               md('markdown', true),
-              text(args, 'under_heading') || undefined
+              toolText(args, 'under_heading') || undefined
             )
       return written(
         store.updatePage(
@@ -276,9 +262,9 @@ export async function runProjectPagesToolOp(
     }
     case 'move': {
       const target = page()
-      const parentRef = text(args, 'parent')
+      const parentRef = toolText(args, 'parent')
       const parentId = parentRef ? resolvePageRef(pages(), parentRef).id : null
-      const index = count(args, 'index') ?? Number.MAX_SAFE_INTEGER
+      const index = toolCount(args, 'index') ?? Number.MAX_SAFE_INTEGER
       store.movePage(scopeKey, target.id, { parentId, index }, author)
       return written(store.readPage(scopeKey, target.id).meta)
     }

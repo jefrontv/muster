@@ -46,8 +46,10 @@ export function createProjectPagesAttachments({ rootDir }: { rootDir: string }) 
       .toLowerCase()
       .replace(/[^.a-z0-9]/g, '')
       .slice(0, 8)
+    // Same character set read() accepts, so every stored file can be read back.
     const base = safeFileName(name.slice(0, name.length - ext.length))
       .replace(/\s+/g, '-')
+      .replace(/[^A-Za-z0-9._()-]/g, '')
       .slice(0, 60)
     const stored = `${randomBytes(4).toString('hex')}-${base}${ext}`
     mkdirSync(dir, { recursive: true })

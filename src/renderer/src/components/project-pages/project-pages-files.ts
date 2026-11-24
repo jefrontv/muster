@@ -88,12 +88,21 @@ export async function insertPageImages(
       toast.error(result.message)
       continue
     }
-    const image = { type: 'image', attrs: { src: result.value, alt: file.name } }
-    const chain = editor.chain().focus()
-    const inserted =
-      pos === undefined ? chain.insertContent(image) : chain.insertContentAt(pos, image)
-    inserted.command(({ tr }) => caretAfterImage(tr)).run()
+    insertPageImageRef(editor, { file: result.value, alt: file.name }, pos)
   }
+}
+
+/** Inserts an already stored image at pos (or the cursor) and leaves the caret after it. */
+export function insertPageImageRef(
+  editor: Editor,
+  ref: { file: string; alt: string },
+  pos?: number
+): void {
+  const image = { type: 'image', attrs: { src: ref.file, alt: ref.alt } }
+  const chain = editor.chain().focus()
+  const inserted =
+    pos === undefined ? chain.insertContent(image) : chain.insertContentAt(pos, image)
+  inserted.command(({ tr }) => caretAfterImage(tr)).run()
 }
 
 // The inserted image ends up node-selected, so the next keystroke would replace it.

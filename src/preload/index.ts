@@ -980,6 +980,8 @@ const api = {
     saveFile: (scopeKey, name, bytes) =>
       ipcRenderer.invoke('projectPages:saveFile', scopeKey, name, bytes),
     readFile: (scopeKey, ref) => ipcRenderer.invoke('projectPages:readFile', scopeKey, ref),
+    attachPaths: (scopeKey, paths) =>
+      ipcRenderer.invoke('projectPages:attachPaths', scopeKey, paths),
     database: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:database', scopeKey, pageId),
     enableDatabase: (scopeKey, pageId) =>
       ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),

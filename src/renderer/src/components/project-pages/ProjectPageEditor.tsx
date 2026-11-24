@@ -24,6 +24,7 @@ import { replaceEditorMarkdown } from './project-pages-editor-sync'
 import { ProjectPagesEditorMenus } from './ProjectPagesEditorMenus'
 import { pageSlashCommands } from './project-pages-slash-items'
 import { imageFiles, insertPageImages, pickPageImages } from './project-pages-files'
+import { PAGE_FILE_DROP_PROPS, useProjectPageFileDrop } from './use-project-page-file-drop'
 import { RichMarkdownEmojiMenu } from '../editor/RichMarkdownEmojiMenu'
 import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
 
@@ -151,6 +152,7 @@ export function ProjectPageEditor({
     const found = dom?.editor ?? null
     return found && !found.isDestroyed ? found : null
   }
+  useProjectPageFileDrop(liveEditor, scopeKey)
   const mergedRef = useRef<(sent: string, merged: string) => void>(() => {})
   const saveStateRef = useRef(onSaveState)
   saveStateRef.current = onSaveState
@@ -339,7 +341,11 @@ export function ProjectPageEditor({
           }
         }}
       >
-        <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto scrollbar-editor">
+        <div
+          ref={bodyRef}
+          className="min-h-0 flex-1 overflow-auto scrollbar-editor"
+          {...PAGE_FILE_DROP_PROPS}
+        >
           <input
             value={title}
             autoFocus={autoFocusTitle}

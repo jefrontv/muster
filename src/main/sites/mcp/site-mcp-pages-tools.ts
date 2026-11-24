@@ -10,7 +10,7 @@ const PAGE = { type: 'string', description: 'Page id or title path, e.g. Launch/
 const PARENT = { type: 'string', description: 'Parent page id or path. Omit for top level.' }
 const MARKDOWN = {
   type: 'string',
-  description: 'Markdown; [[Title]] links a page, #tag tags it.'
+  description: 'Markdown; [[Title]] links a page, #tag tags it. page_blocks lists all blocks.'
 }
 const OPS_BY_TOOL = new Map<string, ProjectPagesToolOp>()
 const READ_TOOL_OPS = new Set<ProjectPagesToolOp>([
@@ -19,7 +19,8 @@ const READ_TOOL_OPS = new Set<ProjectPagesToolOp>([
   'read',
   'query_database',
   'related',
-  'tags'
+  'tags',
+  'blocks'
 ])
 
 /** The pages op behind a tool name, for other MCP surfaces that reuse this catalog. */
@@ -175,5 +176,18 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     { page: PAGE },
     ['page']
   ),
-  pagesTool('list_page_tags', 'tags', "The project's #tags with page counts.", {})
+  pagesTool('list_page_tags', 'tags', "The project's #tags with page counts.", {}),
+  pagesTool(
+    'page_blocks',
+    'blocks',
+    'Markdown for every page block: callouts, toggles, tables, math, checklists, images, links.',
+    {}
+  ),
+  pagesTool(
+    'attach_page_file',
+    'attach',
+    'Copy a local image into the project; returns markdown to put in a page.',
+    { path: { type: 'string', description: 'Absolute path' }, alt: { type: 'string' } },
+    ['path']
+  )
 ]

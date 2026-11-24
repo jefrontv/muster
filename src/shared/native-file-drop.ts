@@ -18,7 +18,9 @@ export const NATIVE_FILE_DROP_TARGET = {
   /** The Bots comment draft editor; files go onto the waiting draft straight away. */
   botsCommentDraft: 'bots-comment-draft',
   fileExplorer: 'file-explorer',
-  projectSidebar: 'project-sidebar'
+  projectSidebar: 'project-sidebar',
+  /** A page in the Pages view; dropped images are added to the page. */
+  projectPage: 'project-page'
 } as const
 
 export type NativeDropResolution =
@@ -30,6 +32,7 @@ export type NativeDropResolution =
   | { target: typeof NATIVE_FILE_DROP_TARGET.botsCommentDraft }
   | { target: typeof NATIVE_FILE_DROP_TARGET.fileExplorer; destinationDir: string }
   | { target: typeof NATIVE_FILE_DROP_TARGET.projectSidebar }
+  | { target: typeof NATIVE_FILE_DROP_TARGET.projectPage }
   | { target: 'rejected' }
 
 export type NativeFileDropPayload =
@@ -50,6 +53,7 @@ export type NativeFileDropPayload =
       destinationDir: string
     }
   | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.projectSidebar }
+  | { paths: string[]; target: typeof NATIVE_FILE_DROP_TARGET.projectPage }
   | NativeFileDropRejectedPayload
 
 export type NativeFileDropRejectedPayload = {
@@ -127,7 +131,8 @@ export function resolveNativeFileDropPath(
       target === NATIVE_FILE_DROP_TARGET.editor ||
       target === NATIVE_FILE_DROP_TARGET.composer ||
       target === NATIVE_FILE_DROP_TARGET.activeCollabComment ||
-      target === NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate
+      target === NATIVE_FILE_DROP_TARGET.activeCollabTaskCreate ||
+      target === NATIVE_FILE_DROP_TARGET.projectPage
     ) {
       return { target }
     }

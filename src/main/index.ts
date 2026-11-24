@@ -16,6 +16,7 @@ import { agentCommentDrafts, setCommentDraftsRuntime } from './comment-drafts/co
 import { runCommentDraftToolOp } from './comment-drafts/comment-draft-tool-ops'
 import {
   projectPages,
+  projectPagesAttachments,
   projectPagesDatabases,
   projectPagesSearch
 } from './project-pages/project-pages'
@@ -866,6 +867,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
                   store: projectPages(),
                   search: projectPagesSearch(),
                   databases: projectPagesDatabases(),
+                  attachments: projectPagesAttachments(),
                   repos: () => bridgeStore.getRepos(),
                   settings: () => bridgeStore.getSettings()
                 },
