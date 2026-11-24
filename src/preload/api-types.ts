@@ -21,6 +21,10 @@ import type {
   ProjectPagesTree,
   ProjectPageUpdateInput
 } from '../shared/project-pages-types'
+import type {
+  PageDatabaseSchema,
+  ProjectPageDatabase
+} from '../shared/project-pages-database-types'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
 import type {
   BrowserExtensionAddResult,
@@ -1053,6 +1057,26 @@ export type ProjectPagesApi = {
     query: string
   ) => Promise<ProjectPagesResult<ProjectPageSearchResult[]>>
   backlinks: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageMeta[]>>
+  database: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDatabase>>
+  enableDatabase: (
+    scopeKey: string,
+    pageId: string
+  ) => Promise<ProjectPagesResult<ProjectPageDatabase>>
+  updateDatabase: (
+    scopeKey: string,
+    pageId: string,
+    schema: PageDatabaseSchema
+  ) => Promise<ProjectPagesResult<ProjectPageDatabase>>
+  setProperties: (
+    scopeKey: string,
+    pageId: string,
+    patch: Record<string, unknown>
+  ) => Promise<ProjectPagesResult<ProjectPageMeta>>
+  addRow: (
+    scopeKey: string,
+    databaseId: string,
+    input: { title?: string; properties?: Record<string, unknown> }
+  ) => Promise<ProjectPagesResult<ProjectPageMeta>>
   onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
 }
 

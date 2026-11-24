@@ -10,6 +10,7 @@ const PAGE = { type: 'string', description: 'Page id or title path, e.g. Launch/
 const PARENT = { type: 'string', description: 'Parent page id or path. Omit for top level.' }
 const MARKDOWN = { type: 'string', description: 'Markdown. Up to 200,000 characters.' }
 const OPS_BY_TOOL = new Map<string, ProjectPagesToolOp>()
+const READ_TOOL_OPS = new Set<ProjectPagesToolOp>(['list', 'search', 'read', 'query_database'])
 
 /** The pages op behind a tool name, for other MCP surfaces that reuse this catalog. */
 export function pagesToolOp(name: string): ProjectPagesToolOp | undefined {
@@ -27,7 +28,7 @@ function pagesTool(
   return {
     name,
     description,
-    pagesAccess: op === 'list' || op === 'search' || op === 'read' ? 'read' : 'write',
+    pagesAccess: READ_TOOL_OPS.has(op) ? 'read' : 'write',
     inputSchema: objectSchema({ ...properties, ...PROJECT_PROPERTY }, required),
     run: (context, args) => {
       if (!context.projectPagesTool) {
@@ -119,6 +120,41 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     'archive',
     'Move a page and its subpages to the trash.',
     { page: PAGE },
+    ['page']
+  ),
+  pagesTool(
+    'query_database',
+    'query_database',
+    'List rows of a database page with their properties. Add rows with create_page under it.',
+    {
+      database: PAGE,
+      view: { type: 'string' },
+      filter: {
+        type: 'object',
+        description: '{property, op: is|is_not|contains|empty|not_empty, value}'
+      },
+      sort: { type: 'object', description: '{property, direction: asc|desc}' }
+    },
+    ['database']
+  ),
+  pagesTool(
+    'set_page_properties',
+    'set_properties',
+    'Set property values on a database row by property name; select values by option name.',
+    { page: PAGE, properties: { type: 'object' } },
+    ['page', 'properties']
+  ),
+  pagesTool(
+    'make_database',
+    'make_database',
+    'Turn a page into a database (child pages become rows), optionally adding properties.',
+    {
+      page: PAGE,
+      properties: {
+        type: 'array',
+        description: '[{name, type: text|number|select|checkbox|date, options?: [names]}]'
+      }
+    },
     ['page']
   )
 ]

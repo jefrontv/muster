@@ -975,6 +975,15 @@ const api = {
       ipcRenderer.invoke('projectPages:readRevision', scopeKey, pageId, revision),
     search: (scopeKey, query) => ipcRenderer.invoke('projectPages:search', scopeKey, query),
     backlinks: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:backlinks', scopeKey, pageId),
+    database: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:database', scopeKey, pageId),
+    enableDatabase: (scopeKey, pageId) =>
+      ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),
+    updateDatabase: (scopeKey, pageId, schema) =>
+      ipcRenderer.invoke('projectPages:updateDatabase', scopeKey, pageId, schema),
+    setProperties: (scopeKey, pageId, patch) =>
+      ipcRenderer.invoke('projectPages:setProperties', scopeKey, pageId, patch),
+    addRow: (scopeKey, databaseId, input) =>
+      ipcRenderer.invoke('projectPages:addRow', scopeKey, databaseId, input),
     onChanged: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

@@ -263,6 +263,8 @@ export function createProjectPagesStore({ rootDir, now = Date.now, newId = newPa
     onChanged(listener: (change: ProjectPagesChange) => void): () => void {
       listeners.add(listener)
       return () => listeners.delete(listener)
-    }
+    },
+    /** For modules that write the space directly, such as database properties. */
+    notify: emit
   }
 }

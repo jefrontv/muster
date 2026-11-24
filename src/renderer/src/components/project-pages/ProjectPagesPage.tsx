@@ -18,7 +18,9 @@ import type { ProjectPageDocument } from '../../../../shared/project-pages-types
 import type { AutosaveState } from './project-pages-autosave'
 import { buildPageTree, pageTitle } from './project-pages-tree-model'
 import { ProjectPageBacklinks } from './ProjectPageBacklinks'
+import { ProjectPageDatabaseView } from './ProjectPageDatabaseView'
 import { ProjectPageEditor } from './ProjectPageEditor'
+import { ProjectPageRowProperties } from './ProjectPageRowProperties'
 import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
 import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
@@ -73,6 +75,8 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const pageId =
     [selectedId, remembered, firstPageId].find((id) => id && live.some((p) => p.id === id)) ?? null
   const meta = pageId ? live.find((p) => p.id === pageId) : undefined
+  const parentDatabaseId =
+    meta?.parentId && live.some((p) => p.id === meta.parentId && p.database) ? meta.parentId : null
 
   useEffect(() => {
     rememberPagesLocation(scopeKey, pageId)
@@ -268,13 +272,39 @@ export default function ProjectPagesPage(): React.JSX.Element {
                 pages={pages}
                 onOpenPage={setSelectedId}
                 onSaveState={setSaveState}
+                onMakeDatabase={
+                  meta.database
+                    ? undefined
+                    : () =>
+                        void window.api.projectPages.enableDatabase(scopeKey, meta.id).then(report)
+                }
+                afterTitle={
+                  parentDatabaseId ? (
+                    <ProjectPageRowProperties
+                      scopeKey={scopeKey}
+                      row={meta}
+                      databaseId={parentDatabaseId}
+                      pages={pages}
+                    />
+                  ) : null
+                }
                 footer={
-                  <ProjectPageBacklinks
-                    scopeKey={scopeKey}
-                    pageId={doc.meta.id}
-                    spaceVersion={spaceVersion}
-                    onOpenPage={setSelectedId}
-                  />
+                  <>
+                    {meta.database ? (
+                      <ProjectPageDatabaseView
+                        scopeKey={scopeKey}
+                        pageId={meta.id}
+                        pages={pages}
+                        onOpenPage={setSelectedId}
+                      />
+                    ) : null}
+                    <ProjectPageBacklinks
+                      scopeKey={scopeKey}
+                      pageId={doc.meta.id}
+                      spaceVersion={spaceVersion}
+                      onOpenPage={setSelectedId}
+                    />
+                  </>
                 }
               />
             ) : loaded && live.length === 0 ? (

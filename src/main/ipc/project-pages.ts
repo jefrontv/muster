@@ -8,6 +8,7 @@ import type {
 import { isPagesScopeKey } from '../../shared/project-pages-space-key'
 import { ProjectPagesError } from '../project-pages/project-pages-store'
 import { projectPages, projectPagesSearch } from '../project-pages/project-pages'
+import { registerProjectPagesDatabaseHandlers } from './project-pages-databases'
 import { sendToTrustedUIRenderer } from './ui'
 
 const CHANNELS = [
@@ -26,14 +27,14 @@ const CHANNELS = [
 
 const USER = { kind: 'user' } as const
 
-function scope(value: unknown): string {
+export function scope(value: unknown): string {
   if (!isPagesScopeKey(value)) {
     throw new ProjectPagesError('invalid', 'Unknown project.')
   }
   return value
 }
 
-function pageId(value: unknown): string {
+export function pageId(value: unknown): string {
   if (typeof value !== 'string' || !value || value.length > 64) {
     throw new ProjectPagesError('invalid', 'A page id is required.')
   }
@@ -80,7 +81,7 @@ function move(value: unknown): ProjectPageMoveInput {
 }
 
 // Failures answer as results so the renderer never sees a rejected invoke.
-function guarded<T>(call: () => T): ProjectPagesResult<T> {
+export function guarded<T>(call: () => T): ProjectPagesResult<T> {
   try {
     return { ok: true, value: call() }
   } catch (error) {
@@ -159,6 +160,7 @@ export function registerProjectPagesHandlers(): void {
   ipcMain.handle('projectPages:backlinks', (_e, key: unknown, id: unknown) =>
     guarded(() => projectPagesSearch().backlinks(scope(key), pageId(id)))
   )
+  registerProjectPagesDatabaseHandlers()
   stopForwarding?.()
   stopForwarding = pages().onChanged((change) =>
     sendToTrustedUIRenderer('projectPages:changed', change)

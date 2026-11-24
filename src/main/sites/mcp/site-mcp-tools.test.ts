@@ -130,6 +130,9 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   append_to_page: { page: 'Launch', markdown: 'x' },
   move_page: { page: 'Launch' },
   archive_page: { page: 'Launch' },
+  query_database: { database: 'Tasks' },
+  set_page_properties: { page: 'Tasks/Write docs', properties: { Status: 'Done' } },
+  make_database: { page: 'Tasks' },
   collect_plan_review: { review_id: 'r1' },
   collect_setup_approval: { approval_id: 'approval-1', wait_seconds: 0 },
   list_projects: {},
@@ -183,7 +186,8 @@ describe('site MCP tool table', () => {
     const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
     // Pages tools only appear once the user turns Pages on, so they get their own budget.
     expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
-    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(5_000)
+    // Twelve pages tools, each with the project selector.
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(7_000)
   })
 })
 

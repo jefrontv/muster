@@ -6,27 +6,41 @@ import {
   getProfileUserDataPath
 } from '../orca-profiles/profile-storage-paths'
 import {
+  createProjectPagesDatabases,
+  type ProjectPagesDatabases
+} from './project-pages-database-store'
+import {
   createProjectPagesSearchIndex,
   type ProjectPagesSearchIndex
 } from './project-pages-search-index'
 import { createProjectPagesStore, type ProjectPagesStore } from './project-pages-store'
 
+let rootDir: string | null = null
 let store: ProjectPagesStore | null = null
 let searchIndex: ProjectPagesSearchIndex | null = null
+let databases: ProjectPagesDatabases | null = null
 
 // Switching profiles relaunches the app, so the folder is resolved once.
-export function projectPages(): ProjectPagesStore {
-  if (!store) {
+function pagesRoot(): string {
+  if (!rootDir) {
     const userData = getProfileUserDataPath()
     const profileId = loadOrCreateProfileIndex(userData).activeProfileId
-    store = createProjectPagesStore({
-      rootDir: join(getOrcaProfileDirectory(profileId, userData), 'project-pages')
-    })
+    rootDir = join(getOrcaProfileDirectory(profileId, userData), 'project-pages')
   }
+  return rootDir
+}
+
+export function projectPages(): ProjectPagesStore {
+  store ??= createProjectPagesStore({ rootDir: pagesRoot() })
   return store
 }
 
 export function projectPagesSearch(): ProjectPagesSearchIndex {
   searchIndex ??= createProjectPagesSearchIndex(projectPages())
   return searchIndex
+}
+
+export function projectPagesDatabases(): ProjectPagesDatabases {
+  databases ??= createProjectPagesDatabases({ rootDir: pagesRoot(), store: projectPages() })
+  return databases
 }

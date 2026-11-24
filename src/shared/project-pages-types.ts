@@ -1,4 +1,5 @@
 // Project pages: Notion-like nested pages kept per Muster project.
+import type { PageRowProperties } from './project-pages-database-types'
 
 export type ProjectPageAuthor =
   | { kind: 'user' }
@@ -22,6 +23,10 @@ export type ProjectPageMeta = {
   updatedAt: number
   /** Set when the page or an ancestor was moved to the trash. */
   archivedAt: number | null
+  /** The page is a database: its child pages are rows. */
+  database?: boolean
+  /** Property values when the page is a database row, keyed by property id. */
+  properties?: PageRowProperties
 }
 
 export type ProjectPagesTree = {

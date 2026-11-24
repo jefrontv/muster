@@ -37,7 +37,7 @@ describe('chat connector pages tools', () => {
   it('lists tools by the agent access setting', () => {
     expect(chatConnectorPagesToolDefs(deps('off').deps)).toEqual([])
     const read = chatConnectorPagesToolDefs(deps('read').deps).map((tool) => tool.name)
-    expect(read).toEqual(['list_pages', 'search_pages', 'read_page'])
+    expect(read).toEqual(['list_pages', 'search_pages', 'read_page', 'query_database'])
     expect(chatConnectorPagesToolDefs(deps('write').deps).map((tool) => tool.name)).toContain(
       'append_to_page'
     )

@@ -39,6 +39,10 @@ type Props = {
   onSaveState: (state: AutosaveState) => void
   /** Rendered under the body, inside the scroll area. */
   footer?: React.ReactNode
+  /** Rendered between the title and the body. */
+  afterTitle?: React.ReactNode
+  /** Offered on a blank page when set; database pages pass none and show no starters. */
+  onMakeDatabase?: () => void
 }
 
 export function ProjectPageEditor({
@@ -50,7 +54,9 @@ export function ProjectPageEditor({
   pages,
   onOpenPage,
   onSaveState,
-  footer
+  footer,
+  afterTitle,
+  onMakeDatabase
 }: Props): React.JSX.Element {
   const pageId = doc.meta.id
   const codec = useMemo(() => createRichMarkdownEditorCodec(), [])
@@ -253,9 +259,11 @@ export function ProjectPageEditor({
               }
             }}
           />
+          {afterTitle}
           <EditorContent editor={editor} />
-          {blank ? (
+          {blank && onMakeDatabase ? (
             <ProjectPageStarters
+              onMakeDatabase={onMakeDatabase}
               onPick={(markdown) => {
                 const live = liveEditor()
                 if (live) {

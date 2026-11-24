@@ -8,6 +8,12 @@ import { pagesScopeKeyForRepo } from '../../shared/project-pages-space-key'
 import { childrenOf } from '../../shared/project-pages-tree'
 import type { ProjectPageAuthor, ProjectPageMeta } from '../../shared/project-pages-types'
 import type { GlobalSettings } from '../../shared/types'
+import type { ProjectPagesDatabases } from './project-pages-database-store'
+import {
+  isProjectPagesDatabaseOp,
+  PROJECT_PAGES_DATABASE_OPS,
+  runProjectPagesDatabaseOp
+} from './project-pages-database-tool-ops'
 import { appendMarkdown, readSection, replaceAnchor } from './project-pages-markdown-ops'
 import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
@@ -29,10 +35,16 @@ export const PROJECT_PAGES_TOOL_OPS = [
   'edit',
   'append',
   'move',
-  'archive'
+  'archive',
+  ...PROJECT_PAGES_DATABASE_OPS
 ] as const
 export type ProjectPagesToolOp = (typeof PROJECT_PAGES_TOOL_OPS)[number]
-const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set(['list', 'search', 'read'])
+const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
+  'list',
+  'search',
+  'read',
+  'query_database'
+])
 
 export function isProjectPagesToolOp(value: unknown): value is ProjectPagesToolOp {
   return PROJECT_PAGES_TOOL_OPS.includes(value as ProjectPagesToolOp)
@@ -43,6 +55,7 @@ export type ProjectPagesToolDeps = {
   search: ProjectPagesSearchIndex
   repos: () => readonly PagesToolRepo[]
   settings: () => GlobalSettings | null | undefined
+  databases?: ProjectPagesDatabases
 }
 
 type Args = Record<string, unknown>
@@ -125,6 +138,16 @@ export async function runProjectPagesToolOp(
     page: row(pages(), meta)
   })
 
+  if (isProjectPagesDatabaseOp(op)) {
+    return runProjectPagesDatabaseOp(op, {
+      databases: deps.databases,
+      scopeKey,
+      author,
+      project,
+      args,
+      pageRef: (key) => resolvePageRef(pages(), text(args, key, true))
+    })
+  }
   switch (op) {
     case 'list': {
       const all = pages().filter((p) => p.archivedAt === null)

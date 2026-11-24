@@ -64,6 +64,14 @@ export function createProjectPagesFiles(rootDir: string) {
     return join(rootDir, spaceId)
   }
 
+  function readDatabase(dir: string, pageId: string): unknown {
+    return readJson<unknown>(join(dir, 'databases', `${pageId}.json`))
+  }
+
+  function writeDatabase(dir: string, pageId: string, schema: unknown): void {
+    writeAtomic(join(dir, 'databases', `${pageId}.json`), JSON.stringify(schema, null, 2))
+  }
+
   function pageFile(dir: string, pageId: string): string {
     return join(dir, 'pages', `${pageId}.md`)
   }
@@ -171,6 +179,8 @@ export function createProjectPagesFiles(rootDir: string) {
     writeBody,
     keepHistory,
     readHistory,
-    listHistory
+    listHistory,
+    readDatabase,
+    writeDatabase
   }
 }
