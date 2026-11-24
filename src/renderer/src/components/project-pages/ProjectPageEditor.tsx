@@ -371,6 +371,8 @@ export function ProjectPageEditor({
               }
             }}
           />
+          {/* Part of the page chrome, not the document, so it can't be selected or deleted. */}
+          <div aria-hidden className="mx-8 mt-3 mb-1 border-b border-border" />
           {afterTitle}
           <EditorContent editor={editor} />
           {footer}
