@@ -7,6 +7,7 @@ import { fitDiagram, zoomAt, type DiagramEditor } from './project-pages-diagram-
 import { deleteSelection, duplicateSelection } from './project-pages-diagram-keys'
 import type { DiagramSelection } from './use-project-page-diagram-selection'
 import { ProjectPageDiagramMenus } from './ProjectPageDiagramMenus'
+import { PagesPanelToggle } from './ProjectPagesPanelToggle'
 
 const isMac = navigator.userAgent.includes('Mac')
 const mod = isMac ? '⌘' : 'Ctrl+'
@@ -36,16 +37,27 @@ function ToolButton(props: {
 export function ProjectPageDiagramToolbar({
   editor,
   selection,
-  title
+  title,
+  paletteCollapsed,
+  onTogglePalette
 }: {
   editor: DiagramEditor | null
   selection: DiagramSelection
   title: string
+  paletteCollapsed: boolean
+  onTogglePalette: () => void
 }) {
   const graph = editor?.graph
   const none = selection.cells.length === 0
   return (
     <div className="flex items-center gap-0.5 px-4 pb-2">
+      <PagesPanelToggle
+        collapsed={paletteCollapsed}
+        onToggle={onTogglePalette}
+        showLabel={t('showShapes', 'Show shapes')}
+        hideLabel={t('hideShapes', 'Hide shapes')}
+      />
+      <span className="mx-1.5 h-5 w-px bg-border" />
       <ToolButton
         label={`${t('undo', 'Undo')} (${mod}Z)`}
         disabled={!selection.canUndo}

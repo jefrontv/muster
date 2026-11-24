@@ -22,6 +22,7 @@ import { ProjectPageDiagramFormat } from './ProjectPageDiagramFormat'
 import { ProjectPageDiagramPalette } from './ProjectPageDiagramPalette'
 import { ProjectPageDiagramQuickConnect } from './ProjectPageDiagramQuickConnect'
 import { ProjectPageDiagramToolbar } from './ProjectPageDiagramToolbar'
+import { PagesPanelSlot, usePagesPanelCollapsed } from './ProjectPagesPanelToggle'
 import { useProjectPageDiagram, type DiagramContent } from './use-project-page-diagram'
 import { useProjectPageDiagramLinks } from './use-project-page-diagram-links'
 import { useProjectPageDiagramSelection } from './use-project-page-diagram-selection'
@@ -69,6 +70,7 @@ export function ProjectPageDiagramView({
   const scheduleRef = useRef(schedule)
   scheduleRef.current = schedule
   const selection = useProjectPageDiagramSelection(editor?.graph ?? null, editor?.undo ?? null)
+  const [paletteCollapsed, togglePalette] = usePagesPanelCollapsed('diagramPalette')
   const openLink = useProjectPageDiagramLinks(editor, onOpenPage)
 
   useEffect(() => {
@@ -145,9 +147,17 @@ export function ProjectPageDiagramView({
           }
         }}
       />
-      <ProjectPageDiagramToolbar editor={editor} selection={selection} title={title} />
+      <ProjectPageDiagramToolbar
+        editor={editor}
+        selection={selection}
+        title={title}
+        paletteCollapsed={paletteCollapsed}
+        onTogglePalette={togglePalette}
+      />
       <div className="flex min-h-0 flex-1 border-t border-border">
-        <ProjectPageDiagramPalette graph={editor?.graph ?? null} />
+        <PagesPanelSlot collapsed={paletteCollapsed} width="w-48">
+          <ProjectPageDiagramPalette graph={editor?.graph ?? null} />
+        </PagesPanelSlot>
         <div className="relative min-w-0 flex-1 overflow-hidden">
           <div
             ref={canvasRef}

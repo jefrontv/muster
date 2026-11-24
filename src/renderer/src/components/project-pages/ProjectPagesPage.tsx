@@ -4,13 +4,6 @@ import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { tagNodeId } from '../../../../shared/project-pages-graph-types'
@@ -29,6 +22,8 @@ import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
 import { ProjectPagesMap } from './ProjectPagesMap'
 import { ProjectPagesFolderView } from './ProjectPagesFolderView'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
+import { ProjectPagesScopePicker } from './ProjectPagesScopePicker'
+import { PagesPanelSlot, PagesPanelToggle, usePagesPanelCollapsed } from './ProjectPagesPanelToggle'
 import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
@@ -58,6 +53,7 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [agentOpen, setAgentOpen] = useState(false)
+  const [sidebarCollapsed, toggleSidebar] = usePagesPanelCollapsed('pagesSidebar')
   const [mapOpen, setMapOpen] = useState(false)
   const [mapFocus, setMapFocus] = useState<string | null>(null)
   const isMac = navigator.userAgent.includes('Mac')
@@ -146,34 +142,24 @@ export default function ProjectPagesPage(): React.JSX.Element {
         >
           <ArrowLeft className="size-4" />
         </Button>
+        <PagesPanelToggle
+          collapsed={sidebarCollapsed}
+          onToggle={toggleSidebar}
+          showLabel={translate('auto.components.projectPages.showSidebar', 'Show pages')}
+          hideLabel={translate('auto.components.projectPages.hideSidebar', 'Hide pages')}
+        />
         <FileText className="size-4 shrink-0 text-muted-foreground" />
         <span className="text-sm font-medium">
           {translate('auto.components.projectPages.title', 'Pages')}
         </span>
-        {options.length > 0 && scopeKey ? (
-          <Select
-            value={scopeKey}
-            onValueChange={(key) => {
-              setChosenKey(key)
-              setSelectedId(null)
-            }}
-          >
-            <SelectTrigger
-              size="sm"
-              className="ml-2 h-7 max-w-56"
-              aria-label={translate('auto.components.projectPages.project', 'Project')}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option.key} value={option.key}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
+        <ProjectPagesScopePicker
+          options={options}
+          value={scopeKey}
+          onChange={(key) => {
+            setChosenKey(key)
+            setSelectedId(null)
+          }}
+        />
         <nav
           aria-label={translate('auto.components.projectPages.breadcrumb', 'Page path')}
           className="ml-2 flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-muted-foreground"
@@ -280,18 +266,21 @@ export default function ProjectPagesPage(): React.JSX.Element {
         </p>
       ) : (
         <div className="flex min-h-0 flex-1">
-          <ProjectPagesSidebar
-            pages={pages}
-            loaded={loaded}
-            selectedId={pageId}
-            onSelect={setSelectedId}
-            onCreate={(parentId, folder, diagram) => void create(parentId, folder, diagram)}
-            onTrash={(id) => void window.api.projectPages.archive(scopeKey, id).then(report)}
-            onRestore={(id) => void window.api.projectPages.restore(scopeKey, id).then(report)}
-            onMove={(id, move) =>
-              void window.api.projectPages.move(scopeKey, id, move).then(report)
-            }
-          />
+          <PagesPanelSlot collapsed={sidebarCollapsed} width="w-[clamp(14rem,26%,18rem)]">
+            <ProjectPagesSidebar
+              className="w-full min-w-56 shrink-0 border-r border-border"
+              pages={pages}
+              loaded={loaded}
+              selectedId={pageId}
+              onSelect={setSelectedId}
+              onCreate={(parentId, folder, diagram) => void create(parentId, folder, diagram)}
+              onTrash={(id) => void window.api.projectPages.archive(scopeKey, id).then(report)}
+              onRestore={(id) => void window.api.projectPages.restore(scopeKey, id).then(report)}
+              onMove={(id, move) =>
+                void window.api.projectPages.move(scopeKey, id, move).then(report)
+              }
+            />
+          </PagesPanelSlot>
           <section className="flex min-w-0 flex-1 flex-col">
             {mapOpen ? (
               <ProjectPagesMap
