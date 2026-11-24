@@ -69,7 +69,8 @@ export function PagesIntroModal({
     useAppStore.getState().openPagesPage()
   }
 
-  if (!open) {
+  // Someone who turned Pages off in Settings doesn't get introduced to it.
+  if (!open || !pagesEnabled) {
     return null
   }
 

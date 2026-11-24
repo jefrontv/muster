@@ -2883,8 +2883,12 @@ export type GlobalSettings = {
   experimentalBots?: boolean
   /** One-shot marker: profile has been flipped to Muster's on-by-default Bots tab. */
   experimentalBotsDefaultedOnForMuster?: boolean
-  /** Pages: Notion-like pages per project, in the sidebar under Sites. */
+  /** Pages: Notion-like pages per project, in the sidebar under Sites. On by default; Settings → Pages turns it off. */
   experimentalProjectPages?: boolean
+  /** Where a page picked in the right sidebar opens. Absent = 'tab'. */
+  projectPagesOpenIn?: 'tab' | 'page'
+  /** Dots and the sidebar badge for pages an agent changed since the user last looked. Absent = on. */
+  projectPagesAgentChangeDots?: boolean
   /** The Bots tab's first-visit intro has been closed. */
   botsIntroSeen?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */

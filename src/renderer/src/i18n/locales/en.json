@@ -754,7 +754,9 @@
         "setupGuideDescription": "Finish the setup guide for core Muster workflows.",
         "setupGuideSearchDescription": "Open the setup guide for setup and milestone steps.",
         "extensionsTitle": "Extensions",
-        "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use."
+        "extensionsDescription": "Install and update the skills, MCP servers and tools your agents use.",
+        "pagesTitle": "Pages",
+        "pagesDescription": "Project docs and diagrams, agent access and change dots."
       },
       "useAppMenuPaste": {
         "pasteTooLarge": "Paste is too large."
@@ -6570,7 +6572,9 @@
           "navGroupApp": "App",
           "navGroupAgents": "Agents",
           "navGroupWorkspaces": "Workspaces",
-          "navGroupIntegrations": "Integrations"
+          "navGroupIntegrations": "Integrations",
+          "pagesTitle": "Pages",
+          "pagesDescription": "Project docs and diagrams, agent access and change dots."
         },
         "SettingsFormControls": {
           "42a4d15a30": "No matching fonts.",
@@ -9611,6 +9615,28 @@
           "crossDescription": "Off keeps each agent to the pages of the project it runs in. Pages can hold client details.",
           "section": "Pages",
           "description": "What coding agents can do with Pages through the Muster site tools."
+        },
+        "pages": {
+          "openIn": {
+            "tab": "Project tab",
+            "page": "Pages view",
+            "title": "Open pages in",
+            "description": "Where a page you pick in the right sidebar opens."
+          },
+          "intro": {
+            "done": "The Pages introduction will show next time Muster starts.",
+            "button": "Show again",
+            "title": "Pages introduction",
+            "description": "Show the \"Introducing Muster Pages\" window again the next time Muster starts."
+          },
+          "enabled": {
+            "title": "Pages",
+            "description": "Docs, checklists and diagrams for each project that you and your agents can read and edit."
+          },
+          "agentDots": {
+            "title": "Show when agents change a page",
+            "description": "A dot on each page an agent changed since you last opened it, and a count on the Pages icon."
+          }
         }
       },
       "right": {

@@ -39,9 +39,9 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
     rememberPagesLocation(activeKey, pageId)
     openPagesPage()
   }
-  // No worktree to hold a tab (e.g. a site with no checkout): fall back to the full view.
+  // The full view when Settings says so, or with no worktree to hold a tab (e.g. a site with no checkout).
   const open = (pageId: string | null): void => {
-    if (worktreeId) {
+    if (worktreeId && useAppStore.getState().settings?.projectPagesOpenIn !== 'page') {
       if (useAppStore.getState().activeView === 'pages') {
         useAppStore.getState().closePagesPage()
       }

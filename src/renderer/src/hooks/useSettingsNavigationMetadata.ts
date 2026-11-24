@@ -15,6 +15,7 @@ import {
   FlaskConical,
   GitBranch,
   Globe,
+  FileText,
   Keyboard,
   ListChecks,
   Lock,
@@ -52,6 +53,7 @@ import { getGitProviderApiBudgetSearchEntries } from '@/components/settings/git-
 import { getCommitMessageAiPaneSearchEntries } from '@/components/settings/commit-message-ai-search'
 import { getTasksPaneSearchEntries } from '@/components/settings/tasks-search'
 import { getFloatingWorkspaceSearchEntries } from '@/components/settings/floating-workspace-search'
+import { getProjectPagesSearchEntryList } from '@/components/settings/project-pages-settings-search'
 import { getAppearancePaneSearchEntries } from '@/components/settings/appearance-search'
 import { getInputPaneSearchEntries } from '@/components/settings/input-search'
 import { getTerminalPaneSearchEntries } from '@/components/settings/terminal-search'
@@ -429,6 +431,17 @@ export function buildSettingsNavigationMetadata({
       ),
       icon: PanelsTopLeft,
       searchEntries: getFloatingWorkspaceSearchEntries(),
+      group: 'workspaces'
+    },
+    {
+      id: 'pages',
+      title: translate('auto.hooks.useSettingsNavigationMetadata.pagesTitle', 'Pages'),
+      description: translate(
+        'auto.hooks.useSettingsNavigationMetadata.pagesDescription',
+        'Project docs and diagrams, agent access and change dots.'
+      ),
+      icon: FileText,
+      searchEntries: getProjectPagesSearchEntryList(),
       group: 'workspaces'
     },
     {

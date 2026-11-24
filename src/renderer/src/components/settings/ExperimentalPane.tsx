@@ -11,7 +11,6 @@ import { NativeChatExperimentalSetting } from './NativeChatExperimentalSetting'
 import { chatModeSupported } from '@/lib/chat-mode-platform'
 import { ChatModeExperimentalSetting } from './ChatModeExperimentalSetting'
 import { BotsExperimentalSetting } from './BotsExperimentalSetting'
-import { ProjectPagesExperimentalSetting } from './ProjectPagesExperimentalSetting'
 import { botsSupported } from '@/lib/bots-platform'
 import { AgentDashboardExperimentalSetting } from './AgentDashboardExperimentalSetting'
 import { EphemeralVmsExperimentalSetting } from './EphemeralVmsExperimentalSetting'
@@ -152,8 +151,6 @@ export function ExperimentalPane({
       {showBots ? (
         <BotsExperimentalSetting settings={settings} updateSettings={updateSettings} />
       ) : null}
-
-      <ProjectPagesExperimentalSetting settings={settings} updateSettings={updateSettings} />
 
       {showTerminalAttention ? (
         <SearchableSetting
