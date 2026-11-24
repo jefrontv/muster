@@ -350,7 +350,9 @@ export default function ProjectPagesPage(): React.JSX.Element {
                       folderId={meta.id}
                       pages={pages}
                       onOpenPage={setSelectedId}
-                      onCreate={(folder) => void create(meta.id, folder)}
+                      onCreate={(kind) =>
+                        void create(meta.id, kind === 'folder', kind === 'diagram')
+                      }
                     />
                   ) : null
                 }

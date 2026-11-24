@@ -1,5 +1,5 @@
 // A folder page's contents: its child pages as cards, plus buttons to add more.
-import { FolderPlus, Plus } from 'lucide-react'
+import { FolderPlus, Plus, Workflow } from 'lucide-react'
 import type React from 'react'
 import { childrenOf } from '../../../../shared/project-pages-tree'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
@@ -11,7 +11,7 @@ type Props = {
   folderId: string
   pages: ProjectPageMeta[]
   onOpenPage: (pageId: string) => void
-  onCreate: (folder: boolean) => void
+  onCreate: (kind: 'page' | 'folder' | 'diagram') => void
 }
 
 const CARD =
@@ -65,7 +65,7 @@ export function ProjectPagesFolderView({
         <button
           type="button"
           className="flex items-center gap-1.5 hover:text-foreground"
-          onClick={() => onCreate(false)}
+          onClick={() => onCreate('page')}
         >
           <Plus className="size-3.5" />
           {translate('auto.components.projectPages.newPage', 'New page')}
@@ -73,7 +73,15 @@ export function ProjectPagesFolderView({
         <button
           type="button"
           className="flex items-center gap-1.5 hover:text-foreground"
-          onClick={() => onCreate(true)}
+          onClick={() => onCreate('diagram')}
+        >
+          <Workflow className="size-3.5" />
+          {translate('auto.components.projectPages.newDiagram', 'New diagram')}
+        </button>
+        <button
+          type="button"
+          className="flex items-center gap-1.5 hover:text-foreground"
+          onClick={() => onCreate('folder')}
         >
           <FolderPlus className="size-3.5" />
           {translate('auto.components.projectPages.newFolder', 'New folder')}
