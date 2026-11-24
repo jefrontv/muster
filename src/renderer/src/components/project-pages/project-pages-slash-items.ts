@@ -15,7 +15,7 @@ import { filterRichMarkdownSlashCommands } from '../editor/rich-markdown-slash-c
 import { icon, type SlashCommand } from '../editor/rich-markdown-slash-command-primitives'
 import { activeCollabInstance } from './project-pages-activecollab-data'
 import { openActiveCollabPicker } from './project-pages-activecollab-insert'
-import { PROJECT_PAGE_TEMPLATES } from './project-pages-templates'
+import { projectPageTemplates } from './project-pages-templates'
 
 export type PageSlashItem = {
   key: string
@@ -49,7 +49,7 @@ export function pageSlashCommands(actions: {
   makeDatabase?: () => void
   newDiagram?: () => Promise<{ id: string; title: string } | null>
 }): SlashCommand[] {
-  const templates = PROJECT_PAGE_TEMPLATES.map(
+  const templates = projectPageTemplates().map(
     (template): SlashCommand => ({
       id: `page-template-${template.id}`,
       label: template.label,
