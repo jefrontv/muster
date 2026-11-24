@@ -30,6 +30,7 @@ import { NativeChatPickerMenu } from '../native-chat/NativeChatAutocompleteMenus
 import { useNativeChatPickerState } from '../native-chat/use-native-chat-picker-state'
 import { ChatModeDraftHeroControls } from './ChatModeDraftHeroControls'
 import { ChatModeHeroTaskShortcuts } from './ChatModeHeroTaskShortcuts'
+import { DotEmptyMark } from '../brand/dot-empty-mark'
 import { useChatDraftPrewarm } from './use-chat-draft-prewarm'
 
 /** The hero composer wears the seat's look, so its shared + menu and model chip match the thread's. */
@@ -164,6 +165,7 @@ export function ChatModeDraftHero({
   return (
     // Same column and composer width as a thread, so the card keeps its width when it docks.
     <div className="flex h-full flex-col items-center justify-center gap-6 px-5 pb-8">
+      <DotEmptyMark className="-mb-2" />
       <h1
         className={cn(
           CHAT_CONVERSATION_COLUMN_CLASS,

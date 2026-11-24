@@ -8,6 +8,7 @@ import React from 'react'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAppStore } from '../../store'
+import { StepDots } from '../brand/step-dots'
 import { translate } from '@/i18n/i18n'
 import { describeMinimizedFlow, primaryMinimizedFlow } from '../../../../shared/site-setup-minimize'
 
@@ -35,6 +36,8 @@ export function SiteSetupStatusSegment({
       <AlertCircle className="size-3.5 shrink-0 text-status-danger" />
     ) : primary.phase === 'waiting' ? (
       <span className="animate-attention-pulse size-2 shrink-0 rounded-full bg-status-attention" />
+    ) : primary.stepIndex != null && primary.stepTotal ? (
+      <StepDots total={primary.stepTotal} current={primary.stepIndex} />
     ) : (
       <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none" />
     )

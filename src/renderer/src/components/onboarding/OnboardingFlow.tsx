@@ -188,7 +188,7 @@ export default function OnboardingFlow({
                   <MusterWordmark height={17} />
                 </div>
 
-                <div className="mt-10 flex items-center gap-2 transition-[margin-top] duration-[760ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none">
+                <div className="mt-10 flex items-center gap-1 transition-[margin-top] duration-[760ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none">
                   {flow.progressSteps.map(({ step, index: realStepIndex }, progressIdx) => {
                     const isActive = realStepIndex === stepIndex
                     const isDone = realStepIndex < stepIndex
@@ -198,14 +198,14 @@ export default function OnboardingFlow({
                           <button
                             type="button"
                             className={cn(
-                              // Why: the visible bars stay 4px tall, but the invisible
-                              // hit area makes hover/click/tooltip targeting reliable.
-                              'relative h-1 rounded-full outline-none transition-all duration-300 before:absolute before:-inset-y-2 before:-inset-x-1 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                              // Why: Formation step dots (ink done, coral current, faded to come); the
+                              // invisible hit area keeps hover/click/tooltip targeting reliable.
+                              'relative size-2 rounded-full outline-none transition-colors duration-150 before:absolute before:-inset-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
                               isActive
-                                ? 'w-10 bg-foreground'
+                                ? 'bg-brand'
                                 : isDone
-                                  ? 'w-6 bg-muted-foreground/70 hover:bg-foreground/80'
-                                  : 'w-6 bg-muted-foreground/25 hover:bg-muted-foreground/45'
+                                  ? 'bg-foreground hover:bg-foreground/80'
+                                  : 'bg-foreground/20 hover:bg-foreground/40'
                             )}
                             aria-label={translate(
                               'auto.components.onboarding.OnboardingFlow.adaa0aa627',

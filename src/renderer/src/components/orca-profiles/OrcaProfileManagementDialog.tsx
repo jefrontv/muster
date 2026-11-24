@@ -200,7 +200,7 @@ export function OrcaProfileManagementDialog({
 
         <div className="rounded-md border border-border">
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-            <OrcaProfileAvatar profile={activeProfile} />
+            <OrcaProfileAvatar profile={activeProfile} isSelf />
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">{activeProfile.name}</div>
               <div className="truncate text-xs text-muted-foreground">

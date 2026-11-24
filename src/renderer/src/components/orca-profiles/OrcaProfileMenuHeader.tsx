@@ -18,7 +18,7 @@ export function OrcaProfileMenuHeader({
     <DropdownMenuLabel className="px-2 py-1.5">
       <div className="flex min-w-0 items-center gap-2">
         {showProfileAvatar ? (
-          <OrcaProfileAvatar profile={profile} className="size-7 text-xs" />
+          <OrcaProfileAvatar profile={profile} isSelf className="size-7" />
         ) : (
           <CircleUserRound className="size-5 text-muted-foreground" />
         )}

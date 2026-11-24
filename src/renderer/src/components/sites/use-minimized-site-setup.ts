@@ -13,6 +13,8 @@ export type SiteSetupFlowReport = {
   stage: string
   phase: SiteSetupFlowPhase
   percent: number | null
+  stepIndex: number | null
+  stepTotal: number | null
 }
 
 export function useMinimizedSiteSetup(
@@ -33,7 +35,7 @@ export function useMinimizedSiteSetup(
   // identity every render. Depending on it would push state on every render and spin.
   const latest = useRef(report)
   latest.current = report
-  const { label, stage, phase, percent } = report
+  const { label, stage, phase, percent, stepIndex, stepTotal } = report
 
   // Why keep pushing while minimized: the chip is the only view of the flow, so it has to follow
   // the clone's percentage and whatever stage comes after it. The store ignores an unknown id, so
@@ -42,8 +44,8 @@ export function useMinimizedSiteSetup(
     if (!minimized) {
       return
     }
-    updateFlow(flowId, { label, stage, phase, percent })
-  }, [minimized, flowId, updateFlow, label, stage, phase, percent])
+    updateFlow(flowId, { label, stage, phase, percent, stepIndex, stepTotal })
+  }, [minimized, flowId, updateFlow, label, stage, phase, percent, stepIndex, stepTotal])
 
   // Why clear on unmount: the dialog going away for any reason — finished, dismissed, the window
   // closing — must not leave a chip pointing at a flow that no longer exists.

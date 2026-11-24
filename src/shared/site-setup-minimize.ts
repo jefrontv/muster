@@ -24,6 +24,9 @@ export type MinimizedSiteSetupFlow = {
   phase: SiteSetupFlowPhase
   /** 0-100 while a clone or import reports it; null for a stage with no measure. */
   percent: number | null
+  /** Zero-based running step and the step count, for the status bar's step dots. */
+  stepIndex?: number | null
+  stepTotal?: number | null
 }
 
 /** How the chip reads when several flows are minimized at once. */

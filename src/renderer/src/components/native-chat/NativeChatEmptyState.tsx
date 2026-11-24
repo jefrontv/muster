@@ -3,6 +3,8 @@ import { translate } from '@/i18n/i18n'
 import { formatAgentTypeLabel } from '@/lib/agent-status'
 import { NATIVE_CHAT_EMPTY_STATE_COPY } from '../../../../shared/native-chat-empty-state'
 import type { NativeChatSession } from '../../../../shared/native-chat-types'
+import { DotEmptyMark } from '../brand/dot-empty-mark'
+import { DotLoader } from '../brand/dot-loader'
 
 export function NativeChatEmptyState({
   kind,
@@ -16,19 +18,25 @@ export function NativeChatEmptyState({
   const copy = emptyStateCopy(kind, message, agent)
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center">
-      <div
-        className={
-          kind === 'error'
-            ? 'flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive'
-            : 'flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground'
-        }
-      >
-        {kind === 'error' ? (
-          <TriangleAlert className="size-6" />
-        ) : (
-          <MessageSquare className="size-6" />
-        )}
-      </div>
+      {kind === 'loading' ? (
+        <DotLoader />
+      ) : kind === 'empty' ? (
+        <DotEmptyMark />
+      ) : (
+        <div
+          className={
+            kind === 'error'
+              ? 'flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive'
+              : 'flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground'
+          }
+        >
+          {kind === 'error' ? (
+            <TriangleAlert className="size-6" />
+          ) : (
+            <MessageSquare className="size-6" />
+          )}
+        </div>
+      )}
       <p className="text-sm font-medium text-foreground">{copy.title}</p>
       {copy.subtitle ? (
         <p className="max-w-sm text-balance text-xs text-muted-foreground">{copy.subtitle}</p>

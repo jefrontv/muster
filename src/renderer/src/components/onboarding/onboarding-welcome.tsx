@@ -3,7 +3,7 @@ import { CornerDownLeft } from 'lucide-react'
 import { isEditableTarget } from '@/lib/editable-target'
 import { getScreenSubmitModifierLabel, isScreenSubmitShortcut } from '@/lib/screen-submit-shortcut'
 import { translate } from '@/i18n/i18n'
-import { MusterMark } from '../brand/muster-mark'
+import { FormationIntro } from '../brand/formation-intro'
 import {
   resolveOnboardingWelcomeExitMs,
   splitOnboardingWelcomeTitle
@@ -64,13 +64,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps): React
       </div>
 
       <div className="relative flex flex-col items-center text-center">
-        <div className="onboarding-welcome-mark relative mb-9">
-          <span
-            aria-hidden
-            className="onboarding-welcome-ring absolute inset-[-22px] rounded-[28%]"
-          />
-          <MusterMark size={88} className="relative" />
-        </div>
+        <FormationIntro size={88} className="mb-9" />
 
         <p className="onboarding-welcome-kicker mb-4 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
           {translate('auto.components.onboarding.welcome.eyebrow', 'Welcome to')}

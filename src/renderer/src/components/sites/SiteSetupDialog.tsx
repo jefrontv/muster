@@ -155,7 +155,9 @@ export function SiteSetupDialog({
             : strings.stageConfirm,
     phase:
       snapshot.phase === 'running' ? 'running' : snapshot.phase === 'failed' ? 'error' : 'waiting',
-    percent: runningStep?.percent ?? null
+    percent: runningStep?.percent ?? null,
+    stepIndex: runningStep ? snapshot.steps.indexOf(runningStep) : null,
+    stepTotal: snapshot.steps.length
   })
 
   const source = (): SiteSetupSource | null => {

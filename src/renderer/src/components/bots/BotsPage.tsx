@@ -1,6 +1,5 @@
 // Muster Bots: the Bots tab. Hosts the bundled bots server's UI in a webview on the Bots
 // partition, the only session that carries the server's owner token.
-import { Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -8,6 +7,7 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { ChatModeToggle } from '../chat-mode/ChatModeToggle'
+import { DotLoader } from '../brand/dot-loader'
 import { BotsCommentDraftsPanel } from './BotsCommentDraftsPanel'
 import { BotsFailedActions } from './BotsFailedActions'
 import { BotsIntroDialog } from './BotsIntroDialog'
@@ -141,7 +141,7 @@ export default function BotsPage({ active = true }: { active?: boolean }): React
           {status.state === 'starting' || status.state === 'stopped' ? (
             <BotsNotice
               title={translate('auto.components.bots.BotsPage.starting', 'Starting Muster Bots…')}
-              action={<Loader2 className="size-4 animate-spin text-muted-foreground" />}
+              action={<DotLoader />}
             />
           ) : null}
           {status.state === 'missing' ? (

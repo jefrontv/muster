@@ -1,0 +1,67 @@
+/* Formation dot motif (docs/STYLEGUIDE.md "Brand"). One motif animates per view. */
+
+/* First launch: settle 0 to 360ms, M inks 360 to 480ms, coral lights 480 to 600ms. */
+.formation-intro circle {
+  animation: formation-settle 360ms var(--ease-chat) both;
+}
+
+.formation-intro circle[data-cell='D'] {
+  animation:
+    formation-settle 360ms var(--ease-chat) both,
+    formation-ink 120ms var(--ease-chat) 360ms both;
+}
+
+.formation-intro circle[data-cell='C'] {
+  animation:
+    formation-settle 360ms var(--ease-chat) both,
+    formation-light 120ms var(--ease-chat) 480ms both;
+}
+
+@keyframes formation-settle {
+  from {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
+
+@keyframes formation-ink {
+  from {
+    fill: var(--brand-stone);
+  }
+}
+
+@keyframes formation-light {
+  from {
+    fill: var(--brand-stone);
+  }
+}
+
+/* Loader: the coral dot steps round the 3x3 ring, 160ms a step. */
+.dot-loader .dot-loader-step {
+  fill: color-mix(in srgb, var(--foreground) 20%, transparent);
+  animation: dot-loader-step 1280ms step-end infinite;
+  animation-delay: calc(var(--dot-step) * 160ms);
+}
+
+@keyframes dot-loader-step {
+  0% {
+    fill: var(--brand);
+  }
+  12.5% {
+    fill: color-mix(in srgb, var(--foreground) 20%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .formation-intro circle {
+    animation: none !important;
+  }
+
+  .dot-loader .dot-loader-step {
+    animation: none;
+  }
+
+  .dot-loader .dot-loader-first {
+    fill: var(--brand);
+  }
+}

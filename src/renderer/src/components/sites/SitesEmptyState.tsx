@@ -6,6 +6,7 @@ import type React from 'react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
+import { DotEmptyMark } from '../brand/dot-empty-mark'
 
 export function SitesEmptyState({
   importing,
@@ -21,6 +22,7 @@ export function SitesEmptyState({
   const ocsitesDetected = useAppStore((state) => state.preflightStatus?.ocsites?.detected === true)
   return (
     <div className="space-y-2 px-3 py-2" data-testid="sites-empty-state">
+      <DotEmptyMark className="mb-3" />
       <p className="text-xs text-muted-foreground">
         {translate('auto.components.sites.SitesPage.emptyTitle', 'No sites yet.')}
       </p>

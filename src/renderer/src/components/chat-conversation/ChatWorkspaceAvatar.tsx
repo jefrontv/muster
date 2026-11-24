@@ -6,6 +6,7 @@ import type { ChatWorkspace } from '../../../../shared/chat-mode-types'
 import { normalizeRepoBadgeColor } from '../../../../shared/repo-badge-color'
 import { RepoIconGlyph } from '@/components/repo/repo-icon'
 import { cn } from '@/lib/utils'
+import { DotIdenticon } from '../brand/dot-identicon'
 
 export function ChatWorkspaceAvatar(props: {
   workspace: ChatWorkspace | null
@@ -16,6 +17,16 @@ export function ChatWorkspaceAvatar(props: {
 }): React.JSX.Element {
   const color = normalizeRepoBadgeColor(props.workspace?.color) ?? null
   const glyph = Math.round(props.size * 0.55)
+  if (props.workspace && !props.workspace.icon && !color) {
+    // No chosen icon or colour: a stable identicon keeps workspaces apart without inventing a glyph.
+    return (
+      <DotIdenticon
+        id={props.workspace.id}
+        size={props.size}
+        className={cn(props.working && 'motion-safe:animate-pulse', props.className)}
+      />
+    )
+  }
   return (
     <span
       aria-hidden
