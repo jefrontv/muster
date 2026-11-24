@@ -27,7 +27,10 @@ import {
   updateSiteThroughBridge,
   type SiteWriteBridgeBody
 } from './site-mcp-store-bridge'
-import { isSiteSetupExposedToAgents } from '../../../shared/agent-capabilities'
+import {
+  isSiteSetupExposedToAgents,
+  projectPagesAgentAccess
+} from '../../../shared/agent-capabilities'
 import {
   collectSetupApprovalThroughBridge,
   openSetupApprovalThroughBridge,
@@ -78,6 +81,17 @@ function requireBridgeFile(
 const NO_GUI_FOR_SETUP = 'No Muster window is running. Open Muster and try again.'
 const NO_GUI_FOR_DRAFTS =
   'No Muster window is running, so nobody can review the comment. Open Muster and try again.'
+const NO_GUI_FOR_PAGES = 'Pages need the Muster window open. Open Muster and try again.'
+
+function agentSource(cwd: string): Record<string, string | null> {
+  return {
+    cwd,
+    agent: siteMcpClientName() ?? 'agent',
+    // Set by Muster on every terminal it spawns; the agent and this process inherit them.
+    worktreeId: process.env.ORCA_WORKTREE_ID || null,
+    terminalHandle: process.env.ORCA_TERMINAL_HANDLE || null
+  }
+}
 
 export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpContext {
   const { store } = options
@@ -159,6 +173,17 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
         waitMs: args.waitMs
       }),
     siteSetupEnabled: () => isSiteSetupExposedToAgents(store.getSettings?.()),
+    projectPagesAccess: () => projectPagesAgentAccess(store.getSettings?.()),
+    projectPagesTool: async (op, args) => {
+      const answer = (await postToGuiBridge({
+        bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_PAGES),
+        path: '/pages/tool',
+        body: { op, args, source: agentSource(cwd) },
+        noGui: NO_GUI_FOR_PAGES,
+        refusedLabel: 'pages'
+      })) as { value?: unknown }
+      return answer.value
+    },
     requestSetupApproval: (input) =>
       openSetupApprovalThroughBridge({
         bridgeFile: requireBridgeFile(options.bridgeFile, NO_GUI_FOR_SETUP),
@@ -184,13 +209,7 @@ export function createSiteMcpContext(options: SiteMcpEngineOptions): SiteMcpCont
         body: {
           op,
           args,
-          source: {
-            cwd,
-            agent: siteMcpClientName() ?? 'agent',
-            // Set by Muster on every terminal it spawns; the agent and this process inherit them.
-            worktreeId: process.env.ORCA_WORKTREE_ID || null,
-            terminalHandle: process.env.ORCA_TERMINAL_HANDLE || null
-          }
+          source: agentSource(cwd)
         },
         noGui: NO_GUI_FOR_DRAFTS,
         refusedLabel: 'comment draft'

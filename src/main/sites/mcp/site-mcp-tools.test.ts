@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import type { SiteActiveRun, SiteRun } from '../../../shared/site-run-types'
 import { CUSTOM_STEP_SCRIPT_DIR, SITE_LOCAL_STACKS } from '../../../shared/site-types'
 import { listSiteMcpToolDescriptors, SITE_MCP_TOOLS } from './site-mcp-tools'
+import { SITE_MCP_PAGES_TOOLS } from './site-mcp-pages-tools'
 import {
   acfState,
   call,
@@ -120,6 +121,15 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   queue_task_comment: { project_id: 1, task_id: 2, body_html: '<p>Done.</p>' },
   list_comment_drafts: {},
   amend_comment_draft: { draft: '1', body_html: '<p>Shorter.</p>' },
+  list_pages: {},
+  search_pages: { query: 'launch' },
+  read_page: { page: 'Launch' },
+  create_page: { title: 'Launch' },
+  update_page: { page: 'Launch', base_revision: 1, markdown: 'x' },
+  edit_page: { page: 'Launch', old_text: 'a', new_text: 'b' },
+  append_to_page: { page: 'Launch', markdown: 'x' },
+  move_page: { page: 'Launch' },
+  archive_page: { page: 'Launch' },
   collect_plan_review: { review_id: 'r1' },
   collect_setup_approval: { approval_id: 'approval-1', wait_seconds: 0 },
   list_projects: {},
@@ -168,8 +178,12 @@ describe('site MCP tool table', () => {
   })
 
   it('keeps the full tools/list schema payload within a tight byte budget', () => {
-    const bytes = Buffer.byteLength(JSON.stringify(listSiteMcpToolDescriptors()), 'utf8')
-    expect(bytes).toBeLessThan(47_000)
+    const pages = new Set(SITE_MCP_PAGES_TOOLS.map((tool) => tool.name))
+    const all = listSiteMcpToolDescriptors()
+    const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
+    // Pages tools only appear once the user turns Pages on, so they get their own budget.
+    expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(5_000)
   })
 })
 

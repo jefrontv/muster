@@ -32,6 +32,11 @@ import {
   DRAFT_BRIDGE_ROUTE,
   type DraftBridgeCallbacks
 } from './site-write-bridge-draft-routes'
+import {
+  answerPagesBridgeRoute,
+  PAGES_BRIDGE_ROUTE,
+  type PagesBridgeCallbacks
+} from './site-write-bridge-pages-routes'
 
 /** Discovery file the MCP process reads; absent means "no GUI, write to disk". */
 export const SITE_WRITE_BRIDGE_FILE_NAME = 'site-write-bridge.json'
@@ -80,7 +85,8 @@ type StartArgs = {
     | { status: 'unknown' }
   >
 } & SetupBridgeCallbacks &
-  DraftBridgeCallbacks
+  DraftBridgeCallbacks &
+  PagesBridgeCallbacks
 
 export class SiteWriteBridgeServer {
   private server: Server | null = null
@@ -130,6 +136,7 @@ export class SiteWriteBridgeServer {
     const isSecrets = req.method === 'POST' && req.url === '/site/secrets'
     const setupRoute = req.method === 'POST' && isSetupBridgeRoute(req.url) ? req.url : null
     const isDraftTool = req.method === 'POST' && req.url === DRAFT_BRIDGE_ROUTE
+    const isPagesTool = req.method === 'POST' && req.url === PAGES_BRIDGE_ROUTE
     if (
       !isSiteUpdate &&
       !isLibraryUpdate &&
@@ -137,7 +144,8 @@ export class SiteWriteBridgeServer {
       !isPlanCollect &&
       !isSecrets &&
       !setupRoute &&
-      !isDraftTool
+      !isDraftTool &&
+      !isPagesTool
     ) {
       reply(404, { error: 'not found' })
       return
@@ -146,9 +154,12 @@ export class SiteWriteBridgeServer {
       reply(401, { error: 'unauthorized' })
       return
     }
-    if (isDraftTool) {
+    if (isDraftTool || isPagesTool) {
       try {
-        await answerDraftBridgeRoute(await readJsonBody(req), reply, args)
+        const body = await readJsonBody(req)
+        await (isPagesTool
+          ? answerPagesBridgeRoute(body, reply, args)
+          : answerDraftBridgeRoute(body, reply, args))
       } catch (error) {
         reply(500, { error: error instanceof Error ? error.message : String(error) })
       }

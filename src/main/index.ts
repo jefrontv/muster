@@ -14,6 +14,8 @@ import {
 import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
 import { agentCommentDrafts, setCommentDraftsRuntime } from './comment-drafts/comment-drafts'
 import { runCommentDraftToolOp } from './comment-drafts/comment-draft-tool-ops'
+import { projectPages } from './project-pages/project-pages'
+import { runProjectPagesToolOp } from './project-pages/project-pages-tool-ops'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
 import { awaitPlanAnnotationResult, openPlanAnnotation } from './sites/plan-annotation-requests'
@@ -854,6 +856,17 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
             onSetupApprovalRequested: openSiteSetupApproval,
             onCommentDraftTool: (op, toolArgs, source) =>
               runCommentDraftToolOp(agentCommentDrafts(), op, toolArgs, source),
+            onProjectPagesTool: (op, toolArgs, source) =>
+              runProjectPagesToolOp(
+                {
+                  store: projectPages(),
+                  repos: () => bridgeStore.getRepos(),
+                  settings: () => bridgeStore.getSettings()
+                },
+                op,
+                toolArgs,
+                source
+              ),
             onSetupApprovalCollect: awaitSiteSetupApproval,
             onSetupRead: (op, readArgs) => readSiteSetupInfo(bridgeStore, op, readArgs),
             onSetupWrite: (op, approvalId, writeArgs) =>

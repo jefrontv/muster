@@ -3037,6 +3037,10 @@ export type GlobalSettings = {
   /** Why opt-in: lets agents create projects and write site config, each behind an approval card.
    *  Absent or false = the site write tools are hidden from agents. */
   agentCapabilitySiteSetup?: boolean
+  /** Absent = write. Only applies while experimentalProjectPages is on. */
+  agentCapabilityProjectPages?: 'off' | 'read' | 'write'
+  /** Why opt-in: pages can hold client details, so one repo's agent should not reach another's. */
+  agentCapabilityProjectPagesCrossProject?: boolean
   /** Why persisted: setup actions the user ticked "Always allow" for on an approval card. Only
    *  the card's Approve adds one (no agent-reachable route writes settings); Settings removes them.
    *  Normalised on write to the eligible list, so a password or a removal can never be granted. */

@@ -175,7 +175,8 @@ describe('initialize', () => {
 
 describe('tools/list', () => {
   it('returns every tool with a valid JSON schema', async () => {
-    const [frame] = await createHarness().send(request(2, 'tools/list'))
+    const harness = createHarness({ projectPagesAccess: () => 'write' })
+    const [frame] = await harness.send(request(2, 'tools/list'))
     const result: unknown = frame?.result
     if (!isPlainJsonObject(result) || !Array.isArray(result.tools)) {
       throw new Error(`tools/list did not return a tools array: ${JSON.stringify(frame)}`)

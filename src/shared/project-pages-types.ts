@@ -54,7 +54,7 @@ export type ProjectPageMoveInput = {
   index: number
 }
 
-export type ProjectPagesErrorCode = 'not_found' | 'conflict' | 'invalid' | 'error'
+export type ProjectPagesErrorCode = 'not_found' | 'conflict' | 'invalid' | 'forbidden' | 'error'
 
 export type ProjectPagesResult<T> =
   | { ok: true; value: T }
