@@ -190,7 +190,7 @@ function registerDrawioShapes(): void {
 }
 
 /** Resolves a CSS colour token to rgb(), since SVG attributes cannot read var(). */
-function tokenColor(name: string, fallback: string): string {
+export function tokenColor(name: string, fallback: string): string {
   const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   if (!raw) {
     return fallback

@@ -1,5 +1,11 @@
 // A diagram page: title, toolbar, shape palette, canvas with minimap, and the format panel.
-import { InternalEvent, Outline, type EventObject, type EventSource } from '@maxgraph/core'
+import {
+  Clipboard,
+  InternalEvent,
+  Outline,
+  type EventObject,
+  type EventSource
+} from '@maxgraph/core'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
@@ -17,7 +23,9 @@ import { ProjectPageDiagramPalette } from './ProjectPageDiagramPalette'
 import { ProjectPageDiagramQuickConnect } from './ProjectPageDiagramQuickConnect'
 import { ProjectPageDiagramToolbar } from './ProjectPageDiagramToolbar'
 import { useProjectPageDiagram, type DiagramContent } from './use-project-page-diagram'
+import { useProjectPageDiagramLinks } from './use-project-page-diagram-links'
 import { useProjectPageDiagramSelection } from './use-project-page-diagram-selection'
+import { insertMermaidText } from './ProjectPageDiagramMermaidDialog'
 
 function diagramContent(editor: DiagramEditor): DiagramContent {
   const cells = snapshotDiagram(editor.graph)
@@ -40,11 +48,15 @@ export function ProjectPageDiagramView({
   scopeKey,
   meta,
   autoFocusTitle,
+  pages,
+  onOpenPage,
   onSaveState
 }: {
   scopeKey: string
   meta: ProjectPageMeta
   autoFocusTitle: boolean
+  pages: ProjectPageMeta[]
+  onOpenPage: (pageId: string) => void
   onSaveState: (state: AutosaveState) => void
 }) {
   const { loaded, error, schedule, rename } = useProjectPageDiagram(scopeKey, meta, onSaveState)
@@ -57,6 +69,7 @@ export function ProjectPageDiagramView({
   const scheduleRef = useRef(schedule)
   scheduleRef.current = schedule
   const selection = useProjectPageDiagramSelection(editor?.graph ?? null, editor?.undo ?? null)
+  const openLink = useProjectPageDiagramLinks(editor, onOpenPage)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -115,7 +128,7 @@ export function ProjectPageDiagramView({
   const lone = selection.cells.length === 1 ? selection.cells[0] : null
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="project-page-diagram flex min-h-0 flex-1 flex-col">
       <input
         value={title}
         autoFocus={autoFocusTitle}
@@ -132,7 +145,7 @@ export function ProjectPageDiagramView({
           }
         }}
       />
-      <ProjectPageDiagramToolbar editor={editor} selection={selection} />
+      <ProjectPageDiagramToolbar editor={editor} selection={selection} title={title} />
       <div className="flex min-h-0 flex-1 border-t border-border">
         <ProjectPageDiagramPalette graph={editor?.graph ?? null} />
         <div className="relative min-w-0 flex-1 overflow-hidden">
@@ -146,6 +159,22 @@ export function ProjectPageDiagramView({
             onKeyDown={(event) => {
               if (editor && handleDiagramKey(editor, event.nativeEvent)) {
                 event.preventDefault()
+              }
+            }}
+            onPaste={(event) => {
+              if (!editor || editor.graph.isEditing()) {
+                return
+              }
+              event.preventDefault()
+              // Mermaid text from anywhere becomes shapes; otherwise paste copied shapes.
+              const text = event.clipboardData.getData('text/plain')
+              if (/^\s*(graph|flowchart)\b/i.test(text)) {
+                const problem = insertMermaidText(editor.graph, text)
+                if (problem) {
+                  toast.error(problem)
+                }
+              } else {
+                Clipboard.paste(editor.graph)
               }
             }}
           />
@@ -163,7 +192,12 @@ export function ProjectPageDiagramView({
           ) : null}
         </div>
         {editor && selection.cells.length ? (
-          <ProjectPageDiagramFormat graph={editor.graph} cells={selection.cells} />
+          <ProjectPageDiagramFormat
+            graph={editor.graph}
+            cells={selection.cells}
+            pages={pages}
+            onOpenLink={openLink}
+          />
         ) : null}
       </div>
     </div>

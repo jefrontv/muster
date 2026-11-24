@@ -6,6 +6,7 @@ import { createRichMarkdownExtensions } from '../editor/rich-markdown-extensions
 import type { RichMarkdownEditorCodec } from '../editor/rich-markdown-source-transport'
 import { ProjectPageActiveCollab } from './project-pages-activecollab-blocks'
 import { ProjectPageCallouts } from './project-pages-callouts'
+import { ProjectPageDiagramEmbeds } from './project-pages-diagram-embeds'
 import { withPageImages } from './project-pages-files'
 import { ProjectPageTags } from './project-pages-tag-decorations'
 
@@ -29,6 +30,7 @@ export function createProjectPagesExtensions(
     ProjectPageTags,
     ProjectPageCallouts,
     ProjectPageActiveCollab,
+    ProjectPageDiagramEmbeds.configure({ scopeKey }),
     Placeholder.configure({ placeholder })
   ]
 }

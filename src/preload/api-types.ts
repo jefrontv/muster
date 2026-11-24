@@ -1091,6 +1091,11 @@ export type ProjectPagesApi = {
     pageId: string,
     input: ProjectPageDiagramSave
   ) => Promise<ProjectPagesResult<ProjectPageDiagram>>
+  exportDiagramFile: (
+    name: string,
+    extension: 'svg' | 'png',
+    data: string | Uint8Array
+  ) => Promise<{ ok: true; path: string } | { ok: false; cancelled?: boolean; message?: string }>
   enableDatabase: (
     scopeKey: string,
     pageId: string

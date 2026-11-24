@@ -2,8 +2,14 @@
 import type { Cell, Graph } from '@maxgraph/core'
 import {
   AlignCenter,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignEndHorizontal,
+  AlignEndVertical,
   AlignLeft,
   AlignRight,
+  AlignStartHorizontal,
+  AlignStartVertical,
   ArrowLeft,
   ArrowRight,
   Bold,
@@ -14,14 +20,27 @@ import {
   MoveRight,
   Plus,
   SendToBack,
+  SquareDashed,
   Spline,
   Underline
 } from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
+import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import { patchSelectionStyle, selectionStyle } from './project-pages-diagram-actions'
+import type { DiagramLink } from './project-pages-diagram-links'
 import { DIAGRAM_COLOR_PRESETS } from './project-pages-diagram-styles'
+import { ProjectPageDiagramLink } from './ProjectPageDiagramLink'
+
+const ALIGNS = [
+  ['left', 'alignLeft', 'Align left', AlignStartVertical],
+  ['center', 'alignCentre', 'Align centres', AlignCenterVertical],
+  ['right', 'alignRight', 'Align right', AlignEndVertical],
+  ['top', 'alignTop', 'Align top', AlignStartHorizontal],
+  ['middle', 'alignMiddle', 'Align middles', AlignCenterHorizontal],
+  ['bottom', 'alignBottom', 'Align bottom', AlignEndHorizontal]
+] as const
 
 const t = (key: string, fallback: string): string =>
   translate(`auto.components.projectPages.diagram.${key}`, fallback)
@@ -92,7 +111,17 @@ function Swatches({ edges, graph }: { edges: boolean; graph: Graph }) {
   )
 }
 
-export function ProjectPageDiagramFormat({ graph, cells }: { graph: Graph; cells: Cell[] }) {
+export function ProjectPageDiagramFormat({
+  graph,
+  cells,
+  pages,
+  onOpenLink
+}: {
+  graph: Graph
+  cells: Cell[]
+  pages: ProjectPageMeta[]
+  onOpenLink: (link: DiagramLink) => void
+}) {
   const style = selectionStyle(graph)
   const edges = cells.every((cell) => cell.isEdge())
   const fontStyle = Number(style.fontStyle ?? 0)
@@ -105,6 +134,9 @@ export function ProjectPageDiagramFormat({ graph, cells }: { graph: Graph; cells
 
   return (
     <aside className="w-56 shrink-0 overflow-y-auto scrollbar-sleek border-l border-border text-sm">
+      {cells.length === 1 && cells[0].isVertex() ? (
+        <ProjectPageDiagramLink graph={graph} cell={cells[0]} pages={pages} onOpen={onOpenLink} />
+      ) : null}
       <Section title={edges ? t('lineColour', 'Line colour') : t('colour', 'Colour')}>
         <Swatches edges={edges} graph={graph} />
       </Section>
@@ -247,7 +279,27 @@ export function ProjectPageDiagramFormat({ graph, cells }: { graph: Graph; cells
           <Tool label={t('toBack', 'Send to back')} onClick={() => graph.orderCells(true, cells)}>
             <SendToBack className="size-4" />
           </Tool>
+          <Tool
+            label={t('shadow', 'Shadow')}
+            active={Boolean(style.shadow)}
+            onClick={() => set({ shadow: style.shadow ? undefined : true })}
+          >
+            <SquareDashed className="size-4" />
+          </Tool>
         </div>
+        {cells.length > 1 && !edges ? (
+          <div className="flex flex-wrap gap-1">
+            {ALIGNS.map(([align, key, label, Icon]) => (
+              <Tool
+                key={align}
+                label={t(key, label)}
+                onClick={() => graph.alignCells(align, cells)}
+              >
+                <Icon className="size-4" />
+              </Tool>
+            ))}
+          </div>
+        ) : null}
       </Section>
     </aside>
   )

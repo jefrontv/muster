@@ -56,8 +56,6 @@ export function handleDiagramKey({ graph, undo }: DiagramEditor, event: Keyboard
     Clipboard.copy(graph)
   } else if (mod && key === 'x') {
     Clipboard.cut(graph)
-  } else if (mod && key === 'v') {
-    Clipboard.paste(graph)
   } else if (mod && key === 'g') {
     if (event.shiftKey) {
       graph.ungroupCells()

@@ -6,6 +6,7 @@ import { translate } from '@/i18n/i18n'
 import { fitDiagram, zoomAt, type DiagramEditor } from './project-pages-diagram-graph'
 import { deleteSelection, duplicateSelection } from './project-pages-diagram-keys'
 import type { DiagramSelection } from './use-project-page-diagram-selection'
+import { ProjectPageDiagramMenus } from './ProjectPageDiagramMenus'
 
 const isMac = navigator.userAgent.includes('Mac')
 const mod = isMac ? '⌘' : 'Ctrl+'
@@ -34,10 +35,12 @@ function ToolButton(props: {
 
 export function ProjectPageDiagramToolbar({
   editor,
-  selection
+  selection,
+  title
 }: {
   editor: DiagramEditor | null
   selection: DiagramSelection
+  title: string
 }) {
   const graph = editor?.graph
   const none = selection.cells.length === 0
@@ -93,11 +96,10 @@ export function ProjectPageDiagramToolbar({
       >
         <Trash2 className="size-4" />
       </ToolButton>
-      <span className="ml-auto text-xs text-muted-foreground">
-        {t(
-          'hint',
-          'Double-click the canvas to add a shape. Drag from the middle of a shape to connect it.'
-        )}
+      <span className="mx-1.5 h-5 w-px bg-border" />
+      <ProjectPageDiagramMenus editor={editor} title={title} />
+      <span className="ml-auto hidden truncate pl-3 text-xs text-muted-foreground 2xl:inline">
+        {t('hint', 'Double-click to add a shape. Drag from the middle of a shape to connect.')}
       </span>
     </div>
   )

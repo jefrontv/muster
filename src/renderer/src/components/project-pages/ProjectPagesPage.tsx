@@ -20,7 +20,7 @@ import type { AutosaveState } from './project-pages-autosave'
 import { buildPageTree, pageTitle } from './project-pages-tree-model'
 import { ProjectPageBacklinks } from './ProjectPageBacklinks'
 import { ProjectPageDatabaseView } from './ProjectPageDatabaseView'
-import { ProjectPageDiagramView } from './ProjectPageDiagramView'
+import { ProjectPageDiagramViewLazy } from './ProjectPageDiagramViewLazy'
 import { ProjectPageEditor } from './ProjectPageEditor'
 import { ProjectPageRowProperties } from './ProjectPageRowProperties'
 import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
@@ -307,11 +307,13 @@ export default function ProjectPagesPage(): React.JSX.Element {
                 onClose={() => setMapOpen(false)}
               />
             ) : meta?.diagram ? (
-              <ProjectPageDiagramView
+              <ProjectPageDiagramViewLazy
                 key={`${scopeKey}/${meta.id}`}
                 scopeKey={scopeKey}
                 meta={meta}
                 autoFocusTitle={fresh === meta.id}
+                pages={pages}
+                onOpenPage={setSelectedId}
                 onSaveState={setSaveState}
               />
             ) : doc && meta && doc.meta.id === meta.id ? (

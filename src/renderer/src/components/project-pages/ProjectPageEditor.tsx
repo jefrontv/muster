@@ -22,6 +22,7 @@ import {
 import { createProjectPagesExtensions } from './project-pages-editor-extensions'
 import { replaceEditorMarkdown } from './project-pages-editor-sync'
 import { ProjectPagesEditorMenus } from './ProjectPagesEditorMenus'
+import { createDiagramPage } from './project-pages-diagram-embeds'
 import { pageSlashCommands } from './project-pages-slash-items'
 import { imageFiles, insertPageImages, pickPageImages } from './project-pages-files'
 import { PAGE_FILE_DROP_PROPS, useProjectPageFileDrop } from './use-project-page-file-drop'
@@ -83,9 +84,10 @@ export function ProjectPageEditor({
             })
             .run()
         },
-        makeDatabase: canMakeDatabase ? () => makeDatabaseRef.current?.() : undefined
+        makeDatabase: canMakeDatabase ? () => makeDatabaseRef.current?.() : undefined,
+        newDiagram: () => createDiagramPage(scopeKey, pageId)
       }),
-    [codec, canMakeDatabase]
+    [codec, canMakeDatabase, scopeKey, pageId]
   )
   const [tags, setTags] = useState<string[]>([])
   const [emojiAt, setEmojiAt] = useState<{ left: number; top: number } | null>(null)

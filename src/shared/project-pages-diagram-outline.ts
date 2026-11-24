@@ -51,7 +51,9 @@ export function diagramOutlineText(cells: DiagramCell[]): string {
   const shapes: string[] = []
   const walk = (parentId: string, depth: number): void => {
     for (const cell of children.get(parentId) ?? []) {
-      shapes.push(`${'  '.repeat(depth)}- ${name(cell.id)}`)
+      const link = cell.attrs?.link
+      const text = link ? `[${name(cell.id)}](${link})` : name(cell.id)
+      shapes.push(`${'  '.repeat(depth)}- ${text}`)
       walk(cell.id, depth + 1)
     }
   }

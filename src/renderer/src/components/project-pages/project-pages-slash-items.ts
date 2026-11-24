@@ -1,7 +1,14 @@
 // The Pages "/" menu: the rich editor's blocks, with headings folded into one row per kind
 // (level picked with chips or ←/→), plus page templates and "Database".
 import type { Editor } from '@tiptap/react'
-import { Database, FolderKanban, Info, LayoutTemplate, SquareCheckBig } from 'lucide-react'
+import {
+  Database,
+  FolderKanban,
+  Info,
+  LayoutTemplate,
+  SquareCheckBig,
+  Workflow
+} from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { slashCommands } from '../editor/rich-markdown-slash-command-catalog'
 import { filterRichMarkdownSlashCommands } from '../editor/rich-markdown-slash-command-filter'
@@ -40,6 +47,7 @@ const HIDDEN = /^(heading-\d|toggle-h\d)$/
 export function pageSlashCommands(actions: {
   insertMarkdown: (editor: Editor, markdown: string) => void
   makeDatabase?: () => void
+  newDiagram?: () => Promise<{ id: string; title: string } | null>
 }): SlashCommand[] {
   const templates = PROJECT_PAGE_TEMPLATES.map(
     (template): SlashCommand => ({
@@ -107,7 +115,26 @@ export function pageSlashCommands(actions: {
       run: (editor) => openActiveCollabPicker(editor, 'project')
     }
   ]
-  return [...callouts, ...templates, ...database, ...activeCollab]
+  const { newDiagram } = actions
+  const diagram: SlashCommand[] = newDiagram
+    ? [
+        {
+          id: 'page-diagram',
+          label: translate('auto.components.projectPages.diagramBlock', 'Diagram'),
+          aliases: ['draw', 'drawio', 'flowchart', 'whiteboard', 'chart'],
+          icon: icon(Workflow),
+          group: 'Basic blocks',
+          description: 'A new diagram page, previewed here',
+          run: (editor) =>
+            void newDiagram().then((page) => {
+              if (page) {
+                actions.insertMarkdown(editor, `[${page.title}](muster-page://${page.id})\n`)
+              }
+            })
+        }
+      ]
+    : []
+  return [...callouts, ...diagram, ...templates, ...database, ...activeCollab]
 }
 
 /** Items matching the query, each with the heading level the query points at. */
@@ -161,16 +188,17 @@ export function filterPageSlashItems(
   const needle = query.trim().toLowerCase()
   const matches = items.flatMap((item) => {
     const hits = filterRichMarkdownSlashCommands(item.variants, query)
-    const named = !needle || item.label.toLowerCase().includes(needle)
+    const label = item.label.toLowerCase()
+    const named = !needle || label.includes(needle)
     if (!named && hits.length === 0) {
       return []
     }
     // A query naming one level ("h2", "heading 2") preselects it.
     const level = !named && hits.length === 1 ? item.variants.indexOf(hits[0]) : 0
-    return [{ item, level, named }]
+    const rank = !named ? 3 : label === needle ? 0 : label.startsWith(needle) ? 1 : 2
+    return [{ item, level, rank }]
   })
-  // Rows named by the query come before alias hits, so "/task" lands on ActiveCollab task.
-  return [...matches.filter((m) => m.named), ...matches.filter((m) => !m.named)].map(
-    ({ item, level }) => ({ item, level })
-  )
+  // Exact and prefix label matches first, then other named rows, then alias hits, so "/task"
+  // lands on ActiveCollab task and "/diagram" on Diagram rather than Mermaid diagram.
+  return matches.toSorted((a, b) => a.rank - b.rank).map(({ item, level }) => ({ item, level }))
 }

@@ -988,6 +988,8 @@ const api = {
       ipcRenderer.invoke('projectPages:enableDiagram', scopeKey, pageId),
     saveDiagram: (scopeKey, pageId, input) =>
       ipcRenderer.invoke('projectPages:saveDiagram', scopeKey, pageId, input),
+    exportDiagramFile: (name, extension, data) =>
+      ipcRenderer.invoke('projectPages:exportDiagramFile', name, extension, data),
     enableDatabase: (scopeKey, pageId) =>
       ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),
     updateDatabase: (scopeKey, pageId, schema) =>

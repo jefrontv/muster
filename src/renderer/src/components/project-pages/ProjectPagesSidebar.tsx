@@ -1,8 +1,14 @@
 // Left column of the Pages view: search, the page tree and the trash.
-import { FolderPlus, Plus, RotateCcw, Search, Trash2, Workflow } from 'lucide-react'
+import { FileText, FolderPlus, Plus, RotateCcw, Search, Trash2, Workflow } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 import type { ProjectPageMeta, ProjectPageMoveInput } from '../../../../shared/project-pages-types'
@@ -72,14 +78,28 @@ export function ProjectPagesSidebar({
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={translate('auto.components.projectPages.newPage', 'New page')}
-          onClick={() => onCreate(null)}
-        >
-          <Plus className="size-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label={translate('auto.components.projectPages.new', 'New')}
+              title={translate('auto.components.projectPages.new', 'New')}
+            >
+              <Plus className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => onCreate(null)}>
+              <FileText className="size-4" />
+              {translate('auto.components.projectPages.newPage', 'New page')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onCreate(null, false, true)}>
+              <Workflow className="size-4" />
+              {translate('auto.components.projectPages.newDiagram', 'New diagram')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           variant="outline"
           size="icon-sm"
@@ -88,15 +108,6 @@ export function ProjectPagesSidebar({
           onClick={() => onCreate(null, true)}
         >
           <FolderPlus className="size-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label={translate('auto.components.projectPages.newDiagram', 'New diagram')}
-          title={translate('auto.components.projectPages.newDiagram', 'New diagram')}
-          onClick={() => onCreate(null, false, true)}
-        >
-          <Workflow className="size-4" />
         </Button>
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek px-2 pb-3">
