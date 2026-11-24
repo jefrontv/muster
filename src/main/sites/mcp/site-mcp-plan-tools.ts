@@ -85,7 +85,8 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
         title: plan.title,
         content: plan.content,
         agent: siteMcpClientName(),
-        project: describePlanProject(context.cwd, context.store.listSites())
+        project: describePlanProject(context.cwd, context.store.listSites()),
+        cwd: context.cwd
       })
 
       return {

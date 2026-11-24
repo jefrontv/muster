@@ -23,7 +23,7 @@ export function getEditorHeaderCopyState(file: OpenFile): EditorHeaderCopyState 
     }
   }
 
-  if (file.mode === 'project-pages') {
+  if (file.mode === 'project-pages' || file.mode === 'plan-review') {
     return {
       copyText: null,
       copyToastLabel: 'Page copied',

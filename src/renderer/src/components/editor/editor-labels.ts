@@ -33,7 +33,7 @@ export function getEditorDisplayLabel(
     return file.checkRunDetails?.check.name ?? getBaseLabel(file, variant)
   }
 
-  if (file.mode === 'project-pages') {
+  if (file.mode === 'project-pages' || file.mode === 'plan-review') {
     return file.relativePath
   }
 

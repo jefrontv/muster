@@ -96,7 +96,8 @@ export function EditorPanelShell({
     <div ref={panelRef} className="flex flex-col flex-1 min-w-0 min-h-0">
       {!model.isCombinedDiff &&
         activeFile.mode !== 'check-details' &&
-        activeFile.mode !== 'project-pages' && (
+        activeFile.mode !== 'project-pages' &&
+        activeFile.mode !== 'plan-review' && (
           <EditorPanelHeader
             activeFile={activeFile}
             copiedPathVisible={copiedPathVisible}

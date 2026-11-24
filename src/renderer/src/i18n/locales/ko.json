@@ -9354,7 +9354,8 @@
           "sitesWarning": "These tools reach real infrastructure — WordPress deploys, uploads syncs, and remote database queries. Turning them off is a legitimate way to harden what an agent can touch.",
           "skillsDescription": "Muster installs its bundled skills into your agent skill directories at startup. Turning one off stops future installs; a copy already on disk is left where it is.",
           "alwaysAllowEmpty": "Every setup change asks first.",
-          "alwaysAllowRemove": "Ask again for {{value0}}"
+          "alwaysAllowRemove": "Ask again for {{value0}}",
+          "reviewsTitle": "Plan reviews"
         },
         "BrowserExtensionsSection": {
           "b7419fc2ad": "Configure",
@@ -9431,7 +9432,9 @@
             "siteSetupTitle": "Let agents create and set up projects",
             "siteSetupDescription": "Agents can add projects and change site settings. Muster asks you to approve each change.",
             "alwaysAllowTitle": "Allowed without asking",
-            "alwaysAllowDescription": "Setup changes you chose to always allow. Remove one to be asked again."
+            "alwaysAllowDescription": "Setup changes you chose to always allow. Remove one to be asked again.",
+            "planReviewTabTitle": "Open plan reviews in a project tab",
+            "planReviewTabDescription": "A plan an agent sends for review opens as a tab in its project instead of over your work. Off opens it full screen."
           }
         },
         "confirmations": {
@@ -15221,6 +15224,27 @@
         "templateDecision": "Decision record",
         "changedBy": "Changed by {{agent}}",
         "changedInside": "Changed by an agent"
+      },
+      "planAnnotation": {
+        "tab": {
+          "ended": "This review has ended.",
+          "close": "Close tab"
+        },
+        "tabToast": {
+          "title": "Plan ready for review",
+          "open": "Open",
+          "round": "Round {{value0}}",
+          "sections": "{{value0}} sections",
+          "waiting": "{{value0}} more waiting",
+          "dismiss": "Dismiss",
+          "later": "Later",
+          "review": "Review plan"
+        },
+        "sidebar": {
+          "review": "Review",
+          "reviewTooltip": "Plan waiting: {{value0}}",
+          "projectDot": "Plan waiting for review"
+        }
       }
     },
     "i18n": {

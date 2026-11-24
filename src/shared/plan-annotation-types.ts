@@ -69,6 +69,8 @@ export type PlanAnnotationRequest = {
   agent: string | null
   /** The site or checkout the plan is about, so a review is not read out of context. */
   project: string | null
+  /** The agent's working folder, so the review can open in that project's tab. */
+  cwd?: string | null
   /** 1 on first review of this plan, incrementing while the agent revises it. */
   round: number
   /** Previous round's content, so the modal can show what changed. Null on round 1. */

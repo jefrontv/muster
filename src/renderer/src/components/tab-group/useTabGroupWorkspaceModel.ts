@@ -160,7 +160,8 @@ export function useTabGroupWorkspaceModel({
             item.contentType === 'diff' ||
             item.contentType === 'conflict-review' ||
             item.contentType === 'check-details' ||
-            item.contentType === 'project-pages'
+            item.contentType === 'project-pages' ||
+            item.contentType === 'plan-review'
         )
         .map((item) => {
           const file = worktreeState.openFiles.find((candidate) => candidate.id === item.entityId)
@@ -192,7 +193,8 @@ export function useTabGroupWorkspaceModel({
             item.contentType === 'diff' ||
             item.contentType === 'conflict-review' ||
             item.contentType === 'check-details' ||
-            item.contentType === 'project-pages')
+            item.contentType === 'project-pages' ||
+            item.contentType === 'plan-review')
       )
       if (!otherReference) {
         const file = useAppStore.getState().openFiles.find((candidate) => candidate.id === entityId)
@@ -476,7 +478,8 @@ export function useTabGroupWorkspaceModel({
         item.contentType === 'diff' ||
         item.contentType === 'conflict-review' ||
         item.contentType === 'check-details' ||
-        item.contentType === 'project-pages'
+        item.contentType === 'project-pages' ||
+        item.contentType === 'plan-review'
       ) {
         closeItem(item.id)
       }

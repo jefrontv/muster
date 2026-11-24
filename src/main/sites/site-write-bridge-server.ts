@@ -245,7 +245,8 @@ export class SiteWriteBridgeServer {
             title: typeof body.title === 'string' ? body.title : 'Plan',
             content,
             agent: typeof body.agent === 'string' ? body.agent : null,
-            project: typeof body.project === 'string' ? body.project : null
+            project: typeof body.project === 'string' ? body.project : null,
+            cwd: typeof body.cwd === 'string' ? body.cwd : null
           })
         )
       } catch (error) {

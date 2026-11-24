@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
-import { GitCompareArrows, Eye, ShieldAlert, Pin, ListChecks, FileText } from 'lucide-react'
+import {
+  GitCompareArrows,
+  Eye,
+  ShieldAlert,
+  Pin,
+  ListChecks,
+  FileText,
+  ClipboardCheck
+} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { basename, normalizeRelativePath } from '@/lib/path'
@@ -30,6 +38,7 @@ import { EditorFileTabContextMenu } from './EditorFileTabContextMenu'
 import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { EditorFileTabCloseButton } from './EditorFileTabCloseButton'
+import { TabAttentionDot, useTabAttention } from './TabAttentionDot'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 
 export default function EditorFileTab({
@@ -80,6 +89,8 @@ export default function EditorFileTab({
   const isConflictReview = file.mode === 'conflict-review'
   const isCheckDetails = file.mode === 'check-details'
   const isProjectPages = file.mode === 'project-pages'
+  const isPlanReview = file.mode === 'plan-review'
+  const attention = useTabAttention(file.worktreeId, file.tabId)
   const isMarkdownPreviewTab = file.mode === 'markdown-preview'
   // Why: only deleted/renamed mean the file is gone from its path, which is
   // what strikethrough conveys. 'changed' keeps a normal label — its surface
@@ -262,6 +273,10 @@ export default function EditorFileTab({
         <ListChecks
           className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
         />
+      ) : isPlanReview ? (
+        <ClipboardCheck
+          className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
+        />
       ) : isProjectPages ? (
         <FileText
           className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
@@ -362,9 +377,10 @@ export default function EditorFileTab({
         {file.isDirty && (
           <span className="absolute size-1.5 rounded-full bg-foreground/60 group-hover:hidden group-focus-within:hidden" />
         )}
+        {attention && !file.isDirty && <TabAttentionDot attention={attention} />}
         {!isPinned && (
           <EditorFileTabCloseButton
-            fileIsDirty={file.isDirty}
+            fileIsDirty={file.isDirty || Boolean(attention)}
             showsSelectionChrome={isActive}
             onClose={onClose}
           />

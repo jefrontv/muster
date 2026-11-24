@@ -5,6 +5,7 @@ import { getHostedReviewCacheKey } from '@/store/slices/hosted-review'
 import { issueCacheKey as getIssueCacheKey } from '@/store/slices/github'
 import { getGitHubPRCacheKey } from '@/store/slices/github-cache-key'
 import { Badge } from '@/components/ui/badge'
+import { WorktreePlanReviewBadge } from '@/components/plan-annotation/plan-review-sidebar-markers'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import {
@@ -1611,6 +1612,7 @@ const WorktreeCard = React.memo(function WorktreeCard({
               </Tooltip>
             )}
 
+            <WorktreePlanReviewBadge worktreeId={worktree.id} />
             {worktree.isSparse && (
               <Tooltip>
                 <TooltipTrigger asChild>

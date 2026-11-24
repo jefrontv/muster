@@ -3,6 +3,7 @@ import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
 import type {
   Tab,
+  TabAttention,
   TabContentType,
   TabGroup,
   TabGroupLayoutNode,
@@ -120,6 +121,7 @@ export type TabsSlice = {
     opts?: { recordInteraction?: boolean }
   ) => void
   setTabLabel: (tabId: string, label: string) => void
+  setTabAttention: (tabId: string, attention: TabAttention | null) => void
   /** Set a tab's view mode (terminal vs native chat). Patches only that tab. */
   setTabViewMode: (tabId: string, mode: 'terminal' | 'chat') => void
   /** Flip a tab between terminal and native-chat renderings; the live TerminalPane stays mounted. */
@@ -323,7 +325,8 @@ function isReplaceablePreviewContentType(contentType: Tab['contentType']): boole
     contentType === 'diff' ||
     contentType === 'conflict-review' ||
     contentType === 'check-details' ||
-    contentType === 'project-pages'
+    contentType === 'project-pages' ||
+    contentType === 'plan-review'
   )
 }
 
@@ -469,7 +472,8 @@ function deriveActiveSurfaceForWorktree(
       activeUnifiedTab.contentType === 'diff' ||
       activeUnifiedTab.contentType === 'conflict-review' ||
       activeUnifiedTab.contentType === 'check-details' ||
-      activeUnifiedTab.contentType === 'project-pages'
+      activeUnifiedTab.contentType === 'project-pages' ||
+      activeUnifiedTab.contentType === 'plan-review'
         ? activeUnifiedTab.entityId
         : fileStillOpen
           ? restoredFileId
@@ -815,6 +819,9 @@ export const createTabsSlice: StateCreator<AppState, [], [], TabsSlice> = (set, 
     findTabByEntityInGroup(get().unifiedTabsByWorktree, worktreeId, groupId, entityId, contentType),
 
   activateTab: (tabId, opts) => {
+    if (findTabAndWorktree(get().unifiedTabsByWorktree, tabId)?.tab.attention === 'changed') {
+      get().setTabAttention(tabId, null)
+    }
     set((state) => {
       const found = findTabAndWorktree(state.unifiedTabsByWorktree, tabId)
       if (!found) {
@@ -1049,6 +1056,13 @@ export const createTabsSlice: StateCreator<AppState, [], [], TabsSlice> = (set, 
 
   setTabLabel: (tabId, label) => {
     set((state) => patchTab(state.unifiedTabsByWorktree, tabId, { label }) ?? {})
+  },
+
+  setTabAttention: (tabId, attention) => {
+    set(
+      (state) =>
+        patchTab(state.unifiedTabsByWorktree, tabId, { attention: attention ?? undefined }) ?? {}
+    )
   },
 
   setTabViewMode: (tabId, mode) => {

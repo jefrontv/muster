@@ -40,6 +40,7 @@ const ImageDiffViewer = lazy(() => import('./ImageDiffViewer'))
 const MermaidViewer = lazy(() => import('./MermaidViewer'))
 const CsvViewer = lazy(() => import('./CsvViewer'))
 const ProjectPagesTab = lazy(() => import('../project-pages/ProjectPagesTab'))
+const PlanReviewTab = lazy(() => import('../plan-annotation/PlanReviewTab'))
 const IpynbViewer = lazy(() => import('./IpynbViewer'))
 
 // Why: module-level for a stable no-op identity so read-only tabs don't rebuild callbacks each render.
@@ -615,6 +616,14 @@ export function EditorContent({
     return (
       <React.Suspense fallback={null}>
         <ProjectPagesTab file={activeFile} />
+      </React.Suspense>
+    )
+  }
+
+  if (activeFile.mode === 'plan-review') {
+    return (
+      <React.Suspense fallback={null}>
+        <PlanReviewTab file={activeFile} />
       </React.Suspense>
     )
   }

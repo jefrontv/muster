@@ -77,7 +77,8 @@ export function PlanAnnotationHeader({
   onToggleTableOfContents,
   onToggleReadable,
   onWholePlanNote,
-  onCopyPlan
+  onCopyPlan,
+  inDialog = true
 }: {
   title: string
   /** The agent waiting on this review. Null when its client did not identify itself. */
@@ -96,14 +97,17 @@ export function PlanAnnotationHeader({
   onToggleReadable: () => void
   onWholePlanNote: () => void
   onCopyPlan: () => void
+  /** DialogTitle throws outside a Dialog, so the tab gets a plain heading. */
+  inDialog?: boolean
 }): React.JSX.Element {
+  const Title: React.ElementType = inDialog ? DialogTitle : 'h2'
   // Provenance answers "whose plan, about what", which matters most when a review interrupts.
   const provenance = [agent, project].filter((part): part is string => Boolean(part))
   const isRich = view === 'rich'
   return (
     <TooltipProvider delayDuration={300}>
       <div className="editor-header">
-        <DialogTitle className="flex min-w-0 flex-1 items-center gap-2 text-[12px] font-normal">
+        <Title className="flex min-w-0 flex-1 items-center gap-2 text-[12px] font-normal">
           <span className="shrink-0 font-medium text-foreground">Plan review</span>
           {round > 1 ? (
             <Badge variant="muted" className="shrink-0">
@@ -118,7 +122,7 @@ export function PlanAnnotationHeader({
               {waiting} more waiting
             </span>
           ) : null}
-        </DialogTitle>
+        </Title>
         {canShowChanges ? (
           <EditorViewToggle
             value={view}

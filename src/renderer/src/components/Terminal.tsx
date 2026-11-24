@@ -144,7 +144,8 @@ const EDITOR_TAB_CONTENT_TYPES = new Set<TabContentType>([
   'diff',
   'conflict-review',
   'check-details',
-  'project-pages'
+  'project-pages',
+  'plan-review'
 ])
 
 type TerminalStoreSnapshot = ReturnType<typeof useAppStore.getState>

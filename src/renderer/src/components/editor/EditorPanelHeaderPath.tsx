@@ -49,7 +49,9 @@ export function EditorPanelHeaderPath({
   const headerCopyState = getEditorHeaderCopyState(activeFile)
   const canCopyHeaderPath = headerCopyState.copyText !== null
   const isVirtualEditorTab =
-    activeFile.mode === 'check-details' || activeFile.mode === 'project-pages'
+    activeFile.mode === 'check-details' ||
+    activeFile.mode === 'project-pages' ||
+    activeFile.mode === 'plan-review'
   const markdownPreviewShortcutLabel = useShortcutLabel('editor.markdownPreview')
   const {
     canRename,

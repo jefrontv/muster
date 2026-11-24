@@ -101,6 +101,7 @@ const RECOGNIZED_TAB_CONTENT_TYPES = [
   'conflict-review',
   'check-details',
   'project-pages',
+  'plan-review',
   'browser'
 ] as const
 

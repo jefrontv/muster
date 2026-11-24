@@ -16,6 +16,11 @@ import {
   projectPagesTabLabel,
   type OpenProjectPagesState
 } from '@/components/project-pages/project-pages-tab'
+import {
+  buildPlanReviewTabId,
+  planReviewTabLabel,
+  type OpenPlanReviewState
+} from '@/components/plan-annotation/plan-review-tab'
 import { openHttpLink, type HttpLinkSourceOwner } from '@/lib/http-link-routing'
 import { getConnectionIdForFileFromState } from '@/lib/connection-owner-resolution'
 import { isLocalPathOpenBlocked, showLocalPathOpenBlockedToast } from '@/lib/local-path-open-guard'
@@ -271,9 +276,18 @@ export type OpenFile = {
   readOnly?: boolean
   /** Why: explicit live tail, only meaningful for a read-only local log. */
   liveTail?: boolean
-  mode: 'edit' | 'diff' | 'conflict-review' | 'markdown-preview' | 'check-details' | 'project-pages'
+  mode:
+    | 'edit'
+    | 'diff'
+    | 'conflict-review'
+    | 'markdown-preview'
+    | 'check-details'
+    | 'project-pages'
+    | 'plan-review'
   /** Virtual Pages tab: the project's pages scope and the page the tab was last asked to show. */
   projectPages?: OpenProjectPagesState
+  /** Virtual plan review tab: the queued review it shows. */
+  planReview?: OpenPlanReviewState
 }
 
 export type ActivityBarPosition = 'top' | 'side'
@@ -577,6 +591,12 @@ export type EditorSlice = {
     state: Pick<OpenCheckRunDetailsState, 'details' | 'loading' | 'error'>
   ) => void
   openProjectPagesTab: (worktreeId: string, scopeKey: string, pageId: string | null) => void
+  /** Opens or reuses the worktree's plan review tab; without focus it only marks the tab. */
+  openPlanReviewTab: (
+    worktreeId: string,
+    review: { requestId: string; title: string },
+    opts?: { focus?: boolean }
+  ) => void
   /** Records the page the tab is showing and retitles the tab; never steals focus. */
   showProjectPagesTabPage: (fileId: string, pageId: string | null, title: string | null) => void
   patchOpenCheckRunDetails: (
@@ -775,7 +795,8 @@ function isEditorTabContentType(contentType: Tab['contentType']): boolean {
     contentType === 'diff' ||
     contentType === 'conflict-review' ||
     contentType === 'check-details' ||
-    contentType === 'project-pages'
+    contentType === 'project-pages' ||
+    contentType === 'plan-review'
   )
 }
 
@@ -1655,7 +1676,9 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
     let editorItemContentType: EditorFamilyContentType =
       file.mode === 'conflict-review'
         ? 'conflict-review'
-        : file.mode === 'check-details' || file.mode === 'project-pages'
+        : file.mode === 'check-details' ||
+            file.mode === 'project-pages' ||
+            file.mode === 'plan-review'
           ? file.mode
           : file.mode === 'diff'
             ? 'diff'
@@ -2273,7 +2296,8 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
             entry.contentType === 'diff' ||
             entry.contentType === 'conflict-review' ||
             entry.contentType === 'check-details' ||
-            entry.contentType === 'project-pages')
+            entry.contentType === 'project-pages' ||
+            entry.contentType === 'plan-review')
       )
       if (unifiedTab) {
         get().closeUnifiedTab(unifiedTab.id)
@@ -2324,7 +2348,8 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
             item.contentType === 'diff' ||
             item.contentType === 'conflict-review' ||
             item.contentType === 'check-details' ||
-            item.contentType === 'project-pages') &&
+            item.contentType === 'project-pages' ||
+            item.contentType === 'plan-review') &&
           (!activeWorktreeId || item.worktreeId === activeWorktreeId)
       )
       .map((item) => item.id)
@@ -3488,6 +3513,59 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
     const label =
       get().openFiles.find((f) => f.id === id)?.relativePath ?? projectPagesTabLabel(null)
     void openWorkspaceEditorItem(get(), id, worktreeId, label, 'project-pages')
+  },
+
+  openPlanReviewTab: (worktreeId, review, opts) => {
+    const id = buildPlanReviewTabId(worktreeId)
+    const label = planReviewTabLabel(review.title)
+    const focus = opts?.focus ?? false
+    const file: OpenFile = {
+      id,
+      filePath: id,
+      relativePath: label,
+      worktreeId,
+      language: 'plaintext',
+      isDirty: false,
+      mode: 'plan-review',
+      planReview: { requestId: review.requestId }
+    }
+    set((s) => {
+      const openFiles = s.openFiles.some((f) => f.id === id)
+        ? s.openFiles.map((f) => (f.id === id ? file : f))
+        : [...s.openFiles, file]
+      if (!focus) {
+        return { openFiles }
+      }
+      return {
+        openFiles,
+        activeFileId: id,
+        activeTabType: 'editor',
+        activeFileIdByWorktree: { ...s.activeFileIdByWorktree, [worktreeId]: id },
+        activeTabTypeByWorktree: { ...s.activeTabTypeByWorktree, [worktreeId]: 'editor' }
+      }
+    })
+    const state = get()
+    const existing = state.unifiedTabsByWorktree[worktreeId]?.find(
+      (tab) => tab.entityId === id && tab.contentType === 'plan-review'
+    )
+    let tabId = existing?.id
+    if (focus) {
+      tabId = openWorkspaceEditorItem(state, id, worktreeId, label, 'plan-review')
+    } else if (!existing) {
+      // An agent asked; the user may be mid-task, so the tab appears without taking focus.
+      const groupId = resolveEditorOpenTargetGroupId(state, worktreeId)
+      tabId = state.createUnifiedTab?.(worktreeId, 'plan-review', {
+        entityId: id,
+        label,
+        activate: false,
+        recordInteraction: false,
+        ...(groupId ? { targetGroupId: groupId } : {})
+      })?.id
+    }
+    if (tabId) {
+      state.setTabLabel?.(tabId, label)
+      state.setTabAttention?.(tabId, 'review')
+    }
   },
 
   showProjectPagesTabPage: (fileId, pageId, title) => {
@@ -4871,7 +4949,8 @@ function reconcileOpenFilesForStatus(
     if (
       file.mode === 'conflict-review' ||
       file.mode === 'check-details' ||
-      file.mode === 'project-pages'
+      file.mode === 'project-pages' ||
+      file.mode === 'plan-review'
     ) {
       return [file]
     }

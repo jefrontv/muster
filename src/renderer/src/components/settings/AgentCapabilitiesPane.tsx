@@ -29,7 +29,15 @@ export function AgentCapabilitiesPane({
   updateSettings
 }: AgentCapabilitiesPaneProps): React.JSX.Element {
   const entries = getAgentCapabilitiesPaneSearchEntries()
-  const [paneEntry, sitesMcpEntry, siteSetupEntry, sitesMcpInstallEntry, alwaysAllowEntry] = entries
+  const [
+    paneEntry,
+    sitesMcpEntry,
+    siteSetupEntry,
+    sitesMcpInstallEntry,
+    alwaysAllowEntry,
+    planReviewTabEntry
+  ] = entries
+  const planReviewInTab = settings.planReviewInProjectTab !== false
 
   const sitesMcpEnabled = isSitesMcpExposedToAgents(settings)
   const siteSetupEnabled = isSiteSetupExposedToAgents(settings)
@@ -86,6 +94,23 @@ export function AgentCapabilitiesPane({
         ) : null}
         <SearchableSetting {...sitesMcpInstallEntry}>
           <SiteMcpInstallCard enabled={sitesMcpEnabled} />
+        </SearchableSetting>
+      </section>
+
+      <section className="space-y-3">
+        <SettingsSubsectionHeader
+          title={translate(
+            'auto.components.settings.AgentCapabilities.reviewsTitle',
+            'Plan reviews'
+          )}
+        />
+        <SearchableSetting {...planReviewTabEntry}>
+          <SettingsSwitchRow
+            label={planReviewTabEntry.title}
+            description={planReviewTabEntry.description}
+            checked={planReviewInTab}
+            onChange={() => updateSettings({ planReviewInProjectTab: !planReviewInTab })}
+          />
         </SearchableSetting>
       </section>
 

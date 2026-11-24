@@ -821,6 +821,7 @@ export type TabContentType =
   | 'conflict-review'
   | 'check-details'
   | 'project-pages'
+  | 'plan-review'
   | 'browser'
 
 export type WorkspaceVisibleTabType = 'terminal' | 'editor' | 'browser'
@@ -846,7 +847,11 @@ export type Tab = {
    *  underneath; `'terminal'` (the default for legacy/missing) shows the raw
    *  xterm. Optional so sessions persisted before this field hydrate cleanly. */
   viewMode?: 'terminal' | 'chat'
+  /** A dot in the close slot: 'review' waits on the user; 'changed' clears once the tab is shown. */
+  attention?: TabAttention
 }
+
+export type TabAttention = 'review' | 'changed'
 
 export type TabGroup = {
   id: string
@@ -3042,6 +3047,8 @@ export type GlobalSettings = {
   /** Why opt-in: lets agents create projects and write site config, each behind an approval card.
    *  Absent or false = the site write tools are hidden from agents. */
   agentCapabilitySiteSetup?: boolean
+  /** Absent or true = a plan review opens as a tab in the agent's project; false = full-window popup. */
+  planReviewInProjectTab?: boolean
   /** Absent = write. Only applies while experimentalProjectPages is on. */
   agentCapabilityProjectPages?: 'off' | 'read' | 'write'
   /** Why opt-in: pages can hold client details, so one repo's agent should not reach another's. */
