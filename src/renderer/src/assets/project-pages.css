@@ -303,3 +303,14 @@
   font-size: 0.75rem;
   color: var(--muted-foreground);
 }
+
+/* Page comments: the commented passage, stronger while its thread is selected. */
+.project-page-editor .page-comment-highlight {
+  background: color-mix(in srgb, var(--annotation-highlight) 16%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--annotation-highlight) 50%, transparent);
+  cursor: pointer;
+}
+
+.project-page-editor .page-comment-highlight.is-active {
+  background: color-mix(in srgb, var(--annotation-highlight) 30%, transparent);
+}

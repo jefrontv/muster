@@ -29,6 +29,9 @@ import { PAGE_FILE_DROP_PROPS, useProjectPageFileDrop } from './use-project-page
 import { RichMarkdownEmojiMenu } from '../editor/RichMarkdownEmojiMenu'
 import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
 import { ProjectPageOutline } from './ProjectPageOutline'
+import { ProjectPageComments, ProjectPageCommentsToggle } from './ProjectPageComments'
+import { ProjectPageCommentBubble } from './ProjectPageCommentBubble'
+import { usePageCommentController } from './use-page-comment-controller'
 
 type Props = {
   scopeKey: string
@@ -306,6 +309,9 @@ export function ProjectPageEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestRevision])
 
+  const commentsRootRef = useRef<HTMLDivElement | null>(null)
+  const comments = usePageCommentController({ scopeKey, pageId, editor, rootRef: commentsRootRef })
+
   return (
     <div className="rich-markdown-editor-shell">
       {conflict !== null ? (
@@ -328,68 +334,78 @@ export function ProjectPageEditor({
         </div>
       ) : null}
       <div
-        ref={menus.rootRef}
-        className="relative flex min-h-0 flex-1 flex-col"
-        onClickCapture={(event) => {
-          const tag = (event.target as HTMLElement).closest<HTMLElement>('.page-tag')?.dataset.tag
-          if (tag && onOpenTag) {
-            event.preventDefault()
-            onOpenTag(tag)
-            return
-          }
-          const link = (event.target as HTMLElement).closest('a')
-          const href = link?.getAttribute('href') ?? ''
-          if (href.startsWith(PAGE_LINK_SCHEME)) {
-            event.preventDefault()
-            event.stopPropagation()
-            onOpenPage(href.slice(PAGE_LINK_SCHEME.length))
-          }
-        }}
+        ref={commentsRootRef}
+        className="relative flex min-h-0 flex-1"
+        onKeyDownCapture={comments.onKeyDownCapture}
+        onClick={comments.onClick}
       >
         <div
-          ref={bodyRef}
-          className="min-h-0 flex-1 overflow-auto scrollbar-editor"
-          {...PAGE_FILE_DROP_PROPS}
+          ref={menus.rootRef}
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col"
+          onClickCapture={(event) => {
+            const tag = (event.target as HTMLElement).closest<HTMLElement>('.page-tag')?.dataset.tag
+            if (tag && onOpenTag) {
+              event.preventDefault()
+              onOpenTag(tag)
+              return
+            }
+            const link = (event.target as HTMLElement).closest('a')
+            const href = link?.getAttribute('href') ?? ''
+            if (href.startsWith(PAGE_LINK_SCHEME)) {
+              event.preventDefault()
+              event.stopPropagation()
+              onOpenPage(href.slice(PAGE_LINK_SCHEME.length))
+            }
+          }}
         >
-          <input
-            value={title}
-            autoFocus={autoFocusTitle}
-            aria-label={translate('auto.components.projectPages.titleLabel', 'Page title')}
-            placeholder={translate('auto.components.projectPages.untitled', 'Untitled')}
-            className="w-full bg-transparent px-8 pt-8 text-2xl font-semibold text-foreground outline-none placeholder:text-muted-foreground/60"
-            onChange={(event) => {
-              setTitle(event.target.value)
-              autosave.queue({ title: event.target.value })
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                const live = liveEditor()
-                if (live) {
-                  live.commands.setTextSelection(1)
-                  live.view.focus()
+          <div
+            ref={bodyRef}
+            className="min-h-0 flex-1 overflow-auto scrollbar-editor"
+            {...PAGE_FILE_DROP_PROPS}
+          >
+            <input
+              value={title}
+              autoFocus={autoFocusTitle}
+              aria-label={translate('auto.components.projectPages.titleLabel', 'Page title')}
+              placeholder={translate('auto.components.projectPages.untitled', 'Untitled')}
+              className="w-full bg-transparent px-8 pt-8 text-2xl font-semibold text-foreground outline-none placeholder:text-muted-foreground/60"
+              onChange={(event) => {
+                setTitle(event.target.value)
+                autosave.queue({ title: event.target.value })
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  const live = liveEditor()
+                  if (live) {
+                    live.commands.setTextSelection(1)
+                    live.view.focus()
+                  }
                 }
-              }
-            }}
-          />
-          {/* Part of the page chrome, not the document, so it can't be selected or deleted. */}
-          <div aria-hidden className="mx-8 mt-3 mb-1 border-b border-border" />
-          {afterTitle}
-          <EditorContent editor={editor} />
-          {footer}
+              }}
+            />
+            {/* Part of the page chrome, not the document, so it can't be selected or deleted. */}
+            <div aria-hidden className="mx-8 mt-3 mb-1 border-b border-border" />
+            {afterTitle}
+            <EditorContent editor={editor} />
+            {footer}
+          </div>
+          {doc.meta.database ? null : (
+            <ProjectPageOutline getEditor={liveEditor} scrollRef={bodyRef} />
+          )}
+          <ProjectPagesEditorMenus editor={liveEditor() ?? editor} menus={menus} />
+          {emojiAt ? (
+            <RichMarkdownEmojiMenu
+              editor={liveEditor() ?? editor}
+              left={emojiAt.left}
+              top={emojiAt.top}
+              onClose={() => setEmojiAt(null)}
+            />
+          ) : null}
+          <ProjectPageCommentsToggle controller={comments} />
         </div>
-        {doc.meta.database ? null : (
-          <ProjectPageOutline getEditor={liveEditor} scrollRef={bodyRef} />
-        )}
-        <ProjectPagesEditorMenus editor={liveEditor() ?? editor} menus={menus} />
-        {emojiAt ? (
-          <RichMarkdownEmojiMenu
-            editor={liveEditor() ?? editor}
-            left={emojiAt.left}
-            top={emojiAt.top}
-            onClose={() => setEmojiAt(null)}
-          />
-        ) : null}
+        <ProjectPageComments controller={comments} overlay={comments.narrow} />
+        <ProjectPageCommentBubble controller={comments} />
       </div>
     </div>
   )
