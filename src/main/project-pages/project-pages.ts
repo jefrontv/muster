@@ -1,5 +1,9 @@
 // The app's project pages store, kept in the active profile's folder because repo ids belong to a profile.
 import { join } from 'node:path'
+import {
+  createProjectPagesAttachments,
+  type ProjectPagesAttachments
+} from './project-pages-attachments'
 import { loadOrCreateProfileIndex } from '../orca-profiles/profile-index-store'
 import {
   getOrcaProfileDirectory,
@@ -19,6 +23,7 @@ let rootDir: string | null = null
 let store: ProjectPagesStore | null = null
 let searchIndex: ProjectPagesSearchIndex | null = null
 let databases: ProjectPagesDatabases | null = null
+let attachments: ProjectPagesAttachments | null = null
 
 // Switching profiles relaunches the app, so the folder is resolved once.
 function pagesRoot(): string {
@@ -43,4 +48,9 @@ export function projectPagesSearch(): ProjectPagesSearchIndex {
 export function projectPagesDatabases(): ProjectPagesDatabases {
   databases ??= createProjectPagesDatabases({ rootDir: pagesRoot(), store: projectPages() })
   return databases
+}
+
+export function projectPagesAttachments(): ProjectPagesAttachments {
+  attachments ??= createProjectPagesAttachments({ rootDir: pagesRoot() })
+  return attachments
 }

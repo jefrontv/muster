@@ -1,6 +1,6 @@
 // Writes a project's live pages to a folder as markdown: a page with subpages gets a folder of
 // the same name, page links become relative file links, and database rows get front matter.
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join, posix } from 'node:path'
 import { PAGE_LINK_SCHEME } from '../../shared/project-pages-plain-text'
 import { childrenOf } from '../../shared/project-pages-tree'
@@ -33,12 +33,15 @@ export function exportProjectPages({
   store,
   databases,
   scopeKey,
-  targetDir
+  targetDir,
+  filesDir = null
 }: {
   store: ProjectPagesStore
   databases: ProjectPagesDatabases
   scopeKey: string
   targetDir: string
+  /** The space's files/ folder; copied beside the pages so image links keep working. */
+  filesDir?: string | null
 }): { count: number } {
   const pages = store.listPages(scopeKey).pages.filter((page) => page.archivedAt === null)
   // Posix path of each page's file, relative to the export folder.
@@ -71,7 +74,9 @@ export function exportProjectPages({
     const body = rewriteMarkdownLinks(store.readPage(scopeKey, page.id).markdown, (href) => {
       const target = href.startsWith(PAGE_LINK_SCHEME)
         ? files.get(href.slice(PAGE_LINK_SCHEME.length))
-        : undefined
+        : href.startsWith('files/') && filesDir
+          ? href
+          : undefined
       return target ? linkPath(posix.relative(posix.dirname(file), target)) : null
     })
     const parent = page.parentId ? pages.find((p) => p.id === page.parentId) : undefined
@@ -79,6 +84,9 @@ export function exportProjectPages({
     const absolute = join(targetDir, ...file.split('/'))
     mkdirSync(join(absolute, '..'), { recursive: true })
     writeFileSync(absolute, `${header}# ${page.title.trim() || 'Untitled'}\n\n${body}`)
+  }
+  if (filesDir && existsSync(filesDir)) {
+    cpSync(filesDir, join(targetDir, 'files'), { recursive: true })
   }
   return { count: files.size }
 }

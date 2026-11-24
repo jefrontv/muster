@@ -23,6 +23,8 @@ import { createProjectPagesExtensions } from './project-pages-editor-extensions'
 import { replaceEditorMarkdown } from './project-pages-editor-sync'
 import { ProjectPagesEditorMenus } from './ProjectPagesEditorMenus'
 import { pageSlashCommands } from './project-pages-slash-items'
+import { imageFiles, insertPageImages, pickPageImages } from './project-pages-files'
+import { RichMarkdownEmojiMenu } from '../editor/RichMarkdownEmojiMenu'
 import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
 
 type Props = {
@@ -83,6 +85,29 @@ export function ProjectPageEditor({
     [codec, canMakeDatabase]
   )
   const [tags, setTags] = useState<string[]>([])
+  const [emojiAt, setEmojiAt] = useState<{ left: number; top: number } | null>(null)
+  useEffect(() => {
+    if (!emojiAt) {
+      return
+    }
+    const close = (event: Event): void => {
+      const inside = (event.target as HTMLElement | null)?.closest('.rich-markdown-emoji-menu')
+      if (!inside || (event instanceof KeyboardEvent && event.key === 'Escape')) {
+        setEmojiAt(null)
+      }
+    }
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setEmojiAt(null)
+      }
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [emojiAt])
   useEffect(() => {
     let stale = false
     void window.api.projectPages.tags(scopeKey).then((result) => {
@@ -100,6 +125,13 @@ export function ProjectPageEditor({
     pageId,
     extraCommands,
     tags,
+    onImage: () => {
+      const live = liveEditor()
+      if (live) {
+        pickPageImages(live, scopeKey)
+      }
+    },
+    onEmoji: setEmojiAt,
     onCreatePage: async (newTitle) => {
       const result = await window.api.projectPages.create(scopeKey, { parentId, title: newTitle })
       if (!result.ok) {
@@ -159,9 +191,10 @@ export function ProjectPageEditor({
         translate(
           'auto.components.projectPages.bodyPlaceholder',
           'Type / for blocks, @ to link a page, # to tag.'
-        )
+        ),
+        scopeKey
       ),
-    [codec]
+    [codec, scopeKey]
   )
 
   // Created once per open page (the parent keys this component by page).
@@ -172,7 +205,26 @@ export function ProjectPageEditor({
       contentType: 'markdown',
       editorProps: {
         attributes: { class: 'rich-markdown-editor project-page-editor' },
-        handleKeyDown: (_view, event) => menusRef.current.handleKeyDown(liveEditor(), event)
+        handleKeyDown: (_view, event) => menusRef.current.handleKeyDown(liveEditor(), event),
+        handlePaste: (_view, event) => {
+          const images = imageFiles(event.clipboardData?.files)
+          const live = liveEditor()
+          if (images.length === 0 || !live) {
+            return false
+          }
+          void insertPageImages(live, scopeKey, images)
+          return true
+        },
+        handleDrop: (view, event, _slice, moved) => {
+          const images = moved ? [] : imageFiles(event.dataTransfer?.files)
+          const live = liveEditor()
+          if (images.length === 0 || !live) {
+            return false
+          }
+          const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
+          void insertPageImages(live, scopeKey, images, at)
+          return true
+        }
       },
       onUpdate: ({ editor: current }) => {
         autosave.queue({ markdown: () => current.getMarkdown() })
@@ -314,6 +366,14 @@ export function ProjectPageEditor({
           {footer}
         </div>
         <ProjectPagesEditorMenus editor={liveEditor() ?? editor} menus={menus} />
+        {emojiAt ? (
+          <RichMarkdownEmojiMenu
+            editor={liveEditor() ?? editor}
+            left={emojiAt.left}
+            top={emojiAt.top}
+            onClose={() => setEmojiAt(null)}
+          />
+        ) : null}
       </div>
     </div>
   )

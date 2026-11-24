@@ -1061,6 +1061,16 @@ export type ProjectPagesApi = {
   backlinks: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageMeta[]>>
   graph: (scopeKey: string) => Promise<ProjectPagesResult<PagesGraph>>
   tags: (scopeKey: string) => Promise<ProjectPagesResult<{ tag: string; pages: number }[]>>
+  /** Stores bytes in the project's files/ folder; resolves the files/... reference. */
+  saveFile: (
+    scopeKey: string,
+    name: string,
+    bytes: Uint8Array
+  ) => Promise<ProjectPagesResult<string>>
+  readFile: (
+    scopeKey: string,
+    ref: string
+  ) => Promise<ProjectPagesResult<{ bytes: Uint8Array; type: string }>>
   database: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDatabase>>
   enableDatabase: (
     scopeKey: string,

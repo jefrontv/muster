@@ -99,7 +99,7 @@ export function ProjectPagesSlashMenu({
                             }
                           }}
                         >
-                          H{n + 1}
+                          {item.chips?.[n] ?? n + 1}
                         </button>
                       ))}
                     </span>

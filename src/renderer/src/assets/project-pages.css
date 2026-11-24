@@ -25,3 +25,74 @@
 .project-page-editor .page-tag:hover {
   color: var(--foreground);
 }
+
+/* Callouts: GitHub-style [!NOTE] quotes. */
+.project-page-editor blockquote.page-callout {
+  --callout: var(--status-info);
+  --callout-bg: var(--status-info-background);
+  --callout-border: var(--status-info-border);
+  margin: 0.75em 0;
+  padding: 0.65em 0.9em;
+  border: 1px solid var(--callout-border);
+  border-radius: var(--radius-md);
+  background: var(--callout-bg);
+  font-style: normal;
+  color: var(--foreground);
+}
+
+.project-page-editor blockquote.page-callout-tip {
+  --callout: var(--status-success);
+  --callout-bg: var(--status-success-background);
+  --callout-border: var(--status-success-border);
+}
+
+.project-page-editor blockquote.page-callout-warning {
+  --callout: var(--status-attention);
+  --callout-bg: var(--status-attention-background);
+  --callout-border: var(--status-attention-border);
+}
+
+.project-page-editor blockquote.page-callout-caution {
+  --callout: var(--status-danger);
+  --callout-bg: var(--status-danger-background);
+  --callout-border: var(--status-danger-border);
+}
+
+.project-page-editor .page-callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  width: fit-content;
+  margin-bottom: 0.2em;
+  color: var(--callout);
+  font-size: 0.875em;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.project-page-editor .page-callout-title svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.project-page-editor .page-callout-marker {
+  font-size: 0;
+}
+
+.project-page-editor img.page-image {
+  display: block;
+  max-width: 100%;
+  margin: 0.75em 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.project-page-editor img.page-image.ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
+}

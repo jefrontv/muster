@@ -977,6 +977,9 @@ const api = {
     backlinks: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:backlinks', scopeKey, pageId),
     graph: (scopeKey) => ipcRenderer.invoke('projectPages:graph', scopeKey),
     tags: (scopeKey) => ipcRenderer.invoke('projectPages:tags', scopeKey),
+    saveFile: (scopeKey, name, bytes) =>
+      ipcRenderer.invoke('projectPages:saveFile', scopeKey, name, bytes),
+    readFile: (scopeKey, ref) => ipcRenderer.invoke('projectPages:readFile', scopeKey, ref),
     database: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:database', scopeKey, pageId),
     enableDatabase: (scopeKey, pageId) =>
       ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),

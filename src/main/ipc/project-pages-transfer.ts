@@ -3,7 +3,11 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain, type WebContents } from 'electron'
 import type { ProjectPagesResult, ProjectPagesTransfer } from '../../shared/project-pages-types'
-import { projectPages, projectPagesDatabases } from '../project-pages/project-pages'
+import {
+  projectPages,
+  projectPagesAttachments,
+  projectPagesDatabases
+} from '../project-pages/project-pages'
 import { exportProjectPages } from '../project-pages/project-pages-export'
 import { safeFileName, uniqueName } from '../project-pages/project-pages-file-names'
 import { importProjectPages } from '../project-pages/project-pages-import'
@@ -58,7 +62,13 @@ export function registerProjectPagesTransferHandlers(): void {
         const store = projectPages()
         const databases = projectPagesDatabases()
         return {
-          ...exportProjectPages({ store, databases, scopeKey: scopeKey.value, targetDir }),
+          ...exportProjectPages({
+            store,
+            databases,
+            scopeKey: scopeKey.value,
+            targetDir,
+            filesDir: projectPagesAttachments().folder(scopeKey.value)
+          }),
           path: targetDir
         }
       })

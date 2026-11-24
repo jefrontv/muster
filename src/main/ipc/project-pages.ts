@@ -11,6 +11,7 @@ import { projectPages, projectPagesSearch } from '../project-pages/project-pages
 import { buildPagesGraph, listPageTags } from '../project-pages/project-pages-graph'
 import { registerProjectPagesDatabaseHandlers } from './project-pages-databases'
 import { registerProjectPagesTransferHandlers } from './project-pages-transfer'
+import { registerProjectPagesAttachmentHandlers } from './project-pages-attachments'
 import { sendToTrustedUIRenderer } from './ui'
 
 const CHANNELS = [
@@ -172,6 +173,7 @@ export function registerProjectPagesHandlers(): void {
   )
   registerProjectPagesDatabaseHandlers()
   registerProjectPagesTransferHandlers()
+  registerProjectPagesAttachmentHandlers()
   stopForwarding?.()
   stopForwarding = pages().onChanged((change) =>
     sendToTrustedUIRenderer('projectPages:changed', change)

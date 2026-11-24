@@ -1,7 +1,7 @@
 // The Pages "/" menu: the rich editor's blocks, with headings folded into one row per kind
 // (level picked with chips or ←/→), plus page templates and "Database".
 import type { Editor } from '@tiptap/react'
-import { Database, LayoutTemplate } from 'lucide-react'
+import { Database, Info, LayoutTemplate } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { slashCommands } from '../editor/rich-markdown-slash-command-catalog'
 import { filterRichMarkdownSlashCommands } from '../editor/rich-markdown-slash-command-filter'
@@ -13,9 +13,18 @@ export type PageSlashItem = {
   label: string
   group: SlashCommand['group']
   icon: SlashCommand['icon']
-  /** One command, or one per heading level. */
+  /** One command, or one per variant (heading level, callout kind). */
   variants: SlashCommand[]
+  /** Chip labels for the variants, when there is more than one. */
+  chips?: string[]
 }
+
+const CALLOUTS = [
+  ['note', 'Note'],
+  ['tip', 'Tip'],
+  ['warning', 'Warning'],
+  ['caution', 'Caution']
+] as const
 
 const byId = (id: string): SlashCommand | undefined => slashCommands.find((c) => c.id === id)
 const levels = (prefix: string): SlashCommand[] =>
@@ -23,8 +32,8 @@ const levels = (prefix: string): SlashCommand[] =>
 
 const HEADINGS = levels('heading-')
 const TOGGLE_HEADINGS = levels('toggle-h')
-// Image and emoji need pickers the file editor owns; H4+ is rare enough to leave to markdown.
-const HIDDEN = /^(image|emoji|heading-\d|toggle-h\d)$/
+// H4+ is rare enough to leave to markdown.
+const HIDDEN = /^(heading-\d|toggle-h\d)$/
 
 export function pageSlashCommands(actions: {
   insertMarkdown: (editor: Editor, markdown: string) => void
@@ -55,7 +64,28 @@ export function pageSlashCommands(actions: {
         }
       ]
     : []
-  return [...templates, ...database]
+  const callouts = CALLOUTS.map(
+    ([kind, label]): SlashCommand => ({
+      id: `page-callout-${kind}`,
+      label: `${label} callout`,
+      aliases: ['callout', 'alert', 'admonition', kind],
+      icon: icon(Info),
+      group: 'Basic blocks',
+      description: `A highlighted ${kind} box`,
+      run: (editor) =>
+        editor
+          .chain()
+          .focus()
+          .toggleBlockquote()
+          // insertContent trims the trailing space; insertText keeps it.
+          .command(({ tr }) => {
+            tr.insertText(`[!${kind.toUpperCase()}] `)
+            return true
+          })
+          .run()
+    })
+  )
+  return [...callouts, ...templates, ...database]
 }
 
 /** Items matching the query, each with the heading level the query points at. */
@@ -63,28 +93,44 @@ export function filterPageSlashItems(
   extra: readonly SlashCommand[],
   query: string
 ): { item: PageSlashItem; level: number }[] {
+  const single = (c: SlashCommand): PageSlashItem => ({
+    key: c.id,
+    label: c.label,
+    group: c.group,
+    icon: c.icon,
+    variants: [c]
+  })
+  const levelChips = ['H1', 'H2', 'H3']
+  const callouts = extra.filter((c) => c.id.startsWith('page-callout-'))
+  const base = slashCommands.filter((c) => !HIDDEN.test(c.id)).map(single)
+  const lastBasic = base.map((item) => item.group).lastIndexOf('Basic blocks')
+  base.splice(lastBasic + 1, 0, {
+    key: 'callout',
+    label: 'Callout',
+    group: 'Basic blocks',
+    icon: callouts[0]?.icon ?? icon(Info),
+    variants: callouts,
+    chips: CALLOUTS.map(([, label]) => label)
+  })
   const items: PageSlashItem[] = [
     {
       key: 'heading',
       label: 'Heading',
       group: 'Headings',
       icon: HEADINGS[0].icon,
-      variants: HEADINGS
+      variants: HEADINGS,
+      chips: levelChips
     },
     {
       key: 'toggle-heading',
       label: 'Toggle heading',
       group: 'Headings',
       icon: TOGGLE_HEADINGS[0].icon,
-      variants: TOGGLE_HEADINGS
+      variants: TOGGLE_HEADINGS,
+      chips: levelChips
     },
-    ...[...slashCommands.filter((c) => !HIDDEN.test(c.id)), ...extra].map((c) => ({
-      key: c.id,
-      label: c.label,
-      group: c.group,
-      icon: c.icon,
-      variants: [c]
-    }))
+    ...base.filter((item) => item.variants.length > 0),
+    ...extra.filter((c) => !c.id.startsWith('page-callout-')).map(single)
   ]
   const needle = query.trim().toLowerCase()
   return items.flatMap((item) => {

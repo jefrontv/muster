@@ -22,6 +22,8 @@ type MenuOptions = {
   tags: readonly string[]
   /** Makes a page for "Create page" in the picker; null when that failed. */
   onCreatePage: (title: string) => Promise<ProjectPageMeta | null>
+  onImage: () => void
+  onEmoji: (at: { left: number; top: number }) => void
 }
 
 export function useProjectPagesEditorMenus({
@@ -29,7 +31,9 @@ export function useProjectPagesEditorMenus({
   pageId,
   extraCommands,
   tags,
-  onCreatePage
+  onCreatePage,
+  onImage,
+  onEmoji
 }: MenuOptions) {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null)
@@ -65,7 +69,9 @@ export function useProjectPagesEditorMenus({
   }
 
   function runItem(editor: Editor, menu: SlashMenuState, item: PageSlashItem, level: number): void {
-    runSlashCommand(editor, menu, item.variants[level] ?? item.variants[0])
+    runSlashCommand(editor, menu, item.variants[level] ?? item.variants[0], onImage, () =>
+      onEmoji({ left: menu.left, top: menu.top })
+    )
     setSlashMenu(null)
   }
 
