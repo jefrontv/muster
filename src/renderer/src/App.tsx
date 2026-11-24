@@ -327,6 +327,7 @@ const ActivityPrototypePage = lazy(() => import('./components/activity/ActivityP
 const Settings = lazy(() => import('./components/settings/Settings'))
 const SkillsPage = lazy(() => import('./components/skills/SkillsPage'))
 const SitesPage = lazy(() => import('./components/sites/SitesPage'))
+const ProjectPagesPage = lazy(() => import('./components/project-pages/ProjectPagesPage'))
 const ChatModePage = lazy(() => import('./components/chat-mode/ChatModePage'))
 const BotsPage = lazy(() => import('./components/bots/BotsPage'))
 const SiteSetupHost = lazy(() =>
@@ -2370,6 +2371,7 @@ function App(): React.JSX.Element {
                               {activeView === 'settings' ? <Settings /> : null}
                               {activeView === 'skills' ? <SkillsPage /> : null}
                               {activeView === 'sites' ? <SitesPage /> : null}
+                              {activeView === 'pages' ? <ProjectPagesPage /> : null}
                               {activeView === 'chat' ? <ChatModePage /> : null}
                               {botsMounted ? <BotsPage active={activeView === 'bots'} /> : null}
                               {activeView === 'tasks' ? <TaskPage /> : null}

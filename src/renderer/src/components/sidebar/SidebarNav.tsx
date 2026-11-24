@@ -2,6 +2,7 @@ import React from 'react'
 import {
   Bell,
   CalendarClock,
+  FileText,
   Globe,
   LayoutDashboard,
   MessageCircleQuestion,
@@ -140,6 +141,8 @@ const SidebarNav = React.memo(function SidebarNav() {
   const openAutomationsPage = useAppStore((s) => s.openAutomationsPage)
   const openActivityPage = useAppStore((s) => s.openActivityPage)
   const openSitesPage = useAppStore((s) => s.openSitesPage)
+  const openPagesPage = useAppStore((s) => s.openPagesPage)
+  const showPagesButton = useAppStore((s) => s.settings?.experimentalProjectPages === true)
   const openModal = useAppStore((s) => s.openModal)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const activeView = useAppStore((s) => s.activeView)
@@ -149,6 +152,7 @@ const SidebarNav = React.memo(function SidebarNav() {
   const automationsActive = activeView === 'automations'
   const activityActive = activeView === 'activity'
   const sitesActive = activeView === 'sites'
+  const pagesActive = activeView === 'pages'
   const activityUnreadCount = useActivityUnreadCount(showAgentsButton, 'sidebar-badge')
   const hideAutomationsButton = React.useCallback(() => {
     void updateSettings({ showAutomationsButton: false })
@@ -183,6 +187,26 @@ const SidebarNav = React.memo(function SidebarNav() {
           {translate('auto.components.sidebar.SidebarNav.sites', 'Sites')}
         </span>
       </button>
+      {showPagesButton ? (
+        <button
+          type="button"
+          onClick={openPagesPage}
+          aria-current={pagesActive ? 'page' : undefined}
+          className={cn(
+            SIDEBAR_NAV_ITEM_CLASS,
+            pagesActive
+              ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
+              : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+          )}
+        >
+          <FileText
+            className={cn('size-4 shrink-0', !pagesActive && 'text-worktree-sidebar-foreground/55')}
+          />
+          <span className="flex-1">
+            {translate('auto.components.sidebar.SidebarNav.pages', 'Pages')}
+          </span>
+        </button>
+      ) : null}
       <SidebarTaskNavButton />
       {showAutomationsButton ? (
         <ContextMenu>

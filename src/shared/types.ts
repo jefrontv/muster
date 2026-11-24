@@ -2882,6 +2882,8 @@ export type GlobalSettings = {
   experimentalBots?: boolean
   /** One-shot marker: profile has been flipped to Muster's on-by-default Bots tab. */
   experimentalBotsDefaultedOnForMuster?: boolean
+  /** Pages: Notion-like pages per project, in the sidebar under Sites. */
+  experimentalProjectPages?: boolean
   /** The Bots tab's first-visit intro has been closed. */
   botsIntroSeen?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
@@ -3425,6 +3427,7 @@ export type TopLevelView =
   | 'mobile'
   | 'chat'
   | 'bots'
+  | 'pages'
 
 export type PersistedUIState = {
   lastActiveRepoId: string | null

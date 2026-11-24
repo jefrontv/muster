@@ -960,6 +960,26 @@ const api = {
     }
   } satisfies PreloadApi['bots'],
 
+  projectPages: {
+    list: (scopeKey) => ipcRenderer.invoke('projectPages:list', scopeKey),
+    read: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:read', scopeKey, pageId),
+    create: (scopeKey, input) => ipcRenderer.invoke('projectPages:create', scopeKey, input),
+    update: (scopeKey, pageId, input) =>
+      ipcRenderer.invoke('projectPages:update', scopeKey, pageId, input),
+    move: (scopeKey, pageId, input) =>
+      ipcRenderer.invoke('projectPages:move', scopeKey, pageId, input),
+    archive: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:archive', scopeKey, pageId),
+    restore: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:restore', scopeKey, pageId),
+    onChanged: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        change: Parameters<typeof callback>[0]
+      ): void => callback(change)
+      ipcRenderer.on('projectPages:changed', listener)
+      return () => ipcRenderer.removeListener('projectPages:changed', listener)
+    }
+  } satisfies PreloadApi['projectPages'],
+
   chatConnector: {
     respondConfirm: (args) => ipcRenderer.invoke('chatConnector:respondConfirm', args),
     onConfirmRequest: (callback) => {

@@ -9,6 +9,16 @@ import type {
   HostedReviewProvider
 } from '../shared/hosted-review'
 import type { WhatsNewGetResult } from '../shared/whats-new'
+import type {
+  ProjectPageCreateInput,
+  ProjectPageDocument,
+  ProjectPageMeta,
+  ProjectPageMoveInput,
+  ProjectPagesChange,
+  ProjectPagesResult,
+  ProjectPagesTree,
+  ProjectPageUpdateInput
+} from '../shared/project-pages-types'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
 import type {
   BrowserExtensionAddResult,
@@ -1011,6 +1021,28 @@ export type ChatModeApi = {
 }
 
 /** Muster Bots: the bundled bots server behind the Bots tab. */
+export type ProjectPagesApi = {
+  list: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTree>>
+  read: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDocument>>
+  create: (
+    scopeKey: string,
+    input: ProjectPageCreateInput
+  ) => Promise<ProjectPagesResult<ProjectPageDocument>>
+  update: (
+    scopeKey: string,
+    pageId: string,
+    input: ProjectPageUpdateInput
+  ) => Promise<ProjectPagesResult<ProjectPageDocument>>
+  move: (
+    scopeKey: string,
+    pageId: string,
+    input: ProjectPageMoveInput
+  ) => Promise<ProjectPagesResult<ProjectPageMeta>>
+  archive: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<void>>
+  restore: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<void>>
+  onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
+}
+
 export type BotsApi = {
   /** Starts the server if needed and resolves once it answers, failed or found missing. */
   start: () => Promise<BotsSidecarStatus>
@@ -1961,6 +1993,7 @@ export type PreloadApi = {
   chatMode: ChatModeApi
   chatConnector: ChatConnectorApi
   bots: BotsApi
+  projectPages: ProjectPagesApi
   planAnnotation: PlanAnnotationApi
   siteSetupApproval: SiteSetupApprovalApi
   siteSetupAgent: SiteSetupAgentApi
