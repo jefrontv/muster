@@ -80,7 +80,9 @@ export function useAgentChangedPages(
   loaded: boolean,
   openPage?: SeenPage
 ): ReadonlySet<string> {
-  const seen = useSyncExternalStore(subscribe, () => (scopeKey ? readAll()[scopeKey] : undefined))
+  const snapshot = (): Record<string, number> | undefined =>
+    scopeKey ? readAll()[scopeKey] : undefined
+  const seen = useSyncExternalStore(subscribe, snapshot, snapshot)
   useEffect(() => {
     if (scopeKey && loaded && seen === undefined) {
       markPagesSeen(scopeKey, pages)
