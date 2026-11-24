@@ -1,5 +1,5 @@
 // Pages: Notion-like nested pages for each project.
-import { ArrowLeft, FileText, History } from 'lucide-react'
+import { ArrowLeft, FileText, History, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -17,8 +17,10 @@ import { ancestorsOf } from '../../../../shared/project-pages-tree'
 import type { ProjectPageDocument } from '../../../../shared/project-pages-types'
 import type { AutosaveState } from './project-pages-autosave'
 import { buildPageTree, pageTitle } from './project-pages-tree-model'
+import { ProjectPageBacklinks } from './ProjectPageBacklinks'
 import { ProjectPageEditor } from './ProjectPageEditor'
 import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
+import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
@@ -46,6 +48,22 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const [doc, setDoc] = useState<ProjectPageDocument | null>(null)
   const [saveState, setSaveState] = useState<AutosaveState>('saved')
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [switcherOpen, setSwitcherOpen] = useState(false)
+  const isMac = navigator.userAgent.includes('Mac')
+  const spaceVersion = useMemo(() => pages.map((p) => `${p.id}:${p.revision}`).join(','), [pages])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      const mod = isMac ? event.metaKey : event.ctrlKey
+      if (mod && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'p') {
+        event.preventDefault()
+        event.stopPropagation()
+        setSwitcherOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
+  }, [isMac])
 
   const live = useMemo(() => pages.filter((p) => p.archivedAt === null), [pages])
   const remembered = lastPageIn(scopeKey)
@@ -158,6 +176,27 @@ export default function ProjectPagesPage(): React.JSX.Element {
             {translate(`auto.components.projectPages.save.${saveState}`, SAVE_LABELS[saveState])}
           </span>
         ) : null}
+        {scopeKey ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0 text-muted-foreground"
+              aria-label={translate('auto.components.projectPages.switcher', 'Go to page')}
+              title={`${translate('auto.components.projectPages.switcher', 'Go to page')} (${isMac ? '⌘P' : 'Ctrl+P'})`}
+              onClick={() => setSwitcherOpen(true)}
+            >
+              <Search className="size-4" />
+            </Button>
+            <ProjectPagesQuickSwitcher
+              scopeKey={scopeKey}
+              pages={pages}
+              open={switcherOpen}
+              onOpenChange={setSwitcherOpen}
+              onPick={setSelectedId}
+            />
+          </>
+        ) : null}
         {meta && scopeKey ? (
           <>
             <Button
@@ -213,7 +252,17 @@ export default function ProjectPagesPage(): React.JSX.Element {
                 latestRevision={meta.revision}
                 latestAuthor={meta.editedBy}
                 autoFocusTitle={fresh === doc.meta.id}
+                pages={pages}
+                onOpenPage={setSelectedId}
                 onSaveState={setSaveState}
+                footer={
+                  <ProjectPageBacklinks
+                    scopeKey={scopeKey}
+                    pageId={doc.meta.id}
+                    spaceVersion={spaceVersion}
+                    onOpenPage={setSelectedId}
+                  />
+                }
               />
             ) : loaded && live.length === 0 ? (
               <div className="grid flex-1 place-items-center">

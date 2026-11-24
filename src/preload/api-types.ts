@@ -15,6 +15,7 @@ import type {
   ProjectPageMeta,
   ProjectPageMoveInput,
   ProjectPageRevision,
+  ProjectPageSearchResult,
   ProjectPagesChange,
   ProjectPagesResult,
   ProjectPagesTree,
@@ -1047,6 +1048,11 @@ export type ProjectPagesApi = {
     pageId: string,
     revision: number
   ) => Promise<ProjectPagesResult<string>>
+  search: (
+    scopeKey: string,
+    query: string
+  ) => Promise<ProjectPagesResult<ProjectPageSearchResult[]>>
+  backlinks: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageMeta[]>>
   onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
 }
 

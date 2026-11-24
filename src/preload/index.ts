@@ -973,6 +973,8 @@ const api = {
     history: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:history', scopeKey, pageId),
     readRevision: (scopeKey, pageId, revision) =>
       ipcRenderer.invoke('projectPages:readRevision', scopeKey, pageId, revision),
+    search: (scopeKey, query) => ipcRenderer.invoke('projectPages:search', scopeKey, query),
+    backlinks: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:backlinks', scopeKey, pageId),
     onChanged: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

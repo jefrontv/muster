@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { toast } from 'sonner'
 import { mergeMarkdownBlocks } from '../../../../shared/project-pages-block-merge'
-import type { ProjectPageAuthor, ProjectPageDocument } from '../../../../shared/project-pages-types'
+import type {
+  ProjectPageAuthor,
+  ProjectPageDocument,
+  ProjectPageMeta
+} from '../../../../shared/project-pages-types'
+import { PAGE_LINK_SCHEME } from '../../../../shared/project-pages-plain-text'
 import { encodeRawMarkdownHtmlForRichEditor } from '../editor/raw-markdown-html'
 import { createRichMarkdownEditorCodec } from '../editor/rich-markdown-source-transport'
 import {
@@ -16,6 +21,9 @@ import {
 } from './project-pages-autosave'
 import { createProjectPagesExtensions } from './project-pages-editor-extensions'
 import { replaceEditorMarkdown } from './project-pages-editor-sync'
+import { ProjectPagesEditorMenus } from './ProjectPagesEditorMenus'
+import { ProjectPageStarters } from './ProjectPageStarters'
+import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
 
 type Props = {
   scopeKey: string
@@ -25,7 +33,12 @@ type Props = {
   /** Who saved latestRevision, so an agent's change can be named. */
   latestAuthor?: ProjectPageAuthor
   autoFocusTitle: boolean
+  /** Pages in this space, for the [[ link menu. */
+  pages: ProjectPageMeta[]
+  onOpenPage: (pageId: string) => void
   onSaveState: (state: AutosaveState) => void
+  /** Rendered under the body, inside the scroll area. */
+  footer?: React.ReactNode
 }
 
 export function ProjectPageEditor({
@@ -34,12 +47,19 @@ export function ProjectPageEditor({
   latestRevision,
   latestAuthor,
   autoFocusTitle,
-  onSaveState
+  pages,
+  onOpenPage,
+  onSaveState,
+  footer
 }: Props): React.JSX.Element {
   const pageId = doc.meta.id
   const codec = useMemo(() => createRichMarkdownEditorCodec(), [])
   const [title, setTitle] = useState(doc.meta.title)
   const [conflict, setConflict] = useState<string | null>(null)
+  const [blank, setBlank] = useState(doc.markdown.trim() === '')
+  const menus = useProjectPagesEditorMenus(pages, pageId)
+  const menusRef = useRef(menus)
+  menusRef.current = menus
   const bodyRef = useRef<HTMLDivElement | null>(null)
   // StrictMode builds the editor twice and the hook's value can be the discarded one; TipTap
   // tags its view's DOM node with the editor that owns it.
@@ -87,7 +107,7 @@ export function ProjectPageEditor({
         codec,
         translate(
           'auto.components.projectPages.bodyPlaceholder',
-          'Start writing. Markdown shortcuts like # and - [ ] work.'
+          'Type / for blocks or [[ to link a page.'
         )
       ),
     [codec]
@@ -99,10 +119,16 @@ export function ProjectPageEditor({
       extensions,
       content: encodeRawMarkdownHtmlForRichEditor(doc.markdown, codec),
       contentType: 'markdown',
-      editorProps: { attributes: { class: 'rich-markdown-editor' } },
+      editorProps: {
+        attributes: { class: 'rich-markdown-editor' },
+        handleKeyDown: (_view, event) => menusRef.current.handleKeyDown(liveEditor(), event)
+      },
       onUpdate: ({ editor: current }) => {
         autosave.queue({ markdown: () => current.getMarkdown() })
-      }
+        setBlank(current.isEmpty)
+        menusRef.current.sync(current)
+      },
+      onSelectionUpdate: ({ editor: current }) => menusRef.current.sync(current)
     },
     []
   )
@@ -192,29 +218,58 @@ export function ProjectPageEditor({
           </Button>
         </div>
       ) : null}
-      <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto scrollbar-editor">
-        <input
-          value={title}
-          autoFocus={autoFocusTitle}
-          aria-label={translate('auto.components.projectPages.titleLabel', 'Page title')}
-          placeholder={translate('auto.components.projectPages.untitled', 'Untitled')}
-          className="w-full bg-transparent px-8 pt-8 text-2xl font-semibold text-foreground outline-none placeholder:text-muted-foreground/60"
-          onChange={(event) => {
-            setTitle(event.target.value)
-            autosave.queue({ title: event.target.value })
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              const live = liveEditor()
-              if (live) {
-                live.commands.setTextSelection(1)
-                live.view.focus()
+      <div
+        ref={menus.rootRef}
+        className="relative flex min-h-0 flex-1 flex-col"
+        onClickCapture={(event) => {
+          const link = (event.target as HTMLElement).closest('a')
+          const href = link?.getAttribute('href') ?? ''
+          if (href.startsWith(PAGE_LINK_SCHEME)) {
+            event.preventDefault()
+            event.stopPropagation()
+            onOpenPage(href.slice(PAGE_LINK_SCHEME.length))
+          }
+        }}
+      >
+        <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto scrollbar-editor">
+          <input
+            value={title}
+            autoFocus={autoFocusTitle}
+            aria-label={translate('auto.components.projectPages.titleLabel', 'Page title')}
+            placeholder={translate('auto.components.projectPages.untitled', 'Untitled')}
+            className="w-full bg-transparent px-8 pt-8 text-2xl font-semibold text-foreground outline-none placeholder:text-muted-foreground/60"
+            onChange={(event) => {
+              setTitle(event.target.value)
+              autosave.queue({ title: event.target.value })
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                const live = liveEditor()
+                if (live) {
+                  live.commands.setTextSelection(1)
+                  live.view.focus()
+                }
               }
-            }
-          }}
-        />
-        <EditorContent editor={editor} />
+            }}
+          />
+          <EditorContent editor={editor} />
+          {blank ? (
+            <ProjectPageStarters
+              onPick={(markdown) => {
+                const live = liveEditor()
+                if (live) {
+                  replaceEditorMarkdown(live, markdown, codec)
+                  autosave.queue({ markdown: () => live.getMarkdown() })
+                  setBlank(false)
+                  live.commands.focus('end')
+                }
+              }}
+            />
+          ) : null}
+          {footer}
+        </div>
+        <ProjectPagesEditorMenus editor={liveEditor() ?? editor} menus={menus} />
       </div>
     </div>
   )

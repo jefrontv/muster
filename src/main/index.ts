@@ -14,7 +14,7 @@ import {
 import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
 import { agentCommentDrafts, setCommentDraftsRuntime } from './comment-drafts/comment-drafts'
 import { runCommentDraftToolOp } from './comment-drafts/comment-draft-tool-ops'
-import { projectPages } from './project-pages/project-pages'
+import { projectPages, projectPagesSearch } from './project-pages/project-pages'
 import { runProjectPagesToolOp } from './project-pages/project-pages-tool-ops'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
@@ -860,6 +860,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
               runProjectPagesToolOp(
                 {
                   store: projectPages(),
+                  search: projectPagesSearch(),
                   repos: () => bridgeStore.getRepos(),
                   settings: () => bridgeStore.getSettings()
                 },

@@ -8,12 +8,8 @@ import { pagesScopeKeyForRepo } from '../../shared/project-pages-space-key'
 import { childrenOf } from '../../shared/project-pages-tree'
 import type { ProjectPageAuthor, ProjectPageMeta } from '../../shared/project-pages-types'
 import type { GlobalSettings } from '../../shared/types'
-import {
-  appendMarkdown,
-  matchSnippet,
-  readSection,
-  replaceAnchor
-} from './project-pages-markdown-ops'
+import { appendMarkdown, readSection, replaceAnchor } from './project-pages-markdown-ops'
+import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
 import {
   callerRepo,
@@ -44,6 +40,7 @@ export function isProjectPagesToolOp(value: unknown): value is ProjectPagesToolO
 
 export type ProjectPagesToolDeps = {
   store: ProjectPagesStore
+  search: ProjectPagesSearchIndex
   repos: () => readonly PagesToolRepo[]
   settings: () => GlobalSettings | null | undefined
 }
@@ -146,20 +143,10 @@ export async function runProjectPagesToolOp(
       return { project, count: listed.length, pages: listed.map((p) => row(all, p)) }
     }
     case 'search': {
-      const query = text(args, 'query', true)
-      const all = pages().filter((p) => p.archivedAt === null)
-      const hits: Record<string, unknown>[] = []
-      for (const candidate of all) {
-        const snippet =
-          matchSnippet(candidate.title, query) ??
-          matchSnippet(store.readPage(scopeKey, candidate.id).markdown, query)
-        if (snippet) {
-          hits.push({ ...row(all, candidate), snippet })
-        }
-        if (hits.length >= 20) {
-          break
-        }
-      }
+      const all = pages()
+      const hits = deps.search
+        .search(scopeKey, text(args, 'query', true))
+        .map((hit) => ({ ...row(all, hit.page), snippet: hit.snippet }))
       return { project, count: hits.length, results: hits }
     }
     case 'read': {
@@ -172,7 +159,10 @@ export async function runProjectPagesToolOp(
         page: row(pages(), doc.meta),
         title: doc.meta.title,
         markdown: body.slice(0, max),
-        truncated: body.length > max
+        truncated: body.length > max,
+        linked_from: deps.search
+          .backlinks(scopeKey, doc.meta.id)
+          .map((p) => ({ id: p.id, path: pagePath(pages(), p.id) }))
       }
     }
     case 'create': {

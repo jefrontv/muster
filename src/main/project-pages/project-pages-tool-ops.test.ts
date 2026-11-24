@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { GlobalSettings } from '../../shared/types'
+import { createProjectPagesSearchIndex } from './project-pages-search-index'
 import { createProjectPagesStore, type ProjectPagesStore } from './project-pages-store'
 import { runProjectPagesToolOp, type ProjectPagesToolOp } from './project-pages-tool-ops'
 import type { ProjectPagesToolSource } from './project-pages-tool-target'
@@ -41,7 +42,12 @@ afterEach(() => rmSync(root, { recursive: true, force: true }))
 
 function run(op: ProjectPagesToolOp, args: Record<string, unknown> = {}, source = SOURCE) {
   return runProjectPagesToolOp(
-    { store, repos: () => REPOS, settings: () => settings as GlobalSettings },
+    {
+      store,
+      search: createProjectPagesSearchIndex(store),
+      repos: () => REPOS,
+      settings: () => settings as GlobalSettings
+    },
     op,
     args,
     source

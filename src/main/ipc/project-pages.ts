@@ -7,7 +7,7 @@ import type {
 } from '../../shared/project-pages-types'
 import { isPagesScopeKey } from '../../shared/project-pages-space-key'
 import { ProjectPagesError } from '../project-pages/project-pages-store'
-import { projectPages } from '../project-pages/project-pages'
+import { projectPages, projectPagesSearch } from '../project-pages/project-pages'
 import { sendToTrustedUIRenderer } from './ui'
 
 const CHANNELS = [
@@ -19,7 +19,9 @@ const CHANNELS = [
   'projectPages:archive',
   'projectPages:restore',
   'projectPages:history',
-  'projectPages:readRevision'
+  'projectPages:readRevision',
+  'projectPages:search',
+  'projectPages:backlinks'
 ] as const
 
 const USER = { kind: 'user' } as const
@@ -146,6 +148,16 @@ export function registerProjectPagesHandlers(): void {
       }
       return body
     })
+  )
+  ipcMain.handle('projectPages:search', (_e, key: unknown, query: unknown) =>
+    guarded(() =>
+      projectPagesSearch()
+        .search(scope(key), typeof query === 'string' ? query.slice(0, 200) : '')
+        .map((hit) => ({ page: hit.page, snippet: hit.snippet }))
+    )
+  )
+  ipcMain.handle('projectPages:backlinks', (_e, key: unknown, id: unknown) =>
+    guarded(() => projectPagesSearch().backlinks(scope(key), pageId(id)))
   )
   stopForwarding?.()
   stopForwarding = pages().onChanged((change) =>

@@ -38,6 +38,8 @@ export type ProjectPageDocument = {
 
 export type ProjectPageRevision = { revision: number; savedAt: number }
 
+export type ProjectPageSearchResult = { page: ProjectPageMeta; snippet: string }
+
 export type ProjectPageCreateInput = {
   parentId?: string | null
   title?: string
