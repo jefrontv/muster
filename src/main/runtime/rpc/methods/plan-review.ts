@@ -49,7 +49,8 @@ export const PLAN_REVIEW_METHODS: RpcMethod[] = [
         title: params.title,
         content,
         agent: 'muster annotate',
-        project: params.cwd ? describePlanProject(params.cwd, []) : null
+        project: params.cwd ? describePlanProject(params.cwd, []) : null,
+        cwd: params.cwd ?? null
       })
       if ('error' in opened) {
         throw new Error('Muster has no window open to show the review. Run `muster open` first.')

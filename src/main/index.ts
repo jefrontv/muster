@@ -17,6 +17,7 @@ import { runCommentDraftToolOp } from './comment-drafts/comment-draft-tool-ops'
 import {
   projectPages,
   projectPagesAttachments,
+  projectPagesComments,
   projectPagesDatabases,
   projectPagesDiagrams,
   projectPagesSearch
@@ -26,7 +27,12 @@ import { requestDiagramWork } from './project-pages/project-pages-diagram-relay'
 import { runProjectPagesToolOp } from './project-pages/project-pages-tool-ops'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
-import { awaitPlanAnnotationResult, openPlanAnnotation } from './sites/plan-annotation-requests'
+import {
+  awaitPlanAnnotationResult,
+  openPlanAnnotation,
+  setPlanAnnotationPageBinder
+} from './sites/plan-annotation-requests'
+import { bindPlanReviewPage } from './sites/plan-review-pages'
 import { awaitSiteSetupApproval, openSiteSetupApproval } from './sites/site-setup-approval-requests'
 import { readSiteSetupInfo } from './sites/site-setup-reads'
 import { writeSiteSetup } from './sites/site-setup-writes'
@@ -852,6 +858,17 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
       // on the old direct-to-disk path rather than blocking startup.
       if (store) {
         const bridgeStore = store
+        setPlanAnnotationPageBinder((input, prior) =>
+          bindPlanReviewPage(
+            {
+              store: projectPages(),
+              repos: () => bridgeStore.getRepos(),
+              settings: () => bridgeStore.getSettings()
+            },
+            input,
+            prior
+          )
+        )
         try {
           await siteWriteBridgeServer.start({
             store,
@@ -874,6 +891,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
                   activeCollab: projectPagesActiveCollab(),
                   diagrams: projectPagesDiagrams(),
                   diagramWorker: requestDiagramWork,
+                  comments: projectPagesComments(),
                   repos: () => bridgeStore.getRepos(),
                   settings: () => bridgeStore.getSettings()
                 },

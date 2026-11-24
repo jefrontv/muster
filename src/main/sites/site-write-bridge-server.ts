@@ -37,6 +37,7 @@ import {
   PAGES_BRIDGE_ROUTE,
   type PagesBridgeCallbacks
 } from './site-write-bridge-pages-routes'
+import { planAnnotationOpenInput } from './plan-annotation-open-input'
 
 /** Discovery file the MCP process reads; absent means "no GUI, write to disk". */
 export const SITE_WRITE_BRIDGE_FILE_NAME = 'site-write-bridge.json'
@@ -74,7 +75,7 @@ type StartArgs = {
   /** Opens a review and answers at once with its id. Absent = feature off. */
   onPlanAnnotationRequested?: (
     request: PlanAnnotationOpenInput
-  ) => { requestId: string; round: number } | { error: 'no-window' }
+  ) => { requestId: string; round: number; pageId?: string } | { error: 'no-window' }
   /** Parks for at most waitMs, then reports the verdict or that it is still pending. */
   onPlanAnnotationCollect?: (
     reviewId: string,
@@ -238,17 +239,7 @@ export class SiteWriteBridgeServer {
         // MCP tool call cannot stay open for the minutes a person needs to read a plan.
         // Round and previousContent are the queue's to decide: several transports review the same
         // plan, so a caller cannot be the authority on how many times it has been seen.
-        reply(
-          200,
-          open({
-            planPath: typeof body.planPath === 'string' ? body.planPath : null,
-            title: typeof body.title === 'string' ? body.title : 'Plan',
-            content,
-            agent: typeof body.agent === 'string' ? body.agent : null,
-            project: typeof body.project === 'string' ? body.project : null,
-            cwd: typeof body.cwd === 'string' ? body.cwd : null
-          })
-        )
+        reply(200, open(planAnnotationOpenInput(body, content)))
       } catch (error) {
         reply(500, { error: error instanceof Error ? error.message : String(error) })
       }

@@ -10,6 +10,7 @@ import {
   respondPlanAnnotation,
   setPlanAnnotationQueuedSender,
   setPlanAnnotationResolvedSender,
+  setPlanAnnotationPageBinder,
   setPlanAnnotationSender
 } from './plan-annotation-requests'
 import type { PlanAnnotationRequest } from '../../shared/plan-annotation-types'
@@ -296,11 +297,59 @@ describe('round memory', () => {
     ])
   })
 
-  it('counts each plan on its own, and reads an inline plan as a first round every time', () => {
+  it('counts each plan on its own, and an inline plan by its title and agent', () => {
     expect(openAt('/plans/a.md', 'a')).toMatchObject({ round: 1 })
     expect(openAt('/plans/b.md', 'b')).toMatchObject({ round: 1 })
     expect(openInline('one')).toMatchObject({ round: 1 })
-    expect(openInline('two')).toMatchObject({ round: 1 })
+    expect(openInline('two')).toMatchObject({ round: 2 })
+    expect(
+      openPlanAnnotation({
+        planPath: null,
+        title: 'Other',
+        content: 'x',
+        agent: 'omp',
+        project: null
+      })
+    ).toMatchObject({ round: 1 })
+  })
+
+  it('keeps a review on the page its binder chose and reports page_id on settle', async () => {
+    const seen: unknown[] = []
+    setPlanAnnotationPageBinder((_input, prior) => {
+      seen.push(prior)
+      return { scopeKey: 'repo:r1', pageId: 'p_plan' }
+    })
+    try {
+      const first = openAt('/plans/paged.md', 'v1')
+      expect(first).toMatchObject({ pageId: 'p_plan' })
+      openAt('/plans/paged.md', 'v2')
+      expect(seen).toEqual([null, { scopeKey: 'repo:r1', pageId: 'p_plan' }])
+      expect(listPendingPlanAnnotations()[0]?.page).toEqual({
+        scopeKey: 'repo:r1',
+        pageId: 'p_plan'
+      })
+      const id = 'requestId' in first ? first.requestId : ''
+      respondPlanAnnotation(id, { decision: 'approved', annotations: [] })
+      await expect(awaitPlanAnnotationResult(id, 0)).resolves.toMatchObject({
+        status: 'settled',
+        result: { pageId: 'p_plan' }
+      })
+    } finally {
+      setPlanAnnotationPageBinder(null)
+    }
+  })
+
+  it('still opens the review when the binder throws', () => {
+    setPlanAnnotationPageBinder(() => {
+      throw new Error('disk full')
+    })
+    try {
+      const opened = openAt('/plans/broken.md', 'x')
+      expect(opened).toMatchObject({ round: 1 })
+      expect(opened).not.toHaveProperty('pageId')
+    } finally {
+      setPlanAnnotationPageBinder(null)
+    }
   })
 
   it('lets a caller that keeps its own count specify the round', () => {

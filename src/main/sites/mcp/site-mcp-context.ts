@@ -166,7 +166,7 @@ export type SiteMcpJsonSchema = {
 /** Opens a plan in the running GUI and returns its review id and round, without waiting. */
 export type SiteMcpAnnotatePlan = (
   request: PlanAnnotationOpenInput
-) => Promise<{ requestId: string; round: number }>
+) => Promise<{ requestId: string; round: number; pageId?: string }>
 
 /**
  * Collects a verdict, parking for at most `waitMs`.

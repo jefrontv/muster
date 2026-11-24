@@ -10,7 +10,8 @@ import { randomUUID } from 'node:crypto'
 import type {
   PlanAnnotationOpenInput,
   PlanAnnotationRequest,
-  PlanAnnotationResult
+  PlanAnnotationResult,
+  PlanReviewPageRef
 } from '../../shared/plan-annotation-types'
 
 /**
@@ -68,30 +69,69 @@ const settled = new Map<
 const waiters = new Map<string, Set<Waiter>>()
 
 /**
- * Rounds and prior text, keyed by absolute plan path.
+ * Rounds, prior text and the Pages page, keyed by reviewKey().
  *
  * Why here and not in a transport: the MCP tool and the agent-hooks routes both review plans, and
  * one owner keeps the modal's round counter and "changed since last round" diff identical on
- * either path. Inline plans have no stable key and always read as round 1.
+ * either path.
  *
  * Why a limit: this used to live in the MCP process, which died with its agent. The GUI does not,
  * so the memo is bounded and evicts the plan opened longest ago.
  */
-const roundsByPlanPath = new Map<string, { round: number; content: string }>()
+const roundsByPlanPath = new Map<
+  string,
+  { round: number; content: string; page: PlanReviewPageRef | null }
+>()
 
 /** Plenty for any one working session; a bound, not a policy. */
 const PLAN_ROUND_MEMORY_LIMIT = 64
 
-function rememberRound(planPath: string, round: number, content: string): void {
+function rememberRound(
+  planPath: string,
+  memo: { round: number; content: string; page: PlanReviewPageRef | null }
+): void {
   // Re-insert so insertion order stays "least recently opened first".
   roundsByPlanPath.delete(planPath)
-  roundsByPlanPath.set(planPath, { round, content })
+  roundsByPlanPath.set(planPath, memo)
   while (roundsByPlanPath.size > PLAN_ROUND_MEMORY_LIMIT) {
     const oldest = roundsByPlanPath.keys().next().value
     if (oldest === undefined) {
       break
     }
     roundsByPlanPath.delete(oldest)
+  }
+}
+
+/** Saves the plan to a Pages page and names it; null leaves the review off Pages. */
+export type PlanReviewPageBinder = (
+  input: PlanAnnotationOpenInput,
+  prior: PlanReviewPageRef | null
+) => PlanReviewPageRef | null
+
+let bindPage: PlanReviewPageBinder | null = null
+
+export function setPlanAnnotationPageBinder(binder: PlanReviewPageBinder | null): void {
+  bindPage = binder
+}
+
+/** Same plan, next round: same page, plan file, or inline title from the same agent. */
+function reviewKey(input: PlanAnnotationOpenInput): string {
+  if (input.page) {
+    return `page:${input.page.scopeKey}:${input.page.pageId}`
+  }
+  return input.planPath ?? `inline:${input.agent ?? ''}:${input.title}`
+}
+
+function pageFor(input: PlanAnnotationOpenInput, prior: PlanReviewPageRef | null) {
+  if (!bindPage) {
+    return input.page ?? null
+  }
+  try {
+    return bindPage(input, prior)
+  } catch (error) {
+    // A Pages failure must not cost the review; it falls back to the plan-review tab.
+    console.warn('[plan-review] could not save the plan to Pages:', error)
+    return null
   }
 }
 
@@ -211,27 +251,28 @@ function startFront(): void {
  */
 export function openPlanAnnotation(
   input: PlanAnnotationOpenInput
-): { requestId: string; round: number; queuedAhead: number } | { error: 'no-window' } {
+):
+  | { requestId: string; round: number; queuedAhead: number; pageId?: string }
+  | { error: 'no-window' } {
   if (!sendRequest) {
     // No window is listening, and there is no headless way to ask a person.
     return { error: 'no-window' }
   }
-  const planPath = input.planPath
-  const prior = planPath === null ? undefined : roundsByPlanPath.get(planPath)
+  const key = reviewKey(input)
+  const prior = roundsByPlanPath.get(key)
   const round = input.round ?? (prior ? prior.round + 1 : 1)
   const previousContent = input.previousContent ?? prior?.content ?? null
-  if (planPath !== null) {
-    rememberRound(planPath, round, input.content)
-  }
+  const page = pageFor(input, prior?.page ?? null)
+  rememberRound(key, { round, content: input.content, page })
   const requestId = randomUUID()
   // Everything already queued settles first (FIFO), so the current depth is what is ahead of us.
   const queuedAhead = queue.size
-  const request: PlanAnnotationRequest = { ...input, requestId, round, previousContent }
+  const request: PlanAnnotationRequest = { ...input, page, requestId, round, previousContent }
   queue.set(requestId, { request, timer: null, openedAt: Date.now(), shownAt: null })
   startFront()
   // After startFront, so a review that went straight to the front reports a depth of zero.
   notifyQueued()
-  return { requestId, round, queuedAhead }
+  return { requestId, round, queuedAhead, ...(page ? { pageId: page.pageId } : {}) }
 }
 
 /**
@@ -293,7 +334,8 @@ export function respondPlanAnnotation(requestId: string, result: PlanAnnotationR
     // Already settled — a double submit, or a response racing the timeout.
     return false
   }
-  settle(entry, result)
+  const page = entry.request.page
+  settle(entry, page ? { ...result, pageId: page.pageId } : result)
   startFront()
   return true
 }

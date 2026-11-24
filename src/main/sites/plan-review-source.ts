@@ -38,6 +38,12 @@ export type PlanSourceRequest = {
  * Inline plans are not size-checked — the caller already holds the text and nothing is being read
  * blind. Files are, because the next thing that happens is a modal.
  */
+/** The first heading, so inline plans get a page title and a round key of their own. */
+export function inlinePlanTitle(content: string): string {
+  const heading = /^#{1,6}[ \t]+(.+?)[ \t#]*$/m.exec(content)?.[1]?.trim()
+  return heading ? heading.slice(0, 120) : 'Plan'
+}
+
 export function loadPlanText(request: PlanSourceRequest): {
   planPath: string | null
   title: string
@@ -54,7 +60,7 @@ export function loadPlanText(request: PlanSourceRequest): {
     )
   }
   if (content.length > 0) {
-    return { planPath: null, title: 'Plan', content }
+    return { planPath: null, title: inlinePlanTitle(content), content }
   }
   const absolute = isAbsolute(path) ? path : resolve(cwd, path)
   let fileText: string

@@ -56,7 +56,12 @@ export type PlanAnnotationResult = {
   edits?: PlanAnnotationEdits
   /** Set when the decision was not the reviewer's, e.g. `timeout`. */
   reason?: string
+  /** The Pages page this review lives on, when it was saved to Pages. */
+  pageId?: string
 }
+
+/** A page in a project's Pages that a review is shown on. */
+export type PlanReviewPageRef = { scopeKey: string; pageId: string }
 
 /** Main → renderer. Carries content, never a path the renderer might not be able to read. */
 export type PlanAnnotationRequest = {
@@ -71,6 +76,8 @@ export type PlanAnnotationRequest = {
   project: string | null
   /** The agent's working folder, so the review can open in that project's tab. */
   cwd?: string | null
+  /** Set when the review is shown on a Pages page: the agent asked for one, or Muster saved it. */
+  page?: PlanReviewPageRef | null
   /** 1 on first review of this plan, incrementing while the agent revises it. */
   round: number
   /** Previous round's content, so the modal can show what changed. Null on round 1. */

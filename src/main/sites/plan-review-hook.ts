@@ -78,7 +78,8 @@ export function handlePlanReviewOpen(args: PlanReviewOpenArgs): unknown {
     title: plan.title,
     content: plan.content,
     agent: readTextField(body, 'agent').slice(0, MAX_AGENT_LABEL) || null,
-    project: cwd.length > 0 ? describePlanProject(cwd, args.store?.listSites() ?? []) : null
+    project: cwd.length > 0 ? describePlanProject(cwd, args.store?.listSites() ?? []) : null,
+    cwd: cwd.length > 0 ? cwd : null
   })
   if ('error' in opened) {
     return { ok: false, error: 'no-window' }
@@ -87,7 +88,8 @@ export function handlePlanReviewOpen(args: PlanReviewOpenArgs): unknown {
     ok: true,
     review_id: opened.requestId,
     round: opened.round,
-    queued_ahead: opened.queuedAhead
+    queued_ahead: opened.queuedAhead,
+    ...(opened.pageId ? { page_id: opened.pageId } : {})
   }
 }
 

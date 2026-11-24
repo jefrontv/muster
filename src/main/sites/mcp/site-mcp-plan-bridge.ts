@@ -96,20 +96,21 @@ export async function openPlanAnnotationThroughBridge(args: {
   bridgeFile: string
   request: PlanBridgeRequest
   fetchImpl?: typeof fetch
-}): Promise<{ requestId: string; round: number }> {
+}): Promise<{ requestId: string; round: number; pageId?: string }> {
   const answer = (await postToGuiBridge({
     bridgeFile: args.bridgeFile,
     path: '/plan/annotate',
     body: args.request,
     fetchImpl: args.fetchImpl
-  })) as { requestId?: unknown; round?: unknown; error?: unknown }
+  })) as { requestId?: unknown; round?: unknown; pageId?: unknown; error?: unknown }
   if (typeof answer.requestId !== 'string') {
     throw new PlanBridgeUnavailableError(NO_GUI)
   }
   return {
     requestId: answer.requestId,
     // The queue counts rounds; a missing number is a cosmetic fallback, not a lost review.
-    round: typeof answer.round === 'number' ? answer.round : 1
+    round: typeof answer.round === 'number' ? answer.round : 1,
+    ...(typeof answer.pageId === 'string' ? { pageId: answer.pageId } : {})
   }
 }
 

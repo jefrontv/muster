@@ -22,6 +22,8 @@ import { siteMcpClientName } from './site-mcp-client-identity'
 import type { SiteMcpTool } from './site-mcp-context'
 import { HOLD_DEFAULT_SECONDS, HOLD_MAX_SECONDS, holdInSlices } from './site-mcp-held-wait'
 import type { PlanReviewOutcome } from './site-mcp-plan-bridge'
+import { loadPagePlan } from './site-mcp-plan-page-source'
+import type { PlanReviewPageRef } from '../../../shared/plan-annotation-types'
 import { objectSchema } from './site-mcp-schemas'
 
 type PlanReviewPending = Extract<PlanReviewOutcome, { status: 'pending' }>
@@ -53,7 +55,7 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'annotate_plan',
     description:
-      'Open a markdown plan in Muster for human review and return review_id at once; then poll collect_plan_review in a loop until a decision returns. Prefer path over content so edits save back to disk and survive compaction.',
+      'Open a markdown plan in Muster for human review and return review_id at once; then poll collect_plan_review in a loop until a decision returns. Prefer path over content so the plan survives compaction. Pass page (a Muster page id or path) to review a page; its edits save to the page. A routed review is also saved as a page under Plans; the result returns page_id.',
     inputSchema: objectSchema({
       path: {
         type: 'string',
@@ -62,18 +64,30 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
       content: {
         type: 'string',
         description: 'Inline plan markdown when not on disk; prefer path.'
+      },
+      page: {
+        type: 'string',
+        description: 'A Muster page id or title path to review instead of path/content.'
       }
     }),
     // Still concurrent: opening is quick, but it must not queue behind a long collect.
     concurrent: true,
     async run(context, args) {
       let plan: { planPath: string | null; title: string; content: string }
+      let page: PlanReviewPageRef | null = null
+      const pageArg = readString(args, 'page')
       try {
-        plan = loadPlanText({
-          path: readString(args, 'path'),
-          content: readLongString(args, 'content', MAX_PLAN_BYTES),
-          cwd: context.cwd
-        })
+        if (pageArg) {
+          const loaded = await loadPagePlan(context, pageArg)
+          page = loaded.page
+          plan = { planPath: null, title: loaded.title, content: loaded.content }
+        } else {
+          plan = loadPlanText({
+            path: readString(args, 'path'),
+            content: readLongString(args, 'content', MAX_PLAN_BYTES),
+            cwd: context.cwd
+          })
+        }
       } catch (error) {
         throw error instanceof PlanSourceError ? new SiteMcpToolError(error.message) : error
       }
@@ -86,13 +100,15 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
         content: plan.content,
         agent: siteMcpClientName(),
         project: describePlanProject(context.cwd, context.store.listSites()),
-        cwd: context.cwd
+        cwd: context.cwd,
+        page
       })
 
       return {
         review_id: opened.requestId,
         round: opened.round,
         plan_path: plan.planPath,
+        ...(opened.pageId ? { page_id: opened.pageId } : {}),
         status: 'open',
         next_step: `The plan is open in Muster. Call collect_plan_review with review_id "${opened.requestId}" and keep calling it until it returns a decision. Reviews often take 5 to 15 minutes; each call answers "pending" while the user reads.`
       }
@@ -148,7 +164,8 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
         feedback: formatPlanFeedback(outcome.result),
         annotations: outcome.result.annotations,
         ...(outcome.result.edits ? { edits: outcome.result.edits } : {}),
-        ...(outcome.result.reason ? { reason: outcome.result.reason } : {})
+        ...(outcome.result.reason ? { reason: outcome.result.reason } : {}),
+        ...(outcome.result.pageId ? { page_id: outcome.result.pageId } : {})
       }
     }
   }
