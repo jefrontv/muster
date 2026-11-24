@@ -1,48 +1,39 @@
-// Slash menu and [[ page-link menu for the page editor. ProseMirror keeps the first key handler,
-// so everything it reads goes through refs.
+// Slash menu and the page/tag picker ("[[", "@", "#") for the page editor. ProseMirror keeps the
+// first key handler, so everything it reads goes through refs.
 import type { Editor } from '@tiptap/react'
 import { useMemo, useRef, useState } from 'react'
 import { pageLinkHref } from '../../../../shared/project-pages-plain-text'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import type { SlashCommand, SlashMenuState } from '../editor/rich-markdown-slash-command-primitives'
 import { runSlashCommand, syncSlashMenu } from '../editor/rich-markdown-slash-commands'
+import {
+  pagePickerItems,
+  syncPagePicker,
+  type PagePickerItem,
+  type PagePickerState
+} from './project-pages-editor-triggers'
 import { filterPageSlashItems, type PageSlashItem } from './project-pages-slash-items'
 import { pageTitle } from './project-pages-tree-model'
 
-const LINK_TRIGGER = /\[\[([^[\]\n\uFFFC]{0,60})$/
-
-export type PageLinkMenuState = SlashMenuState
-
-function syncPageLinkMenu(editor: Editor, root: HTMLElement | null): PageLinkMenuState | null {
-  const { selection } = editor.state
-  if (!root || !selection.empty || !selection.$from.parent.isTextblock) {
-    return null
-  }
-  const { $from } = selection
-  const before = $from.parent.textBetween(0, $from.parentOffset, '\n', '\uFFFC')
-  const match = before.match(LINK_TRIGGER)
-  if (!match) {
-    return null
-  }
-  const coords = editor.view.coordsAtPos(selection.from)
-  const rect = root.getBoundingClientRect()
-  return {
-    query: match[1],
-    from: selection.from - match[0].length,
-    to: selection.from,
-    left: coords.left - rect.left,
-    top: coords.bottom - rect.top + 8
-  }
+type MenuOptions = {
+  pages: readonly ProjectPageMeta[]
+  pageId: string
+  extraCommands: readonly SlashCommand[]
+  tags: readonly string[]
+  /** Makes a page for "Create page" in the picker; null when that failed. */
+  onCreatePage: (title: string) => Promise<ProjectPageMeta | null>
 }
 
-export function useProjectPagesEditorMenus(
-  pages: readonly ProjectPageMeta[],
-  pageId: string,
-  extraCommands: readonly SlashCommand[]
-) {
+export function useProjectPagesEditorMenus({
+  pages,
+  pageId,
+  extraCommands,
+  tags,
+  onCreatePage
+}: MenuOptions) {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null)
-  const [linkMenu, setLinkMenu] = useState<PageLinkMenuState | null>(null)
+  const [picker, setPicker] = useState<PagePickerState | null>(null)
   const [selected, setSelected] = useState(0)
   const [levels, setLevels] = useState<Record<string, number>>({})
 
@@ -53,21 +44,18 @@ export function useProjectPagesEditorMenus(
   const commands = matches.map((match) => match.item)
   const levelOf = (index: number): number =>
     levels[matches[index]?.item.key] ?? matches[index]?.level ?? 0
-  const linkTargets = useMemo(() => {
-    const query = (linkMenu?.query ?? '').trim().toLowerCase()
-    return pages
-      .filter((page) => page.archivedAt === null && page.id !== pageId)
-      .filter((page) => !query || pageTitle(page).toLowerCase().includes(query))
-      .slice(0, 12)
-  }, [pages, pageId, linkMenu?.query])
+  const pickerItems = useMemo(
+    () => pagePickerItems(picker, pages, pageId, tags),
+    [picker, pages, pageId, tags]
+  )
 
-  const live = useRef({ slashMenu, linkMenu, commands, linkTargets, selected, levelOf })
-  live.current = { slashMenu, linkMenu, commands, linkTargets, selected, levelOf }
+  const live = useRef({ slashMenu, picker, commands, pickerItems, selected, levelOf, onCreatePage })
+  live.current = { slashMenu, picker, commands, pickerItems, selected, levelOf, onCreatePage }
 
   function sync(editor: Editor): void {
-    const nextLink = syncPageLinkMenu(editor, rootRef.current)
-    setLinkMenu(nextLink)
-    if (nextLink) {
+    const next = syncPagePicker(editor, rootRef.current)
+    setPicker(next)
+    if (next) {
       setSlashMenu(null)
     } else {
       syncSlashMenu(editor, rootRef.current, setSlashMenu)
@@ -81,32 +69,44 @@ export function useProjectPagesEditorMenus(
     setSlashMenu(null)
   }
 
-  function insertPageLink(editor: Editor, menu: PageLinkMenuState, page: ProjectPageMeta): void {
-    editor
-      .chain()
-      .focus()
-      .deleteRange({ from: menu.from, to: menu.to })
-      .insertContent([
-        {
-          type: 'text',
-          text: pageTitle(page),
-          marks: [{ type: 'link', attrs: { href: pageLinkHref(page.id) } }]
-        },
-        { type: 'text', text: ' ' }
-      ])
-      .run()
-    setLinkMenu(null)
+  /** Plain text nodes: a link mark would spread onto the trailing space, and HTML trims it. */
+  function replaceRange(editor: Editor, menu: PagePickerState, text: string, href?: string): void {
+    const { state } = editor
+    const marks = href ? [state.schema.marks.link.create({ href })] : []
+    const tr = state.tr.replaceWith(menu.from, menu.to, state.schema.text(text, marks))
+    tr.insert(menu.from + text.length, state.schema.text(' '))
+    tr.setStoredMarks([])
+    editor.view.dispatch(tr)
+    editor.commands.focus()
+  }
+
+  function insertLink(editor: Editor, menu: PagePickerState, page: ProjectPageMeta): void {
+    replaceRange(editor, menu, pageTitle(page), pageLinkHref(page.id))
+  }
+
+  async function pick(editor: Editor, menu: PagePickerState, item: PagePickerItem): Promise<void> {
+    setPicker(null)
+    if (item.kind === 'tag') {
+      replaceRange(editor, menu, `#${item.label}`)
+    } else if (item.kind === 'page') {
+      insertLink(editor, menu, item.page)
+    } else {
+      const page = await live.current.onCreatePage(item.title)
+      if (page && !editor.isDestroyed) {
+        insertLink(editor, menu, page)
+      }
+    }
   }
 
   /** True when a menu consumed the key. */
   function handleKeyDown(editor: Editor | null, event: KeyboardEvent): boolean {
     const state = live.current
-    if (!editor || (!state.linkMenu && !state.slashMenu)) {
+    if (!editor || (!state.picker && !state.slashMenu)) {
       return false
     }
-    const count = state.linkMenu ? state.linkTargets.length : state.commands.length
+    const count = state.picker ? state.pickerItems.length : state.commands.length
     if (event.key === 'Escape') {
-      setLinkMenu(null)
+      setPicker(null)
       setSlashMenu(null)
       return true
     }
@@ -134,8 +134,8 @@ export function useProjectPagesEditorMenus(
       return false
     }
     const index = Math.min(state.selected, count - 1)
-    if (state.linkMenu) {
-      insertPageLink(editor, state.linkMenu, state.linkTargets[index])
+    if (state.picker) {
+      void pick(editor, state.picker, state.pickerItems[index])
     } else if (state.slashMenu) {
       runItem(editor, state.slashMenu, state.commands[index], state.levelOf(index))
     }
@@ -145,16 +145,15 @@ export function useProjectPagesEditorMenus(
   return {
     rootRef,
     slashMenu,
-    linkMenu,
+    picker,
     commands,
-    linkTargets,
+    pickerItems,
     selected,
     levelOf,
-    setLevel: (key: string, level: number) => setLevels((c) => ({ ...c, [key]: level })),
     runItem,
+    pick,
     sync,
-    handleKeyDown,
-    insertPageLink
+    handleKeyDown
   }
 }
 

@@ -1060,6 +1060,7 @@ export type ProjectPagesApi = {
   ) => Promise<ProjectPagesResult<ProjectPageSearchResult[]>>
   backlinks: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageMeta[]>>
   graph: (scopeKey: string) => Promise<ProjectPagesResult<PagesGraph>>
+  tags: (scopeKey: string) => Promise<ProjectPagesResult<{ tag: string; pages: number }[]>>
   database: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDatabase>>
   enableDatabase: (
     scopeKey: string,

@@ -1,8 +1,9 @@
-// The editor's extension set for pages: the file editor's markdown blocks with a pages placeholder.
+// The editor's extension set for pages: the file editor's markdown blocks, tag pills, a placeholder.
 import Placeholder from '@tiptap/extension-placeholder'
 import type { AnyExtension } from '@tiptap/core'
 import { createRichMarkdownExtensions } from '../editor/rich-markdown-extensions'
 import type { RichMarkdownEditorCodec } from '../editor/rich-markdown-source-transport'
+import { ProjectPageTags } from './project-pages-tag-decorations'
 
 // Link drops hrefs with unknown schemes, which would strip page links on load.
 const PAGE_LINK_PROTOCOL = 'muster-page'
@@ -16,5 +17,5 @@ export function createProjectPagesExtensions(
       ? extension.configure({ ...extension.options, protocols: [PAGE_LINK_PROTOCOL] })
       : extension
   )
-  return [...base, Placeholder.configure({ placeholder })]
+  return [...base, ProjectPageTags, Placeholder.configure({ placeholder })]
 }

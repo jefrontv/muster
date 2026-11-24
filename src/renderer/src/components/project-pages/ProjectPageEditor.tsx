@@ -43,6 +43,8 @@ type Props = {
   afterTitle?: React.ReactNode
   /** Offered as "Database" in the / menu; database pages pass none. */
   onMakeDatabase?: () => void
+  /** A #tag in the text was clicked. */
+  onOpenTag?: (tag: string) => void
 }
 
 export function ProjectPageEditor({
@@ -56,7 +58,8 @@ export function ProjectPageEditor({
   onSaveState,
   footer,
   afterTitle,
-  onMakeDatabase
+  onMakeDatabase,
+  onOpenTag
 }: Props): React.JSX.Element {
   const pageId = doc.meta.id
   const codec = useMemo(() => createRichMarkdownEditorCodec(), [])
@@ -79,7 +82,33 @@ export function ProjectPageEditor({
       }),
     [codec, canMakeDatabase]
   )
-  const menus = useProjectPagesEditorMenus(pages, pageId, extraCommands)
+  const [tags, setTags] = useState<string[]>([])
+  useEffect(() => {
+    let stale = false
+    void window.api.projectPages.tags(scopeKey).then((result) => {
+      if (!stale && result.ok) {
+        setTags(result.value.map((row) => row.tag))
+      }
+    })
+    return () => {
+      stale = true
+    }
+  }, [scopeKey, pages])
+  const parentId = doc.meta.parentId
+  const menus = useProjectPagesEditorMenus({
+    pages,
+    pageId,
+    extraCommands,
+    tags,
+    onCreatePage: async (newTitle) => {
+      const result = await window.api.projectPages.create(scopeKey, { parentId, title: newTitle })
+      if (!result.ok) {
+        toast.error(result.message)
+        return null
+      }
+      return result.value.meta
+    }
+  })
   const menusRef = useRef(menus)
   menusRef.current = menus
   const bodyRef = useRef<HTMLDivElement | null>(null)
@@ -129,7 +158,7 @@ export function ProjectPageEditor({
         codec,
         translate(
           'auto.components.projectPages.bodyPlaceholder',
-          'Type / for blocks or [[ to link a page.'
+          'Type / for blocks, @ to link a page, # to tag.'
         )
       ),
     [codec]
@@ -142,7 +171,7 @@ export function ProjectPageEditor({
       content: encodeRawMarkdownHtmlForRichEditor(doc.markdown, codec),
       contentType: 'markdown',
       editorProps: {
-        attributes: { class: 'rich-markdown-editor' },
+        attributes: { class: 'rich-markdown-editor project-page-editor' },
         handleKeyDown: (_view, event) => menusRef.current.handleKeyDown(liveEditor(), event)
       },
       onUpdate: ({ editor: current }) => {
@@ -243,6 +272,12 @@ export function ProjectPageEditor({
         ref={menus.rootRef}
         className="relative flex min-h-0 flex-1 flex-col"
         onClickCapture={(event) => {
+          const tag = (event.target as HTMLElement).closest<HTMLElement>('.page-tag')?.dataset.tag
+          if (tag && onOpenTag) {
+            event.preventDefault()
+            onOpenTag(tag)
+            return
+          }
           const link = (event.target as HTMLElement).closest('a')
           const href = link?.getAttribute('href') ?? ''
           if (href.startsWith(PAGE_LINK_SCHEME)) {
