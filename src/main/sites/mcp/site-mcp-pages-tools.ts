@@ -9,6 +9,12 @@ import { objectSchema } from './site-mcp-schemas'
 const PAGE = { type: 'string', description: 'Page id or title path, e.g. Launch/Checklist.' }
 const PARENT = { type: 'string', description: 'Parent page id or path. Omit for top level.' }
 const MARKDOWN = { type: 'string', description: 'Markdown. Up to 200,000 characters.' }
+const OPS_BY_TOOL = new Map<string, ProjectPagesToolOp>()
+
+/** The pages op behind a tool name, for other MCP surfaces that reuse this catalog. */
+export function pagesToolOp(name: string): ProjectPagesToolOp | undefined {
+  return OPS_BY_TOOL.get(name)
+}
 
 function pagesTool(
   name: string,
@@ -17,6 +23,7 @@ function pagesTool(
   properties: Record<string, unknown>,
   required: string[] = []
 ): SiteMcpTool {
+  OPS_BY_TOOL.set(name, op)
   return {
     name,
     description,

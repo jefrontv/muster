@@ -17,6 +17,9 @@ import {
 import { getLearnedClaudeModels } from '../chat-mode/claude-model-registry'
 import { stopChatThreadStream } from '../chat-mode/chat-thread-stream'
 import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
+import { projectPagesAgentAccess } from '../../shared/agent-capabilities'
+import { projectPages, projectPagesSearch } from '../project-pages/project-pages'
+import { runProjectPagesToolOp } from '../project-pages/project-pages-tool-ops'
 import {
   ensureChatConnectorServer,
   registerChatConnectorThread,
@@ -78,6 +81,21 @@ function buildChatConnectorToolDeps(store: Store): ChatConnectorToolDeps {
       } catch {
         return false
       }
+    },
+    projectPages: {
+      access: () => projectPagesAgentAccess(store.getSettings()),
+      run: (op, args, source) =>
+        runProjectPagesToolOp(
+          {
+            store: projectPages(),
+            search: projectPagesSearch(),
+            repos: () => store.getRepos(),
+            settings: () => store.getSettings()
+          },
+          op,
+          args,
+          source
+        )
     }
   }
 }

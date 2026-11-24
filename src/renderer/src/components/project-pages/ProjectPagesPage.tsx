@@ -1,5 +1,5 @@
 // Pages: Notion-like nested pages for each project.
-import { ArrowLeft, FileText, History, Search } from 'lucide-react'
+import { ArrowLeft, FileText, History, MessageSquareText, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -19,6 +19,7 @@ import type { AutosaveState } from './project-pages-autosave'
 import { buildPageTree, pageTitle } from './project-pages-tree-model'
 import { ProjectPageBacklinks } from './ProjectPageBacklinks'
 import { ProjectPageEditor } from './ProjectPageEditor'
+import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
 import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
@@ -49,6 +50,7 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const [saveState, setSaveState] = useState<AutosaveState>('saved')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
+  const [agentOpen, setAgentOpen] = useState(false)
   const isMac = navigator.userAgent.includes('Mac')
   const spaceVersion = useMemo(() => pages.map((p) => `${p.id}:${p.revision}`).join(','), [pages])
 
@@ -188,6 +190,17 @@ export default function ProjectPagesPage(): React.JSX.Element {
             >
               <Search className="size-4" />
             </Button>
+            <Button
+              variant={agentOpen ? 'secondary' : 'ghost'}
+              size="icon-sm"
+              className="shrink-0 text-muted-foreground"
+              aria-label={translate('auto.components.projectPages.askAgent', 'Ask agent')}
+              aria-pressed={agentOpen}
+              title={translate('auto.components.projectPages.askAgent', 'Ask agent')}
+              onClick={() => setAgentOpen((open) => !open)}
+            >
+              <MessageSquareText className="size-4" />
+            </Button>
             <ProjectPagesQuickSwitcher
               scopeKey={scopeKey}
               pages={pages}
@@ -272,6 +285,14 @@ export default function ProjectPagesPage(): React.JSX.Element {
               </div>
             ) : null}
           </section>
+          {agentOpen ? (
+            <ProjectPagesAgentPanel
+              scopeKey={scopeKey}
+              pages={pages}
+              openPage={meta ?? null}
+              onClose={() => setAgentOpen(false)}
+            />
+          ) : null}
         </div>
       )}
     </main>

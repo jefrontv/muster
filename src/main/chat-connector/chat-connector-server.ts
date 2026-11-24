@@ -9,6 +9,7 @@ import { randomBytes } from 'node:crypto'
 import { Server as McpServer } from '@modelcontextprotocol/sdk/server/index.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import { chatConnectorPagesToolDefs } from './chat-connector-pages-tools'
 import { chatConnectorToolDefs } from './chat-connector-tool-defs'
 import { callChatConnectorTool, type ChatConnectorToolDeps } from './chat-connector-tools'
 
@@ -67,7 +68,7 @@ async function handleMcpPost(
     { capabilities: { tools: {} } }
   )
   mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: chatConnectorToolDefs()
+    tools: [...chatConnectorToolDefs(), ...chatConnectorPagesToolDefs(deps)]
   }))
   mcpServer.setRequestHandler(CallToolRequestSchema, async (request) =>
     callChatConnectorTool({
