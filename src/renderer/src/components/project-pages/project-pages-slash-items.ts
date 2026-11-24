@@ -1,11 +1,13 @@
 // The Pages "/" menu: the rich editor's blocks, with headings folded into one row per kind
 // (level picked with chips or ←/→), plus page templates and "Database".
 import type { Editor } from '@tiptap/react'
-import { Database, Info, LayoutTemplate } from 'lucide-react'
+import { Database, FolderKanban, Info, LayoutTemplate, SquareCheckBig } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { slashCommands } from '../editor/rich-markdown-slash-command-catalog'
 import { filterRichMarkdownSlashCommands } from '../editor/rich-markdown-slash-command-filter'
 import { icon, type SlashCommand } from '../editor/rich-markdown-slash-command-primitives'
+import { activeCollabInstance } from './project-pages-activecollab-data'
+import { openActiveCollabPicker } from './project-pages-activecollab-insert'
 import { PROJECT_PAGE_TEMPLATES } from './project-pages-templates'
 
 export type PageSlashItem = {
@@ -85,7 +87,27 @@ export function pageSlashCommands(actions: {
           .run()
     })
   )
-  return [...callouts, ...templates, ...database]
+  const activeCollab: SlashCommand[] = [
+    {
+      id: 'page-ac-task',
+      label: 'ActiveCollab task',
+      aliases: ['task', 'activecollab', 'ticket', 'quote'],
+      icon: icon(SquareCheckBig),
+      group: 'Basic blocks',
+      description: 'Add a task as a card, link or quote',
+      run: (editor) => openActiveCollabPicker(editor, 'task')
+    },
+    {
+      id: 'page-ac-project',
+      label: 'ActiveCollab project',
+      aliases: ['project', 'activecollab'],
+      icon: icon(FolderKanban),
+      group: 'Basic blocks',
+      description: 'Add a project card',
+      run: (editor) => openActiveCollabPicker(editor, 'project')
+    }
+  ]
+  return [...callouts, ...templates, ...database, ...activeCollab]
 }
 
 /** Items matching the query, each with the heading level the query points at. */
@@ -130,7 +152,11 @@ export function filterPageSlashItems(
       chips: levelChips
     },
     ...base.filter((item) => item.variants.length > 0),
-    ...extra.filter((c) => !c.id.startsWith('page-callout-')).map(single)
+    ...extra
+      .filter((c) => !c.id.startsWith('page-callout-'))
+      // ActiveCollab rows only when it is connected.
+      .filter((c) => !c.id.startsWith('page-ac-') || activeCollabInstance())
+      .map(single)
   ]
   const needle = query.trim().toLowerCase()
   return items.flatMap((item) => {

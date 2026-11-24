@@ -19,6 +19,7 @@ import {
   pageTask,
   refreshActiveCollabPageData
 } from './project-pages-activecollab-data'
+import { pasteActiveCollabUrl } from './project-pages-activecollab-insert'
 
 const KEY = new PluginKey<DecorationSet>('projectPageActiveCollab')
 
@@ -103,6 +104,7 @@ function refAt(view: EditorView, target: HTMLElement): ActiveCollabPageRef | nul
 export const ProjectPageActiveCollab = Extension.create({
   name: 'projectPageActiveCollab',
   addProseMirrorPlugins() {
+    const { editor } = this
     return [
       new Plugin({
         key: KEY,
@@ -139,6 +141,16 @@ export const ProjectPageActiveCollab = Extension.create({
         },
         props: {
           decorations: (state) => KEY.getState(state),
+          handlePaste: (_view, event) => {
+            const text = event.clipboardData?.getData('text/plain').trim() ?? ''
+            const instance = activeCollabInstance()
+            const ref = instance && !/\s/.test(text) ? parseActiveCollabUrl(text, instance) : null
+            if (!ref) {
+              return false
+            }
+            pasteActiveCollabUrl(editor, ref)
+            return true
+          },
           handleDOMEvents: {
             click: (view, event) => {
               const ref = refAt(view, event.target as HTMLElement)

@@ -91,6 +91,15 @@ export function pageProject(projectId: number): Loaded<ActiveCollabProject> {
   return projects?.find((project) => project.id === projectId) ?? null
 }
 
+/** One project's open tasks, for the picker; shares the cards' cache. */
+export async function projectTaskList(projectId: number): Promise<ActiveCollabTask[]> {
+  const result = await activeCollabListProjectTasks({ projectId }, scope().settings)
+  const tasks = result.ok ? result.value.tasks : null
+  projectTasks.set(projectId, tasks)
+  changed()
+  return tasks ?? []
+}
+
 /** Waits for a row, for inserting a pasted or picked link with its real title. */
 export async function loadPageRef(
   ref: ActiveCollabPageRef

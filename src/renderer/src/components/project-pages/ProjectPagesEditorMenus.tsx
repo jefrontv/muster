@@ -5,6 +5,7 @@ import type React from 'react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 import type { PagePickerItem } from './project-pages-editor-triggers'
+import { ProjectPagesActiveCollabPicker } from './ProjectPagesActiveCollabPicker'
 import { ProjectPagesSlashMenu } from './ProjectPagesSlashMenu'
 import { pageTitle } from './project-pages-tree-model'
 import type { ProjectPagesEditorMenus as Menus } from './use-project-pages-editor-menus'
@@ -33,7 +34,19 @@ function ItemBody({ item }: { item: PagePickerItem }): React.JSX.Element {
   )
 }
 
-export function ProjectPagesEditorMenus({
+export function ProjectPagesEditorMenus(props: {
+  editor: Editor | null
+  menus: Menus
+}): React.JSX.Element {
+  return (
+    <>
+      <FloatingMenu {...props} />
+      <ProjectPagesActiveCollabPicker />
+    </>
+  )
+}
+
+function FloatingMenu({
   editor,
   menus
 }: {
