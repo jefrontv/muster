@@ -970,6 +970,9 @@ const api = {
       ipcRenderer.invoke('projectPages:move', scopeKey, pageId, input),
     archive: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:archive', scopeKey, pageId),
     restore: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:restore', scopeKey, pageId),
+    history: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:history', scopeKey, pageId),
+    readRevision: (scopeKey, pageId, revision) =>
+      ipcRenderer.invoke('projectPages:readRevision', scopeKey, pageId, revision),
     onChanged: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

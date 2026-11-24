@@ -32,7 +32,11 @@ export type ProjectPagesTree = {
 export type ProjectPageDocument = {
   meta: ProjectPageMeta
   markdown: string
+  /** Set when a stale edit was merged with newer saves, so the editor must load the result. */
+  merged?: boolean
 }
+
+export type ProjectPageRevision = { revision: number; savedAt: number }
 
 export type ProjectPageCreateInput = {
   parentId?: string | null
@@ -46,6 +50,8 @@ export type ProjectPageUpdateInput = {
   title?: string
   icon?: string | null
   markdown?: string
+  /** A stale edit is merged block by block with what was saved since, instead of refused. */
+  merge?: boolean
 }
 
 export type ProjectPageMoveInput = {

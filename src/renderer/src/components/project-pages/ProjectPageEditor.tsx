@@ -4,7 +4,9 @@ import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
-import type { ProjectPageDocument } from '../../../../shared/project-pages-types'
+import { toast } from 'sonner'
+import { mergeMarkdownBlocks } from '../../../../shared/project-pages-block-merge'
+import type { ProjectPageAuthor, ProjectPageDocument } from '../../../../shared/project-pages-types'
 import { encodeRawMarkdownHtmlForRichEditor } from '../editor/raw-markdown-html'
 import { createRichMarkdownEditorCodec } from '../editor/rich-markdown-source-transport'
 import {
@@ -13,12 +15,15 @@ import {
   type PageSaveResult
 } from './project-pages-autosave'
 import { createProjectPagesExtensions } from './project-pages-editor-extensions'
+import { replaceEditorMarkdown } from './project-pages-editor-sync'
 
 type Props = {
   scopeKey: string
   doc: ProjectPageDocument
   /** Newest revision the tree knows about; a newer one than ours reloads a clean page. */
   latestRevision: number
+  /** Who saved latestRevision, so an agent's change can be named. */
+  latestAuthor?: ProjectPageAuthor
   autoFocusTitle: boolean
   onSaveState: (state: AutosaveState) => void
 }
@@ -27,6 +32,7 @@ export function ProjectPageEditor({
   scopeKey,
   doc,
   latestRevision,
+  latestAuthor,
   autoFocusTitle,
   onSaveState
 }: Props): React.JSX.Element {
@@ -34,7 +40,6 @@ export function ProjectPageEditor({
   const codec = useMemo(() => createRichMarkdownEditorCodec(), [])
   const [title, setTitle] = useState(doc.meta.title)
   const [conflict, setConflict] = useState<string | null>(null)
-  const applyingRef = useRef(false)
   const bodyRef = useRef<HTMLDivElement | null>(null)
   // StrictMode builds the editor twice and the hook's value can be the discarded one; TipTap
   // tags its view's DOM node with the editor that owns it.
@@ -43,6 +48,7 @@ export function ProjectPageEditor({
     const found = dom?.editor ?? null
     return found && !found.isDestroyed ? found : null
   }
+  const mergedRef = useRef<(sent: string, merged: string) => void>(() => {})
   const saveStateRef = useRef(onSaveState)
   saveStateRef.current = onSaveState
 
@@ -53,16 +59,22 @@ export function ProjectPageEditor({
         save: async (patch, baseRevision): Promise<PageSaveResult> => {
           const result = await window.api.projectPages.update(scopeKey, pageId, {
             baseRevision,
+            merge: true,
             ...patch
           })
           return result.ok
-            ? { ok: true, revision: result.value.meta.revision }
+            ? {
+                ok: true,
+                revision: result.value.meta.revision,
+                merged: result.value.merged ? result.value.markdown : undefined
+              }
             : { ok: false, conflict: result.code === 'conflict', message: result.message }
         },
         onState: (state, message) => {
           setConflict(state === 'conflict' ? (message ?? '') : null)
           saveStateRef.current(state)
-        }
+        },
+        onMerged: (sent, merged) => mergedRef.current(sent, merged)
       }),
     // The autosave lives as long as this page stays open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,9 +101,7 @@ export function ProjectPageEditor({
       contentType: 'markdown',
       editorProps: { attributes: { class: 'rich-markdown-editor' } },
       onUpdate: ({ editor: current }) => {
-        if (!applyingRef.current) {
-          autosave.queue({ markdown: () => current.getMarkdown() })
-        }
+        autosave.queue({ markdown: () => current.getMarkdown() })
       }
     },
     []
@@ -117,21 +127,46 @@ export function ProjectPageEditor({
       return
     }
     if (!keepMine) {
-      applyingRef.current = true
-      live.commands.setContent(encodeRawMarkdownHtmlForRichEditor(result.value.markdown, codec), {
-        contentType: 'markdown',
-        emitUpdate: false
-      })
-      applyingRef.current = false
+      replaceEditorMarkdown(live, result.value.markdown, codec)
       setTitle(result.value.meta.title)
     }
     await autosave.resume(result.value.meta.revision, keepMine)
+  }
+
+  // A save that crossed an agent's write came back merged. Typing since the save went out is
+  // merged again here, so neither side is lost.
+  mergedRef.current = (sent, merged) => {
+    const live = liveEditor()
+    if (!live) {
+      return
+    }
+    const now = live.getMarkdown()
+    const next =
+      now === sent
+        ? { ok: true as const, markdown: merged }
+        : mergeMarkdownBlocks(sent, now, merged)
+    if (!next.ok) {
+      setConflict('')
+      saveStateRef.current('conflict')
+      return
+    }
+    replaceEditorMarkdown(live, next.markdown, codec)
+    if (next.markdown !== merged) {
+      autosave.queue({ markdown: () => live.getMarkdown() })
+    }
   }
 
   // Someone else saved this page while it had no unsaved edits here: show their version.
   useEffect(() => {
     if (latestRevision > autosave.revision() && !autosave.isDirty() && !conflict) {
       void loadStored(false)
+      if (latestAuthor?.kind === 'agent') {
+        toast.info(
+          translate('auto.components.projectPages.agentUpdated', '{{agent}} updated this page', {
+            agent: latestAuthor.agent
+          })
+        )
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestRevision])

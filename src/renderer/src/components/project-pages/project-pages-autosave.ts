@@ -2,7 +2,7 @@
 
 export type PagePatch = { title?: string; markdown?: () => string }
 export type PageSaveResult =
-  | { ok: true; revision: number }
+  | { ok: true; revision: number; merged?: string }
   | { ok: false; conflict: boolean; message: string }
 export type AutosaveState = 'saved' | 'pending' | 'saving' | 'conflict' | 'error'
 
@@ -14,11 +14,19 @@ type Options = {
     baseRevision: number
   ) => Promise<PageSaveResult>
   onState: (state: AutosaveState, message?: string) => void
+  /** The store merged this save with newer ones; the editor must show `merged`. */
+  onMerged?: (sent: string, merged: string) => void
 }
 
 export type PageAutosave = ReturnType<typeof createPageAutosave>
 
-export function createPageAutosave({ revision: initial, delayMs = 600, save, onState }: Options) {
+export function createPageAutosave({
+  revision: initial,
+  delayMs = 600,
+  save,
+  onState,
+  onMerged
+}: Options) {
   let revision = initial
   let pending: PagePatch | null = null
   let timer: ReturnType<typeof setTimeout> | null = null
@@ -37,9 +45,13 @@ export function createPageAutosave({ revision: initial, delayMs = 600, save, onS
       const patch = pending
       pending = null
       onState('saving')
-      const result = await save({ title: patch.title, markdown: patch.markdown?.() }, revision)
+      const markdown = patch.markdown?.()
+      const result = await save({ title: patch.title, markdown }, revision)
       if (result.ok) {
         revision = result.revision
+        if (result.merged !== undefined && markdown !== undefined) {
+          onMerged?.(markdown, result.merged)
+        }
         continue
       }
       // Keep the unsaved edit so "keep mine" can retry it on top of the newer revision.

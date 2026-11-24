@@ -14,6 +14,7 @@ import type {
   ProjectPageDocument,
   ProjectPageMeta,
   ProjectPageMoveInput,
+  ProjectPageRevision,
   ProjectPagesChange,
   ProjectPagesResult,
   ProjectPagesTree,
@@ -1040,6 +1041,12 @@ export type ProjectPagesApi = {
   ) => Promise<ProjectPagesResult<ProjectPageMeta>>
   archive: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<void>>
   restore: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<void>>
+  history: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageRevision[]>>
+  readRevision: (
+    scopeKey: string,
+    pageId: string,
+    revision: number
+  ) => Promise<ProjectPagesResult<string>>
   onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
 }
 

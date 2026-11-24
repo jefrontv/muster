@@ -22,6 +22,41 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(root, { recursive: true, force: true }))
 
+describe('stale user saves', () => {
+  it('merges an edit made against an older revision with an agent append', () => {
+    const pages = store()
+    const doc = pages.createPage(SCOPE, { title: 'P', markdown: 'Intro.\n\nBody.\n' }, USER)
+    pages.updatePage(
+      SCOPE,
+      doc.meta.id,
+      { baseRevision: 1, markdown: 'Intro.\n\nBody.\n\nAgent.\n' },
+      AGENT
+    )
+    const saved = pages.updatePage(
+      SCOPE,
+      doc.meta.id,
+      { baseRevision: 1, markdown: 'Intro, edited.\n\nBody.\n', merge: true },
+      USER
+    )
+    expect(saved.merged).toBe(true)
+    expect(saved.markdown).toBe('Intro, edited.\n\nBody.\n\nAgent.\n')
+    expect(saved.meta.revision).toBe(3)
+  })
+
+  it('still refuses a stale save that collides, or one that did not ask to merge', () => {
+    const pages = store()
+    const doc = pages.createPage(SCOPE, { title: 'P', markdown: 'Body.\n' }, USER)
+    pages.updatePage(SCOPE, doc.meta.id, { baseRevision: 1, title: 'Renamed' }, AGENT)
+    pages.updatePage(SCOPE, doc.meta.id, { baseRevision: 2, markdown: 'Agent body.\n' }, AGENT)
+    const mine = { baseRevision: 1, markdown: 'My body.\n' }
+    expect(code(() => pages.updatePage(SCOPE, doc.meta.id, { ...mine, merge: true }, USER))).toBe(
+      'conflict'
+    )
+    expect(code(() => pages.updatePage(SCOPE, doc.meta.id, mine, USER))).toBe('conflict')
+    expect(pages.listRevisions(SCOPE, doc.meta.id).map((r) => r.revision)).toEqual([2])
+  })
+})
+
 function code(fn: () => unknown): string | undefined {
   try {
     fn()

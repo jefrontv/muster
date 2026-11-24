@@ -5,6 +5,7 @@ import type {
   ProjectPageDocument,
   ProjectPageMeta,
   ProjectPageMoveInput,
+  ProjectPageRevision,
   ProjectPagesChange,
   ProjectPagesErrorCode,
   ProjectPagesTree,
@@ -17,7 +18,9 @@ import {
   subtreeIds,
   wouldCreateCycle
 } from '../../shared/project-pages-tree'
+import { mergeMarkdownBlocks } from '../../shared/project-pages-block-merge'
 import { createProjectPagesFiles, isPageId, newPageId } from './project-pages-files'
+import { bodyAtRevision } from './project-pages-revision-history'
 
 export class ProjectPagesError extends Error {
   constructor(
@@ -137,22 +140,35 @@ export function createProjectPagesStore({ rootDir, now = Date.now, newId = newPa
     if (!dir) {
       throw new ProjectPagesError('not_found', 'No page with that id in this project.')
     }
-    if (input.baseRevision !== current.revision) {
-      throw new ProjectPagesError(
-        'conflict',
-        `The page changed since revision ${input.baseRevision}; it is now at ${current.revision}.`,
-        current.revision
-      )
-    }
     const before = files.readBody(dir, current.id)
-    const markdown = input.markdown === undefined ? before : checkMarkdown(input.markdown)
+    let markdown = input.markdown === undefined ? before : checkMarkdown(input.markdown)
+    let merged = false
+    if (input.baseRevision !== current.revision) {
+      const base =
+        input.merge && input.markdown !== undefined
+          ? bodyAtRevision(files, dir, current.id, input.baseRevision, {
+              revision: current.revision,
+              markdown: before
+            })
+          : null
+      const result = base === null ? null : mergeMarkdownBlocks(base, markdown, before)
+      if (!result?.ok) {
+        throw new ProjectPagesError(
+          'conflict',
+          `The page changed since revision ${input.baseRevision}; it is now at ${current.revision}.`,
+          current.revision
+        )
+      }
+      markdown = checkMarkdown(result.markdown)
+      merged = true
+    }
     const title = input.title === undefined ? current.title : cleanTitle(input.title)
     const icon =
       input.icon === undefined
         ? current.icon
         : input.icon?.slice(0, PROJECT_PAGE_LIMITS.icon) || null
     if (markdown === before && title === current.title && icon === current.icon) {
-      return { meta: current, markdown }
+      return { meta: current, markdown, ...(merged ? { merged } : {}) }
     }
     const meta: ProjectPageMeta = {
       ...current,
@@ -171,7 +187,7 @@ export function createProjectPagesStore({ rootDir, now = Date.now, newId = newPa
       pages.map((p) => (p.id === meta.id ? meta : p))
     )
     emit({ scopeKey, pageId: meta.id, revision: meta.revision, author })
-    return { meta, markdown }
+    return { meta, markdown, ...(merged ? { merged } : {}) }
   }
 
   function movePage(
@@ -234,6 +250,11 @@ export function createProjectPagesStore({ rootDir, now = Date.now, newId = newPa
       setArchived(scopeKey, pageId, true, author),
     restorePage: (scopeKey: string, pageId: string, author: ProjectPageAuthor) =>
       setArchived(scopeKey, pageId, false, author),
+    /** Kept earlier revisions of a page, newest first. */
+    listRevisions: (scopeKey: string, pageId: string): ProjectPageRevision[] => {
+      const { dir } = load(scopeKey)
+      return dir && isPageId(pageId) ? files.listHistory(dir, pageId) : []
+    },
     /** Body of an earlier revision, while it is still kept. */
     readRevision: (scopeKey: string, pageId: string, revision: number): string | null => {
       const { dir } = load(scopeKey)

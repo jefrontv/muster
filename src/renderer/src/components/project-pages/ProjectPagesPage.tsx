@@ -1,5 +1,5 @@
 // Pages: Notion-like nested pages for each project.
-import { ArrowLeft, FileText } from 'lucide-react'
+import { ArrowLeft, FileText, History } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -18,6 +18,7 @@ import type { ProjectPageDocument } from '../../../../shared/project-pages-types
 import type { AutosaveState } from './project-pages-autosave'
 import { buildPageTree, pageTitle } from './project-pages-tree-model'
 import { ProjectPageEditor } from './ProjectPageEditor'
+import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
@@ -44,6 +45,7 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const [fresh, setFresh] = useState<string | null>(null)
   const [doc, setDoc] = useState<ProjectPageDocument | null>(null)
   const [saveState, setSaveState] = useState<AutosaveState>('saved')
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const live = useMemo(() => pages.filter((p) => p.archivedAt === null), [pages])
   const remembered = lastPageIn(scopeKey)
@@ -156,6 +158,26 @@ export default function ProjectPagesPage(): React.JSX.Element {
             {translate(`auto.components.projectPages.save.${saveState}`, SAVE_LABELS[saveState])}
           </span>
         ) : null}
+        {meta && scopeKey ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0 text-muted-foreground"
+              aria-label={translate('auto.components.projectPages.history', 'Page history')}
+              title={translate('auto.components.projectPages.history', 'Page history')}
+              onClick={() => setHistoryOpen(true)}
+            >
+              <History className="size-4" />
+            </Button>
+            <ProjectPageHistoryDialog
+              scopeKey={scopeKey}
+              page={meta}
+              open={historyOpen}
+              onOpenChange={setHistoryOpen}
+            />
+          </>
+        ) : null}
       </header>
 
       {error ? (
@@ -189,6 +211,7 @@ export default function ProjectPagesPage(): React.JSX.Element {
                 scopeKey={scopeKey}
                 doc={doc}
                 latestRevision={meta.revision}
+                latestAuthor={meta.editedBy}
                 autoFocusTitle={fresh === doc.meta.id}
                 onSaveState={setSaveState}
               />

@@ -20,6 +20,21 @@ function setup(results: PageSaveResult[]) {
 }
 
 describe('page autosave', () => {
+  it('reports a merged save with the body it sent', async () => {
+    const merged: [string, string][] = []
+    const autosave = createPageAutosave({
+      revision: 1,
+      delayMs: 10,
+      save: () => Promise.resolve({ ok: true, revision: 3, merged: 'mine\n\nagent\n' }),
+      onState: () => {},
+      onMerged: (sent, result) => merged.push([sent, result])
+    })
+    autosave.queue({ markdown: () => 'mine\n' })
+    await vi.advanceTimersByTimeAsync(10)
+    expect(merged).toEqual([['mine\n', 'mine\n\nagent\n']])
+    expect(autosave.revision()).toBe(3)
+  })
+
   it('debounces edits into one save and reads the body only when saving', async () => {
     const read = vi.fn(() => 'body')
     const { autosave, saves } = setup([])

@@ -17,7 +17,9 @@ const CHANNELS = [
   'projectPages:update',
   'projectPages:move',
   'projectPages:archive',
-  'projectPages:restore'
+  'projectPages:restore',
+  'projectPages:history',
+  'projectPages:readRevision'
 ] as const
 
 const USER = { kind: 'user' } as const
@@ -61,6 +63,7 @@ function update(value: unknown): ProjectPageUpdateInput {
     baseRevision,
     title: optionalText(input.title, 'title'),
     markdown: optionalText(input.markdown, 'markdown'),
+    merge: input.merge === true,
     ...(icon === undefined ? {} : { icon })
   }
 }
@@ -128,6 +131,21 @@ export function registerProjectPagesHandlers(): void {
   )
   ipcMain.handle('projectPages:restore', (_e, key: unknown, id: unknown) =>
     guarded(() => pages().restorePage(scope(key), pageId(id), USER))
+  )
+  ipcMain.handle('projectPages:history', (_e, key: unknown, id: unknown) =>
+    guarded(() => pages().listRevisions(scope(key), pageId(id)))
+  )
+  ipcMain.handle('projectPages:readRevision', (_e, key: unknown, id: unknown, rev: unknown) =>
+    guarded(() => {
+      if (typeof rev !== 'number' || !Number.isSafeInteger(rev)) {
+        throw new ProjectPagesError('invalid', 'revision must be a number.')
+      }
+      const body = pages().readRevision(scope(key), pageId(id), rev)
+      if (body === null) {
+        throw new ProjectPagesError('not_found', 'That revision is no longer kept.')
+      }
+      return body
+    })
   )
   stopForwarding?.()
   stopForwarding = pages().onChanged((change) =>

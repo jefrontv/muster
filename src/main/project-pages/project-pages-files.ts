@@ -7,6 +7,7 @@ import {
   readFileSync,
   renameSync,
   rmSync,
+  statSync,
   writeFileSync
 } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -145,5 +146,31 @@ export function createProjectPagesFiles(rootDir: string) {
     }
   }
 
-  return { spaceDir, readTree, writeTree, readBody, writeBody, keepHistory, readHistory }
+  /** Kept revisions, newest first, with when each was replaced. */
+  function listHistory(dir: string, pageId: string): { revision: number; savedAt: number }[] {
+    const historyDir = join(dir, 'history', pageId)
+    try {
+      return readdirSync(historyDir)
+        .map((name) => Number.parseInt(name, 10))
+        .filter((n) => Number.isFinite(n))
+        .sort((a, b) => b - a)
+        .map((revision) => ({
+          revision,
+          savedAt: statSync(join(historyDir, `${revision}.md`)).mtimeMs
+        }))
+    } catch {
+      return []
+    }
+  }
+
+  return {
+    spaceDir,
+    readTree,
+    writeTree,
+    readBody,
+    writeBody,
+    keepHistory,
+    readHistory,
+    listHistory
+  }
 }
