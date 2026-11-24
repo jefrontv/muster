@@ -5,6 +5,10 @@ import {
   extractPageLinks,
   markdownToPlainText
 } from '../../shared/project-pages-plain-text'
+import {
+  activeCollabTaskLinks,
+  type ActiveCollabTaskLink
+} from '../../shared/project-pages-activecollab-links'
 import { extractTags, type PageTag } from '../../shared/project-pages-tags'
 import type { ProjectPageMeta } from '../../shared/project-pages-types'
 import { matchSnippet } from './project-pages-markdown-ops'
@@ -16,6 +20,8 @@ export type ProjectPageIndexEntry = {
   text: string
   links: string[]
   tags: PageTag[]
+  /** ActiveCollab task links, for related pages and the map. */
+  tasks?: ActiveCollabTaskLink[]
 }
 type Entry = ProjectPageIndexEntry
 
@@ -44,7 +50,8 @@ export function createProjectPagesSearchIndex(store: ProjectPagesStore) {
           headings: extractHeadings(markdown),
           text: markdownToPlainText(markdown),
           links: extractPageLinks(markdown),
-          tags: extractTags(markdown)
+          tags: extractTags(markdown),
+          tasks: activeCollabTaskLinks(markdown)
         })
       }
     }

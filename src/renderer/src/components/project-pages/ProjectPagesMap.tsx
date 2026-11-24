@@ -6,7 +6,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
+import { parseActiveCollabUrl } from '../../../../shared/project-pages-activecollab-links'
 import type { PagesGraph, PagesGraphNode } from '../../../../shared/project-pages-graph-types'
+import { activeCollabInstance, openActiveCollabRef } from './project-pages-activecollab-data'
 import { visibleGraph, type MapFilters } from './project-pages-map-model'
 import { useProjectPagesMapCanvas } from './use-project-pages-map-canvas'
 
@@ -21,9 +23,10 @@ type Props = {
   onClose: () => void
 }
 
-type Toggle = 'tags' | 'subpages' | 'orphans'
+type Toggle = 'tags' | 'tasks' | 'subpages' | 'orphans'
 const TOGGLES: { key: Toggle; label: string }[] = [
   { key: 'tags', label: 'Tags' },
+  { key: 'tasks', label: 'Tasks' },
   { key: 'subpages', label: 'Subpages' },
   { key: 'orphans', label: 'Unlinked' }
 ]
@@ -36,6 +39,7 @@ export function ProjectPagesMap(props: Props): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<Omit<MapFilters, 'focus'>>({
     tags: true,
+    tasks: false,
     subpages: false,
     orphans: true,
     depth: 1
@@ -81,6 +85,14 @@ export function ProjectPagesMap(props: Props): React.JSX.Element {
   const pick = (node: PagesGraphNode): void => {
     if (node.kind === 'page') {
       onOpenPage(node.id)
+    } else if (node.kind === 'task') {
+      const instance = activeCollabInstance()
+      const ref = instance ? parseActiveCollabUrl(node.href, instance) : null
+      if (ref) {
+        openActiveCollabRef(ref)
+      } else {
+        void window.api.shell.openUrl(node.href)
+      }
     } else {
       onFocusChange(node.id)
     }

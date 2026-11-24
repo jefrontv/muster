@@ -20,6 +20,7 @@ import {
   projectPagesDatabases,
   projectPagesSearch
 } from './project-pages/project-pages'
+import { projectPagesActiveCollab } from './project-pages/project-pages-activecollab-lookup'
 import { runProjectPagesToolOp } from './project-pages/project-pages-tool-ops'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
@@ -868,6 +869,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
                   search: projectPagesSearch(),
                   databases: projectPagesDatabases(),
                   attachments: projectPagesAttachments(),
+                  activeCollab: projectPagesActiveCollab(),
                   repos: () => bridgeStore.getRepos(),
                   settings: () => bridgeStore.getSettings()
                 },

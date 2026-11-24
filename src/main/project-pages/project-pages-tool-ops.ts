@@ -14,6 +14,7 @@ import {
   PROJECT_PAGES_DATABASE_OPS,
   runProjectPagesDatabaseOp
 } from './project-pages-database-tool-ops'
+import type { ProjectPagesActiveCollab } from './project-pages-activecollab-lookup'
 import type { ProjectPagesAttachments } from './project-pages-attachments'
 import {
   isProjectPagesBlockOp,
@@ -76,6 +77,7 @@ export type ProjectPagesToolDeps = {
   settings: () => GlobalSettings | null | undefined
   databases?: ProjectPagesDatabases
   attachments?: ProjectPagesAttachments
+  activeCollab?: ProjectPagesActiveCollab
 }
 
 function editor(author: ProjectPageAuthor): string {
@@ -189,6 +191,7 @@ export async function runProjectPagesToolOp(
       const section = toolText(args, 'section')
       const body = section ? readSection(doc.markdown, section) : doc.markdown
       const max = toolCount(args, 'max_chars') ?? 50_000
+      const activecollab = await deps.activeCollab?.describe(doc.markdown)
       return {
         project,
         page: row(pages(), doc.meta),
@@ -198,7 +201,8 @@ export async function runProjectPagesToolOp(
         linked_from: deps.search
           .backlinks(scopeKey, doc.meta.id)
           .map((p) => ({ id: p.id, path: pagePath(pages(), p.id) })),
-        ...pageConnections(deps.search, scopeKey, doc.meta.id, pages())
+        ...pageConnections(deps.search, scopeKey, doc.meta.id, pages()),
+        ...(activecollab?.length ? { activecollab } : {})
       }
     }
     case 'create': {

@@ -29,6 +29,29 @@ function setup() {
 }
 
 describe('page graph', () => {
+  it('adds task nodes and relates pages that link the same task', () => {
+    const store = createProjectPagesStore({ rootDir: root })
+    const url = 'https://ac.example.com/projects/4/tasks/99'
+    const one = store.createPage('s', { title: 'One', markdown: `[Fix the header](${url})` }, USER)
+    const two = store.createPage('s', { title: 'Two', markdown: `See ${url}/ for detail` }, USER)
+    store.createPage('s', { title: 'Three', markdown: 'https://ac.example.com/projects/4' }, USER)
+    const snapshot = createProjectPagesSearchIndex(store).snapshot('s')
+    const graph = buildPagesGraph(snapshot)
+    expect(graph.nodes.filter((n) => n.kind === 'task')).toEqual([
+      {
+        id: 'task:ac.example.com/tasks/99',
+        kind: 'task',
+        label: 'Fix the header',
+        href: url,
+        degree: 2
+      }
+    ])
+    const related = relatedPages(snapshot, one.meta.id)
+    expect(related.map((r) => [r.page.id, r.reasons])).toEqual([
+      [two.meta.id, ['shares task "Fix the header"']]
+    ])
+  })
+
   it('builds page and tag nodes with link, tag and child edges', () => {
     const { snapshot, brief, plan, child } = setup()
     const graph = buildPagesGraph(snapshot)

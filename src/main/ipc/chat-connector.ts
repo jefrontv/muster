@@ -24,6 +24,7 @@ import {
   projectPagesDatabases,
   projectPagesSearch
 } from '../project-pages/project-pages'
+import { projectPagesActiveCollab } from '../project-pages/project-pages-activecollab-lookup'
 import { runProjectPagesToolOp } from '../project-pages/project-pages-tool-ops'
 import {
   ensureChatConnectorServer,
@@ -96,6 +97,7 @@ function buildChatConnectorToolDeps(store: Store): ChatConnectorToolDeps {
             search: projectPagesSearch(),
             databases: projectPagesDatabases(),
             attachments: projectPagesAttachments(),
+            activeCollab: projectPagesActiveCollab(),
             repos: () => store.getRepos(),
             settings: () => store.getSettings()
           },

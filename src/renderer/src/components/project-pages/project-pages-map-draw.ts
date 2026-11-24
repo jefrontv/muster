@@ -4,7 +4,14 @@ import type { MapSim, SimNode } from './project-pages-map-model'
 /** Screen = layout * k + (x, y), in CSS pixels. */
 export type MapView = { x: number; y: number; k: number }
 
-export type MapPalette = { edge: string; page: string; strong: string; tag: string; font: string }
+export type MapPalette = {
+  edge: string
+  page: string
+  strong: string
+  tag: string
+  task: string
+  font: string
+}
 
 export function readMapPalette(element: HTMLElement): MapPalette {
   const style = getComputedStyle(element)
@@ -14,6 +21,7 @@ export function readMapPalette(element: HTMLElement): MapPalette {
     page: token('--muted-foreground'),
     strong: token('--foreground'),
     tag: token('--chart-2') || token('--primary'),
+    task: token('--status-success') || token('--primary'),
     font: style.fontFamily
   }
 }
@@ -77,9 +85,11 @@ export function drawMap(ctx: CanvasRenderingContext2D, paint: MapPaint): void {
     ctx.fillStyle =
       kind === 'tag'
         ? palette.tag
-        : id === paint.current || paint.lit?.has(id)
-          ? palette.strong
-          : palette.page
+        : kind === 'task'
+          ? palette.task
+          : id === paint.current || paint.lit?.has(id)
+            ? palette.strong
+            : palette.page
     ctx.beginPath()
     ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2)
     ctx.fill()
@@ -100,7 +110,8 @@ export function drawMap(ctx: CanvasRenderingContext2D, paint: MapPaint): void {
       continue
     }
     ctx.globalAlpha = shown(node.node.id, paint) ? 1 : DIM
-    ctx.fillStyle = node.node.kind === 'tag' ? palette.tag : palette.strong
+    const kind = node.node.kind
+    ctx.fillStyle = kind === 'tag' ? palette.tag : kind === 'task' ? palette.task : palette.strong
     const label = node.node.kind === 'tag' ? `#${node.node.label}` : node.node.label
     ctx.fillText(
       label.length > 40 ? `${label.slice(0, 39)}…` : label,

@@ -7,6 +7,8 @@ import type {
 
 export type MapFilters = {
   tags: boolean
+  /** ActiveCollab tasks that pages link to. */
+  tasks: boolean
   subpages: boolean
   orphans: boolean
   /** Show only what sits within depth links of this node. */
@@ -16,9 +18,14 @@ export type MapFilters = {
 
 export function visibleGraph(graph: PagesGraph, filters: MapFilters): PagesGraph {
   let edges = graph.edges.filter(
-    (edge) => (filters.tags || edge.kind !== 'tag') && (filters.subpages || edge.kind !== 'child')
+    (edge) =>
+      (filters.tags || edge.kind !== 'tag') &&
+      (filters.tasks || edge.kind !== 'task') &&
+      (filters.subpages || edge.kind !== 'child')
   )
-  let nodes = graph.nodes.filter((node) => filters.tags || node.kind !== 'tag')
+  let nodes = graph.nodes.filter(
+    (node) => (filters.tags || node.kind !== 'tag') && (filters.tasks || node.kind !== 'task')
+  )
   if (filters.focus && nodes.some((node) => node.id === filters.focus)) {
     const keep = new Set([filters.focus])
     let frontier = new Set([filters.focus])
@@ -70,11 +77,11 @@ export type MapSim = {
   alpha: number
 }
 
-const LINK_SHAPE = { link: [70, 1], tag: [55, 0.6], child: [60, 0.4] } as const
+const LINK_SHAPE = { link: [70, 1], tag: [55, 0.6], task: [55, 0.6], child: [60, 0.4] } as const
 
 export function nodeRadius(node: PagesGraphNode): number {
   const grow = Math.sqrt(node.degree)
-  return node.kind === 'tag' ? Math.min(3.5 + grow * 1.6, 14) : Math.min(4 + grow * 2.2, 18)
+  return node.kind === 'page' ? Math.min(4 + grow * 2.2, 18) : Math.min(3.5 + grow * 1.6, 14)
 }
 
 /** A layout for the graph, keeping positions from the last one so updates do not jump. */
