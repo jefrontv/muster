@@ -58,15 +58,20 @@ export function descriptionParagraphs(html: string): string[] {
   return paragraphs
 }
 
-function linkNode(title: string, href: string): JSONContent {
-  return { type: 'text', text: title, marks: [{ type: 'link', attrs: { href } }] }
+/** Link title that keeps a lone link inline instead of drawing it as a card. */
+export function inlineLinkTitle(kind: ActiveCollabPageRef['kind']): string {
+  return kind === 'task' ? 'ActiveCollab task' : 'ActiveCollab project'
+}
+
+function linkNode(title: string, href: string, linkTitle: string | null = null): JSONContent {
+  return { type: 'text', text: title, marks: [{ type: 'link', attrs: { href, title: linkTitle } }] }
 }
 
 function contentFor(pick: ActiveCollabPick, href: string): JSONContent[] {
-  const link = linkNode(pick.title, href)
   if (pick.mode === 'link') {
-    return [link, { type: 'text', text: ' ' }]
+    return [linkNode(pick.title, href, inlineLinkTitle(pick.ref.kind)), { type: 'text', text: ' ' }]
   }
+  const link = linkNode(pick.title, href)
   const quoted = pick.mode === 'quote' ? descriptionParagraphs(pick.bodyHtml ?? '') : []
   if (quoted.length === 0) {
     return [{ type: 'paragraph', content: [link] }, { type: 'paragraph' }]
@@ -92,6 +97,19 @@ export function insertActiveCollabRef(editor: Editor, pick: ActiveCollabPick): v
     .chain()
     .focus()
     .insertContent(contentFor(pick, activeCollabUrl(instance, pick.ref)))
+    .command(({ tr }) => {
+      // Reuse an empty line already below the block instead of stacking a second one.
+      const { $from } = tr.selection
+      const next = $from.depth === 1 ? tr.doc.nodeAt($from.after()) : null
+      if (
+        $from.parent.content.size === 0 &&
+        next?.type.name === 'paragraph' &&
+        !next.content.size
+      ) {
+        tr.delete($from.after(), $from.after() + next.nodeSize)
+      }
+      return true
+    })
     .run()
 }
 

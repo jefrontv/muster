@@ -42,7 +42,7 @@ export function activeCollabRefKey(ref: ActiveCollabPageRef): string {
 
 export type ActiveCollabTaskLink = { key: string; href: string; title: string }
 
-const MARKDOWN_LINK = /\[((?:\\.|[^\]\\\n])*)\]\((https?:\/\/[^\s)]+)\)/g
+const MARKDOWN_LINK = /\[((?:\\.|[^\]\\\n])*)\]\((https?:\/\/[^\s)]+)(?:\s+"[^"\n]*")?\)/g
 const TASK_PATH = /^\/projects\/\d+\/tasks\/(\d+)\/?$/
 
 /**

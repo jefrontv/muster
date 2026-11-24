@@ -638,43 +638,29 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  height: 1.55em;
+  /* Why: matches the paragraph's line box so the box centres on the first line of text. */
+  height: 1lh;
   cursor: pointer;
   user-select: none;
 }
 
+/* Why: the global checkbox style in main.css sits in :where(), so preflight's input reset wins
+   on radius and the unchecked fill. Restore them here; :checked still comes from main.css. */
 .rich-markdown-editor ul[data-type='taskList'] li > label input[type='checkbox'] {
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  /* Why: bumped from 35% to 55% so the unchecked border stays legible in
-     dark mode where low-alpha foreground nearly disappears on --background. */
-  border: 1.5px solid color-mix(in srgb, var(--foreground) 55%, transparent);
-  border-radius: 4px;
-  background: transparent;
+  border-radius: 5px;
   cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
 }
 
-.rich-markdown-editor ul[data-type='taskList'] li > label input[type='checkbox']:checked {
-  background: var(--primary);
-  border-color: var(--primary);
+.rich-markdown-editor ul[data-type='taskList'] li > label input[type='checkbox']:not(:checked) {
+  background-color: color-mix(in oklab, var(--foreground) 6%, transparent);
 }
 
-.rich-markdown-editor ul[data-type='taskList'] li > label input[type='checkbox']:checked::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 5px;
-  height: 9px;
-  /* Why: --primary flips between dark and light per theme, so a hardcoded
-     white tick is invisible in dark mode (light-on-light). Use the paired
-     token so the tick always contrasts against the filled box. */
-  border: solid var(--primary-foreground);
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+.rich-markdown-editor
+  ul[data-type='taskList']
+  li
+  > label
+  input[type='checkbox']:not(:checked):hover {
+  background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
 }
 
 .rich-markdown-editor ul[data-type='taskList'] li > div {

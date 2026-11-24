@@ -159,7 +159,7 @@ export function filterPageSlashItems(
       .map(single)
   ]
   const needle = query.trim().toLowerCase()
-  return items.flatMap((item) => {
+  const matches = items.flatMap((item) => {
     const hits = filterRichMarkdownSlashCommands(item.variants, query)
     const named = !needle || item.label.toLowerCase().includes(needle)
     if (!named && hits.length === 0) {
@@ -167,6 +167,10 @@ export function filterPageSlashItems(
     }
     // A query naming one level ("h2", "heading 2") preselects it.
     const level = !named && hits.length === 1 ? item.variants.indexOf(hits[0]) : 0
-    return [{ item, level }]
+    return [{ item, level, named }]
   })
+  // Rows named by the query come before alias hits, so "/task" lands on ActiveCollab task.
+  return [...matches.filter((m) => m.named), ...matches.filter((m) => !m.named)].map(
+    ({ item, level }) => ({ item, level })
+  )
 }

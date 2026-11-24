@@ -221,3 +221,12 @@
 .project-page-editor .page-ac-dot.is-loading {
   background: var(--muted-foreground);
 }
+
+/* Why: after an insert the caret sits on an empty line; the hint shows what that line is for. */
+.project-page-editor.ProseMirror-focused > p.is-empty:not(.is-editor-empty)::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+}

@@ -29,6 +29,17 @@ describe('ActiveCollab page links', () => {
     ])
   })
 
+  it('keeps link text when the link has a title', () => {
+    const md = '[Header fix](https://ac.example.com/projects/4/tasks/11 "ActiveCollab task")'
+    expect(activeCollabTaskLinks(md)).toEqual([
+      {
+        key: 'ac.example.com/tasks/11',
+        href: 'https://ac.example.com/projects/4/tasks/11',
+        title: 'Header fix'
+      }
+    ])
+  })
+
   it('reads task and project URLs on the connected instance', () => {
     expect(parseActiveCollabUrl(`${AC}projects/37/tasks/509`, AC)).toEqual({
       kind: 'task',

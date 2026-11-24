@@ -19,11 +19,11 @@ import {
   pageTask,
   refreshActiveCollabPageData
 } from './project-pages-activecollab-data'
-import { pasteActiveCollabUrl } from './project-pages-activecollab-insert'
+import { inlineLinkTitle, pasteActiveCollabUrl } from './project-pages-activecollab-insert'
 
 const KEY = new PluginKey<DecorationSet>('projectPageActiveCollab')
 
-type LinkRun = { ref: ActiveCollabPageRef; from: number; to: number; text: string }
+type LinkRun = { ref: ActiveCollabPageRef; from: number; to: number; text: string; inline: boolean }
 
 function rowFor(ref: ActiveCollabPageRef) {
   return ref.kind === 'task' ? pageTask(ref) : pageProject(ref.projectId)
@@ -33,8 +33,8 @@ function rowFor(ref: ActiveCollabPageRef) {
 function linkRuns(block: ProseMirrorNode, start: number, instance: string): LinkRun[] {
   const runs: LinkRun[] = []
   block.forEach((child, offset) => {
-    const href = child.marks.find((mark) => mark.type.name === 'link')?.attrs.href
-    const ref = typeof href === 'string' ? parseActiveCollabUrl(href, instance) : null
+    const attrs = child.marks.find((mark) => mark.type.name === 'link')?.attrs
+    const ref = typeof attrs?.href === 'string' ? parseActiveCollabUrl(attrs.href, instance) : null
     const from = start + offset
     const last = runs.at(-1)
     if (!ref) {
@@ -44,7 +44,8 @@ function linkRuns(block: ProseMirrorNode, start: number, instance: string): Link
       last.to = from + child.nodeSize
       last.text += child.text ?? ''
     } else {
-      runs.push({ ref, from, to: from + child.nodeSize, text: child.text ?? '' })
+      const inline = attrs?.title === inlineLinkTitle(ref.kind)
+      runs.push({ ref, from, to: from + child.nodeSize, text: child.text ?? '', inline })
     }
   })
   return runs
@@ -67,7 +68,7 @@ function decorate(doc: ProseMirrorNode): DecorationSet {
       const state =
         row === undefined ? 'loading' : row ? (row.isCompleted ? 'done' : 'open') : 'missing'
       const key = `${activeCollabRefKey(run.ref)}:${state}:${row ? JSON.stringify(row).length : 0}`
-      if (alone && node.type.name === 'paragraph') {
+      if (alone && !run.inline && node.type.name === 'paragraph') {
         found.push(
           Decoration.node(pos, pos + node.nodeSize, { class: `page-ac-card is-${state}` }),
           Decoration.widget(pos + 1, () => cardHead(run.ref, row), {
