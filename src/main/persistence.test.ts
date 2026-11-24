@@ -726,7 +726,7 @@ describe('Store', () => {
     expect(settings.experimentalActivity).toBe(false)
     expect(settings.experimentalActivityDefaultedOffForAllUsers).toBe(true)
     expect(settings.experimentalTerminalAttention).toBe(false)
-    expect(settings.experimentalNewWorktreeCardStyle).toBe(false)
+    expect(settings.experimentalNewWorktreeCardStyle).toBe(true)
     expect(settings.floatingTerminalEnabled).toBe(true)
     expect(settings.floatingTerminalDefaultedForAllUsers).toBe(true)
     expect(settings.notifications.customSoundPath).toBeNull()
@@ -936,7 +936,7 @@ describe('Store', () => {
     expect(store.getUI().setupGuideSidebarDismissed).toBe(false)
   })
 
-  it('keeps new worktree card style off while onboarding is open', async () => {
+  it('uses the graduated card style while onboarding is open', async () => {
     writeDataFile({
       settings: {},
       onboarding: {
@@ -951,10 +951,10 @@ describe('Store', () => {
 
     const store = await createStore()
 
-    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(false)
+    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(true)
   })
 
-  it('preserves explicit new worktree card style opt-out while onboarding is open', async () => {
+  it('moves a saved card style opt-out onto the graduated style', async () => {
     writeDataFile({
       settings: {
         experimentalNewWorktreeCardStyle: false
@@ -971,7 +971,7 @@ describe('Store', () => {
 
     const store = await createStore()
 
-    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(false)
+    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(true)
   })
 
   it('preserves explicit new worktree card style opt-in on load', async () => {
@@ -988,7 +988,7 @@ describe('Store', () => {
     expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(true)
   })
 
-  it('keeps new worktree card style off for existing users backfilled as completed', async () => {
+  it('uses the graduated card style for existing users backfilled as completed', async () => {
     writeDataFile({
       schemaVersion: 1,
       settings: {},
@@ -998,7 +998,7 @@ describe('Store', () => {
     const store = await createStore()
 
     expect(store.getOnboarding().closedAt).not.toBeNull()
-    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(false)
+    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(true)
   })
 
   it('treats persisted false setup guide sidebar dismissal as stale once onboarding is closed', async () => {
@@ -2331,7 +2331,7 @@ describe('Store', () => {
     const store = await createStore()
     expect(store.getRepos()).toEqual([])
     expect(store.getSettings().theme).toBe('system')
-    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(false)
+    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(true)
   })
 
   // ── 4. Schema migration: merges with defaults ───────────────────────
@@ -10763,7 +10763,7 @@ describe('Store', () => {
     expect(t!.installId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
     )
-    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(false)
+    expect(store.getSettings().experimentalNewWorktreeCardStyle).toBe(true)
   })
 
   it('preserves an already-migrated telemetry block on subsequent launches', async () => {

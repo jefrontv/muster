@@ -374,7 +374,8 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     experimentalTerminalAttention: false,
     experimentalAgentHibernation: false,
     agentHibernationIdleMs: 30 * 60 * 1000,
-    experimentalNewWorktreeCardStyle: false,
+    // Graduated from Experimental; the key stays so old code paths and RPC clients keep working.
+    experimentalNewWorktreeCardStyle: true,
     experimentalEphemeralVms: false,
     compactWorktreeCards: false,
     // Why: local desktop stays the default until the user picks a saved runtime environment.

@@ -3207,8 +3207,9 @@ export class Store {
           ),
           settings: {
             ...defaults.settings,
-            // Why (#7977): keep persisted experimentalNewWorktreeCardStyle:true — v1.4.130's onboarding auto-wrote it as a plain boolean, so it's indistinguishable from a real opt-in; only the default changed.
             ...stripLegacyTerminalScrollbackBytes(parsed.settings),
+            // Why: the new card style graduated and its toggle is gone, so a saved false must not strand anyone on the old cards.
+            experimentalNewWorktreeCardStyle: true,
             prBotAuthorOverrides: normalizePRBotAuthorOverrides(
               parsed.settings?.prBotAuthorOverrides
             ),
