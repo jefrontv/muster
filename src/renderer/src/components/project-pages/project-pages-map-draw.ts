@@ -17,7 +17,8 @@ export function readMapPalette(element: HTMLElement): MapPalette {
   const style = getComputedStyle(element)
   const token = (name: string): string => style.getPropertyValue(name).trim()
   return {
-    edge: token('--border'),
+    // --border vanishes on dark backgrounds; muted text at partial alpha reads in both themes.
+    edge: token('--muted-foreground'),
     page: token('--muted-foreground'),
     strong: token('--foreground'),
     tag: token('--chart-2') || token('--primary'),
@@ -64,13 +65,13 @@ export function drawMap(ctx: CanvasRenderingContext2D, paint: MapPaint): void {
   ctx.translate(view.x, view.y)
   ctx.scale(view.k, view.k)
 
-  ctx.lineWidth = 1 / view.k
+  ctx.lineWidth = 1.25 / view.k
   for (const link of sim.links) {
     const a = sim.nodes[link.a]
     const b = sim.nodes[link.b]
     const on = shown(a.node.id, paint) && shown(b.node.id, paint)
-    ctx.globalAlpha = (on ? 1 : DIM) * (link.kind === 'link' ? 0.9 : 0.45)
-    ctx.strokeStyle = paint.lit && on ? palette.page : palette.edge
+    ctx.globalAlpha = (on ? 1 : DIM) * (link.kind === 'link' ? 0.6 : 0.4)
+    ctx.strokeStyle = paint.lit && on ? palette.strong : palette.edge
     ctx.setLineDash(link.kind === 'child' ? [4 / view.k, 3 / view.k] : [])
     ctx.beginPath()
     ctx.moveTo(a.x, a.y)
