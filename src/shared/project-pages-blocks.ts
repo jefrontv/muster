@@ -21,6 +21,11 @@ export const PAGE_BLOCKS: PageBlockExample[] = [
   { block: 'Divider', markdown: '---' },
   { block: 'Table', markdown: '| A | B |\n| --- | --- |\n| 1 | 2 |' },
   { block: 'Code', markdown: '```ts\nconst a = 1\n```' },
+  {
+    block: 'Diagram (Mermaid)',
+    markdown: '```mermaid\nflowchart LR\n  A[Request] --> B{Approved?}\n  B -->|yes| C[Ship]\n```',
+    note: 'Renders as a diagram. Also sequenceDiagram, erDiagram, gantt, classDiagram, stateDiagram-v2.'
+  },
   { block: 'Math', markdown: 'Inline $x^2$ and a block:\n\n$$\nE = mc^2\n$$' },
   {
     block: 'Toggle',
