@@ -18,6 +18,7 @@ import {
   type SelectionHandler
 } from '@maxgraph/core'
 import DOMPurify from 'dompurify'
+import { keepLabelsReadable } from './project-pages-diagram-label-contrast'
 import { applyDiagramTheme } from './project-pages-diagram-styles'
 
 export type DiagramEditor = {
@@ -126,6 +127,7 @@ export function createDiagramEditor(container: HTMLElement, onChange: () => void
     } as CellStyle)
 
   applyDiagramTheme(graph)
+  keepLabelsReadable(graph)
   const theme = new MutationObserver(() => {
     applyDiagramTheme(graph)
     graph.refresh()

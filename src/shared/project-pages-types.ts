@@ -79,7 +79,8 @@ export type ProjectPagesResult<T> =
   | { ok: false; code: ProjectPagesErrorCode; message: string; revision?: number }
 
 /** Null when the user closed the folder picker. */
-export type ProjectPagesTransfer = { count: number; path: string } | null
+/** skipped: files an import could not read, each as "name: reason". */
+export type ProjectPagesTransfer = { count: number; path: string; skipped?: string[] } | null
 
 export type ProjectPagesChange = {
   scopeKey: string

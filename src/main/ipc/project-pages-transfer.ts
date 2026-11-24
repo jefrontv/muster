@@ -6,22 +6,30 @@ import type { ProjectPagesResult, ProjectPagesTransfer } from '../../shared/proj
 import {
   projectPages,
   projectPagesAttachments,
-  projectPagesDatabases
+  projectPagesDatabases,
+  projectPagesDiagrams
 } from '../project-pages/project-pages'
 import { exportProjectPages } from '../project-pages/project-pages-export'
 import { safeFileName, uniqueName } from '../project-pages/project-pages-file-names'
-import { importProjectPages } from '../project-pages/project-pages-import'
+import { importProjectPageFiles, importProjectPages } from '../project-pages/project-pages-import'
 import { guarded, scope } from './project-pages'
+
+async function pickPaths(
+  sender: WebContents,
+  options: Electron.OpenDialogOptions
+): Promise<string[]> {
+  const parent = BrowserWindow.fromWebContents(sender)
+  const result = parent
+    ? await dialog.showOpenDialog(parent, options)
+    : await dialog.showOpenDialog(options)
+  return result.canceled ? [] : result.filePaths
+}
 
 async function pickFolder(
   sender: WebContents,
   options: Electron.OpenDialogOptions
 ): Promise<string | null> {
-  const parent = BrowserWindow.fromWebContents(sender)
-  const result = parent
-    ? await dialog.showOpenDialog(parent, options)
-    : await dialog.showOpenDialog(options)
-  return result.canceled ? null : (result.filePaths[0] ?? null)
+  return (await pickPaths(sender, options))[0] ?? null
 }
 
 /** A fresh folder inside the chosen one, so an export never writes over existing files. */
@@ -38,6 +46,7 @@ function exportFolder(chosen: string, name: unknown): string {
 export function registerProjectPagesTransferHandlers(): void {
   ipcMain.removeHandler('projectPages:export')
   ipcMain.removeHandler('projectPages:import')
+  ipcMain.removeHandler('projectPages:importFiles')
   ipcMain.handle(
     'projectPages:export',
     async (
@@ -65,6 +74,7 @@ export function registerProjectPagesTransferHandlers(): void {
           ...exportProjectPages({
             store,
             databases,
+            diagrams: projectPagesDiagrams(),
             scopeKey: scopeKey.value,
             targetDir,
             filesDir: projectPagesAttachments().folder(scopeKey.value)
@@ -82,7 +92,7 @@ export function registerProjectPagesTransferHandlers(): void {
         return scopeKey
       }
       const sourceDir = await pickFolder(event.sender, {
-        title: 'Import a folder of markdown pages',
+        title: 'Import a folder of markdown pages and diagrams',
         buttonLabel: 'Import',
         properties: ['openDirectory']
       })
@@ -92,12 +102,45 @@ export function registerProjectPagesTransferHandlers(): void {
       return guarded(() => ({
         ...importProjectPages({
           store: projectPages(),
+          diagrams: projectPagesDiagrams(),
           scopeKey: scopeKey.value,
           sourceDir,
           parentId: null,
           author: { kind: 'user' }
         }),
         path: sourceDir
+      }))
+    }
+  )
+  ipcMain.handle(
+    'projectPages:importFiles',
+    async (event, key: unknown): Promise<ProjectPagesResult<ProjectPagesTransfer>> => {
+      const scopeKey = guarded(() => scope(key))
+      if (!scopeKey.ok) {
+        return scopeKey
+      }
+      const files = await pickPaths(event.sender, {
+        title: 'Import diagram files',
+        buttonLabel: 'Import',
+        properties: ['openFile', 'multiSelections'],
+        filters: [
+          { name: 'Diagrams', extensions: ['drawio', 'xml', 'svg', 'canvas'] },
+          { name: 'Markdown', extensions: ['md'] }
+        ]
+      })
+      if (files.length === 0) {
+        return { ok: true, value: null }
+      }
+      return guarded(() => ({
+        ...importProjectPageFiles({
+          store: projectPages(),
+          diagrams: projectPagesDiagrams(),
+          scopeKey: scopeKey.value,
+          files,
+          parentId: null,
+          author: { kind: 'user' }
+        }),
+        path: files[0]
       }))
     }
   )

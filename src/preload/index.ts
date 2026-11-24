@@ -1010,6 +1010,7 @@ const api = {
     exportToFolder: (scopeKey, folderName) =>
       ipcRenderer.invoke('projectPages:export', scopeKey, folderName),
     importFromFolder: (scopeKey) => ipcRenderer.invoke('projectPages:import', scopeKey),
+    importFiles: (scopeKey) => ipcRenderer.invoke('projectPages:importFiles', scopeKey),
     onChanged: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

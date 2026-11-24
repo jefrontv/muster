@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pageLinkHref } from '../../shared/project-pages-plain-text'
 import { createProjectPagesDatabases } from './project-pages-database-store'
+import { createProjectPagesDiagrams } from './project-pages-diagram-store'
 import { exportProjectPages } from './project-pages-export'
 import { importProjectPages } from './project-pages-import'
 import { createProjectPagesStore } from './project-pages-store'
@@ -23,7 +24,11 @@ afterEach(() => {
 
 function setup() {
   const store = createProjectPagesStore({ rootDir: root })
-  return { store, databases: createProjectPagesDatabases({ rootDir: root, store }) }
+  return {
+    store,
+    databases: createProjectPagesDatabases({ rootDir: root, store }),
+    diagrams: createProjectPagesDiagrams({ rootDir: root, store })
+  }
 }
 
 describe('page export and import', () => {
@@ -49,7 +54,7 @@ describe('page export and import', () => {
   })
 
   it('imports a folder tree and turns relative links into page links', () => {
-    const { store } = setup()
+    const { store, diagrams } = setup()
     mkdirSync(join(out, 'Guide 0123456789abcdef0123456789abcdef'))
     writeFileSync(
       join(out, 'Guide 0123456789abcdef0123456789abcdef.md'),
@@ -64,8 +69,14 @@ describe('page export and import', () => {
     writeFileSync(join(out, 'Loose', '.git', 'x.md'), 'skip')
 
     expect(
-      importProjectPages({ store, scopeKey: 'b', sourceDir: out, parentId: null, author: USER })
-        .count
+      importProjectPages({
+        store,
+        diagrams,
+        scopeKey: 'b',
+        sourceDir: out,
+        parentId: null,
+        author: USER
+      }).count
     ).toBe(4)
     const pages = store.listPages('b').pages
     const byTitle = new Map(pages.map((p) => [p.title, p]))

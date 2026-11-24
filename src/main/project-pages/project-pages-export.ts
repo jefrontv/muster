@@ -7,6 +7,8 @@ import { childrenOf } from '../../shared/project-pages-tree'
 import type { PageDatabaseSchema } from '../../shared/project-pages-database-types'
 import type { ProjectPageMeta } from '../../shared/project-pages-types'
 import type { ProjectPagesDatabases } from './project-pages-database-store'
+import type { ProjectPagesDiagrams } from './project-pages-diagram-store'
+import { rewriteDiagramLinks, writeDrawioFile } from './project-pages-drawio-file'
 import {
   linkPath,
   rewriteMarkdownLinks,
@@ -32,12 +34,15 @@ function frontMatter(schema: PageDatabaseSchema, page: ProjectPageMeta): string 
 export function exportProjectPages({
   store,
   databases,
+  diagrams = null,
   scopeKey,
   targetDir,
   filesDir = null
 }: {
   store: ProjectPagesStore
   databases: ProjectPagesDatabases
+  /** When given, diagram pages also get a .drawio file beside their .md. */
+  diagrams?: ProjectPagesDiagrams | null
   scopeKey: string
   targetDir: string
   /** The space's files/ folder; copied beside the pages so image links keep working. */
@@ -71,18 +76,28 @@ export function exportProjectPages({
     if (!file) {
       continue
     }
-    const body = rewriteMarkdownLinks(store.readPage(scopeKey, page.id).markdown, (href) => {
+    const relink = (href: string): string | null => {
       const target = href.startsWith(PAGE_LINK_SCHEME)
         ? files.get(href.slice(PAGE_LINK_SCHEME.length))
         : href.startsWith('files/') && filesDir
           ? href
           : undefined
       return target ? linkPath(posix.relative(posix.dirname(file), target)) : null
-    })
-    const parent = page.parentId ? pages.find((p) => p.id === page.parentId) : undefined
-    const header = parent?.database ? frontMatter(schemaFor(parent.id), page) : ''
+    }
+    let body = rewriteMarkdownLinks(store.readPage(scopeKey, page.id).markdown, relink)
     const absolute = join(targetDir, ...file.split('/'))
     mkdirSync(join(absolute, '..'), { recursive: true })
+    if (page.diagram && diagrams) {
+      const drawio = `${posix.basename(file, '.md')}.drawio`
+      const xml = rewriteDiagramLinks(diagrams.readDiagram(scopeKey, page.id).xml, relink)
+      writeFileSync(
+        join(absolute, '..', drawio),
+        writeDrawioFile([{ name: page.title || 'Page-1', xml }])
+      )
+      body = `[Open diagram](${linkPath(drawio)})\n\n${body.replace(/\n*<!-- diagram [0-9a-f]+ -->\s*$/, '\n')}`
+    }
+    const parent = page.parentId ? pages.find((p) => p.id === page.parentId) : undefined
+    const header = parent?.database ? frontMatter(schemaFor(parent.id), page) : ''
     writeFileSync(absolute, `${header}# ${page.title.trim() || 'Untitled'}\n\n${body}`)
   }
   if (filesDir && existsSync(filesDir)) {

@@ -1125,6 +1125,8 @@ export type ProjectPagesApi = {
     folderName: string
   ) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
   importFromFolder: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
+  /** Asks for .drawio/.xml/.svg/.canvas (or .md) files and adds each as a top-level page. */
+  importFiles: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
   onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
 }
 

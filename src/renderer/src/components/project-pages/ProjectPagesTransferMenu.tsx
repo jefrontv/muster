@@ -1,5 +1,5 @@
 // Header menu for copying a project's pages out to markdown files, or bringing a folder in.
-import { Download, MoreHorizontal, Upload } from 'lucide-react'
+import { Download, MoreHorizontal, Upload, Workflow } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -20,13 +20,16 @@ function pageCount(count: number): string {
 export function ProjectPagesTransferMenu({ scopeKey, projectName }: Props): React.JSX.Element {
   const [busy, setBusy] = useState(false)
 
-  const run = async (kind: 'export' | 'import'): Promise<void> => {
+  const run = async (kind: 'export' | 'import' | 'importFiles'): Promise<void> => {
     setBusy(true)
     try {
+      const api = window.api.projectPages
       const result =
         kind === 'export'
-          ? await window.api.projectPages.exportToFolder(scopeKey, projectName)
-          : await window.api.projectPages.importFromFolder(scopeKey)
+          ? await api.exportToFolder(scopeKey, projectName)
+          : kind === 'import'
+            ? await api.importFromFolder(scopeKey)
+            : await api.importFiles(scopeKey)
       if (!result.ok) {
         toast.error(result.message)
         return
@@ -35,8 +38,15 @@ export function ProjectPagesTransferMenu({ scopeKey, projectName }: Props): Reac
       if (!done) {
         return
       }
-      if (kind === 'import') {
-        toast.success(`Imported ${pageCount(done.count)}`)
+      if (kind !== 'export') {
+        const skipped = done.skipped ?? []
+        if (skipped.length > 0) {
+          toast.warning(`Imported ${pageCount(done.count)}, skipped ${skipped.length}`, {
+            description: skipped.slice(0, 3).join('\n')
+          })
+        } else {
+          toast.success(`Imported ${pageCount(done.count)}`)
+        }
         return
       }
       toast.success(`Exported ${pageCount(done.count)}`, {
@@ -72,7 +82,11 @@ export function ProjectPagesTransferMenu({ scopeKey, projectName }: Props): Reac
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void run('import')}>
           <Upload className="size-4" />
-          {translate('auto.components.projectPages.transfer.import', 'Import markdown folder…')}
+          {translate('auto.components.projectPages.transfer.import', 'Import folder…')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => void run('importFiles')}>
+          <Workflow className="size-4" />
+          {translate('auto.components.projectPages.transfer.importFiles', 'Import diagram files…')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
