@@ -7,6 +7,8 @@ type RightSidebarActivityVisibilityState = {
   hasSite: boolean
   /** Drafts are waiting, or the drafts tab is open (so posting the last one keeps it in place). */
   hasDrafts?: boolean
+  /** The experimental Pages setting is on. */
+  pagesEnabled?: boolean
 }
 
 export function getVisibleRightSidebarActivityItems(
@@ -16,7 +18,8 @@ export function getVisibleRightSidebarActivityItems(
     isFolderWorkspace,
     isSshRepo,
     hasSite,
-    hasDrafts = false
+    hasDrafts = false,
+    pagesEnabled = false
   }: RightSidebarActivityVisibilityState
 ): ActivityBarItem[] {
   return items.filter((item) => {
@@ -33,6 +36,9 @@ export function getVisibleRightSidebarActivityItems(
       return false
     }
     if (item.draftsOnly && !hasDrafts) {
+      return false
+    }
+    if (item.pagesOnly && !pagesEnabled) {
       return false
     }
     return true

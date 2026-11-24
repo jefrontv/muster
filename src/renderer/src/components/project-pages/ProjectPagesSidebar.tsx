@@ -17,6 +17,8 @@ type Props = {
   onCreate: (parentId: string | null) => void
   onTrash: (pageId: string) => void
   onRestore: (pageId: string) => void
+  /** Replaces the default column width and border, e.g. inside the right sidebar. */
+  className?: string
 }
 
 export function ProjectPagesSidebar({
@@ -26,7 +28,8 @@ export function ProjectPagesSidebar({
   onSelect,
   onCreate,
   onTrash,
-  onRestore
+  onRestore,
+  className = 'w-[clamp(14rem,26%,18rem)] shrink-0 border-r border-border'
 }: Props): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
@@ -48,7 +51,7 @@ export function ProjectPagesSidebar({
   }
 
   return (
-    <aside className="flex w-[clamp(14rem,26%,18rem)] shrink-0 flex-col border-r border-border">
+    <aside className={`flex min-h-0 flex-col ${className}`}>
       <div className="flex shrink-0 items-center gap-1.5 p-3">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />

@@ -3406,6 +3406,7 @@ export type RightSidebarTab =
   | 'ports'
   | 'site'
   | 'comment-drafts'
+  | 'pages'
 export type ActiveRightSidebarTab = Exclude<RightSidebarTab, 'search'>
 export type RightSidebarExplorerView = 'files' | 'search'
 

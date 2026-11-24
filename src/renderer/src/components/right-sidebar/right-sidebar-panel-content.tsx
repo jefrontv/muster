@@ -12,6 +12,9 @@ const FolderWorkspaceWorktreesPanel = lazy(() => import('./FolderWorkspaceWorktr
 const FolderWorkspacePrChecksPanel = lazy(() => import('./FolderWorkspacePrChecksPanel'))
 const SitePanel = lazy(() => import('./SitePanel'))
 const CommentDraftsSidebarPanel = lazy(() => import('../comment-drafts/CommentDraftsSidebarPanel'))
+const ProjectPagesRightSidebarPanel = lazy(
+  () => import('../project-pages/ProjectPagesRightSidebarPanel')
+)
 
 type RightSidebarPanelContentProps = {
   effectiveTab: ActiveRightSidebarTab
@@ -44,6 +47,7 @@ export function RightSidebarPanelContent({
         )}
         {effectiveTab === 'site' && <SitePanel />}
         {effectiveTab === 'comment-drafts' && <CommentDraftsSidebarPanel />}
+        {effectiveTab === 'pages' && <ProjectPagesRightSidebarPanel />}
       </Suspense>
     </div>
   )

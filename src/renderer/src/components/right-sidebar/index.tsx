@@ -4,6 +4,7 @@ import {
   Globe,
   Plug,
   Files,
+  FileText,
   GitBranch,
   ListChecks,
   ListTodo,
@@ -187,6 +188,13 @@ function RightSidebarInner(): React.JSX.Element {
         title: translate('auto.components.right.sidebar.index.commentDraftsTab', 'Comment drafts'),
         shortcut: '',
         draftsOnly: true
+      },
+      {
+        id: 'pages',
+        icon: FileText,
+        title: translate('auto.components.right.sidebar.index.pagesTab', 'Pages'),
+        shortcut: '',
+        pagesOnly: true
       }
     ],
     [checksShortcut, explorerShortcut, portsShortcut, sourceControlShortcut, tasksShortcut]
@@ -197,6 +205,7 @@ function RightSidebarInner(): React.JSX.Element {
     [activityItems]
   )
 
+  const pagesEnabled = useAppStore((s) => s.settings?.experimentalProjectPages === true)
   const visibleItems = useMemo(
     () =>
       getVisibleRightSidebarActivityItems(enabledActivityItems, {
@@ -204,7 +213,8 @@ function RightSidebarInner(): React.JSX.Element {
         isFolderWorkspace,
         isSshRepo,
         hasSite: activeSite !== null,
-        hasDrafts: allDrafts.length > 0 || rightSidebarTab === 'comment-drafts'
+        hasDrafts: allDrafts.length > 0 || rightSidebarTab === 'comment-drafts',
+        pagesEnabled
       }),
     [
       enabledActivityItems,
@@ -213,7 +223,8 @@ function RightSidebarInner(): React.JSX.Element {
       isSshRepo,
       activeSite,
       allDrafts.length,
-      rightSidebarTab
+      rightSidebarTab,
+      pagesEnabled
     ]
   )
 

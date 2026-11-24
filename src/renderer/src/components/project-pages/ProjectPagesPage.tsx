@@ -21,10 +21,7 @@ import { ProjectPageEditor } from './ProjectPageEditor'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
-
-// Remembered for the session so leaving and coming back lands on the same page.
-const lastPageByScope = new Map<string, string>()
-let lastScopeKey: string | null = null
+import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pages-location'
 
 const SAVE_LABELS: Record<AutosaveState, string> = {
   saved: 'Saved',
@@ -37,7 +34,7 @@ const SAVE_LABELS: Record<AutosaveState, string> = {
 export default function ProjectPagesPage(): React.JSX.Element {
   const closePagesPage = useAppStore((s) => s.closePagesPage)
   const { options, activeKey } = useProjectPagesScopes()
-  const [chosenKey, setChosenKey] = useState<string | null>(lastScopeKey)
+  const [chosenKey, setChosenKey] = useState<string | null>(lastPagesScope)
   const scopeKey =
     chosenKey && options.some((o) => o.key === chosenKey)
       ? chosenKey
@@ -49,17 +46,14 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const [saveState, setSaveState] = useState<AutosaveState>('saved')
 
   const live = useMemo(() => pages.filter((p) => p.archivedAt === null), [pages])
-  const remembered = scopeKey ? lastPageByScope.get(scopeKey) : undefined
+  const remembered = lastPageIn(scopeKey)
   const firstPageId = useMemo(() => buildPageTree(pages)[0]?.page.id ?? null, [pages])
   const pageId =
     [selectedId, remembered, firstPageId].find((id) => id && live.some((p) => p.id === id)) ?? null
   const meta = pageId ? live.find((p) => p.id === pageId) : undefined
 
   useEffect(() => {
-    lastScopeKey = scopeKey
-    if (scopeKey && pageId) {
-      lastPageByScope.set(scopeKey, pageId)
-    }
+    rememberPagesLocation(scopeKey, pageId)
   }, [scopeKey, pageId])
 
   useEffect(() => {

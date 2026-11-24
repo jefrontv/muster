@@ -30,6 +30,8 @@ export type ActivityBarItem = {
   siteOnly?: boolean
   /** When true, shown only while comment drafts are waiting. */
   draftsOnly?: boolean
+  /** When true, shown only while the experimental Pages setting is on. */
+  pagesOnly?: boolean
 }
 
 const STATUS_DOT_COLOR: Record<CheckStatus, string> = {
