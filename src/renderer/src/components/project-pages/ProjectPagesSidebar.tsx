@@ -27,6 +27,8 @@ type Props = {
   onMove: (pageId: string, move: ProjectPageMoveInput) => void
   /** Replaces the default column width and border, e.g. inside the right sidebar. */
   className?: string
+  /** Pages an agent changed since the user last opened them. */
+  changedIds?: ReadonlySet<string>
 }
 
 export function ProjectPagesSidebar({
@@ -38,6 +40,7 @@ export function ProjectPagesSidebar({
   onTrash,
   onRestore,
   onMove,
+  changedIds,
   className = 'w-[clamp(14rem,26%,18rem)] shrink-0 border-r border-border'
 }: Props): React.JSX.Element {
   const [query, setQuery] = useState('')
@@ -140,6 +143,7 @@ export function ProjectPagesSidebar({
             depth={0}
             selectedId={selectedId}
             expanded={expanded}
+            changedIds={changedIds}
             forceExpanded={query.trim().length > 0}
             onToggle={toggle}
             onSelect={onSelect}

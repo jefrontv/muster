@@ -26,6 +26,12 @@ type Props = {
   onTrash: (pageId: string) => void
   /** Absent while the tree is filtered. */
   drag?: ProjectPagesTreeDrag | null
+  /** Pages an agent changed since the user last opened them. */
+  changedIds?: ReadonlySet<string>
+}
+
+function changedInside(node: PageTreeNode, changed: ReadonlySet<string>): boolean {
+  return node.children.some((child) => changed.has(child.page.id) || changedInside(child, changed))
 }
 
 export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
@@ -39,12 +45,17 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
     onSelect,
     onAddChild,
     onTrash,
-    drag
+    drag,
+    changedIds
   } = props
   const { page, children } = node
   const open = forceExpanded || expanded.has(page.id)
   const selected = selectedId === page.id
   const zone = drag?.over?.id === page.id ? drag.over.zone : null
+  const changed =
+    changedIds !== undefined &&
+    (changedIds.has(page.id) || (!open && changedInside(node, changedIds)))
+  const changedBy = page.editedBy.kind === 'agent' ? page.editedBy.agent : null
   return (
     <>
       <div
@@ -100,6 +111,18 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
           <span className={cn('truncate', !page.title && 'text-muted-foreground')}>
             {pageTitle(page)}
           </span>
+          {changed ? (
+            <span
+              className="mr-1 ml-auto size-1.5 shrink-0 rounded-full bg-status-attention"
+              title={
+                changedIds?.has(page.id) && changedBy
+                  ? translate('auto.components.projectPages.changedBy', 'Changed by {{agent}}', {
+                      agent: changedBy
+                    })
+                  : translate('auto.components.projectPages.changedInside', 'Changed by an agent')
+              }
+            />
+          ) : null}
         </button>
         <Button
           variant="ghost"

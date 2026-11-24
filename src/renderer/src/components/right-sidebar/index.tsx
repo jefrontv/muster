@@ -17,6 +17,7 @@ import { useScopedCommentDrafts } from '../comment-drafts/comment-draft-project-
 // Checks tab is parked; a persisted or shortcut route to it falls back to a visible tab.
 const CHECKS_TAB_ENABLED = false
 import { useAppStore } from '@/store'
+import { usePagesChangedCount } from '@/components/project-pages/use-pages-changed-count'
 import type { ActiveRightSidebarTab } from '@/store/slices/editor'
 import { useRepoById } from '@/store/selectors'
 import { cn } from '@/lib/utils'
@@ -206,6 +207,9 @@ function RightSidebarInner(): React.JSX.Element {
   )
 
   const pagesEnabled = useAppStore((s) => s.settings?.experimentalProjectPages === true)
+  const pagesChangedCount = usePagesChangedCount(pagesEnabled)
+  const countFor = (id: string): number | undefined =>
+    id === 'comment-drafts' ? draftCount : id === 'pages' ? pagesChangedCount : undefined
   const visibleItems = useMemo(
     () =>
       getVisibleRightSidebarActivityItems(enabledActivityItems, {
@@ -322,7 +326,7 @@ function RightSidebarInner(): React.JSX.Element {
       onClick={() => selectActivityTab(item.id)}
       layout="side"
       statusIndicator={item.id === 'checks' ? checksStatus : null}
-      count={item.id === 'comment-drafts' ? draftCount : undefined}
+      count={countFor(item.id)}
     />
   ))
 
@@ -401,7 +405,7 @@ function RightSidebarInner(): React.JSX.Element {
                               onClick={() => selectActivityTab(item.id)}
                               layout="top"
                               statusIndicator={item.id === 'checks' ? checksStatus : null}
-                              count={item.id === 'comment-drafts' ? draftCount : undefined}
+                              count={countFor(item.id)}
                             />
                           ))}
                         </div>
@@ -459,7 +463,7 @@ function RightSidebarInner(): React.JSX.Element {
                           onClick={() => selectActivityTab(item.id)}
                           layout="top"
                           statusIndicator={item.id === 'checks' ? checksStatus : null}
-                          count={item.id === 'comment-drafts' ? draftCount : undefined}
+                          count={countFor(item.id)}
                         />
                       ))}
                     </div>

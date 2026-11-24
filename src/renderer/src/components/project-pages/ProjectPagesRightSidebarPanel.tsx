@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { lastPageIn, rememberPagesLocation } from './project-pages-location'
+import { useAgentChangedPages } from './project-pages-seen'
 import { buildProjectPagesTabId } from './project-pages-tab'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
@@ -23,6 +24,7 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
   )
   const { options, activeKey } = useProjectPagesScopes()
   const { pages, loaded } = useProjectPagesTree(activeKey)
+  const changedIds = useAgentChangedPages(activeKey, pages, loaded)
   const projectName = options.find((option) => option.key === activeKey)?.label
 
   if (!activeKey) {
@@ -74,6 +76,7 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
         className="flex-1"
         pages={pages}
         loaded={loaded}
+        changedIds={changedIds}
         selectedId={tabPageId ?? lastPageIn(activeKey) ?? null}
         onSelect={open}
         onCreate={(parentId, folder) =>
