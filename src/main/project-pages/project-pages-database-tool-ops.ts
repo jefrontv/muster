@@ -108,6 +108,42 @@ function chosenView(
   return view
 }
 
+/** A property named like an existing one replaces it in place, keeping its id and matching options. */
+function mergeProperties(existing: PageProperty[], added: PageProperty[]): PageProperty[] {
+  const merged = [...existing]
+  for (const property of added) {
+    const at = merged.findIndex((p) => p.name.toLowerCase() === property.name.toLowerCase())
+    if (at === -1) {
+      merged.push(property)
+      continue
+    }
+    const old = merged[at]
+    const kept = new Set<string>()
+    const options = property.options?.map((option) => {
+      const same = old.options?.find((o) => o.name.toLowerCase() === option.name.toLowerCase())
+      kept.add(same?.id ?? '')
+      return same ?? option
+    })
+    // New option ids must not reuse an id an old option kept.
+    let next = 1
+    const fresh = (): string => {
+      while (kept.has(`o${next}`)) {
+        next += 1
+      }
+      kept.add(`o${next}`)
+      return `o${next}`
+    }
+    merged[at] = {
+      ...property,
+      id: old.id,
+      ...(options
+        ? { options: options.map((o) => (old.options?.includes(o) ? o : { ...o, id: fresh() })) }
+        : {})
+    }
+  }
+  return merged
+}
+
 function newProperties(raw: unknown, existing: PageProperty[]): PageProperty[] {
   if (raw === undefined) {
     return []
@@ -149,6 +185,19 @@ function newProperties(raw: unknown, existing: PageProperty[]): PageProperty[] {
   })
 }
 
+/** Sets a new row's property values given in the same create call; adds nothing when none were. */
+export function createdRowProperties(
+  ctx: DatabaseOpContext,
+  meta: ProjectPageMeta
+): { properties?: unknown } {
+  if (ctx.args.properties === undefined) {
+    return {}
+  }
+  const args = { page: meta.id, properties: ctx.args.properties }
+  const set = runProjectPagesDatabaseOp('set_properties', { ...ctx, args, pageRef: () => meta })
+  return { properties: (set as { properties: unknown }).properties }
+}
+
 export function runProjectPagesDatabaseOp(
   op: ProjectPagesDatabaseOp,
   ctx: DatabaseOpContext
@@ -163,8 +212,13 @@ export function runProjectPagesDatabaseOp(
       let database = databases.enableDatabase(scopeKey, page.id, author)
       const added = newProperties(args.properties, database.schema.properties)
       if (added.length > 0) {
-        const schema = { ...database.schema, properties: [...database.schema.properties, ...added] }
-        database = databases.updateSchema(scopeKey, page.id, schema, author)
+        const properties = mergeProperties(database.schema.properties, added)
+        database = databases.updateSchema(
+          scopeKey,
+          page.id,
+          { ...database.schema, properties },
+          author
+        )
       }
       return {
         project,

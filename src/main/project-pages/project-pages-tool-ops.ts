@@ -10,6 +10,7 @@ import type { ProjectPageAuthor, ProjectPageMeta } from '../../shared/project-pa
 import type { GlobalSettings } from '../../shared/types'
 import type { ProjectPagesDatabases } from './project-pages-database-store'
 import {
+  createdRowProperties,
   isProjectPagesDatabaseOp,
   PROJECT_PAGES_DATABASE_OPS,
   runProjectPagesDatabaseOp
@@ -27,6 +28,7 @@ import {
   PROJECT_PAGES_LINK_OPS,
   runProjectPagesLinkOp
 } from './project-pages-link-tool-ops'
+import { tickChecklist } from './project-pages-checklist-ops'
 import { appendMarkdown, readSection, replaceAnchor } from './project-pages-markdown-ops'
 import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
@@ -49,6 +51,7 @@ export const PROJECT_PAGES_TOOL_OPS = [
   'update',
   'edit',
   'append',
+  'check',
   'move',
   'archive',
   ...PROJECT_PAGES_DATABASE_OPS,
@@ -152,15 +155,16 @@ export async function runProjectPagesToolOp(
     })
   }
 
+  const databaseContext = {
+    databases: deps.databases,
+    scopeKey,
+    author,
+    project,
+    args,
+    pageRef: (key: string) => resolvePageRef(pages(), toolText(args, key, true))
+  }
   if (isProjectPagesDatabaseOp(op)) {
-    return runProjectPagesDatabaseOp(op, {
-      databases: deps.databases,
-      scopeKey,
-      author,
-      project,
-      args,
-      pageRef: (key) => resolvePageRef(pages(), toolText(args, key, true))
-    })
+    return runProjectPagesDatabaseOp(op, databaseContext)
   }
   switch (op) {
     case 'list': {
@@ -191,13 +195,14 @@ export async function runProjectPagesToolOp(
       const section = toolText(args, 'section')
       const body = section ? readSection(doc.markdown, section) : doc.markdown
       const max = toolCount(args, 'max_chars') ?? 50_000
+      const offset = toolCount(args, 'offset') ?? 0
       const activecollab = await deps.activeCollab?.describe(doc.markdown)
       return {
         project,
         page: row(pages(), doc.meta),
         title: doc.meta.title,
-        markdown: body.slice(0, max),
-        truncated: body.length > max,
+        markdown: body.slice(offset, offset + max),
+        truncated: body.length > offset + max,
         linked_from: deps.search
           .backlinks(scopeKey, doc.meta.id)
           .map((p) => ({ id: p.id, path: pagePath(pages(), p.id) })),
@@ -218,7 +223,8 @@ export async function runProjectPagesToolOp(
       }
       const input = { parentId, title, markdown: md('markdown'), folder: args.folder === true }
       const doc = store.createPage(scopeKey, input, author)
-      return { created: true, ...written(doc.meta) }
+      const row = createdRowProperties(databaseContext, doc.meta)
+      return { created: true, ...written(doc.meta), ...row }
     }
     case 'update': {
       const target = page()
@@ -244,25 +250,29 @@ export async function runProjectPagesToolOp(
       }
     }
     case 'edit':
-    case 'append': {
+    case 'append':
+    case 'check': {
       const target = page()
       const current = store.readPage(scopeKey, target.id)
-      const markdown =
-        op === 'edit'
+      const ticked = op === 'check' ? tickChecklist(current.markdown, args) : null
+      const markdown = ticked
+        ? ticked.markdown
+        : op === 'edit'
           ? replaceAnchor(current.markdown, toolText(args, 'old_text', true), md('new_text'))
           : appendMarkdown(
               current.markdown,
               md('markdown', true),
               toolText(args, 'under_heading') || undefined
             )
-      return written(
-        store.updatePage(
-          scopeKey,
-          target.id,
-          { baseRevision: current.meta.revision, markdown },
-          author
-        ).meta
-      )
+      const meta = store.updatePage(
+        scopeKey,
+        target.id,
+        { baseRevision: current.meta.revision, markdown },
+        author
+      ).meta
+      return ticked
+        ? { ...written(meta), checked: ticked.checked, unchecked: ticked.unchecked }
+        : written(meta)
     }
     case 'move': {
       const target = page()

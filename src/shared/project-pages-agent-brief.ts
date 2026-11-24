@@ -30,7 +30,7 @@ export function buildProjectPagesAgentBrief(input: ProjectPagesBriefInput): stri
   const { lines, omitted } = outline(input.pages)
   const parts = [
     `You are helping with the "${input.projectName}" project's pages in Muster. Pages are markdown notes the team keeps for this project.`,
-    'Use the page tools (list_pages, search_pages, read_page, create_page, edit_page, append_to_page, update_page, move_page, archive_page) and pass page ids from the outline below. Read a page before changing it; prefer edit_page or append_to_page over rewriting a whole page.'
+    'Use the page tools (list_pages, search_pages, read_page, create_page, edit_page, append_to_page, check_page_items, update_page, move_page, archive_page) and pass page ids from the outline below. Find facts with search_pages before reading whole pages, and read one section of a long page. Prefer edit_page, append_to_page or check_page_items over rewriting a whole page.'
   ]
   if (input.openPage) {
     parts.push(

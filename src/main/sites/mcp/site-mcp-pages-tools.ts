@@ -12,6 +12,7 @@ const MARKDOWN = {
   type: 'string',
   description: 'Markdown; [[Title]] links a page, #tag tags it. page_blocks lists all blocks.'
 }
+const STRINGS = { type: 'array', items: { type: 'string' } }
 const OPS_BY_TOOL = new Map<string, ProjectPagesToolOp>()
 const READ_TOOL_OPS = new Set<ProjectPagesToolOp>([
   'list',
@@ -60,7 +61,7 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
   pagesTool(
     'search_pages',
     'search',
-    'Search page titles and text. Returns snippets.',
+    'Search page titles and text. The snippets often answer a question without read_page.',
     {
       query: { type: 'string' }
     },
@@ -73,7 +74,8 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     {
       page: PAGE,
       section: { type: 'string', description: 'Heading text; returns only that section.' },
-      max_chars: { type: 'number' }
+      max_chars: { type: 'number' },
+      offset: { type: 'number', description: 'Character to start from when truncated.' }
     },
     ['page']
   ),
@@ -86,6 +88,7 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
       parent: PARENT,
       markdown: MARKDOWN,
       folder: { type: 'boolean', description: 'A folder lists its child pages.' },
+      properties: { type: 'object', description: 'Row values, by name, under a database.' },
       allow_duplicate: { type: 'boolean' }
     },
     ['title']
@@ -115,6 +118,13 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     "Add markdown at the end of a page, or at the end of a heading's section.",
     { page: PAGE, markdown: MARKDOWN, under_heading: { type: 'string' } },
     ['page', 'markdown']
+  ),
+  pagesTool(
+    'check_page_items',
+    'check',
+    'Tick or untick checklist items by their exact text. No need to read the page first.',
+    { page: PAGE, check: STRINGS, uncheck: STRINGS },
+    ['page']
   ),
   pagesTool(
     'move_page',

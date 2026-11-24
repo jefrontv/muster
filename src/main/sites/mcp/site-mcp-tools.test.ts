@@ -128,6 +128,7 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   update_page: { page: 'Launch', base_revision: 1, markdown: 'x' },
   edit_page: { page: 'Launch', old_text: 'a', new_text: 'b' },
   append_to_page: { page: 'Launch', markdown: 'x' },
+  check_page_items: { page: 'Launch', check: ['Ship'] },
   move_page: { page: 'Launch' },
   archive_page: { page: 'Launch' },
   query_database: { database: 'Tasks' },
@@ -190,8 +191,8 @@ describe('site MCP tool table', () => {
     const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
     // Pages tools only appear once the user turns Pages on, so they get their own budget.
     expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
-    // Sixteen pages tools, each with the project selector.
-    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(9_000)
+    // Seventeen pages tools, each with the project selector.
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(9_500)
   })
 })
 

@@ -60,6 +60,48 @@ describe('database tools', () => {
     expect(done.rows.map((r) => r.title)).toEqual(['Docs'])
   })
 
+  it('replaces a default property when one with the same name is given', async () => {
+    const run = tools()
+    await run('create', { title: 'Bugs' })
+    const made = (await run('make_database', {
+      page: 'Bugs',
+      properties: [
+        { name: 'status', type: 'select', options: ['Open', 'Done', 'Fixed'] },
+        { name: 'Closed', type: 'checkbox' }
+      ]
+    })) as { properties: { name: string; options?: string[] }[] }
+    expect(made.properties).toEqual([
+      { name: 'status', type: 'select', options: ['Open', 'Done', 'Fixed'] },
+      { name: 'Closed', type: 'checkbox' }
+    ])
+    await expect(
+      run('create', {
+        title: 'Footer',
+        parent: 'Bugs',
+        properties: { status: 'Fixed', Closed: true }
+      })
+    ).resolves.toMatchObject({ created: true, properties: { status: 'Fixed', Closed: true } })
+    const rows = (await run('query_database', { database: 'Bugs' })) as Rows
+    expect(rows.rows[0].properties).toEqual({ status: 'Fixed', Closed: true })
+  })
+
+  it('checks off checklist items by text', async () => {
+    const run = tools()
+    await run('create', { title: 'List', markdown: '- [ ] Ship\n- [x] Plan\n' })
+    await expect(
+      run('check', { page: 'List', check: ['ship'], uncheck: ['Plan'] })
+    ).resolves.toMatchObject({
+      checked: ['Ship'],
+      unchecked: ['Plan']
+    })
+    const read = (await run('read', { page: 'List' })) as { markdown: string }
+    expect(read.markdown).toContain('- [x] Ship\n- [ ] Plan')
+    await expect(run('read', { page: 'List', offset: 6, max_chars: 4 })).resolves.toMatchObject({
+      markdown: 'Ship',
+      truncated: true
+    })
+  })
+
   it('lets read-only agents query but not set properties', async () => {
     await tools()('create', { title: 'Tasks' })
     await tools()('make_database', { page: 'Tasks' })
