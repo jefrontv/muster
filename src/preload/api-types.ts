@@ -18,6 +18,7 @@ import type {
   ProjectPageSearchResult,
   ProjectPagesChange,
   ProjectPagesResult,
+  ProjectPagesTransfer,
   ProjectPagesTree,
   ProjectPageUpdateInput
 } from '../shared/project-pages-types'
@@ -1077,6 +1078,12 @@ export type ProjectPagesApi = {
     databaseId: string,
     input: { title?: string; properties?: Record<string, unknown> }
   ) => Promise<ProjectPagesResult<ProjectPageMeta>>
+  /** Asks for a folder, then writes the pages into a new subfolder named after the project. */
+  exportToFolder: (
+    scopeKey: string,
+    folderName: string
+  ) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
+  importFromFolder: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
   onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
 }
 

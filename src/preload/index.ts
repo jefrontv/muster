@@ -984,6 +984,9 @@ const api = {
       ipcRenderer.invoke('projectPages:setProperties', scopeKey, pageId, patch),
     addRow: (scopeKey, databaseId, input) =>
       ipcRenderer.invoke('projectPages:addRow', scopeKey, databaseId, input),
+    exportToFolder: (scopeKey, folderName) =>
+      ipcRenderer.invoke('projectPages:export', scopeKey, folderName),
+    importFromFolder: (scopeKey) => ipcRenderer.invoke('projectPages:import', scopeKey),
     onChanged: (callback) => {
       const listener = (
         _event: Electron.IpcRendererEvent,

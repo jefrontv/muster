@@ -9,6 +9,7 @@ import { isPagesScopeKey } from '../../shared/project-pages-space-key'
 import { ProjectPagesError } from '../project-pages/project-pages-store'
 import { projectPages, projectPagesSearch } from '../project-pages/project-pages'
 import { registerProjectPagesDatabaseHandlers } from './project-pages-databases'
+import { registerProjectPagesTransferHandlers } from './project-pages-transfer'
 import { sendToTrustedUIRenderer } from './ui'
 
 const CHANNELS = [
@@ -161,6 +162,7 @@ export function registerProjectPagesHandlers(): void {
     guarded(() => projectPagesSearch().backlinks(scope(key), pageId(id)))
   )
   registerProjectPagesDatabaseHandlers()
+  registerProjectPagesTransferHandlers()
   stopForwarding?.()
   stopForwarding = pages().onChanged((change) =>
     sendToTrustedUIRenderer('projectPages:changed', change)

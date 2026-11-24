@@ -73,6 +73,9 @@ export type ProjectPagesResult<T> =
   | { ok: true; value: T }
   | { ok: false; code: ProjectPagesErrorCode; message: string; revision?: number }
 
+/** Null when the user closed the folder picker. */
+export type ProjectPagesTransfer = { count: number; path: string } | null
+
 export type ProjectPagesChange = {
   scopeKey: string
   /** Null when the change touched the tree only. */

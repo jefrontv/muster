@@ -25,6 +25,7 @@ import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
 import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
+import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
 import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pages-location'
@@ -205,6 +206,10 @@ export default function ProjectPagesPage(): React.JSX.Element {
             >
               <MessageSquareText className="size-4" />
             </Button>
+            <ProjectPagesTransferMenu
+              scopeKey={scopeKey}
+              projectName={options.find((o) => o.key === scopeKey)?.label ?? 'Pages'}
+            />
             <ProjectPagesQuickSwitcher
               scopeKey={scopeKey}
               pages={pages}
