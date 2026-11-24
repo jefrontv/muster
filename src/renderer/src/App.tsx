@@ -26,6 +26,7 @@ import { syncZoomCSSVar } from '@/lib/ui-zoom'
 import { DISPLAY_SLEEP_LIKELY_HIDDEN_MS as GITHUB_REFRESH_MIN_HIDDEN_MS } from '@/components/terminal-pane/use-terminal-window-wake-recovery'
 import { WhatsNewModal } from '@/components/whats-new/whats-new-modal'
 import { useWhatsNew } from '@/components/whats-new/use-whats-new'
+import { PagesIntroModal } from '@/components/project-pages/pages-intro-modal'
 import { installChatThreadStreamEvents } from '@/lib/chat-thread-stream-events'
 import {
   applyMatchTerminalAppChrome,
@@ -313,8 +314,13 @@ function WindowControls(): React.JSX.Element {
 // 'none' unless this launch followed an update, so the modal cost on ordinary
 // launches is a single no-op round trip.
 function WhatsNewSurface(): React.JSX.Element | null {
-  const { payload, ready, dismiss } = useWhatsNew()
-  return <WhatsNewModal payload={payload} ready={ready} onDismiss={dismiss} />
+  const { payload, ready, settled, dismiss } = useWhatsNew()
+  return (
+    <>
+      <WhatsNewModal payload={payload} ready={ready} onDismiss={dismiss} />
+      <PagesIntroModal whatsNewSettled={settled} />
+    </>
+  )
 }
 
 const Landing = lazy(() => import('./components/Landing'))
