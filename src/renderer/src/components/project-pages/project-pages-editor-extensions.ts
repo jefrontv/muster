@@ -4,6 +4,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import type { AnyExtension } from '@tiptap/core'
 import { createRichMarkdownExtensions } from '../editor/rich-markdown-extensions'
 import type { RichMarkdownEditorCodec } from '../editor/rich-markdown-source-transport'
+import { ProjectPageActiveCollab } from './project-pages-activecollab-blocks'
 import { ProjectPageCallouts } from './project-pages-callouts'
 import { withPageImages } from './project-pages-files'
 import { ProjectPageTags } from './project-pages-tag-decorations'
@@ -27,6 +28,7 @@ export function createProjectPagesExtensions(
     ),
     ProjectPageTags,
     ProjectPageCallouts,
+    ProjectPageActiveCollab,
     Placeholder.configure({ placeholder })
   ]
 }

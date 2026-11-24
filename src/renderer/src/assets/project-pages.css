@@ -96,3 +96,128 @@
 .project-page-editor img.page-image.ProseMirror-selectednode {
   outline: 2px solid var(--ring);
 }
+
+/* ActiveCollab task and project links: a card when alone on a line, a chip inside a sentence. */
+.project-page-editor p.page-ac-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  margin: 0.75em 0;
+  padding: 0.7em 0.9em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+}
+
+.project-page-editor p.page-ac-card a {
+  color: var(--foreground);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.project-page-editor p.page-ac-card.is-done a {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+
+.project-page-editor .page-ac-head,
+.project-page-editor .page-ac-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--muted-foreground);
+  font-size: 0.8em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.project-page-editor .page-ac-meta:empty {
+  display: none;
+}
+
+.project-page-editor .page-ac-head svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.project-page-editor .page-ac-status {
+  padding: 0.05em 0.55em;
+  border: 1px solid var(--status-info-border);
+  border-radius: 999px;
+  background: var(--status-info-background);
+  color: var(--status-info);
+  font-weight: 600;
+}
+
+.project-page-editor .page-ac-status.is-done {
+  border-color: var(--status-success-border);
+  background: var(--status-success-background);
+  color: var(--status-success);
+}
+
+.project-page-editor .page-ac-status.is-missing {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+.project-page-editor .page-ac-detail.is-late {
+  color: var(--status-danger);
+}
+
+.project-page-editor .page-ac-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.project-page-editor .page-ac-label::before {
+  content: '';
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 999px;
+  background: var(--label, var(--muted-foreground));
+}
+
+.project-page-editor .page-ac-chip {
+  padding: 0.05em 0.35em 0.05em 0.2em;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+}
+
+.project-page-editor .page-ac-chip a,
+.project-page-editor a:has(.page-ac-chip) {
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+/* ProseMirror pads a widget at the end of a line with these; the card has its own spacing. */
+.project-page-editor p.page-ac-card > img.ProseMirror-separator,
+.project-page-editor p.page-ac-card > br.ProseMirror-trailingBreak {
+  display: none;
+}
+
+.project-page-editor .page-ac-dot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin: 0 0.3em 0.1em 0.25em;
+  border-radius: 999px;
+  background: var(--status-info);
+  cursor: pointer;
+}
+
+.project-page-editor .page-ac-dot.is-done {
+  background: var(--status-success);
+}
+
+.project-page-editor .page-ac-dot.is-missing,
+.project-page-editor .page-ac-dot.is-loading {
+  background: var(--muted-foreground);
+}
