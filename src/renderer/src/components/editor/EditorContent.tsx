@@ -39,6 +39,7 @@ const ImageViewer = lazy(() => import('./ImageViewer'))
 const ImageDiffViewer = lazy(() => import('./ImageDiffViewer'))
 const MermaidViewer = lazy(() => import('./MermaidViewer'))
 const CsvViewer = lazy(() => import('./CsvViewer'))
+const ProjectPagesTab = lazy(() => import('../project-pages/ProjectPagesTab'))
 const IpynbViewer = lazy(() => import('./IpynbViewer'))
 
 // Why: module-level for a stable no-op identity so read-only tabs don't rebuild callbacks each render.
@@ -607,6 +608,14 @@ export function EditorContent({
       <div className="min-h-0 flex-1 overflow-y-auto bg-editor-surface scrollbar-sleek">
         {unresolvedEntries.map(renderConflictReviewInlineFile)}
       </div>
+    )
+  }
+
+  if (activeFile.mode === 'project-pages') {
+    return (
+      <React.Suspense fallback={null}>
+        <ProjectPagesTab file={activeFile} />
+      </React.Suspense>
     )
   }
 

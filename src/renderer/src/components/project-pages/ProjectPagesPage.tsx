@@ -1,7 +1,7 @@
 // Pages: Notion-like nested pages for each project.
 import { ArrowLeft, FileText, History, MessageSquareText, Search, Waypoints } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
@@ -28,6 +28,7 @@ import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
 import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pages-location'
+import { useProjectPagesEmbed, type ProjectPagesEmbed } from './use-project-pages-embed'
 
 const SAVE_LABELS: Record<AutosaveState, string> = {
   saved: 'Saved',
@@ -37,14 +38,18 @@ const SAVE_LABELS: Record<AutosaveState, string> = {
   error: 'Not saved'
 }
 
-export default function ProjectPagesPage(): React.JSX.Element {
+export default function ProjectPagesPage({
+  embedded
+}: { embedded?: ProjectPagesEmbed } = {}): React.JSX.Element {
   const closePagesPage = useAppStore((s) => s.closePagesPage)
   const { options, activeKey } = useProjectPagesScopes()
   const [chosenKey, setChosenKey] = useState<string | null>(lastPagesScope)
   const scopeKey =
-    chosenKey && options.some((o) => o.key === chosenKey)
+    embedded?.scopeKey ??
+    (chosenKey && options.some((o) => o.key === chosenKey)
       ? chosenKey
-      : (activeKey ?? options[0]?.key ?? null)
+      : (activeKey ?? options[0]?.key ?? null))
+  const mainRef = useRef<HTMLElement | null>(null)
   const { pages, loaded, error } = useProjectPagesTree(scopeKey)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [fresh, setFresh] = useState<string | null>(null)
@@ -57,11 +62,16 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const [mapOpen, setMapOpen] = useState(false)
   const [mapFocus, setMapFocus] = useState<string | null>(null)
   const isMac = navigator.userAgent.includes('Mac')
+  const isEmbedded = embedded !== undefined
   const spaceVersion = useMemo(() => pages.map((p) => `${p.id}:${p.revision}`).join(','), [pages])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       const mod = isMac ? event.metaKey : event.ctrlKey
+      // In a tab, ⌘P stays the file finder unless focus is inside Pages.
+      if (isEmbedded && !mainRef.current?.contains(document.activeElement)) {
+        return
+      }
       if (mod && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'p') {
         event.preventDefault()
         event.stopPropagation()
@@ -70,7 +80,7 @@ export default function ProjectPagesPage(): React.JSX.Element {
     }
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [isMac])
+  }, [isMac, isEmbedded])
 
   const live = useMemo(() => pages.filter((p) => p.archivedAt === null), [pages])
   const remembered = lastPageIn(scopeKey)
@@ -84,6 +94,8 @@ export default function ProjectPagesPage(): React.JSX.Element {
   useEffect(() => {
     rememberPagesLocation(scopeKey, pageId)
   }, [scopeKey, pageId])
+
+  useProjectPagesEmbed(embedded, pageId, meta ? pageTitle(meta) : null, setSelectedId)
 
   useEffect(() => {
     setDoc(null)
@@ -131,17 +143,22 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const backLabel = translate('auto.components.projectPages.back', 'Back')
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col border-l border-border bg-background">
+    <main
+      ref={mainRef}
+      className={`flex min-h-0 flex-1 flex-col bg-background ${isEmbedded ? '' : 'border-l border-border'}`}
+    >
       <header className="flex shrink-0 items-center gap-2 border-b border-border py-3 pr-5 pl-3">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0 text-muted-foreground"
-          aria-label={backLabel}
-          onClick={closePagesPage}
-        >
-          <ArrowLeft className="size-4" />
-        </Button>
+        {isEmbedded ? null : (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0 text-muted-foreground"
+            aria-label={backLabel}
+            onClick={closePagesPage}
+          >
+            <ArrowLeft className="size-4" />
+          </Button>
+        )}
         <PagesPanelToggle
           collapsed={sidebarCollapsed}
           onToggle={toggleSidebar}
@@ -152,14 +169,16 @@ export default function ProjectPagesPage(): React.JSX.Element {
         <span className="text-sm font-medium">
           {translate('auto.components.projectPages.title', 'Pages')}
         </span>
-        <ProjectPagesScopePicker
-          options={options}
-          value={scopeKey}
-          onChange={(key) => {
-            setChosenKey(key)
-            setSelectedId(null)
-          }}
-        />
+        {isEmbedded ? null : (
+          <ProjectPagesScopePicker
+            options={options}
+            value={scopeKey}
+            onChange={(key) => {
+              setChosenKey(key)
+              setSelectedId(null)
+            }}
+          />
+        )}
         <nav
           aria-label={translate('auto.components.projectPages.breadcrumb', 'Page path')}
           className="ml-2 flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-muted-foreground"
