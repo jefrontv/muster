@@ -15091,7 +15091,11 @@
           "reassignFilter": "Find a person",
           "reassignLoading": "Loading people…",
           "reassignFailedLoad": "Couldn't load the project's people",
-          "reassignNoMatch": "No one matches"
+          "reassignNoMatch": "No one matches",
+          "showLess": "Show less",
+          "showMore": "Show more",
+          "moreActions": "More actions",
+          "discardDraft": "Discard draft"
         }
       },
       "commentDrafts": {

@@ -24,6 +24,7 @@ import { BotsReassignMemberMenu } from './BotsReassignMemberMenu'
 
 export function BotsCommentDraftPostButton({
   label,
+  ariaLabel,
   size,
   busy,
   disabled,
@@ -33,6 +34,8 @@ export function BotsCommentDraftPostButton({
   onPost
 }: {
   label: string
+  /** Fuller name for assistive tech, e.g. how many files go with it. */
+  ariaLabel?: string
   size: 'xs' | 'sm'
   busy: boolean
   disabled: boolean
@@ -67,7 +70,13 @@ export function BotsCommentDraftPostButton({
   return (
     <DropdownMenu modal={false} onOpenChange={onOpenChange}>
       <ButtonGroup>
-        <Button type="button" size={size} disabled={disabled} onClick={() => onPost()}>
+        <Button
+          type="button"
+          size={size}
+          disabled={disabled}
+          aria-label={ariaLabel}
+          onClick={() => onPost()}
+        >
           {busy ? <LoaderCircle className={`${spinner} animate-spin`} /> : null}
           {label}
         </Button>
@@ -85,7 +94,7 @@ export function BotsCommentDraftPostButton({
           </Button>
         </DropdownMenuTrigger>
       </ButtonGroup>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => onPost()}>
           {translate('auto.components.bots.commentDrafts.post', 'Post')}
         </DropdownMenuItem>

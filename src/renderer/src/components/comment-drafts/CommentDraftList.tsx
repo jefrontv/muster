@@ -36,8 +36,8 @@ function DraftRow({
   return (
     <li
       className={cn(
-        'rounded-xl transition-colors',
-        open ? 'bg-chat-raised shadow-chat-soft' : 'hover:bg-foreground/[0.04]'
+        'rounded-lg transition-colors',
+        open ? 'bg-chat-raised ring-1 ring-border ring-inset' : 'hover:bg-foreground/[0.04]'
       )}
     >
       <button
@@ -45,7 +45,7 @@ function DraftRow({
         aria-expanded={open}
         aria-controls={bodyId}
         onClick={onToggle}
-        className="flex w-full min-w-0 items-start gap-2 rounded-xl px-2.5 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full min-w-0 items-start gap-2 rounded-lg px-2.5 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <ChevronRight
           aria-hidden
@@ -72,7 +72,8 @@ function DraftRow({
                 .filter(Boolean)
                 .join(' · ')}
             </span>
-            {draft.attachments.length > 0 ? (
+            {/* An open row lists the files itself. */}
+            {draft.attachments.length > 0 && !open ? (
               <span className="flex shrink-0 items-center gap-0.5 tabular-nums">
                 <Paperclip aria-hidden className="size-3" />
                 {draft.attachments.length}
@@ -92,7 +93,7 @@ function DraftRow({
         </span>
       </button>
       {open ? (
-        <div id={bodyId} className="px-2.5 pb-2.5 pl-8">
+        <div id={bodyId} className="px-2.5 pb-2.5 pl-8 pt-0.5">
           <BotsCommentDraftCard draft={draft} task={task} bare />
         </div>
       ) : null}

@@ -1,4 +1,4 @@
-// A draft's files: square tiles with image thumbnails, a large view, and (in the editor) add and remove.
+// A draft's files: square tiles (editor) or compact name chips (card), image previews, and remove in the editor.
 import { FileText, LoaderCircle, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
@@ -120,17 +120,62 @@ function Tile({
   )
 }
 
+// One row per file: thumbnail or icon, name and size; images open the large view.
+function Chip({
+  draftId,
+  file,
+  onOpen
+}: {
+  draftId: string
+  file: BotsCommentDraftAttachment
+  onOpen: (url: string) => void
+}): React.JSX.Element {
+  const url = usePreview(draftId, file)
+  return (
+    <li className="min-w-0">
+      <button
+        type="button"
+        aria-disabled={!url}
+        onClick={() => url && onOpen(url)}
+        aria-label={
+          url
+            ? translate('auto.components.bots.commentDrafts.viewFile', 'View {{value0}}', {
+                value0: file.name
+              })
+            : `${file.name}, ${formatBytes(file.size)}`
+        }
+        className="flex h-7 max-w-[15rem] min-w-0 items-center gap-1.5 rounded-md border border-border bg-foreground/[0.03] pr-2 pl-1 text-xs outline-none hover:bg-foreground/[0.06] focus-visible:ring-2 focus-visible:ring-ring/50 aria-disabled:cursor-default aria-disabled:hover:bg-foreground/[0.03]"
+      >
+        {url ? (
+          <img src={url} alt="" className="size-5 shrink-0 rounded-sm object-cover" />
+        ) : (
+          <span className="flex size-5 shrink-0 items-center justify-center">
+            <FileText aria-hidden className="size-3.5 text-chat-ink-tertiary" />
+          </span>
+        )}
+        <span className="truncate text-foreground">{file.name}</span>
+        <span className="shrink-0 text-chat-ink-tertiary tabular-nums">
+          {formatBytes(file.size)}
+        </span>
+      </button>
+    </li>
+  )
+}
+
 export function BotsCommentDraftAttachments({
   draft,
   editable = false,
   busy = false,
   onRemove,
+  compact = false,
   className
 }: {
   draft: BotsCommentDraft
   editable?: boolean
   busy?: boolean
   onRemove?: (file: BotsCommentDraftAttachment) => void
+  /** Name chips instead of tiles, for the read-only card. */
+  compact?: boolean
   className?: string
 }): React.JSX.Element | null {
   const [open, setOpen] = useState<{ url: string; name: string } | null>(null)
@@ -142,18 +187,27 @@ export function BotsCommentDraftAttachments({
       <TooltipProvider delayDuration={300}>
         <ul
           aria-label={translate('auto.components.bots.commentDrafts.files', 'Files')}
-          className={cn('flex flex-wrap gap-2 pt-1.5', className)}
+          className={cn('flex flex-wrap', compact ? 'gap-1.5' : 'gap-2 pt-1.5', className)}
         >
-          {draft.attachments.map((file) => (
-            <Tile
-              key={file.id}
-              draftId={draft.id}
-              file={file}
-              disabled={busy}
-              onOpen={(url) => setOpen({ url, name: file.name })}
-              onRemove={editable && onRemove ? () => onRemove(file) : undefined}
-            />
-          ))}
+          {draft.attachments.map((file) =>
+            compact ? (
+              <Chip
+                key={file.id}
+                draftId={draft.id}
+                file={file}
+                onOpen={(url) => setOpen({ url, name: file.name })}
+              />
+            ) : (
+              <Tile
+                key={file.id}
+                draftId={draft.id}
+                file={file}
+                disabled={busy}
+                onOpen={(url) => setOpen({ url, name: file.name })}
+                onRemove={editable && onRemove ? () => onRemove(file) : undefined}
+              />
+            )
+          )}
           {busy ? (
             <li className="flex size-12 items-center justify-center" aria-live="polite">
               <LoaderCircle className="size-3.5 animate-spin text-chat-ink-tertiary" />
