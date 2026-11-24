@@ -2015,7 +2015,7 @@ function App(): React.JSX.Element {
         ) : hasCustomTitleBar ? (
           /* Why: Windows/Linux remove the native title bar, so render the logo plus a ··· button that pops the application menu (as Alt does). */
           <>
-            <MusterMark variant="glyph" size={16} className="titlebar-logo" />
+            <MusterMark variant="glyph" tight size={11} className="titlebar-logo" />
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -2044,7 +2044,7 @@ function App(): React.JSX.Element {
                     className="titlebar-app-name"
                     aria-label={translate('auto.App.5096cbbc86', 'Muster')}
                   >
-                    <MusterMark variant="glyph" size={16} />
+                    <MusterMark variant="glyph" tight size={11} />
                     <span className="titlebar-app-name-main">
                       {translate('auto.App.5096cbbc86', 'Muster')}
                     </span>

@@ -19,6 +19,8 @@ type MusterMarkProps = {
   title?: string
   /** Glyph only: overrides the centre colour (share images; currentColor where coral is already in use). */
   centreColor?: string
+  /** Glyph only: crops the margin and fattens the dots so the M sits like a letter beside text. */
+  tight?: boolean
 }
 
 // The mark always uses Coral; the small Paper tile takes Coral deep so the M's vertex holds in greyscale.
@@ -34,7 +36,8 @@ export function MusterMark({
   tone = 'paper',
   className,
   title,
-  centreColor
+  centreColor,
+  tight = false
 }: MusterMarkProps): React.JSX.Element {
   const small = variant === 'glyph' || size <= SMALL_MARK_MAX_PX
   const grid = small ? SMALL_GRID : FULL_GRID
@@ -46,10 +49,17 @@ export function MusterMark({
   const centreFill =
     variant === 'glyph' ? (centreColor ?? 'var(--brand)') : small && !dark ? CORAL_DEEP : CORAL
   const a11y = title ? { role: 'img', 'aria-label': title } : { 'aria-hidden': true }
+  const crop = tight && variant === 'glyph'
+  // Cropped to the dots, whose centres span 12u; larger dots keep it solid at text size.
+  const radius = crop ? 1.42 : 1
+  const edge = grid.margin + 1 - radius
+  const viewBox = crop
+    ? `${edge} ${edge} ${12 + 2 * radius} ${12 + 2 * radius}`
+    : `0 0 ${grid.tile} ${grid.tile}`
 
   return (
     <svg
-      viewBox={`0 0 ${grid.tile} ${grid.tile}`}
+      viewBox={viewBox}
       width={size}
       height={size}
       className={cn('shrink-0', className)}
@@ -77,7 +87,7 @@ export function MusterMark({
             key={`${row}-${col}`}
             cx={dotCentre(col, grid.margin)}
             cy={dotCentre(row, grid.margin)}
-            r={1}
+            r={radius}
             fill={cell === 'D' ? mColor : cell === 'C' ? centreFill : stoneColor}
           />
         )
