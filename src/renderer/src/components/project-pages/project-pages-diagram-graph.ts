@@ -4,12 +4,16 @@ import {
   Graph,
   InternalEvent,
   RubberBandHandler,
+  styleUtils,
   UndoManager,
+  VertexHandler,
+  type Cell,
   type CellStyle,
   type ConnectionHandler,
   type EventObject,
   type EventSource,
   type PanningHandler,
+  type SelectionCellsHandler,
   type SelectionHandler
 } from '@maxgraph/core'
 import DOMPurify from 'dompurify'
@@ -55,6 +59,20 @@ export function fitDiagram(graph: Graph): void {
   view.scaleAndTranslate(next, (rect.width / next - w) / 2 - x, (rect.height / next - h) / 2 - y)
 }
 
+/** Starts dragging a connector out of a shape; dropping on empty canvas adds a new shape there. */
+export function startConnector(graph: Graph, cell: Cell, clientX: number, clientY: number): void {
+  const state = graph.getView().getState(cell)
+  if (!state || !graph.container) {
+    return
+  }
+  const connector = graph.getPlugin<ConnectionHandler>('ConnectionHandler')!
+  const point = styleUtils.convertPoint(graph.container, clientX, clientY)
+  connector.setEnabled(true)
+  connector.start(state, point.x, point.y)
+  // The press landed on an overlay button, so route the rest of the gesture to the graph.
+  graph.isMouseDown = true
+}
+
 export function createDiagramEditor(container: HTMLElement, onChange: () => void): DiagramEditor {
   InternalEvent.disableContextMenu(container)
   const graph = new Graph(container, undefined, [...getDefaultPlugins(), RubberBandHandler])
@@ -65,8 +83,24 @@ export function createDiagramEditor(container: HTMLElement, onChange: () => void
   graph.setDropEnabled(true)
   graph.setSplitEnabled(false)
   graph.gridSize = 10
-  graph.getPlugin<SelectionHandler>('SelectionHandler')!.guidesEnabled = true
-  graph.getPlugin<ConnectionHandler>('ConnectionHandler')!.createTarget = true
+  const selection = graph.getPlugin<SelectionHandler>('SelectionHandler')!
+  selection.guidesEnabled = true
+  // Drag and resize the shapes themselves, as draw.io does, instead of a dashed outline.
+  selection.maxLivePreview = 200
+  const cells = graph.getPlugin<SelectionCellsHandler>('SelectionCellsHandler')!
+  const createHandler = cells.createHandler.bind(cells)
+  cells.createHandler = (state) => {
+    const handler = createHandler(state)
+    if (handler instanceof VertexHandler) {
+      handler.livePreview = true
+    }
+    return handler
+  }
+  const connector = graph.getPlugin<ConnectionHandler>('ConnectionHandler')!
+  connector.createTarget = true
+  // A press anywhere on a shape moves it; connectors start only from the arrows (startConnector).
+  connector.setEnabled(false)
+  connector.addListener(InternalEvent.RESET, () => connector.setEnabled(false))
   const panning = graph.getPlugin<PanningHandler>('PanningHandler')!
 
   // HTML labels render with innerHTML, so every label passes DOMPurify first.

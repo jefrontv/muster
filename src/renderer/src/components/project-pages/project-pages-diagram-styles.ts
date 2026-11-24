@@ -219,7 +219,9 @@ export function applyDiagramTheme(graph: AbstractGraph): void {
     strokeColor: muted,
     fontColor: fg,
     fontFamily,
-    fontSize: 12
+    fontSize: 12,
+    // Keeps labels off the border; draw.io's 2px default lets left-aligned text touch it.
+    spacing: 8
   } satisfies CellStyle)
   Object.assign(sheet.getDefaultEdgeStyle(), {
     strokeColor: muted,
@@ -252,7 +254,7 @@ export function applyDiagramTheme(graph: AbstractGraph): void {
       spacingLeft: 52,
       rounded: true
     },
-    swimlane: { shape: 'swimlane', fontStyle: 1, startSize: 26, verticalAlign: 'top' },
+    swimlane: { shape: 'swimlane', fontStyle: 1, startSize: 26, verticalAlign: 'top', spacing: 4 },
     group: { verticalAlign: 'top', fillColor: 'none', strokeColor: 'none' },
     ellipse: { shape: 'ellipse', perimeter: 'ellipsePerimeter' },
     doubleEllipse: { shape: 'doubleEllipse', perimeter: 'ellipsePerimeter' },

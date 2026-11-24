@@ -99,7 +99,7 @@ export function ProjectPageDiagramToolbar({
       <span className="mx-1.5 h-5 w-px bg-border" />
       <ProjectPageDiagramMenus editor={editor} title={title} />
       <span className="ml-auto hidden truncate pl-3 text-xs text-muted-foreground 2xl:inline">
-        {t('hint', 'Double-click to add a shape. Drag from the middle of a shape to connect.')}
+        {t('hint', 'Double-click to add a shape. Drag an arrow onto a shape to connect.')}
       </span>
     </div>
   )

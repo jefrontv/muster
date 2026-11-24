@@ -1,8 +1,10 @@
-// Arrows around a lone selected shape: click one to add a connected copy on that side.
+// Arrows around a lone selected shape: click one to add a connected copy on that side, or drag
+// one onto another shape to connect them.
 import type { Cell, Graph } from '@maxgraph/core'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { quickConnect, type QuickConnectSide } from './project-pages-diagram-actions'
+import { startConnector } from './project-pages-diagram-graph'
 import type { DiagramBox } from './use-project-page-diagram-selection'
 
 const SIZE = 20
@@ -52,6 +54,11 @@ export function ProjectPageDiagramQuickConnect({
           className="absolute grid place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-xs hover:bg-accent hover:text-foreground"
           style={{ ...place(side, box), width: SIZE, height: SIZE }}
           onMouseDown={(event) => event.stopPropagation()}
+          onPointerDown={(event) => {
+            if (event.button === 0) {
+              startConnector(graph, cell, event.clientX, event.clientY)
+            }
+          }}
           onClick={() => quickConnect(graph, cell, side)}
         >
           <Icon className="size-3" />
