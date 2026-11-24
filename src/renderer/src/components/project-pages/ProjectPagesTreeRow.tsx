@@ -1,5 +1,13 @@
 // One page in the tree, with its children when expanded.
-import { ChevronRight, FileText, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
+import {
+  ChevronRight,
+  FileText,
+  Folder,
+  FolderOpen,
+  MoreHorizontal,
+  Plus,
+  Trash2
+} from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -89,6 +97,12 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
         >
           {page.icon ? (
             <span className="w-4 shrink-0 text-center text-sm leading-none">{page.icon}</span>
+          ) : page.folder ? (
+            open ? (
+              <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" />
+            ) : (
+              <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+            )
           ) : (
             <FileText className="size-3.5 shrink-0 text-muted-foreground" />
           )}

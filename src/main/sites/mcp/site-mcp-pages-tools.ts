@@ -84,6 +84,7 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
       title: { type: 'string' },
       parent: PARENT,
       markdown: MARKDOWN,
+      folder: { type: 'boolean', description: 'A folder lists its child pages.' },
       allow_duplicate: { type: 'boolean' }
     },
     ['title']

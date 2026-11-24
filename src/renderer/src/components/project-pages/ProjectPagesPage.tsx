@@ -26,6 +26,7 @@ import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
 import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
 import { ProjectPagesMap } from './ProjectPagesMap'
+import { ProjectPagesFolderView } from './ProjectPagesFolderView'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
@@ -109,11 +110,11 @@ export default function ProjectPagesPage(): React.JSX.Element {
     }
   }
 
-  const create = async (parentId: string | null): Promise<void> => {
+  const create = async (parentId: string | null, folder = false): Promise<void> => {
     if (!scopeKey) {
       return
     }
-    const result = await window.api.projectPages.create(scopeKey, { parentId })
+    const result = await window.api.projectPages.create(scopeKey, { parentId, folder })
     if (result.ok) {
       setSelectedId(result.value.meta.id)
       setFresh(result.value.meta.id)
@@ -276,7 +277,7 @@ export default function ProjectPagesPage(): React.JSX.Element {
             loaded={loaded}
             selectedId={pageId}
             onSelect={setSelectedId}
-            onCreate={(parentId) => void create(parentId)}
+            onCreate={(parentId, folder) => void create(parentId, folder)}
             onTrash={(id) => void window.api.projectPages.archive(scopeKey, id).then(report)}
             onRestore={(id) => void window.api.projectPages.restore(scopeKey, id).then(report)}
             onMove={(id, move) =>
@@ -325,6 +326,13 @@ export default function ProjectPagesPage(): React.JSX.Element {
                       row={meta}
                       databaseId={parentDatabaseId}
                       pages={pages}
+                    />
+                  ) : meta.folder ? (
+                    <ProjectPagesFolderView
+                      folderId={meta.id}
+                      pages={pages}
+                      onOpenPage={setSelectedId}
+                      onCreate={(folder) => void create(meta.id, folder)}
                     />
                   ) : null
                 }

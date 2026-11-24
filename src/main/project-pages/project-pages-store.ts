@@ -120,7 +120,8 @@ export function createProjectPagesStore({ rootDir, now = Date.now, newId = newPa
       editedBy: author,
       createdAt: at,
       updatedAt: at,
-      archivedAt: null
+      archivedAt: null,
+      ...(input.folder ? { folder: true } : {})
     }
     // Body first: a crash before the tree write leaves an orphan the next load recovers.
     files.writeBody(dir, meta.id, markdown)

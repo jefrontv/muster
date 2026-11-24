@@ -25,6 +25,8 @@ export type ProjectPageMeta = {
   archivedAt: number | null
   /** The page is a database: its child pages are rows. */
   database?: boolean
+  /** The page is a folder: opening it lists its child pages. It can still hold text. */
+  folder?: boolean
   /** Property values when the page is a database row, keyed by property id. */
   properties?: PageRowProperties
 }
@@ -49,6 +51,7 @@ export type ProjectPageCreateInput = {
   parentId?: string | null
   title?: string
   markdown?: string
+  folder?: boolean
 }
 
 export type ProjectPageUpdateInput = {

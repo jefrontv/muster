@@ -226,7 +226,8 @@ export async function runProjectPagesToolOp(
       if (existing && args.allow_duplicate !== true) {
         return { created: false, ...written(existing) }
       }
-      const doc = store.createPage(scopeKey, { parentId, title, markdown: md('markdown') }, author)
+      const input = { parentId, title, markdown: md('markdown'), folder: args.folder === true }
+      const doc = store.createPage(scopeKey, input, author)
       return { created: true, ...written(doc.meta) }
     }
     case 'update': {

@@ -56,8 +56,8 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
         loaded={loaded}
         selectedId={lastPageIn(activeKey) ?? null}
         onSelect={open}
-        onCreate={(parentId) =>
-          void window.api.projectPages.create(activeKey, { parentId }).then((result) => {
+        onCreate={(parentId, folder) =>
+          void window.api.projectPages.create(activeKey, { parentId, folder }).then((result) => {
             if (result.ok) {
               open(result.value.meta.id)
             } else {

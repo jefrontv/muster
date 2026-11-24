@@ -1,5 +1,5 @@
 // Left column of the Pages view: search, the page tree and the trash.
-import { Plus, RotateCcw, Search, Trash2 } from 'lucide-react'
+import { FolderPlus, Plus, RotateCcw, Search, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -15,7 +15,7 @@ type Props = {
   loaded: boolean
   selectedId: string | null
   onSelect: (pageId: string) => void
-  onCreate: (parentId: string | null) => void
+  onCreate: (parentId: string | null, folder?: boolean) => void
   onTrash: (pageId: string) => void
   onRestore: (pageId: string) => void
   onMove: (pageId: string, move: ProjectPageMoveInput) => void
@@ -79,6 +79,15 @@ export function ProjectPagesSidebar({
           onClick={() => onCreate(null)}
         >
           <Plus className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          aria-label={translate('auto.components.projectPages.newFolder', 'New folder')}
+          title={translate('auto.components.projectPages.newFolder', 'New folder')}
+          onClick={() => onCreate(null, true)}
+        >
+          <FolderPlus className="size-4" />
         </Button>
       </div>
       <nav className="min-h-0 flex-1 overflow-y-auto scrollbar-sleek px-2 pb-3">

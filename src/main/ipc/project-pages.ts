@@ -122,7 +122,8 @@ export function registerProjectPagesHandlers(): void {
         {
           parentId: parentId(input.parentId),
           title: optionalText(input.title, 'title'),
-          markdown: optionalText(input.markdown, 'markdown')
+          markdown: optionalText(input.markdown, 'markdown'),
+          folder: input.folder === true
         },
         USER
       )
