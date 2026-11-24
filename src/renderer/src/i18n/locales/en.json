@@ -15215,7 +15215,9 @@
         "templateMeeting": "Meeting notes",
         "templateBrief": "Project brief",
         "templateChecklist": "Checklist",
-        "templateDecision": "Decision record"
+        "templateDecision": "Decision record",
+        "changedBy": "Changed by {{agent}}",
+        "changedInside": "Changed by an agent"
       }
     },
     "i18n": {

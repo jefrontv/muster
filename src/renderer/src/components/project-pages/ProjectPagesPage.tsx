@@ -28,6 +28,7 @@ import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
 import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pages-location'
+import { useAgentChangedPages } from './project-pages-seen'
 import { useProjectPagesEmbed, type ProjectPagesEmbed } from './use-project-pages-embed'
 
 const SAVE_LABELS: Record<AutosaveState, string> = {
@@ -95,6 +96,7 @@ export default function ProjectPagesPage({
     rememberPagesLocation(scopeKey, pageId)
   }, [scopeKey, pageId])
 
+  const changedIds = useAgentChangedPages(scopeKey, pages, loaded, meta)
   useProjectPagesEmbed(embedded, pageId, meta ? pageTitle(meta) : null, setSelectedId)
 
   useEffect(() => {
@@ -296,6 +298,7 @@ export default function ProjectPagesPage({
               className="w-full min-w-56 shrink-0 border-r border-border"
               pages={pages}
               loaded={loaded}
+              changedIds={changedIds}
               selectedId={pageId}
               onSelect={setSelectedId}
               onCreate={(parentId, folder, diagram) => void create(parentId, folder, diagram)}

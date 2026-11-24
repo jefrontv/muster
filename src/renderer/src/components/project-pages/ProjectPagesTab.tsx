@@ -4,9 +4,11 @@ import { useCallback } from 'react'
 import { useAppStore } from '@/store'
 import type { OpenFile } from '@/store/slices/editor'
 import ProjectPagesPage from './ProjectPagesPage'
+import { usePagesTabSidebar } from './use-pages-tab-sidebar'
 
 export default function ProjectPagesTab({ file }: { file: OpenFile }): React.JSX.Element | null {
   const showPage = useAppStore((s) => s.showProjectPagesTabPage)
+  usePagesTabSidebar(file)
   const onShowPage = useCallback(
     (pageId: string | null, title: string | null) => showPage(file.id, pageId, title),
     [showPage, file.id]
