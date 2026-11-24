@@ -2894,6 +2894,8 @@ export type GlobalSettings = {
   projectPagesOpenIn?: 'tab' | 'page'
   /** Dots and the sidebar badge for pages an agent changed since the user last looked. Absent = on. */
   projectPagesAgentChangeDots?: boolean
+  /** The heading outline rail on pages with two or more headings. Absent = on. */
+  projectPagesOutline?: boolean
   /** The Bots tab's first-visit intro has been closed. */
   botsIntroSeen?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */

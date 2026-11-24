@@ -34,6 +34,7 @@ export function ProjectPagesPane({ settings, updateSettings }: Props): React.JSX
   const enabled = settings.experimentalProjectPages === true
   const openIn = settings.projectPagesOpenIn ?? 'tab'
   const agentDots = settings.projectPagesAgentChangeDots !== false
+  const outline = settings.projectPagesOutline !== false
 
   return (
     <div className="space-y-2">
@@ -82,6 +83,14 @@ export function ProjectPagesPane({ settings, updateSettings }: Props): React.JSX
               description={entries.agentDots.description}
               checked={agentDots}
               onChange={() => updateSettings({ projectPagesAgentChangeDots: !agentDots })}
+            />
+          </SearchableSetting>
+          <SearchableSetting {...entries.outline} id="pages-outline">
+            <SettingsSwitchRow
+              label={entries.outline.title}
+              description={entries.outline.description}
+              checked={outline}
+              onChange={() => updateSettings({ projectPagesOutline: !outline })}
             />
           </SearchableSetting>
           <SearchableSetting {...entries.intro} id="pages-intro">

@@ -32,6 +32,14 @@ export const getProjectPagesPaneSearchEntries = createLocalizedCatalog(() => {
       ),
       keywords: [...keywords, 'notification', 'badge', 'unread', 'dot']
     },
+    outline: {
+      title: translate('auto.components.settings.pages.outline.title', 'Show page outline'),
+      description: translate(
+        'auto.components.settings.pages.outline.description',
+        'A rail of headings on the right of pages with two or more headings.'
+      ),
+      keywords: [...keywords, 'outline', 'table of contents', 'toc', 'headings']
+    },
     intro: {
       title: translate('auto.components.settings.pages.intro.title', 'Pages introduction'),
       description: translate(

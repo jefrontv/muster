@@ -9616,6 +9616,10 @@
           "agentDots": {
             "title": "Show when agents change a page",
             "description": "A dot on each page an agent changed since you last opened it, and a count on the Pages icon."
+          },
+          "outline": {
+            "title": "Show page outline",
+            "description": "A rail of headings on the right of pages with two or more headings."
           }
         }
       },
@@ -15223,7 +15227,10 @@
         "templateChecklist": "Checklist",
         "templateDecision": "Decision record",
         "changedBy": "Changed by {{agent}}",
-        "changedInside": "Changed by an agent"
+        "changedInside": "Changed by an agent",
+        "outline": {
+          "label": "Page outline"
+        }
       },
       "planAnnotation": {
         "tab": {

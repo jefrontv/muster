@@ -36,12 +36,14 @@ describe('ProjectPagesPane', () => {
     expect(settings.experimentalProjectPages).toBe(true)
     expect(settings.projectPagesOpenIn).toBe('tab')
     expect(settings.projectPagesAgentChangeDots).toBe(true)
+    expect(settings.projectPagesOutline).toBe(true)
 
     const markup = renderToStaticMarkup(
       <ProjectPagesPane settings={settings} updateSettings={vi.fn()} />
     )
     expect(markup).toContain('Open pages in')
     expect(markup).toContain('Show when agents change a page')
+    expect(markup).toContain('Show page outline')
     expect(markup).toContain('Agent access')
   })
 

@@ -28,6 +28,7 @@ import { imageFiles, insertPageImages, pickPageImages } from './project-pages-fi
 import { PAGE_FILE_DROP_PROPS, useProjectPageFileDrop } from './use-project-page-file-drop'
 import { RichMarkdownEmojiMenu } from '../editor/RichMarkdownEmojiMenu'
 import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
+import { ProjectPageOutline } from './ProjectPageOutline'
 
 type Props = {
   scopeKey: string
@@ -377,6 +378,9 @@ export function ProjectPageEditor({
           <EditorContent editor={editor} />
           {footer}
         </div>
+        {doc.meta.database ? null : (
+          <ProjectPageOutline getEditor={liveEditor} scrollRef={bodyRef} />
+        )}
         <ProjectPagesEditorMenus editor={liveEditor() ?? editor} menus={menus} />
         {emojiAt ? (
           <RichMarkdownEmojiMenu

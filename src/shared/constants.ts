@@ -284,6 +284,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     experimentalProjectPages: true,
     projectPagesOpenIn: 'tab',
     projectPagesAgentChangeDots: true,
+    projectPagesOutline: true,
     nativeChatSessionOptions: {},
     openInApplications: [...DEFAULT_OPEN_IN_APPLICATIONS],
     rightSidebarOpenByDefault: true,
