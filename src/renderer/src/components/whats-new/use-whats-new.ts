@@ -13,6 +13,8 @@ type WhatsNewState =
 export function useWhatsNew(): {
   payload: WhatsNewPayload | null
   ready: boolean
+  /** True once there is nothing (left) to show, so follow-up dialogs never stack on top. */
+  settled: boolean
   dismiss: () => void
 } {
   const [state, setState] = useState<WhatsNewState>({ phase: 'idle' })
@@ -51,6 +53,7 @@ export function useWhatsNew(): {
   return {
     payload: state.phase === 'ready' ? state.payload : null,
     ready: state.phase === 'ready',
+    settled: state.phase === 'unavailable',
     dismiss
   }
 }
