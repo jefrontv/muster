@@ -14,6 +14,12 @@ import {
   PROJECT_PAGES_DATABASE_OPS,
   runProjectPagesDatabaseOp
 } from './project-pages-database-tool-ops'
+import {
+  isProjectPagesLinkOp,
+  pageConnections,
+  PROJECT_PAGES_LINK_OPS,
+  runProjectPagesLinkOp
+} from './project-pages-link-tool-ops'
 import { appendMarkdown, readSection, replaceAnchor } from './project-pages-markdown-ops'
 import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
@@ -25,6 +31,7 @@ import {
   type PagesToolRepo,
   type ProjectPagesToolSource
 } from './project-pages-tool-target'
+import { resolveWikiLinks } from './project-pages-wiki-links'
 
 export const PROJECT_PAGES_TOOL_OPS = [
   'list',
@@ -36,14 +43,17 @@ export const PROJECT_PAGES_TOOL_OPS = [
   'append',
   'move',
   'archive',
-  ...PROJECT_PAGES_DATABASE_OPS
+  ...PROJECT_PAGES_DATABASE_OPS,
+  ...PROJECT_PAGES_LINK_OPS
 ] as const
 export type ProjectPagesToolOp = (typeof PROJECT_PAGES_TOOL_OPS)[number]
 const READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
   'list',
   'search',
   'read',
-  'query_database'
+  'query_database',
+  'related',
+  'tags'
 ])
 
 export function isProjectPagesToolOp(value: unknown): value is ProjectPagesToolOp {
@@ -133,10 +143,26 @@ export async function runProjectPagesToolOp(
   const pages = (): ProjectPageMeta[] => store.listPages(scopeKey).pages
   const page = (): ProjectPageMeta => resolvePageRef(pages(), text(args, 'page', true))
   const project = { id: repo.id, name: repo.displayName }
+  const unlinked = new Set<string>()
+  // Markdown from the agent with [[Title]] links resolved; misses are reported back.
+  const md = (key: string, required = false): string => {
+    const resolved = resolveWikiLinks(text(args, key, required), pages())
+    resolved.unresolved.forEach((ref) => unlinked.add(ref))
+    return resolved.markdown
+  }
   const written = (meta: ProjectPageMeta): Record<string, unknown> => ({
     project,
-    page: row(pages(), meta)
+    page: row(pages(), meta),
+    ...(unlinked.size > 0 ? { unresolved_links: [...unlinked] } : {})
   })
+  if (isProjectPagesLinkOp(op)) {
+    return runProjectPagesLinkOp(op, {
+      snapshot: deps.search.snapshot(scopeKey),
+      project,
+      pageId: () => page().id,
+      pagePath: (id) => pagePath(pages(), id)
+    })
+  }
 
   if (isProjectPagesDatabaseOp(op)) {
     return runProjectPagesDatabaseOp(op, {
@@ -185,7 +211,8 @@ export async function runProjectPagesToolOp(
         truncated: body.length > max,
         linked_from: deps.search
           .backlinks(scopeKey, doc.meta.id)
-          .map((p) => ({ id: p.id, path: pagePath(pages(), p.id) }))
+          .map((p) => ({ id: p.id, path: pagePath(pages(), p.id) })),
+        ...pageConnections(deps.search, scopeKey, doc.meta.id, pages())
       }
     }
     case 'create': {
@@ -199,11 +226,7 @@ export async function runProjectPagesToolOp(
       if (existing && args.allow_duplicate !== true) {
         return { created: false, ...written(existing) }
       }
-      const doc = store.createPage(
-        scopeKey,
-        { parentId, title, markdown: text(args, 'markdown') },
-        author
-      )
+      const doc = store.createPage(scopeKey, { parentId, title, markdown: md('markdown') }, author)
       return { created: true, ...written(doc.meta) }
     }
     case 'update': {
@@ -213,7 +236,7 @@ export async function runProjectPagesToolOp(
         throw new ProjectPagesError('invalid', 'base_revision is required; read_page reports it.')
       }
       const title = args.title === undefined ? undefined : text(args, 'title')
-      const markdown = args.markdown === undefined ? undefined : text(args, 'markdown')
+      const markdown = args.markdown === undefined ? undefined : md('markdown')
       try {
         return written(
           store.updatePage(scopeKey, target.id, { baseRevision, title, markdown }, author).meta
@@ -235,10 +258,10 @@ export async function runProjectPagesToolOp(
       const current = store.readPage(scopeKey, target.id)
       const markdown =
         op === 'edit'
-          ? replaceAnchor(current.markdown, text(args, 'old_text', true), text(args, 'new_text'))
+          ? replaceAnchor(current.markdown, text(args, 'old_text', true), md('new_text'))
           : appendMarkdown(
               current.markdown,
-              text(args, 'markdown', true),
+              md('markdown', true),
               text(args, 'under_heading') || undefined
             )
       return written(

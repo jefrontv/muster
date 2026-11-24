@@ -20,7 +20,9 @@ describe('pages MCP tools', () => {
       'list_pages',
       'search_pages',
       'read_page',
-      'query_database'
+      'query_database',
+      'related_pages',
+      'list_page_tags'
     ])
     expect(listed({ ...context, projectPagesAccess: () => 'off' })).toEqual([])
     expect(listed({ ...context, projectPagesAccess: undefined })).toEqual([])

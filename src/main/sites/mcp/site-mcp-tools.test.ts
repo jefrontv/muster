@@ -133,6 +133,8 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   query_database: { database: 'Tasks' },
   set_page_properties: { page: 'Tasks/Write docs', properties: { Status: 'Done' } },
   make_database: { page: 'Tasks' },
+  related_pages: { page: 'Launch' },
+  list_page_tags: {},
   collect_plan_review: { review_id: 'r1' },
   collect_setup_approval: { approval_id: 'approval-1', wait_seconds: 0 },
   list_projects: {},
@@ -186,8 +188,8 @@ describe('site MCP tool table', () => {
     const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
     // Pages tools only appear once the user turns Pages on, so they get their own budget.
     expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
-    // Twelve pages tools, each with the project selector.
-    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(7_000)
+    // Fourteen pages tools, each with the project selector.
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(8_000)
   })
 })
 
