@@ -1,4 +1,4 @@
-// The open project's pages in the right sidebar. Pages open in the full Pages view.
+// The open project's pages in the right sidebar. Pages open in the project's Pages tab.
 import { Maximize2 } from 'lucide-react'
 import type React from 'react'
 import { toast } from 'sonner'
@@ -12,6 +12,8 @@ import { useProjectPagesTree } from './use-project-pages-tree'
 
 export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
   const openPagesPage = useAppStore((s) => s.openPagesPage)
+  const openProjectPagesTab = useAppStore((s) => s.openProjectPagesTab)
+  const worktreeId = useAppStore((s) => s.activeWorktreeId)
   const { options, activeKey } = useProjectPagesScopes()
   const { pages, loaded } = useProjectPagesTree(activeKey)
   const projectName = options.find((option) => option.key === activeKey)?.label
@@ -24,9 +26,20 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
     )
   }
 
-  const open = (pageId: string | null): void => {
+  const openFull = (pageId: string | null): void => {
     rememberPagesLocation(activeKey, pageId)
     openPagesPage()
+  }
+  // No worktree to hold a tab (e.g. a site with no checkout): fall back to the full view.
+  const open = (pageId: string | null): void => {
+    if (worktreeId) {
+      if (useAppStore.getState().activeView === 'pages') {
+        useAppStore.getState().closePagesPage()
+      }
+      openProjectPagesTab(worktreeId, activeKey, pageId)
+    } else {
+      openFull(pageId)
+    }
   }
   const report = (result: { ok: boolean; message?: string }): void => {
     if (!result.ok) {
@@ -45,7 +58,7 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
           className="text-muted-foreground"
           aria-label={openLabel}
           title={openLabel}
-          onClick={() => open(lastPageIn(activeKey) ?? null)}
+          onClick={() => openFull(lastPageIn(activeKey) ?? null)}
         >
           <Maximize2 className="size-3.5" />
         </Button>

@@ -21,6 +21,7 @@ export type WorkspaceTabContentType =
   | 'diff'
   | 'conflict-review'
   | 'check-details'
+  | 'project-pages'
 
 export type SearchableWorkspaceTab = {
   tab: Tab & { contentType: WorkspaceTabContentType }
@@ -127,7 +128,8 @@ function isWorkspaceTabContentType(
     contentType === 'editor' ||
     contentType === 'diff' ||
     contentType === 'conflict-review' ||
-    contentType === 'check-details'
+    contentType === 'check-details' ||
+    contentType === 'project-pages'
   )
 }
 

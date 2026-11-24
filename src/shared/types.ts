@@ -820,6 +820,7 @@ export type TabContentType =
   | 'diff'
   | 'conflict-review'
   | 'check-details'
+  | 'project-pages'
   | 'browser'
 
 export type WorkspaceVisibleTabType = 'terminal' | 'editor' | 'browser'

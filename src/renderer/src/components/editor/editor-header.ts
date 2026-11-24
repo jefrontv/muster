@@ -23,6 +23,15 @@ export function getEditorHeaderCopyState(file: OpenFile): EditorHeaderCopyState 
     }
   }
 
+  if (file.mode === 'project-pages') {
+    return {
+      copyText: null,
+      copyToastLabel: 'Page copied',
+      pathLabel: file.relativePath,
+      pathTitle: file.relativePath
+    }
+  }
+
   if (file.mode === 'check-details') {
     const label = file.checkRunDetails?.check.name ?? 'Check details'
     return {

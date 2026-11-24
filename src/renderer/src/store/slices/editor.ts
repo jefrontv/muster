@@ -11,6 +11,11 @@ import {
   getCheckRunDetailsTabLabel,
   type OpenCheckRunDetailsState
 } from '@/components/editor/check-run-details-tab'
+import {
+  buildProjectPagesTabId,
+  projectPagesTabLabel,
+  type OpenProjectPagesState
+} from '@/components/project-pages/project-pages-tab'
 import { openHttpLink, type HttpLinkSourceOwner } from '@/lib/http-link-routing'
 import { getConnectionIdForFileFromState } from '@/lib/connection-owner-resolution'
 import { isLocalPathOpenBlocked, showLocalPathOpenBlockedToast } from '@/lib/local-path-open-guard'
@@ -266,7 +271,9 @@ export type OpenFile = {
   readOnly?: boolean
   /** Why: explicit live tail, only meaningful for a read-only local log. */
   liveTail?: boolean
-  mode: 'edit' | 'diff' | 'conflict-review' | 'markdown-preview' | 'check-details'
+  mode: 'edit' | 'diff' | 'conflict-review' | 'markdown-preview' | 'check-details' | 'project-pages'
+  /** Virtual Pages tab: the project's pages scope and the page the tab was last asked to show. */
+  projectPages?: OpenProjectPagesState
 }
 
 export type ActivityBarPosition = 'top' | 'side'
@@ -569,6 +576,9 @@ export type EditorSlice = {
     check: OpenCheckRunDetailsState['check'],
     state: Pick<OpenCheckRunDetailsState, 'details' | 'loading' | 'error'>
   ) => void
+  openProjectPagesTab: (worktreeId: string, scopeKey: string, pageId: string | null) => void
+  /** Records the page the tab is showing and retitles the tab; never steals focus. */
+  showProjectPagesTabPage: (fileId: string, pageId: string | null, title: string | null) => void
   patchOpenCheckRunDetails: (
     worktreeId: string,
     contextKey: string,
@@ -730,7 +740,7 @@ function openWorkspaceEditorItem(
   fileId: string,
   worktreeId: string,
   label: string,
-  contentType: 'editor' | 'diff' | 'conflict-review' | 'check-details',
+  contentType: EditorFamilyContentType,
   isPreview?: boolean,
   targetGroupId?: string
 ): string {
@@ -757,12 +767,15 @@ function openWorkspaceEditorItem(
   return created?.id ?? fileId
 }
 
+type EditorFamilyContentType = Exclude<Tab['contentType'], 'terminal' | 'browser'>
+
 function isEditorTabContentType(contentType: Tab['contentType']): boolean {
   return (
     contentType === 'editor' ||
     contentType === 'diff' ||
     contentType === 'conflict-review' ||
-    contentType === 'check-details'
+    contentType === 'check-details' ||
+    contentType === 'project-pages'
   )
 }
 
@@ -1639,11 +1652,11 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
     let editorItemWorktreeId = file.worktreeId
     let editorItemFileId = file.filePath
     let editorItemLabel = file.relativePath
-    let editorItemContentType: 'editor' | 'diff' | 'conflict-review' | 'check-details' =
+    let editorItemContentType: EditorFamilyContentType =
       file.mode === 'conflict-review'
         ? 'conflict-review'
-        : file.mode === 'check-details'
-          ? 'check-details'
+        : file.mode === 'check-details' || file.mode === 'project-pages'
+          ? file.mode
           : file.mode === 'diff'
             ? 'diff'
             : 'editor'
@@ -2259,7 +2272,8 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
           (entry.contentType === 'editor' ||
             entry.contentType === 'diff' ||
             entry.contentType === 'conflict-review' ||
-            entry.contentType === 'check-details')
+            entry.contentType === 'check-details' ||
+            entry.contentType === 'project-pages')
       )
       if (unifiedTab) {
         get().closeUnifiedTab(unifiedTab.id)
@@ -2309,7 +2323,8 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
           (item.contentType === 'editor' ||
             item.contentType === 'diff' ||
             item.contentType === 'conflict-review' ||
-            item.contentType === 'check-details') &&
+            item.contentType === 'check-details' ||
+            item.contentType === 'project-pages') &&
           (!activeWorktreeId || item.worktreeId === activeWorktreeId)
       )
       .map((item) => item.id)
@@ -3436,6 +3451,67 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
       }
     })
     void openWorkspaceEditorItem(get(), id, worktreeId, label, 'check-details')
+  },
+
+  openProjectPagesTab: (worktreeId, scopeKey, pageId) => {
+    const id = buildProjectPagesTabId(worktreeId)
+    set((s) => {
+      const existing = s.openFiles.find((f) => f.id === id)
+      const projectPages: OpenProjectPagesState = {
+        scopeKey,
+        pageId,
+        request: (existing?.projectPages?.request ?? 0) + 1
+      }
+      const openFiles = existing
+        ? s.openFiles.map((f) => (f.id === id ? { ...f, projectPages } : f))
+        : [
+            ...s.openFiles,
+            {
+              id,
+              filePath: id,
+              relativePath: projectPagesTabLabel(null),
+              worktreeId,
+              language: 'plaintext',
+              isDirty: false,
+              mode: 'project-pages' as const,
+              projectPages
+            }
+          ]
+      return {
+        openFiles,
+        activeFileId: id,
+        activeTabType: 'editor',
+        activeFileIdByWorktree: { ...s.activeFileIdByWorktree, [worktreeId]: id },
+        activeTabTypeByWorktree: { ...s.activeTabTypeByWorktree, [worktreeId]: 'editor' }
+      }
+    })
+    const label =
+      get().openFiles.find((f) => f.id === id)?.relativePath ?? projectPagesTabLabel(null)
+    void openWorkspaceEditorItem(get(), id, worktreeId, label, 'project-pages')
+  },
+
+  showProjectPagesTabPage: (fileId, pageId, title) => {
+    const file = get().openFiles.find((f) => f.id === fileId)
+    const label = projectPagesTabLabel(title)
+    if (
+      !file?.projectPages ||
+      (file.relativePath === label && file.projectPages.pageId === pageId)
+    ) {
+      return
+    }
+    set((s) => ({
+      openFiles: s.openFiles.map((f) =>
+        f.id === fileId && f.projectPages
+          ? { ...f, relativePath: label, projectPages: { ...f.projectPages, pageId } }
+          : f
+      )
+    }))
+    const state = get()
+    for (const tab of state.unifiedTabsByWorktree[file.worktreeId] ?? []) {
+      if (tab.entityId === fileId) {
+        state.setTabLabel(tab.id, label)
+      }
+    }
   },
 
   // Why: sidebar detail fetches can finish after the full-details tab is open; update the snapshot without stealing focus.
@@ -4792,7 +4868,11 @@ function reconcileOpenFilesForStatus(
       return [file]
     }
 
-    if (file.mode === 'conflict-review' || file.mode === 'check-details') {
+    if (
+      file.mode === 'conflict-review' ||
+      file.mode === 'check-details' ||
+      file.mode === 'project-pages'
+    ) {
       return [file]
     }
 
