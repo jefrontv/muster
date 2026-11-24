@@ -33,6 +33,18 @@ export function trashedPages(pages: ProjectPageMeta[]): ProjectPageMeta[] {
     .sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0))
 }
 
+/** Ids of the pages above `pageId`, nearest first; stops on a cycle. */
+export function ancestorIds(pages: ProjectPageMeta[], pageId: string): string[] {
+  const byId = new Map(pages.map((page) => [page.id, page]))
+  const ids: string[] = []
+  let parentId = byId.get(pageId)?.parentId ?? null
+  while (parentId && parentId !== pageId && !ids.includes(parentId)) {
+    ids.push(parentId)
+    parentId = byId.get(parentId)?.parentId ?? null
+  }
+  return ids
+}
+
 export function pageTitle(page: Pick<ProjectPageMeta, 'title'>): string {
   return page.title || 'Untitled'
 }

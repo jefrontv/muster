@@ -1,7 +1,7 @@
 // Left column of the Pages view: search, the page tree and the trash.
 import { FileText, FolderPlus, Plus, RotateCcw, Search, Trash2, Workflow } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 import type { ProjectPageMeta, ProjectPageMoveInput } from '../../../../shared/project-pages-types'
-import { buildPageTree, pageTitle, trashedPages } from './project-pages-tree-model'
+import { ancestorIds, buildPageTree, pageTitle, trashedPages } from './project-pages-tree-model'
 import { ProjectPagesTreeRow } from './ProjectPagesTreeRow'
 import { useProjectPagesTreeDrag } from './use-project-pages-tree-drag'
 
@@ -45,6 +45,21 @@ export function ProjectPagesSidebar({
   const [showTrash, setShowTrash] = useState(false)
   const tree = useMemo(() => buildPageTree(pages, query), [pages, query])
   const trash = useMemo(() => trashedPages(pages), [pages])
+  // Opens the folders above the selected page once per selection, so a manual collapse sticks.
+  const revealed = useRef<string | null>(null)
+  useEffect(() => {
+    if (!selectedId || revealed.current === selectedId) {
+      return
+    }
+    const above = ancestorIds(pages, selectedId)
+    if (above.length === 0 && !pages.some((page) => page.id === selectedId)) {
+      return
+    }
+    revealed.current = selectedId
+    if (above.length > 0) {
+      setExpanded((current) => new Set([...current, ...above]))
+    }
+  }, [pages, selectedId])
   const drag = useProjectPagesTreeDrag(pages, (pageId, move) => {
     const parentId = move.parentId
     if (parentId) {
