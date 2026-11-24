@@ -40,7 +40,8 @@ const ICONS: Record<string, React.ReactNode> = {
   )
 }
 
-function PaletteTile({ graph, shape }: { graph: Graph | null; shape: DiagramShape }) {
+function PaletteTile(props: { graph: Graph | null; shape: DiagramShape; compact: boolean }) {
+  const { graph, shape } = props
   const ref = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -75,24 +76,30 @@ function PaletteTile({ graph, shape }: { graph: Graph | null; shape: DiagramShap
       >
         {ICONS[shape.id]}
       </svg>
-      <span className="w-full truncate text-center">{shape.label}</span>
+      <span className={props.compact ? 'sr-only' : 'w-full truncate text-center'}>
+        {shape.label}
+      </span>
     </button>
   )
 }
 
-export function ProjectPageDiagramPalette({ graph }: { graph: Graph | null }) {
+/** compact is a one-column icon rail: shapes still click or drag in, without search or labels. */
+export function ProjectPageDiagramPalette(props: { graph: Graph | null; compact: boolean }) {
+  const { graph, compact } = props
   const [query, setQuery] = useState('')
   const shapes = useMemo(() => {
-    const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+    const words = compact ? [] : query.toLowerCase().split(/\s+/).filter(Boolean)
     return DIAGRAM_SHAPES.filter((shape) => {
       const haystack = `${shape.label} ${shape.keywords}`.toLowerCase()
       return words.every((word) => haystack.includes(word))
     })
-  }, [query])
+  }, [query, compact])
 
   return (
-    <aside className="flex w-48 shrink-0 flex-col border-r border-border">
-      <div className="relative p-2">
+    <aside
+      className={`flex shrink-0 flex-col overflow-hidden border-r border-border transition-[width] duration-200 ease-out motion-reduce:transition-none ${compact ? 'w-12' : 'w-48'}`}
+    >
+      <div className={compact ? 'hidden' : 'relative p-2'}>
         <Search className="pointer-events-none absolute top-1/2 left-4 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={query}
@@ -104,9 +111,11 @@ export function ProjectPageDiagramPalette({ graph }: { graph: Graph | null }) {
           onChange={(event) => setQuery(event.target.value)}
         />
       </div>
-      <div className="grid grid-cols-3 content-start gap-0.5 overflow-y-auto scrollbar-sleek px-2 pb-2">
+      <div
+        className={`grid content-start gap-0.5 overflow-y-auto scrollbar-sleek pb-2 ${compact ? 'grid-cols-1 px-1 pt-2' : 'grid-cols-3 px-2'}`}
+      >
         {shapes.map((shape) => (
-          <PaletteTile key={shape.id} graph={graph} shape={shape} />
+          <PaletteTile key={shape.id} graph={graph} shape={shape} compact={compact} />
         ))}
         {shapes.length === 0 ? (
           <p className="col-span-3 px-1 py-2 text-xs text-muted-foreground">

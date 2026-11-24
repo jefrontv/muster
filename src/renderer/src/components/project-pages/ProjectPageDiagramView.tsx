@@ -22,7 +22,7 @@ import { ProjectPageDiagramFormat } from './ProjectPageDiagramFormat'
 import { ProjectPageDiagramPalette } from './ProjectPageDiagramPalette'
 import { ProjectPageDiagramQuickConnect } from './ProjectPageDiagramQuickConnect'
 import { ProjectPageDiagramToolbar } from './ProjectPageDiagramToolbar'
-import { PagesPanelSlot, usePagesPanelCollapsed } from './ProjectPagesPanelToggle'
+import { usePagesPanelCollapsed } from './ProjectPagesPanelToggle'
 import { useProjectPageDiagram, type DiagramContent } from './use-project-page-diagram'
 import { useProjectPageDiagramLinks } from './use-project-page-diagram-links'
 import { useProjectPageDiagramSelection } from './use-project-page-diagram-selection'
@@ -155,9 +155,7 @@ export function ProjectPageDiagramView({
         onTogglePalette={togglePalette}
       />
       <div className="flex min-h-0 flex-1 border-t border-border">
-        <PagesPanelSlot collapsed={paletteCollapsed} width="w-48">
-          <ProjectPageDiagramPalette graph={editor?.graph ?? null} />
-        </PagesPanelSlot>
+        <ProjectPageDiagramPalette graph={editor?.graph ?? null} compact={paletteCollapsed} />
         <div className="relative min-w-0 flex-1 overflow-hidden">
           <div
             ref={canvasRef}

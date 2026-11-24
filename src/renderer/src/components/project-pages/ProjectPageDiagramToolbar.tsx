@@ -54,8 +54,8 @@ export function ProjectPageDiagramToolbar({
       <PagesPanelToggle
         collapsed={paletteCollapsed}
         onToggle={onTogglePalette}
-        showLabel={t('showShapes', 'Show shapes')}
-        hideLabel={t('hideShapes', 'Hide shapes')}
+        showLabel={t('expandShapes', 'Expand shapes')}
+        hideLabel={t('collapseShapes', 'Collapse shapes')}
       />
       <span className="mx-1.5 h-5 w-px bg-border" />
       <ToolButton
