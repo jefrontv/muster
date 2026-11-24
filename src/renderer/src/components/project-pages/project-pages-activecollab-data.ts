@@ -124,6 +124,9 @@ export function openActiveCollabRef(ref: ActiveCollabPageRef): void {
   const store = useAppStore.getState()
   if (ref.kind === 'task') {
     store.requestActiveCollabTask({ projectId: ref.projectId, taskId: ref.taskId })
+  } else {
+    const name = pageProject(ref.projectId)?.name ?? `Project ${ref.projectId}`
+    store.setActiveCollabTaskPageProject(scope().cachePrefix, { id: ref.projectId, name })
   }
-  store.openTaskPage()
+  store.openTaskPage({ taskSource: 'activecollab' })
 }
