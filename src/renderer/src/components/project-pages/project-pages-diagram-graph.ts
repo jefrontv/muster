@@ -139,6 +139,23 @@ export function createDiagramEditor(container: HTMLElement, onChange: () => void
   graph.getView().addListener(InternalEvent.UNDO, record)
   graph.getDataModel().addListener(InternalEvent.CHANGE, () => onChange())
 
+  // A shape grows taller to fit its text when typing ends; it never shrinks on its own.
+  graph.addListener(InternalEvent.LABEL_CHANGED, (_sender: EventSource, evt: EventObject) => {
+    const cell = evt.getProperty('cell') as Cell
+    const geometry = cell.getGeometry()
+    if (!cell.isVertex() || !geometry || cell.getChildCount() > 0) {
+      return
+    }
+    const wrap = graph.getCellStyle(cell).whiteSpace === 'wrap'
+    const size = graph.getPreferredSizeForCell(cell, wrap ? geometry.width : null)
+    if (!size || size.height <= geometry.height) {
+      return
+    }
+    const grown = geometry.clone()
+    grown.height = Math.ceil(size.height / graph.gridSize) * graph.gridSize
+    graph.getDataModel().setGeometry(cell, grown)
+  })
+
   // Trackpad: two-finger scroll pans, pinch (ctrlKey wheel) zooms at the cursor.
   const onWheel = (event: WheelEvent): void => {
     event.preventDefault()
