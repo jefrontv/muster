@@ -17,7 +17,7 @@ type MusterMarkProps = {
   className?: string
   /** Omit for decorative use next to the wordmark or app name. */
   title?: string
-  /** Glyph only: a literal centre colour for surfaces captured outside the theme (share images). */
+  /** Glyph only: overrides the centre colour (share images; currentColor where coral is already in use). */
   centreColor?: string
 }
 

@@ -184,7 +184,8 @@ export default function OnboardingFlow({
                     'Muster'
                   )}
                 >
-                  <MusterMark variant="glyph" size={20} />
+                  {/* Why: the step dots below carry this view's one coral dot. */}
+                  <MusterMark variant="glyph" size={20} centreColor="currentColor" />
                   <MusterWordmark height={17} />
                 </div>
 
