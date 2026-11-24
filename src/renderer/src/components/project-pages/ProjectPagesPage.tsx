@@ -1,5 +1,5 @@
 // Pages: Notion-like nested pages for each project.
-import { ArrowLeft, FileText, History, MessageSquareText, Search, Waypoints } from 'lucide-react'
+import { ArrowLeft, FileText } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -17,14 +17,12 @@ import { ProjectPageDiagramViewLazy } from './ProjectPageDiagramViewLazy'
 import { ProjectPageEditor } from './ProjectPageEditor'
 import { ProjectPageRowProperties } from './ProjectPageRowProperties'
 import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
-import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
-import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
+import { ProjectPagesHeaderActions } from './ProjectPagesHeaderActions'
 import { ProjectPagesMap } from './ProjectPagesMap'
 import { ProjectPagesFolderView } from './ProjectPagesFolderView'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { ProjectPagesScopePicker } from './ProjectPagesScopePicker'
 import { PagesPanelSlot, PagesPanelToggle, usePagesPanelCollapsed } from './ProjectPagesPanelToggle'
-import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
 import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pages-location'
@@ -206,73 +204,18 @@ export default function ProjectPagesPage({
             {translate(`auto.components.projectPages.save.${saveState}`, SAVE_LABELS[saveState])}
           </span>
         ) : null}
-        {scopeKey ? (
-          <>
-            <Button
-              variant={mapOpen ? 'secondary' : 'ghost'}
-              size="icon-sm"
-              className="shrink-0 text-muted-foreground"
-              aria-label={translate('auto.components.projectPages.map.open', 'Map')}
-              aria-pressed={mapOpen}
-              title={translate('auto.components.projectPages.map.open', 'Map')}
-              onClick={() => setMapOpen((open) => !open)}
-            >
-              <Waypoints className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="shrink-0 text-muted-foreground"
-              aria-label={translate('auto.components.projectPages.switcher', 'Go to page')}
-              title={`${translate('auto.components.projectPages.switcher', 'Go to page')} (${isMac ? '⌘P' : 'Ctrl+P'})`}
-              onClick={() => setSwitcherOpen(true)}
-            >
-              <Search className="size-4" />
-            </Button>
-            <Button
-              variant={agentOpen ? 'secondary' : 'ghost'}
-              size="icon-sm"
-              className="shrink-0 text-muted-foreground"
-              aria-label={translate('auto.components.projectPages.askAgent', 'Ask agent')}
-              aria-pressed={agentOpen}
-              title={translate('auto.components.projectPages.askAgent', 'Ask agent')}
-              onClick={() => setAgentOpen((open) => !open)}
-            >
-              <MessageSquareText className="size-4" />
-            </Button>
-            <ProjectPagesTransferMenu
-              scopeKey={scopeKey}
-              projectName={options.find((o) => o.key === scopeKey)?.label ?? 'Pages'}
-            />
-            <ProjectPagesQuickSwitcher
-              scopeKey={scopeKey}
-              pages={pages}
-              open={switcherOpen}
-              onOpenChange={setSwitcherOpen}
-              onPick={setSelectedId}
-            />
-          </>
-        ) : null}
-        {meta && scopeKey ? (
-          <>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="shrink-0 text-muted-foreground"
-              aria-label={translate('auto.components.projectPages.history', 'Page history')}
-              title={translate('auto.components.projectPages.history', 'Page history')}
-              onClick={() => setHistoryOpen(true)}
-            >
-              <History className="size-4" />
-            </Button>
-            <ProjectPageHistoryDialog
-              scopeKey={scopeKey}
-              page={meta}
-              open={historyOpen}
-              onOpenChange={setHistoryOpen}
-            />
-          </>
-        ) : null}
+        <ProjectPagesHeaderActions
+          scopeKey={scopeKey}
+          projectName={options.find((o) => o.key === scopeKey)?.label ?? 'Pages'}
+          pages={pages}
+          meta={meta}
+          isMac={isMac}
+          map={[mapOpen, setMapOpen]}
+          switcher={[switcherOpen, setSwitcherOpen]}
+          agent={[agentOpen, setAgentOpen]}
+          history={[historyOpen, setHistoryOpen]}
+          onPick={setSelectedId}
+        />
       </header>
 
       {error ? (
