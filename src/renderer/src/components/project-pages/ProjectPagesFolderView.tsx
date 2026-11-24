@@ -1,10 +1,11 @@
 // A folder page's contents: its child pages as cards, plus buttons to add more.
-import { FileText, Folder, FolderPlus, Plus } from 'lucide-react'
+import { FolderPlus, Plus } from 'lucide-react'
 import type React from 'react'
 import { childrenOf } from '../../../../shared/project-pages-tree'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import { translate } from '@/i18n/i18n'
 import { pageTitle } from './project-pages-tree-model'
+import { ProjectPageKindIcon } from './ProjectPageKindIcon'
 
 type Props = {
   folderId: string
@@ -43,10 +44,8 @@ export function ProjectPagesFolderView({
           >
             {page.icon ? (
               <span className="text-base leading-none">{page.icon}</span>
-            ) : page.folder ? (
-              <Folder className="size-4 text-muted-foreground" />
             ) : (
-              <FileText className="size-4 text-muted-foreground" />
+              <ProjectPageKindIcon page={page} className="size-4 text-muted-foreground" />
             )}
             <span className="line-clamp-2 font-medium">{pageTitle(page)}</span>
             <span className="mt-auto text-xs text-muted-foreground">

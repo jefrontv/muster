@@ -1,10 +1,10 @@
 // "Linked from": live pages in this space whose body links here.
-import { FileText } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import { pageTitle } from './project-pages-tree-model'
+import { ProjectPageKindIcon } from './ProjectPageKindIcon'
 
 type Props = {
   scopeKey: string
@@ -50,7 +50,10 @@ export function ProjectPageBacklinks({
               className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm text-foreground hover:bg-accent"
               onClick={() => onOpenPage(page.id)}
             >
-              <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+              <ProjectPageKindIcon
+                page={page}
+                className="size-3.5 shrink-0 text-muted-foreground"
+              />
               <span className="truncate">{pageTitle(page)}</span>
             </button>
           </li>

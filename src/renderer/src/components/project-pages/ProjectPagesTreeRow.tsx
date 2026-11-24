@@ -1,14 +1,5 @@
 // One page in the tree, with its children when expanded.
-import {
-  ChevronRight,
-  FileText,
-  Folder,
-  FolderOpen,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-  Workflow
-} from 'lucide-react'
+import { ChevronRight, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,6 +11,7 @@ import {
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { pageTitle, type PageTreeNode } from './project-pages-tree-model'
+import { ProjectPageKindIcon } from './ProjectPageKindIcon'
 import type { ProjectPagesTreeDrag } from './use-project-pages-tree-drag'
 
 type Props = {
@@ -98,16 +90,12 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
         >
           {page.icon ? (
             <span className="w-4 shrink-0 text-center text-sm leading-none">{page.icon}</span>
-          ) : page.folder ? (
-            open ? (
-              <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" />
-            ) : (
-              <Folder className="size-3.5 shrink-0 text-muted-foreground" />
-            )
-          ) : page.diagram ? (
-            <Workflow className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
-            <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+            <ProjectPageKindIcon
+              page={page}
+              open={open}
+              className="size-3.5 shrink-0 text-muted-foreground"
+            />
           )}
           <span className={cn('truncate', !page.title && 'text-muted-foreground')}>
             {pageTitle(page)}

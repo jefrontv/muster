@@ -1,6 +1,6 @@
 // Floating menus over the page editor: blocks on "/", pages on "[[" or "@", tags on "#".
 import type { Editor } from '@tiptap/react'
-import { FilePlus, FileText, Hash } from 'lucide-react'
+import { FilePlus, Hash } from 'lucide-react'
 import type React from 'react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
@@ -8,6 +8,7 @@ import type { PagePickerItem } from './project-pages-editor-triggers'
 import { ProjectPagesActiveCollabPicker } from './ProjectPagesActiveCollabPicker'
 import { ProjectPagesSlashMenu } from './ProjectPagesSlashMenu'
 import { pageTitle } from './project-pages-tree-model'
+import { pageKindIcon } from './ProjectPageKindIcon'
 import type { ProjectPagesEditorMenus as Menus } from './use-project-pages-editor-menus'
 
 function itemKey(item: PagePickerItem): string {
@@ -17,7 +18,8 @@ function itemKey(item: PagePickerItem): string {
 }
 
 function ItemBody({ item }: { item: PagePickerItem }): React.JSX.Element {
-  const Icon = item.kind === 'tag' ? Hash : item.kind === 'create' ? FilePlus : FileText
+  const Icon =
+    item.kind === 'tag' ? Hash : item.kind === 'create' ? FilePlus : pageKindIcon(item.page)
   const label =
     item.kind === 'page'
       ? pageTitle(item.page)

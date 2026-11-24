@@ -1,5 +1,4 @@
 // Cmd/Ctrl+P inside Pages: jump to a page by title, heading or text.
-import { FileText } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -15,6 +14,7 @@ import type {
   ProjectPageSearchResult
 } from '../../../../shared/project-pages-types'
 import { pageTitle } from './project-pages-tree-model'
+import { ProjectPageKindIcon } from './ProjectPageKindIcon'
 
 type Props = {
   scopeKey: string
@@ -96,7 +96,7 @@ export function ProjectPagesQuickSwitcher({
               onOpenChange(false)
             }}
           >
-            <FileText className="size-4 shrink-0 text-muted-foreground" />
+            <ProjectPageKindIcon page={page} className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate">
               {pageTitle(page)}
               {snippet ? (
