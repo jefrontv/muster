@@ -1,10 +1,10 @@
-// Floating menus over the page editor: blocks on "/", page links on "[[".
+// Floating menus over the page editor: blocks on "/" and page links on "[[".
 import type { Editor } from '@tiptap/react'
 import { FileText } from 'lucide-react'
 import type React from 'react'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
-import { RichMarkdownSlashMenu } from '../editor/RichMarkdownSlashMenu'
+import { ProjectPagesSlashMenu } from './ProjectPagesSlashMenu'
 import { pageTitle } from './project-pages-tree-model'
 import type { ProjectPagesEditorMenus as Menus } from './use-project-pages-editor-menus'
 
@@ -16,16 +16,7 @@ export function ProjectPagesEditorMenus({
   menus: Menus
 }): React.JSX.Element | null {
   if (menus.slashMenu) {
-    return (
-      <RichMarkdownSlashMenu
-        editor={editor}
-        slashMenu={menus.slashMenu}
-        filteredCommands={menus.commands}
-        selectedIndex={menus.selected}
-        onImagePick={() => {}}
-        onEmojiPick={() => {}}
-      />
-    )
+    return <ProjectPagesSlashMenu editor={editor} menu={menus.slashMenu} menus={menus} />
   }
   const menu = menus.linkMenu
   if (!menu) {

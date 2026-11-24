@@ -36,6 +36,8 @@ export type SlashCommandId =
   | 'inline-math'
   | 'math-block'
   | 'emoji'
+  /** Commands only the Pages editor adds (templates, database). */
+  | `page-${string}`
 
 export type SlashCommandIcon =
   | { kind: 'component'; component: React.ComponentType<{ className?: string }> }
@@ -48,6 +50,7 @@ export type SlashCommandGroup =
   | 'Advanced'
   | 'Media'
   | 'Others'
+  | 'Templates'
 
 export type SlashCommand = {
   id: SlashCommandId

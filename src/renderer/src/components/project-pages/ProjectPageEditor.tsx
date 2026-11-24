@@ -22,7 +22,7 @@ import {
 import { createProjectPagesExtensions } from './project-pages-editor-extensions'
 import { replaceEditorMarkdown } from './project-pages-editor-sync'
 import { ProjectPagesEditorMenus } from './ProjectPagesEditorMenus'
-import { ProjectPageStarters } from './ProjectPageStarters'
+import { pageSlashCommands } from './project-pages-slash-items'
 import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
 
 type Props = {
@@ -41,7 +41,7 @@ type Props = {
   footer?: React.ReactNode
   /** Rendered between the title and the body. */
   afterTitle?: React.ReactNode
-  /** Offered on a blank page when set; database pages pass none and show no starters. */
+  /** Offered as "Database" in the / menu; database pages pass none. */
   onMakeDatabase?: () => void
 }
 
@@ -62,8 +62,24 @@ export function ProjectPageEditor({
   const codec = useMemo(() => createRichMarkdownEditorCodec(), [])
   const [title, setTitle] = useState(doc.meta.title)
   const [conflict, setConflict] = useState<string | null>(null)
-  const [blank, setBlank] = useState(doc.markdown.trim() === '')
-  const menus = useProjectPagesEditorMenus(pages, pageId)
+  const makeDatabaseRef = useRef(onMakeDatabase)
+  makeDatabaseRef.current = onMakeDatabase
+  const canMakeDatabase = Boolean(onMakeDatabase)
+  const extraCommands = useMemo(
+    () =>
+      pageSlashCommands({
+        insertMarkdown: (live, markdown) => {
+          live
+            .chain()
+            .focus()
+            .insertContent(encodeRawMarkdownHtmlForRichEditor(markdown, codec))
+            .run()
+        },
+        makeDatabase: canMakeDatabase ? () => makeDatabaseRef.current?.() : undefined
+      }),
+    [codec, canMakeDatabase]
+  )
+  const menus = useProjectPagesEditorMenus(pages, pageId, extraCommands)
   const menusRef = useRef(menus)
   menusRef.current = menus
   const bodyRef = useRef<HTMLDivElement | null>(null)
@@ -131,7 +147,6 @@ export function ProjectPageEditor({
       },
       onUpdate: ({ editor: current }) => {
         autosave.queue({ markdown: () => current.getMarkdown() })
-        setBlank(current.isEmpty)
         menusRef.current.sync(current)
       },
       onSelectionUpdate: ({ editor: current }) => menusRef.current.sync(current)
@@ -261,20 +276,6 @@ export function ProjectPageEditor({
           />
           {afterTitle}
           <EditorContent editor={editor} />
-          {blank && onMakeDatabase ? (
-            <ProjectPageStarters
-              onMakeDatabase={onMakeDatabase}
-              onPick={(markdown) => {
-                const live = liveEditor()
-                if (live) {
-                  replaceEditorMarkdown(live, markdown, codec)
-                  autosave.queue({ markdown: () => live.getMarkdown() })
-                  setBlank(false)
-                  live.commands.focus('end')
-                }
-              }}
-            />
-          ) : null}
           {footer}
         </div>
         <ProjectPagesEditorMenus editor={liveEditor() ?? editor} menus={menus} />
