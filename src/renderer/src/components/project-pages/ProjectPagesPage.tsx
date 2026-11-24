@@ -1,5 +1,5 @@
 // Pages: Notion-like nested pages for each project.
-import { ArrowLeft, FileText, History, MessageSquareText, Search } from 'lucide-react'
+import { ArrowLeft, FileText, History, MessageSquareText, Search, Waypoints } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
+import { tagNodeId } from '../../../../shared/project-pages-graph-types'
 import { ancestorsOf } from '../../../../shared/project-pages-tree'
 import type { ProjectPageDocument } from '../../../../shared/project-pages-types'
 import type { AutosaveState } from './project-pages-autosave'
@@ -24,6 +25,7 @@ import { ProjectPageRowProperties } from './ProjectPageRowProperties'
 import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
 import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
+import { ProjectPagesMap } from './ProjectPagesMap'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
@@ -54,6 +56,8 @@ export default function ProjectPagesPage(): React.JSX.Element {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [agentOpen, setAgentOpen] = useState(false)
+  const [mapOpen, setMapOpen] = useState(false)
+  const [mapFocus, setMapFocus] = useState<string | null>(null)
   const isMac = navigator.userAgent.includes('Mac')
   const spaceVersion = useMemo(() => pages.map((p) => `${p.id}:${p.revision}`).join(','), [pages])
 
@@ -186,6 +190,17 @@ export default function ProjectPagesPage(): React.JSX.Element {
         {scopeKey ? (
           <>
             <Button
+              variant={mapOpen ? 'secondary' : 'ghost'}
+              size="icon-sm"
+              className="shrink-0 text-muted-foreground"
+              aria-label={translate('auto.components.projectPages.map.open', 'Map')}
+              aria-pressed={mapOpen}
+              title={translate('auto.components.projectPages.map.open', 'Map')}
+              onClick={() => setMapOpen((open) => !open)}
+            >
+              <Waypoints className="size-4" />
+            </Button>
+            <Button
               variant="ghost"
               size="icon-sm"
               className="shrink-0 text-muted-foreground"
@@ -266,7 +281,20 @@ export default function ProjectPagesPage(): React.JSX.Element {
             onRestore={(id) => void window.api.projectPages.restore(scopeKey, id).then(report)}
           />
           <section className="flex min-w-0 flex-1 flex-col">
-            {doc && meta && doc.meta.id === meta.id ? (
+            {mapOpen ? (
+              <ProjectPagesMap
+                scopeKey={scopeKey}
+                version={spaceVersion}
+                currentPageId={pageId}
+                focus={mapFocus}
+                onFocusChange={setMapFocus}
+                onOpenPage={(id) => {
+                  setSelectedId(id)
+                  setMapOpen(false)
+                }}
+                onClose={() => setMapOpen(false)}
+              />
+            ) : doc && meta && doc.meta.id === meta.id ? (
               <ProjectPageEditor
                 key={`${scopeKey}/${doc.meta.id}`}
                 scopeKey={scopeKey}
@@ -276,6 +304,10 @@ export default function ProjectPagesPage(): React.JSX.Element {
                 autoFocusTitle={fresh === doc.meta.id}
                 pages={pages}
                 onOpenPage={setSelectedId}
+                onOpenTag={(tag) => {
+                  setMapFocus(tagNodeId(tag.toLowerCase()))
+                  setMapOpen(true)
+                }}
                 onSaveState={setSaveState}
                 onMakeDatabase={
                   meta.database
