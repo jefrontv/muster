@@ -49,7 +49,7 @@ export function ProjectPagesAgentAccessSection({
   return (
     <section className="space-y-3">
       <SettingsSubsectionHeader
-        title={translate('auto.components.settings.pagesAccess.section', 'Pages')}
+        title={translate('auto.components.settings.pagesAccess.section', 'Agent access')}
       />
       <SearchableSetting
         title={accessTitle}
