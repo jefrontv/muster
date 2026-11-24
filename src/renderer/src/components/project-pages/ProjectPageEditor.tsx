@@ -78,7 +78,9 @@ export function ProjectPageEditor({
           live
             .chain()
             .focus()
-            .insertContent(encodeRawMarkdownHtmlForRichEditor(markdown, codec))
+            .insertContent(encodeRawMarkdownHtmlForRichEditor(markdown, codec), {
+              contentType: 'markdown'
+            })
             .run()
         },
         makeDatabase: canMakeDatabase ? () => makeDatabaseRef.current?.() : undefined
