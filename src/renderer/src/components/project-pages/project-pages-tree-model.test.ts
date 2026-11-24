@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
-import { buildPageTree, trashedPages } from './project-pages-tree-model'
+import { ancestorIds, buildPageTree, trashedPages } from './project-pages-tree-model'
 
 function page(
   id: string,
@@ -41,6 +41,13 @@ describe('project pages tree model', () => {
     expect(
       buildPageTree(pages, 'check').map((n) => [n.page.id, n.children.map((c) => c.page.id)])
     ).toEqual([['a', ['b']]])
+  })
+
+  it('lists the folders above a page, nearest first', () => {
+    const nested = [...pages, page('e', 'b', 'Step')]
+    expect(ancestorIds(nested, 'e')).toEqual(['b', 'a'])
+    expect(ancestorIds(nested, 'a')).toEqual([])
+    expect(ancestorIds([page('x', 'y', 'X'), page('y', 'x', 'Y')], 'x')).toEqual(['y'])
   })
 
   it('lists only the pages that were trashed directly', () => {
