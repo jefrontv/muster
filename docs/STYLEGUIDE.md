@@ -124,6 +124,7 @@ Use `components/brand/muster-mark.tsx`, never an `<img>` of the logo and never a
 | `--brand-paper`, `--brand-stone`, `--brand-mark-ink` | `#ECE9E3`, `#CBC9C4`, `#17181C` | same      | Inside the mark only                           |
 
 - The brand colour is `--brand`, never `--accent` (that is the hover and current-row fill).
+- `--chat-accent` points at `--brand-ink` (caret, links, running label, chat focus rings) and the light `--chat-bubble` is a warm `#F3F1EC`. Send stays the ink fill.
 - No coral text on hovered rows in dark (`--brand` on `--accent` is 3.75:1).
 - Never put coral next to a destructive action: in dark it is 1.04:1 from `--destructive`.
 

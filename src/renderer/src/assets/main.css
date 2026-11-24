@@ -345,7 +345,7 @@
   --tab-group-split-divider-strong: #71717a;
   /* Chat surface tokens (docs/STYLEGUIDE.md "Chat surface"). */
   --chat-row-height: 24px;
-  --chat-bubble: rgb(237 243 254);
+  --chat-bubble: #f3f1ec;
   --chat-ink-secondary: #404040;
   --chat-ink-tertiary: #737373;
   /* Placeholders and separators only: under 4.5:1 on white. */
@@ -354,9 +354,9 @@
   --chat-hairline: 0 0 0 0.5px rgb(0 0 0 / 0.12);
   --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.03), 0 0 24px rgb(0 0 0 / 0.03);
   --elevation-floating: 0 10px 24px rgb(0 0 0 / 0.18);
-  /* Send, caret, links and the running label. */
-  --chat-accent: #4176e6;
-  --chat-accent-hover: #7aaaff;
+  /* Caret, links, the running label and chat focus rings: brand coral at text strength. */
+  --chat-accent: var(--brand-ink);
+  --chat-accent-hover: var(--brand);
   /* Brand coral (docs/STYLEGUIDE.md "Brand"). Coral fails on white, so light mode uses deeper values:
      --brand for dots, fills and indicators (3:1), --brand-ink for text and links (4.5:1). */
   --brand: #e25630;
@@ -524,8 +524,8 @@
   --chat-ambient: 0 4px 16px rgb(0 0 0 / 0.03), 0 0 24px rgb(0 0 0 / 0.03);
   /* Dark surfaces swallow a light drop; floating needs more weight to read as above the page. */
   --elevation-floating: 0 12px 32px rgb(0 0 0 / 0.42);
-  --chat-accent: #7aaaff;
-  --chat-accent-hover: #4176e6;
+  --chat-accent: var(--brand-ink);
+  --chat-accent-hover: #e25630;
   --brand: #ef7a5a;
   /* 3.75:1 on --accent (#404040): no coral text on hovered rows. */
   --brand-ink: #ef7a5a;
