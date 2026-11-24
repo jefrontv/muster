@@ -3,7 +3,7 @@ import {
   Ellipsis,
   ExternalLink,
   LoaderCircle,
-  Pencil,
+  Paperclip,
   Trash2,
   Undo2,
   WandSparkles
@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
@@ -99,12 +100,17 @@ function postArgs(draft: BotsCommentDraft): BotsCommentDraftPostArgs {
 export function BotsCommentDraftCard({
   draft,
   task,
-  bare = false
+  bare = false,
+  expanded = true,
+  onExpand
 }: {
   draft: BotsCommentDraft
   task: BotsCommentDraftTask | undefined
   /** Body and actions only, for a list row that already shows the header. */
   bare?: boolean
+  /** A collapsed list row shows a two-line preview and no files. */
+  expanded?: boolean
+  onExpand?: () => void
 }): React.JSX.Element {
   const author = commentDraftAuthorLabel(draft)
   const [dialogView, setDialogView] = useState<BotsDraftDialogView | null>(null)
@@ -200,8 +206,12 @@ export function BotsCommentDraftCard({
         </p>
       ) : null}
 
-      <BotsCommentDraftBody text={draft.bodyText} />
-      <BotsCommentDraftAttachments draft={draft} compact />
+      <BotsCommentDraftBody
+        text={draft.bodyText}
+        lines={!expanded ? 2 : bare ? null : 3}
+        onExpand={expanded ? undefined : onExpand}
+      />
+      {expanded ? <BotsCommentDraftAttachments draft={draft} compact /> : null}
       {dialogView ? (
         <BotsDraftDialog
           draft={draft}
@@ -250,8 +260,25 @@ export function BotsCommentDraftCard({
         </form>
       ) : null}
 
-      {/* Edits on the left; Post on the right, with Discard kept apart in the menu. */}
-      <div className="flex items-center gap-0.5 pt-0.5">
+      {/* Post and Edit lead; the rarer actions share one menu, with Discard last. */}
+      <div className="flex items-center gap-1">
+        <BotsCommentDraftPostButton
+          size="xs"
+          variant="secondary"
+          label={translate('auto.components.bots.commentDrafts.post', 'Post')}
+          ariaLabel={postLabelWithFiles(
+            translate('auto.components.bots.commentDrafts.post', 'Post'),
+            draft
+          )}
+          busy={busy === 'post'}
+          disabled={locked}
+          projectId={draft.projectId}
+          handBackPeople={task?.handBackPeople}
+          getBodyHtml={() => draft.bodyHtml}
+          onPost={(handBackTo) =>
+            void run('post', () => postCommentDraft(draft, postArgs(draft), handBackTo))
+          }
+        />
         <Button
           type="button"
           size="xs"
@@ -260,34 +287,28 @@ export function BotsCommentDraftCard({
           onClick={() => setDialogView('comment')}
           className="text-chat-ink-secondary hover:text-foreground"
         >
-          <Pencil className="size-3.5" />
           {translate('auto.components.bots.commentDrafts.edit', 'Edit')}
         </Button>
-        <IconAction
-          label={translate('auto.components.bots.commentDrafts.ask', 'Ask {{value0}} to change…', {
-            value0: author
-          })}
-          disabled={locked}
-          expanded={asking}
-          onClick={() => setAsking((open) => !open)}
-        >
-          <WandSparkles className="size-3.5" />
-        </IconAction>
-        {draft.canUndo ? (
-          <IconAction
-            label={translate('auto.components.bots.commentDrafts.undo', 'Undo last change')}
-            disabled={locked}
-            onClick={() => void run('undo', () => window.api.bots.undoCommentDraft(draft.id))}
-          >
-            <Undo2 className="size-3.5" />
-          </IconAction>
-        ) : null}
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
+          {!expanded && draft.attachments.length > 0 ? (
+            <span className="flex items-center gap-0.5 px-1 text-xs text-chat-ink-tertiary tabular-nums">
+              <Paperclip aria-hidden className="size-3" />
+              {draft.attachments.length}
+            </span>
+          ) : null}
           <IconAction
-            label={translate('auto.components.bots.commentDrafts.openTask', 'Open task')}
-            onClick={() => setDialogView('task')}
+            label={translate(
+              'auto.components.bots.commentDrafts.ask',
+              'Ask {{value0}} to change…',
+              {
+                value0: author
+              }
+            )}
+            disabled={locked}
+            expanded={asking}
+            onClick={() => setAsking((open) => !open)}
           >
-            <ExternalLink className="size-3.5" />
+            <WandSparkles className="size-3.5" />
           </IconAction>
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
@@ -295,7 +316,6 @@ export function BotsCommentDraftCard({
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                disabled={locked}
                 aria-label={translate(
                   'auto.components.bots.commentDrafts.moreActions',
                   'More actions'
@@ -306,8 +326,25 @@ export function BotsCommentDraftCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setDialogView('task')}>
+                <ExternalLink className="size-3.5" />
+                {translate('auto.components.bots.commentDrafts.openTask', 'Open task')}
+              </DropdownMenuItem>
+              {draft.canUndo ? (
+                <DropdownMenuItem
+                  disabled={locked}
+                  onSelect={() =>
+                    void run('undo', () => window.api.bots.undoCommentDraft(draft.id))
+                  }
+                >
+                  <Undo2 className="size-3.5" />
+                  {translate('auto.components.bots.commentDrafts.undo', 'Undo last change')}
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
+                disabled={locked}
                 onSelect={() =>
                   void run('discard', () => window.api.bots.discardCommentDraft(draft.id))
                 }
@@ -317,22 +354,6 @@ export function BotsCommentDraftCard({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <BotsCommentDraftPostButton
-            size="xs"
-            label={translate('auto.components.bots.commentDrafts.post', 'Post')}
-            ariaLabel={postLabelWithFiles(
-              translate('auto.components.bots.commentDrafts.post', 'Post'),
-              draft
-            )}
-            busy={busy === 'post'}
-            disabled={locked}
-            projectId={draft.projectId}
-            handBackPeople={task?.handBackPeople}
-            getBodyHtml={() => draft.bodyHtml}
-            onPost={(handBackTo) =>
-              void run('post', () => postCommentDraft(draft, postArgs(draft), handBackTo))
-            }
-          />
         </div>
       </div>
 

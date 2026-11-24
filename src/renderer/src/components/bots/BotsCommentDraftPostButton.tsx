@@ -26,6 +26,7 @@ export function BotsCommentDraftPostButton({
   label,
   ariaLabel,
   size,
+  variant = 'default',
   busy,
   disabled,
   projectId,
@@ -37,6 +38,7 @@ export function BotsCommentDraftPostButton({
   /** Fuller name for assistive tech, e.g. how many files go with it. */
   ariaLabel?: string
   size: 'xs' | 'sm'
+  variant?: 'default' | 'secondary'
   busy: boolean
   disabled: boolean
   projectId: number
@@ -73,6 +75,7 @@ export function BotsCommentDraftPostButton({
         <Button
           type="button"
           size={size}
+          variant={variant}
           disabled={disabled}
           aria-label={ariaLabel}
           onClick={() => onPost()}
@@ -84,6 +87,7 @@ export function BotsCommentDraftPostButton({
           <Button
             type="button"
             size={size === 'xs' ? 'icon-xs' : 'icon-sm'}
+            variant={variant}
             disabled={disabled}
             aria-label={translate(
               'auto.components.bots.commentDrafts.moreOptions',
