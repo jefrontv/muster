@@ -8,10 +8,8 @@ import { app, BrowserWindow, nativeImage } from 'electron'
 import { electronApp } from './node-safe-electron'
 import classicIcon from '../../resources/icon.png?asset'
 import classicDevIcon from '../../resources/icon-dev.png?asset'
-import watercolorIcon from '../../resources/app-icons/muster-watercolor.png?asset'
-import watercolorMacDockIcon from '../../resources/app-icons/muster-watercolor.png?asset&asarUnpack'
-import blueIcon from '../../resources/app-icons/muster-blue.png?asset'
-import blueMacDockIcon from '../../resources/app-icons/muster-blue.png?asset&asarUnpack'
+import darkIcon from '../../resources/app-icons/muster-dark.png?asset'
+import darkMacDockIcon from '../../resources/app-icons/muster-dark.png?asset&asarUnpack'
 import { normalizeAppIconId, type AppIconId } from '../shared/app-icon'
 
 // @electron-toolkit's is.dev reads app.isPackaged on import, which crashes wherever `app` is absent.
@@ -19,13 +17,11 @@ const isDevBuild = electronApp !== undefined && !electronApp.isPackaged
 
 const APP_ICON_PATHS = {
   classic: isDevBuild ? classicDevIcon : classicIcon,
-  watercolor: watercolorIcon,
-  blue: blueIcon
+  dark: darkIcon
 } satisfies Record<AppIconId, string>
 
 const MAC_DOCK_ICON_PATHS = {
-  watercolor: watercolorMacDockIcon,
-  blue: blueMacDockIcon
+  dark: darkMacDockIcon
 } satisfies Record<Exclude<AppIconId, 'classic'>, string>
 
 type ExecFile = (

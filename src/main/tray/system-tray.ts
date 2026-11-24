@@ -1,7 +1,7 @@
 import { Menu, Tray, type NativeImage } from 'electron'
-import { createAppIconImage } from '../app-icon'
 import { translateMain } from '../i18n/main-i18n'
 import { composeTrayAttentionIcon } from './tray-attention-icon'
+import { createTrayIconImage } from './tray-icon-image'
 
 export type SystemTrayOptions = {
   /** App icon id from settings; the tray reuses the app icon image. */
@@ -41,10 +41,6 @@ function baseTooltip(): string {
   }
   return devIndicator.label ? `Muster DEV (${devIndicator.label})` : 'Muster DEV'
 }
-
-// Why: the Windows notification area expects a 16px icon; the app icon PNG is
-// larger, so downscale to avoid a cropped/blurry tray glyph.
-const TRAY_ICON_SIZE = 16
 
 // Why: collapse bursts (rapid show/hide) into one repaint; the deferred pass reads
 // current module state, so a dropped schedule can never land a stale icon.
@@ -93,10 +89,7 @@ export function createSystemTray(opts: SystemTrayOptions): Tray | null {
   }
 
   devIndicator = opts.isDevInstance ? { label: opts.devInstanceLabel } : null
-  baseTrayImage = createAppIconImage(opts.appIcon).resize({
-    width: TRAY_ICON_SIZE,
-    height: TRAY_ICON_SIZE
-  })
+  baseTrayImage = createTrayIconImage(opts.appIcon)
 
   tray = new Tray(baseTrayImage)
   // Why: reflect any attention event that fired before the tray existed.

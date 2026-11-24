@@ -1,7 +1,7 @@
+// Retired ids (watercolor, blue) normalize to the default, which clears any saved macOS bundle icon.
 export const APP_ICON_OPTIONS = [
-  { id: 'classic', label: 'Classic Muster' },
-  { id: 'watercolor', label: 'Watercolor Muster' },
-  { id: 'blue', label: 'Blue Muster' }
+  { id: 'classic', label: 'Muster' },
+  { id: 'dark', label: 'Dark Muster' }
 ] as const
 
 export type AppIconId = (typeof APP_ICON_OPTIONS)[number]['id']

@@ -32,20 +32,12 @@ vi.mock('../../resources/icon-dev.png?asset', () => ({
   default: 'classic-dev-icon'
 }))
 
-vi.mock('../../resources/app-icons/muster-watercolor.png?asset', () => ({
-  default: 'watercolor-icon'
+vi.mock('../../resources/app-icons/muster-dark.png?asset', () => ({
+  default: 'dark-icon'
 }))
 
-vi.mock('../../resources/app-icons/muster-watercolor.png?asset&asarUnpack', () => ({
-  default: 'watercolor-icon-unpacked'
-}))
-
-vi.mock('../../resources/app-icons/muster-blue.png?asset', () => ({
-  default: 'blue-icon'
-}))
-
-vi.mock('../../resources/app-icons/muster-blue.png?asset&asarUnpack', () => ({
-  default: 'blue-icon-unpacked'
+vi.mock('../../resources/app-icons/muster-dark.png?asset&asarUnpack', () => ({
+  default: 'dark-icon-unpacked'
 }))
 
 import { applyAppIcon, getAppIconPath, persistMacDockIcon } from './app-icon'
@@ -83,10 +75,11 @@ describe('app icon selection', () => {
     vi.useRealTimers()
   })
 
-  it('resolves classic, watercolor, blue, and invalid icon ids', () => {
+  it('resolves classic, dark, retired, and invalid icon ids', () => {
     expect(getAppIconPath('classic')).toBe('classic-icon')
-    expect(getAppIconPath('watercolor')).toBe('watercolor-icon')
-    expect(getAppIconPath('blue')).toBe('blue-icon')
+    expect(getAppIconPath('dark')).toBe('dark-icon')
+    expect(getAppIconPath('watercolor')).toBe('classic-icon')
+    expect(getAppIconPath('blue')).toBe('classic-icon')
     expect(getAppIconPath('missing')).toBe('classic-icon')
   })
 
@@ -98,9 +91,9 @@ describe('app icon selection', () => {
       { isDestroyed: () => true, setIcon: vi.fn() }
     ])
 
-    applyAppIcon('watercolor')
+    applyAppIcon('dark')
 
-    expect(createFromPathMock).toHaveBeenCalledWith('watercolor-icon')
+    expect(createFromPathMock).toHaveBeenCalledWith('dark-icon')
     if (process.platform === 'darwin') {
       expect(dockSetIconMock).toHaveBeenCalledWith(image)
     } else {
@@ -125,7 +118,7 @@ describe('app icon selection', () => {
       }
     )
 
-    persistMacDockIcon('watercolor', {
+    persistMacDockIcon('dark', {
       appBundlePath: '/Applications/Muster.app',
       execFile,
       isDevApp: false,
@@ -139,7 +132,7 @@ describe('app icon selection', () => {
       expect.objectContaining({
         env: expect.objectContaining({
           ORCA_APP_BUNDLE_PATH: '/Applications/Muster.app',
-          ORCA_APP_ICON_PATH: 'watercolor-icon-unpacked'
+          ORCA_APP_ICON_PATH: 'dark-icon-unpacked'
         })
       }),
       expect.any(Function)
@@ -291,7 +284,7 @@ describe('app icon selection', () => {
       }
     )
 
-    persistMacDockIcon('watercolor', {
+    persistMacDockIcon('dark', {
       appBundlePath: '/Applications/Muster.app',
       execFile,
       isDevApp: false,
@@ -299,7 +292,7 @@ describe('app icon selection', () => {
     })
     await waitForQueuedPersistence()
 
-    persistMacDockIcon('blue', {
+    persistMacDockIcon('dark', {
       appBundlePath: '/Applications/Muster.app',
       execFile,
       isDevApp: false,
@@ -318,7 +311,7 @@ describe('app icon selection', () => {
       expect.any(Array),
       expect.objectContaining({
         env: expect.objectContaining({
-          ORCA_APP_ICON_PATH: 'watercolor-icon-unpacked'
+          ORCA_APP_ICON_PATH: 'dark-icon-unpacked'
         })
       }),
       expect.any(Function)
@@ -328,16 +321,6 @@ describe('app icon selection', () => {
     await waitForQueuedPersistence()
 
     expect(execFile).toHaveBeenCalledTimes(2)
-    expect(execFile).not.toHaveBeenCalledWith(
-      '/usr/bin/osascript',
-      expect.any(Array),
-      expect.objectContaining({
-        env: expect.objectContaining({
-          ORCA_APP_ICON_PATH: 'blue-icon-unpacked'
-        })
-      }),
-      expect.any(Function)
-    )
     expect(execFile).toHaveBeenNthCalledWith(
       2,
       '/usr/bin/osascript',
@@ -405,7 +388,7 @@ describe('app icon selection', () => {
       }
     )
 
-    persistMacDockIcon('watercolor', {
+    persistMacDockIcon('dark', {
       appBundlePath: '/Applications/Muster.app',
       execFile,
       isDevApp: false,
@@ -413,7 +396,7 @@ describe('app icon selection', () => {
     })
     await waitForQueuedPersistenceMicrotasks()
 
-    persistMacDockIcon('blue', {
+    persistMacDockIcon('dark', {
       appBundlePath: '/Applications/Muster.app',
       execFile,
       isDevApp: false,
@@ -440,7 +423,7 @@ describe('app icon selection', () => {
       expect.any(Array),
       expect.objectContaining({
         env: expect.objectContaining({
-          ORCA_APP_ICON_PATH: 'blue-icon-unpacked'
+          ORCA_APP_ICON_PATH: 'dark-icon-unpacked'
         }),
         timeout: 10_000
       }),

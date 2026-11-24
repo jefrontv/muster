@@ -38,8 +38,8 @@ vi.mock('electron', () => ({
   Menu: { buildFromTemplate: menuFromTemplateMock }
 }))
 
-vi.mock('../app-icon', () => ({
-  createAppIconImage: createAppIconImageMock
+vi.mock('./tray-icon-image', () => ({
+  createTrayIconImage: createAppIconImageMock
 }))
 
 vi.mock('./tray-attention-icon', () => ({
@@ -87,7 +87,7 @@ beforeEach(() => {
   menuFromTemplateMock.mockClear()
   composeAttentionMock.mockClear()
   createAppIconImageMock.mockReset()
-  createAppIconImageMock.mockReturnValue({ resize: vi.fn(() => resizedImage) })
+  createAppIconImageMock.mockReturnValue(resizedImage)
 })
 
 afterEach(() => {

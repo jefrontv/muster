@@ -199,11 +199,7 @@ export const getAppIconEntries = createLocalizedCatalog((): SettingsSearchEntry[
         'auto.components.settings.appearance.search.651f35b2c6',
         'switcher'
       ),
-      ...translateSearchKeyword('auto.components.settings.appearance.search.f586abfa35', 'blue'),
-      ...translateSearchKeyword(
-        'auto.components.settings.appearance.search.468448bba4',
-        'watercolor'
-      )
+      ...translateSearchKeyword('auto.components.settings.appearance.search.262fe1d24f', 'dark')
     ]
   }
 ])
