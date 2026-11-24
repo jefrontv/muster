@@ -983,6 +983,11 @@ const api = {
     attachPaths: (scopeKey, paths) =>
       ipcRenderer.invoke('projectPages:attachPaths', scopeKey, paths),
     database: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:database', scopeKey, pageId),
+    diagram: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:diagram', scopeKey, pageId),
+    enableDiagram: (scopeKey, pageId) =>
+      ipcRenderer.invoke('projectPages:enableDiagram', scopeKey, pageId),
+    saveDiagram: (scopeKey, pageId, input) =>
+      ipcRenderer.invoke('projectPages:saveDiagram', scopeKey, pageId, input),
     enableDatabase: (scopeKey, pageId) =>
       ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),
     updateDatabase: (scopeKey, pageId, schema) =>

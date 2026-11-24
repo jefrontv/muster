@@ -20,6 +20,7 @@ import type { AutosaveState } from './project-pages-autosave'
 import { buildPageTree, pageTitle } from './project-pages-tree-model'
 import { ProjectPageBacklinks } from './ProjectPageBacklinks'
 import { ProjectPageDatabaseView } from './ProjectPageDatabaseView'
+import { ProjectPageDiagramView } from './ProjectPageDiagramView'
 import { ProjectPageEditor } from './ProjectPageEditor'
 import { ProjectPageRowProperties } from './ProjectPageRowProperties'
 import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
@@ -110,11 +111,18 @@ export default function ProjectPagesPage(): React.JSX.Element {
     }
   }
 
-  const create = async (parentId: string | null, folder = false): Promise<void> => {
+  const create = async (
+    parentId: string | null,
+    folder = false,
+    diagram = false
+  ): Promise<void> => {
     if (!scopeKey) {
       return
     }
     const result = await window.api.projectPages.create(scopeKey, { parentId, folder })
+    if (result.ok && diagram) {
+      report(await window.api.projectPages.enableDiagram(scopeKey, result.value.meta.id))
+    }
     if (result.ok) {
       setSelectedId(result.value.meta.id)
       setFresh(result.value.meta.id)
@@ -277,7 +285,7 @@ export default function ProjectPagesPage(): React.JSX.Element {
             loaded={loaded}
             selectedId={pageId}
             onSelect={setSelectedId}
-            onCreate={(parentId, folder) => void create(parentId, folder)}
+            onCreate={(parentId, folder, diagram) => void create(parentId, folder, diagram)}
             onTrash={(id) => void window.api.projectPages.archive(scopeKey, id).then(report)}
             onRestore={(id) => void window.api.projectPages.restore(scopeKey, id).then(report)}
             onMove={(id, move) =>
@@ -297,6 +305,14 @@ export default function ProjectPagesPage(): React.JSX.Element {
                   setMapOpen(false)
                 }}
                 onClose={() => setMapOpen(false)}
+              />
+            ) : meta?.diagram ? (
+              <ProjectPageDiagramView
+                key={`${scopeKey}/${meta.id}`}
+                scopeKey={scopeKey}
+                meta={meta}
+                autoFocusTitle={fresh === meta.id}
+                onSaveState={setSaveState}
               />
             ) : doc && meta && doc.meta.id === meta.id ? (
               <ProjectPageEditor

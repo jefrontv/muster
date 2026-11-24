@@ -10,6 +10,7 @@ import { ProjectPagesError } from '../project-pages/project-pages-store'
 import { projectPages, projectPagesSearch } from '../project-pages/project-pages'
 import { buildPagesGraph, listPageTags } from '../project-pages/project-pages-graph'
 import { registerProjectPagesDatabaseHandlers } from './project-pages-databases'
+import { registerProjectPagesDiagramHandlers } from './project-pages-diagrams'
 import { registerProjectPagesTransferHandlers } from './project-pages-transfer'
 import { registerProjectPagesAttachmentHandlers } from './project-pages-attachments'
 import { sendToTrustedUIRenderer } from './ui'
@@ -173,6 +174,7 @@ export function registerProjectPagesHandlers(): void {
     guarded(() => listPageTags(projectPagesSearch().snapshot(scope(key))))
   )
   registerProjectPagesDatabaseHandlers()
+  registerProjectPagesDiagramHandlers()
   registerProjectPagesTransferHandlers()
   registerProjectPagesAttachmentHandlers()
   stopForwarding?.()

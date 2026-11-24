@@ -6,7 +6,8 @@ import {
   FolderOpen,
   MoreHorizontal,
   Plus,
-  Trash2
+  Trash2,
+  Workflow
 } from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/button'
@@ -103,6 +104,8 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
             ) : (
               <Folder className="size-3.5 shrink-0 text-muted-foreground" />
             )
+          ) : page.diagram ? (
+            <Workflow className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
             <FileText className="size-3.5 shrink-0 text-muted-foreground" />
           )}

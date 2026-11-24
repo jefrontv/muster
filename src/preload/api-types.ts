@@ -27,6 +27,10 @@ import type {
   PageDatabaseSchema,
   ProjectPageDatabase
 } from '../shared/project-pages-database-types'
+import type {
+  ProjectPageDiagram,
+  ProjectPageDiagramSave
+} from '../shared/project-pages-diagram-types'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
 import type {
   BrowserExtensionAddResult,
@@ -1077,6 +1081,16 @@ export type ProjectPagesApi = {
     ref: string
   ) => Promise<ProjectPagesResult<{ bytes: Uint8Array; type: string }>>
   database: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDatabase>>
+  diagram: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDiagram>>
+  enableDiagram: (
+    scopeKey: string,
+    pageId: string
+  ) => Promise<ProjectPagesResult<ProjectPageDiagram>>
+  saveDiagram: (
+    scopeKey: string,
+    pageId: string,
+    input: ProjectPageDiagramSave
+  ) => Promise<ProjectPagesResult<ProjectPageDiagram>>
   enableDatabase: (
     scopeKey: string,
     pageId: string

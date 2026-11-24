@@ -27,7 +27,7 @@ export function newPageId(): string {
   return `p_${randomUUID().replace(/-/g, '')}`
 }
 
-function writeAtomic(file: string, data: string): void {
+export function writeAtomic(file: string, data: string): void {
   mkdirSync(dirname(file), { recursive: true })
   const tmp = `${file}.${process.pid}.tmp`
   writeFileSync(tmp, data)
