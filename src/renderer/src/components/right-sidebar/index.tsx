@@ -176,13 +176,6 @@ function RightSidebarInner(): React.JSX.Element {
         sshOnly: true
       },
       {
-        id: 'site',
-        icon: Globe,
-        title: translate('auto.components.right.sidebar.index.siteTab', 'Site'),
-        shortcut: '',
-        siteOnly: true
-      },
-      {
         id: 'comment-drafts',
         icon: MessageSquareText,
         title: translate('auto.components.right.sidebar.index.commentDraftsTab', 'Comment drafts'),
@@ -195,6 +188,13 @@ function RightSidebarInner(): React.JSX.Element {
         title: translate('auto.components.right.sidebar.index.pagesTab', 'Pages'),
         shortcut: '',
         pagesOnly: true
+      },
+      {
+        id: 'site',
+        icon: Globe,
+        title: translate('auto.components.right.sidebar.index.siteTab', 'Site'),
+        shortcut: '',
+        siteOnly: true
       }
     ],
     [checksShortcut, explorerShortcut, portsShortcut, sourceControlShortcut, tasksShortcut]
