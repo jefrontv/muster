@@ -19,6 +19,8 @@ import {
   type SimNode
 } from './project-pages-map-model'
 
+const GLIDE_MS = 260
+
 type Drag = { node: SimNode | null; lastX: number; lastY: number; moved: number }
 
 export function useProjectPagesMapCanvas({
@@ -43,6 +45,8 @@ export function useProjectPagesMapCanvas({
   const drag = useRef<Drag | null>(null)
   // Re-fit once the first layout settles, unless the user has panned or zoomed.
   const autoFit = useRef(true)
+  // A re-fit after the layout settles eases into place instead of jumping.
+  const glide = useRef<{ from: MapView; to: MapView; start: number } | null>(null)
   const frame = useRef<number | null>(null)
   const props = useRef({ graph, current, match, onPick })
   props.current = { graph, current, match, onPick }
@@ -52,8 +56,22 @@ export function useProjectPagesMapCanvas({
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     const layout = sim.current
-    if (!canvas || !ctx || !layout) {
+    // Nothing to draw into until the first resize sizes the canvas.
+    if (!canvas || !ctx || !layout || size.current.width === 0) {
       return
+    }
+    if (glide.current) {
+      const { from, to, start } = glide.current
+      const t = Math.min(1, (performance.now() - start) / GLIDE_MS)
+      const e = 1 - (1 - t) ** 3
+      view.current = {
+        k: from.k + (to.k - from.k) * e,
+        x: from.x + (to.x - from.x) * e,
+        y: from.y + (to.y - from.y) * e
+      }
+      if (t >= 1) {
+        glide.current = null
+      }
     }
     tickMapSim(layout, 2)
     palette.current ??= readMapPalette(canvas)
@@ -72,11 +90,11 @@ export function useProjectPagesMapCanvas({
       match: props.current.match,
       current: props.current.current
     })
-    if (layout.alpha > 0.004 || drag.current?.node) {
+    if (layout.alpha > 0.004 || drag.current?.node || glide.current) {
       kick()
     } else if (autoFit.current) {
       autoFit.current = false
-      fit()
+      fit(true)
     }
   }
 
@@ -84,11 +102,17 @@ export function useProjectPagesMapCanvas({
     frame.current ??= requestAnimationFrame(paint)
   }
 
-  function fit(): void {
-    if (sim.current) {
-      view.current = fitView(sim.current, size.current.width, size.current.height)
-      kick()
+  function fit(smooth = false): void {
+    const { width, height } = size.current
+    if (!sim.current || width === 0) {
+      return
     }
+    const to = fitView(sim.current, width, height)
+    glide.current = smooth ? { from: view.current, to, start: performance.now() } : null
+    if (!smooth) {
+      view.current = to
+    }
+    kick()
   }
 
   useEffect(() => {
@@ -141,6 +165,7 @@ export function useProjectPagesMapCanvas({
       const k = Math.min(4, Math.max(0.15, old.k * Math.exp(-event.deltaY * 0.0015)))
       view.current = { k, x: sx - ((sx - old.x) / old.k) * k, y: sy - ((sy - old.y) / old.k) * k }
       autoFit.current = false
+      glide.current = null
       kick()
     }
     canvas.addEventListener('wheel', wheel, { passive: false })
@@ -194,6 +219,7 @@ export function useProjectPagesMapCanvas({
         } else {
           view.current = { ...view.current, x: view.current.x + dx, y: view.current.y + dy }
           autoFit.current = false
+          glide.current = null
         }
         kick()
         return
@@ -226,5 +252,5 @@ export function useProjectPagesMapCanvas({
     }
   }
 
-  return { wrapRef, canvasRef, handlers, fit }
+  return { wrapRef, canvasRef, handlers, fit: () => fit(true) }
 }
