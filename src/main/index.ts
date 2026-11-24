@@ -12,6 +12,18 @@ import {
   migrateMobilePairingDataToCanonicalUserDataPath
 } from './persistence'
 import { siteWriteBridgeServer } from './sites/site-write-bridge-server'
+import { agentCommentDrafts, setCommentDraftsRuntime } from './comment-drafts/comment-drafts'
+import { runCommentDraftToolOp } from './comment-drafts/comment-draft-tool-ops'
+import {
+  projectPages,
+  projectPagesAttachments,
+  projectPagesDatabases,
+  projectPagesDiagrams,
+  projectPagesSearch
+} from './project-pages/project-pages'
+import { projectPagesActiveCollab } from './project-pages/project-pages-activecollab-lookup'
+import { requestDiagramWork } from './project-pages/project-pages-diagram-relay'
+import { runProjectPagesToolOp } from './project-pages/project-pages-tool-ops'
 import { copySiteEnvironmentSecrets, deleteSiteEnvironmentSecrets } from './sites/site-secret-store'
 import { sendToTrustedUIRenderer } from './ipc/ui'
 import { awaitPlanAnnotationResult, openPlanAnnotation } from './sites/plan-annotation-requests'
@@ -850,6 +862,25 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
             onPlanAnnotationRequested: openPlanAnnotation,
             onPlanAnnotationCollect: awaitPlanAnnotationResult,
             onSetupApprovalRequested: openSiteSetupApproval,
+            onCommentDraftTool: (op, toolArgs, source) =>
+              runCommentDraftToolOp(agentCommentDrafts(), op, toolArgs, source),
+            onProjectPagesTool: (op, toolArgs, source) =>
+              runProjectPagesToolOp(
+                {
+                  store: projectPages(),
+                  search: projectPagesSearch(),
+                  databases: projectPagesDatabases(),
+                  attachments: projectPagesAttachments(),
+                  activeCollab: projectPagesActiveCollab(),
+                  diagrams: projectPagesDiagrams(),
+                  diagramWorker: requestDiagramWork,
+                  repos: () => bridgeStore.getRepos(),
+                  settings: () => bridgeStore.getSettings()
+                },
+                op,
+                toolArgs,
+                source
+              ),
             onSetupApprovalCollect: awaitSiteSetupApproval,
             onSetupRead: (op, readArgs) => readSiteSetupInfo(bridgeStore, op, readArgs),
             onSetupWrite: (op, approvalId, writeArgs) =>
@@ -2192,6 +2223,7 @@ app.whenReady().then(async () => {
       isAgentStatusHooksEnabled(store?.getSettings()) ? agentHookServer.buildPtyEnv() : {}
   })
   runtime = runtimeService
+  setCommentDraftsRuntime(runtimeService)
   browserManager.setBrowserGuestStateChangedListener((worktreeId) => {
     runtimeService.notifyMobileSessionTabsChanged(worktreeId)
   })

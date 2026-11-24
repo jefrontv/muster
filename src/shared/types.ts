@@ -2882,6 +2882,8 @@ export type GlobalSettings = {
   experimentalBots?: boolean
   /** One-shot marker: profile has been flipped to Muster's on-by-default Bots tab. */
   experimentalBotsDefaultedOnForMuster?: boolean
+  /** Pages: Notion-like pages per project, in the sidebar under Sites. */
+  experimentalProjectPages?: boolean
   /** The Bots tab's first-visit intro has been closed. */
   botsIntroSeen?: boolean
   /** Last explicit native-chat model + option selections; live panes need an applied/dispatched record before showing a value. */
@@ -3035,6 +3037,10 @@ export type GlobalSettings = {
   /** Why opt-in: lets agents create projects and write site config, each behind an approval card.
    *  Absent or false = the site write tools are hidden from agents. */
   agentCapabilitySiteSetup?: boolean
+  /** Absent = write. Only applies while experimentalProjectPages is on. */
+  agentCapabilityProjectPages?: 'off' | 'read' | 'write'
+  /** Why opt-in: pages can hold client details, so one repo's agent should not reach another's. */
+  agentCapabilityProjectPagesCrossProject?: boolean
   /** Why persisted: setup actions the user ticked "Always allow" for on an approval card. Only
    *  the card's Approve adds one (no agent-reachable route writes settings); Settings removes them.
    *  Normalised on write to the eligible list, so a password or a removal can never be granted. */
@@ -3399,6 +3405,8 @@ export type RightSidebarTab =
   | 'checks'
   | 'ports'
   | 'site'
+  | 'comment-drafts'
+  | 'pages'
 export type ActiveRightSidebarTab = Exclude<RightSidebarTab, 'search'>
 export type RightSidebarExplorerView = 'files' | 'search'
 
@@ -3424,6 +3432,7 @@ export type TopLevelView =
   | 'mobile'
   | 'chat'
   | 'bots'
+  | 'pages'
 
 export type PersistedUIState = {
   lastActiveRepoId: string | null

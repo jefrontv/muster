@@ -174,6 +174,9 @@ export function createFakeContext(
     cwd: '/Sites/acme/wp-content/themes/acme',
     // The census invokes every tool; a plan review resolves immediately so it never hangs a sweep.
     annotatePlan: () => Promise.resolve({ requestId: 'r1', round: 1 }),
+    commentDraftTool: (op) => Promise.resolve({ op, drafts: [] }),
+    projectPagesAccess: () => 'write' as const,
+    projectPagesTool: (op, args) => Promise.resolve({ op, args }),
     collectPlanReview: () => Promise.resolve({ status: 'unknown' as const }),
     ...fakeSetupApproval(options, approvalRequests, setupReads, setupWrites),
     updateSite: async (siteId, updates, environmentPatches) => {

@@ -9,7 +9,8 @@ import {
   render,
   renderHook,
   screen,
-  waitFor
+  waitFor,
+  within
 } from '@testing-library/react'
 import type React from 'react'
 import type { Editor } from '@tiptap/react'
@@ -180,15 +181,18 @@ describe('BotsCommentDraftsPanel', () => {
 
   it('lists drafts oldest first with task, project, bot and who changed them', () => {
     renderPanel(true)
-    const cards = screen.getAllByRole('article')
-    expect(cards).toHaveLength(3)
-    expect(cards[0]).toHaveTextContent('1')
-    expect(cards[0]).toHaveTextContent('Fix the header')
-    expect(cards[0]).toHaveTextContent('Website · Bob')
-    expect(cards[1]).toHaveTextContent('Task #2')
-    expect(cards[1]).toHaveTextContent('Amended by Ada · shorter')
-    expect(cards[2]).toHaveTextContent('Edited by you')
+    const rows = screen.getAllByRole('listitem')
+    expect(rows).toHaveLength(3)
+    expect(rows[0]).toHaveTextContent('Fix the header')
+    expect(rows[0]).toHaveTextContent('Bob · Website')
+    expect(rows[1]).toHaveTextContent('Task #2')
+    // Only the newest row opens by default.
+    expect(screen.getAllByRole('article')).toHaveLength(1)
+    fireEvent.click(within(rows[1]).getAllByRole('button')[0])
+    expect(rows[1]).toHaveTextContent('Amended by Ada · shorter')
     expect(screen.getByRole('button', { name: 'Ask Ada to change…' })).toBeInTheDocument()
+    fireEvent.click(within(rows[2]).getAllByRole('button')[0])
+    expect(rows[2]).toHaveTextContent('Edited by you')
   })
 
   it('collapses to a count badge that reopens it', () => {

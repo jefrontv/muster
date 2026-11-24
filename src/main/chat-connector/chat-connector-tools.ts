@@ -18,6 +18,7 @@ import {
   type ChatConnectorToolDeps,
   type ChatConnectorToolResult
 } from './chat-connector-tool-context'
+import { callChatConnectorPagesTool } from './chat-connector-pages-tools'
 import { archiveThreads, deleteThreads, renameThread } from './chat-connector-thread-tools'
 import {
   createWorkspaceFromChat,
@@ -211,7 +212,10 @@ export async function callChatConnectorTool(args: {
       case 'create_workspace_from_chat':
         return createWorkspaceFromChat(ctx, args.args)
       default:
-        return toolFail(`Unknown tool "${args.name}".`)
+        return (
+          (await callChatConnectorPagesTool(ctx, args.name, args.args)) ??
+          toolFail(`Unknown tool "${args.name}".`)
+        )
     }
   } catch (error) {
     return toolFail(error instanceof Error ? error.message : String(error))

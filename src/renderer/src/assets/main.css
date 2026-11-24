@@ -3,6 +3,7 @@
 @import '@xterm/xterm/css/xterm.css';
 @import 'katex/dist/katex.min.css';
 @import './rich-markdown-editor.css';
+@import './project-pages.css';
 @import './markdown-preview.css';
 @import './plan-annotation.css';
 @import './terminal.css';

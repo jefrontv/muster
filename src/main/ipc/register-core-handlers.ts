@@ -2,6 +2,7 @@ import { registerSubagentTranscriptHandler } from '../native-chat/claude-subagen
 import { app } from 'electron'
 import { registerAppHandlers } from './app'
 import { registerCliHandlers } from './cli'
+import { registerProjectPagesHandlers } from './project-pages'
 import { registerPreflightHandlers } from './preflight'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -191,6 +192,7 @@ export function registerCoreHandlers(
     registerCrashReportingHandlers(crashReports)
   }
   registerExportHandlers()
+  registerProjectPagesHandlers()
   registerStatsHandlers(stats)
   registerMemoryHandlers(store)
   registerNotificationHandlers(store, runtime)

@@ -17,6 +17,17 @@ import {
 import { getLearnedClaudeModels } from '../chat-mode/claude-model-registry'
 import { stopChatThreadStream } from '../chat-mode/chat-thread-stream'
 import { chatStore } from '../chat-mode/chat-workspace-store-singleton'
+import { projectPagesAgentAccess } from '../../shared/agent-capabilities'
+import {
+  projectPages,
+  projectPagesAttachments,
+  projectPagesDatabases,
+  projectPagesDiagrams,
+  projectPagesSearch
+} from '../project-pages/project-pages'
+import { projectPagesActiveCollab } from '../project-pages/project-pages-activecollab-lookup'
+import { requestDiagramWork } from '../project-pages/project-pages-diagram-relay'
+import { runProjectPagesToolOp } from '../project-pages/project-pages-tool-ops'
 import {
   ensureChatConnectorServer,
   registerChatConnectorThread,
@@ -78,6 +89,26 @@ function buildChatConnectorToolDeps(store: Store): ChatConnectorToolDeps {
       } catch {
         return false
       }
+    },
+    projectPages: {
+      access: () => projectPagesAgentAccess(store.getSettings()),
+      run: (op, args, source) =>
+        runProjectPagesToolOp(
+          {
+            store: projectPages(),
+            search: projectPagesSearch(),
+            databases: projectPagesDatabases(),
+            attachments: projectPagesAttachments(),
+            activeCollab: projectPagesActiveCollab(),
+            diagrams: projectPagesDiagrams(),
+            diagramWorker: requestDiagramWork,
+            repos: () => store.getRepos(),
+            settings: () => store.getSettings()
+          },
+          op,
+          args,
+          source
+        )
     }
   }
 }

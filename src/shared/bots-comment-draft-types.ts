@@ -12,8 +12,19 @@ export type BotsCommentDraftAttachment = {
   addedBy: 'bot' | 'user'
 }
 
+/** Set on drafts a coding agent queued through the Muster MCP instead of a bot. */
+export type AgentCommentDraftSource = {
+  /** MCP client name, e.g. claude-code or codex. */
+  agent: string
+  cwd: string
+  /** The Muster workspace and terminal the agent ran in, from its env; null outside Muster terminals. */
+  worktreeId?: string | null
+  terminalHandle?: string | null
+}
+
 export type BotsCommentDraft = {
   id: string
+  agentSource?: AgentCommentDraftSource
   /** 1-based among waiting drafts, oldest first; null once posted or discarded. */
   number: number | null
   botId: string

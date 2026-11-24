@@ -22,6 +22,28 @@ export function isSiteSetupExposedToAgents(
   return settings?.agentCapabilitySiteSetup === true
 }
 
+export type ProjectPagesAgentAccess = 'off' | 'read' | 'write'
+
+/** Off while Pages is experimental and off; otherwise write unless the user narrowed it. */
+export function projectPagesAgentAccess(
+  settings:
+    | Pick<GlobalSettings, 'experimentalProjectPages' | 'agentCapabilityProjectPages'>
+    | null
+    | undefined
+): ProjectPagesAgentAccess {
+  if (settings?.experimentalProjectPages !== true) {
+    return 'off'
+  }
+  return settings.agentCapabilityProjectPages ?? 'write'
+}
+
+/** Opt-in: absent means an agent only reaches the pages of the project it runs in. */
+export function isCrossProjectPagesAllowed(
+  settings: Pick<GlobalSettings, 'agentCapabilityProjectPagesCrossProject'> | null | undefined
+): boolean {
+  return settings?.agentCapabilityProjectPagesCrossProject === true
+}
+
 export function isBundledSkillEnabled(
   capabilities: Readonly<Record<string, boolean>> | undefined,
   skillId: string

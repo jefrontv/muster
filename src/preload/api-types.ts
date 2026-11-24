@@ -9,6 +9,29 @@ import type {
   HostedReviewProvider
 } from '../shared/hosted-review'
 import type { WhatsNewGetResult } from '../shared/whats-new'
+import type {
+  ProjectPageCreateInput,
+  ProjectPageDocument,
+  ProjectPageMeta,
+  ProjectPageMoveInput,
+  ProjectPageRevision,
+  ProjectPageSearchResult,
+  ProjectPagesChange,
+  ProjectPagesResult,
+  ProjectPagesTransfer,
+  ProjectPagesTree,
+  ProjectPageUpdateInput
+} from '../shared/project-pages-types'
+import type { PagesGraph } from '../shared/project-pages-graph-types'
+import type {
+  PageDatabaseSchema,
+  ProjectPageDatabase
+} from '../shared/project-pages-database-types'
+import type {
+  ProjectPageDiagram,
+  ProjectPageDiagramSave
+} from '../shared/project-pages-diagram-types'
+import type { DiagramWorkMessage, DiagramWorkResponse } from '../shared/project-pages-diagram-agent'
 import type { NativeFileDropPayload } from '../shared/native-file-drop'
 import type {
   BrowserExtensionAddResult,
@@ -1011,6 +1034,102 @@ export type ChatModeApi = {
 }
 
 /** Muster Bots: the bundled bots server behind the Bots tab. */
+export type ProjectPagesApi = {
+  list: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTree>>
+  read: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDocument>>
+  create: (
+    scopeKey: string,
+    input: ProjectPageCreateInput
+  ) => Promise<ProjectPagesResult<ProjectPageDocument>>
+  update: (
+    scopeKey: string,
+    pageId: string,
+    input: ProjectPageUpdateInput
+  ) => Promise<ProjectPagesResult<ProjectPageDocument>>
+  move: (
+    scopeKey: string,
+    pageId: string,
+    input: ProjectPageMoveInput
+  ) => Promise<ProjectPagesResult<ProjectPageMeta>>
+  archive: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<void>>
+  restore: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<void>>
+  history: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageRevision[]>>
+  readRevision: (
+    scopeKey: string,
+    pageId: string,
+    revision: number
+  ) => Promise<ProjectPagesResult<string>>
+  search: (
+    scopeKey: string,
+    query: string
+  ) => Promise<ProjectPagesResult<ProjectPageSearchResult[]>>
+  backlinks: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageMeta[]>>
+  graph: (scopeKey: string) => Promise<ProjectPagesResult<PagesGraph>>
+  tags: (scopeKey: string) => Promise<ProjectPagesResult<{ tag: string; pages: number }[]>>
+  /** Stores bytes in the project's files/ folder; resolves the files/... reference. */
+  saveFile: (
+    scopeKey: string,
+    name: string,
+    bytes: Uint8Array
+  ) => Promise<ProjectPagesResult<string>>
+  /** Copies local images (e.g. dropped from Finder) into the project's page files. */
+  attachPaths: (
+    scopeKey: string,
+    paths: string[]
+  ) => Promise<ProjectPagesResult<{ file: string; alt: string }[]>>
+  readFile: (
+    scopeKey: string,
+    ref: string
+  ) => Promise<ProjectPagesResult<{ bytes: Uint8Array; type: string }>>
+  database: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDatabase>>
+  diagram: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDiagram>>
+  enableDiagram: (
+    scopeKey: string,
+    pageId: string
+  ) => Promise<ProjectPagesResult<ProjectPageDiagram>>
+  saveDiagram: (
+    scopeKey: string,
+    pageId: string,
+    input: ProjectPageDiagramSave
+  ) => Promise<ProjectPagesResult<ProjectPageDiagram>>
+  exportDiagramFile: (
+    name: string,
+    extension: 'svg' | 'png',
+    data: string | Uint8Array
+  ) => Promise<{ ok: true; path: string } | { ok: false; cancelled?: boolean; message?: string }>
+  /** Agent diagram work sent by the main process; the renderer owns the diagram model. */
+  onDiagramWork: (callback: (request: DiagramWorkMessage) => void) => () => void
+  respondDiagramWork: (response: DiagramWorkResponse) => void
+  enableDatabase: (
+    scopeKey: string,
+    pageId: string
+  ) => Promise<ProjectPagesResult<ProjectPageDatabase>>
+  updateDatabase: (
+    scopeKey: string,
+    pageId: string,
+    schema: PageDatabaseSchema
+  ) => Promise<ProjectPagesResult<ProjectPageDatabase>>
+  setProperties: (
+    scopeKey: string,
+    pageId: string,
+    patch: Record<string, unknown>
+  ) => Promise<ProjectPagesResult<ProjectPageMeta>>
+  addRow: (
+    scopeKey: string,
+    databaseId: string,
+    input: { title?: string; properties?: Record<string, unknown> }
+  ) => Promise<ProjectPagesResult<ProjectPageMeta>>
+  /** Asks for a folder, then writes the pages into a new subfolder named after the project. */
+  exportToFolder: (
+    scopeKey: string,
+    folderName: string
+  ) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
+  importFromFolder: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
+  /** Asks for .drawio/.xml/.svg/.canvas (or .md) files and adds each as a top-level page. */
+  importFiles: (scopeKey: string) => Promise<ProjectPagesResult<ProjectPagesTransfer>>
+  onChanged: (callback: (change: ProjectPagesChange) => void) => () => void
+}
+
 export type BotsApi = {
   /** Starts the server if needed and resolves once it answers, failed or found missing. */
   start: () => Promise<BotsSidecarStatus>
@@ -1961,6 +2080,7 @@ export type PreloadApi = {
   chatMode: ChatModeApi
   chatConnector: ChatConnectorApi
   bots: BotsApi
+  projectPages: ProjectPagesApi
   planAnnotation: PlanAnnotationApi
   siteSetupApproval: SiteSetupApprovalApi
   siteSetupAgent: SiteSetupAgentApi

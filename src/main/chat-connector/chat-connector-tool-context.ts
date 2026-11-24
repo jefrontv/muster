@@ -7,12 +7,19 @@ import type {
   ChatWorkspace,
   ChatWorkspacePatch
 } from '../../shared/chat-mode-types'
+import type { ProjectPagesAgentAccess } from '../../shared/agent-capabilities'
+import type { ProjectPagesToolOp } from '../project-pages/project-pages-tool-ops'
+import type { ProjectPagesToolSource } from '../project-pages/project-pages-tool-target'
 
 export const MAX_CHAT_CONNECTOR_NAME_LENGTH = 120
 export const MAX_CHAT_CONNECTOR_TITLE_LENGTH = 200
 
 export type ChatConnectorToolResult = {
-  content: { type: 'text'; text: string }[]
+  /** Text first; an image block, when a tool returns one, follows it. */
+  content: [
+    { type: 'text'; text: string },
+    ...({ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string })[]
+  ]
   isError?: boolean
 }
 
@@ -38,6 +45,17 @@ export type ChatConnectorToolDeps = {
   /** Notify every window that the chat store changed outside its own IPC. */
   broadcastChange: () => void
   directoryExists: (path: string) => boolean
+  /** Pages tools; absent where the build has no page store. */
+  projectPages?: ChatConnectorPagesDeps
+}
+
+export type ChatConnectorPagesDeps = {
+  access: () => ProjectPagesAgentAccess
+  run: (
+    op: ProjectPagesToolOp,
+    args: Record<string, unknown>,
+    source: ProjectPagesToolSource
+  ) => Promise<unknown>
 }
 
 export type ChatConnectorCallContext = {

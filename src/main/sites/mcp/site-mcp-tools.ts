@@ -27,6 +27,8 @@ import { SITE_MCP_SITE_WRITE_TOOLS } from './site-mcp-site-write-tools'
 import { SITE_MCP_SSH_TOOLS } from './site-mcp-ssh-tools'
 import { SITE_MCP_TRANSFER_TOOLS } from './site-mcp-transfer-tools'
 import { SITE_MCP_PLAN_TOOLS } from './site-mcp-plan-tools'
+import { SITE_MCP_COMMENT_DRAFT_TOOLS } from './site-mcp-comment-draft-tools'
+import { SITE_MCP_PAGES_TOOLS } from './site-mcp-pages-tools'
 import { SITE_MCP_WP_CLI_TOOLS } from './site-mcp-wp-cli-tools'
 import { SITE_MCP_WP_FIELD_TOOLS } from './site-mcp-wp-field-tools'
 import { SITE_MCP_WP_SNAPSHOT_TOOLS } from './site-mcp-wp-snapshot-tools'
@@ -48,6 +50,8 @@ export const SITE_MCP_TOOLS: readonly SiteMcpTool[] = [
   ...SITE_MCP_JOB_TOOLS,
   ...SITE_MCP_PIPELINE_TOOLS,
   ...SITE_MCP_PLAN_TOOLS,
+  ...SITE_MCP_COMMENT_DRAFT_TOOLS,
+  ...SITE_MCP_PAGES_TOOLS,
   ...SITE_MCP_SETUP_READ_TOOLS,
   ...SITE_MCP_PROJECT_WRITE_TOOLS,
   ...SITE_MCP_SITE_WRITE_TOOLS,
@@ -62,15 +66,22 @@ export type SiteMcpToolDescriptor = {
   inputSchema: SiteMcpJsonSchema
 }
 
+type ToolGates = Pick<SiteMcpContext, 'siteSetupEnabled' | 'projectPagesAccess'>
+
 /** Hidden rather than refused when the setting is off, so a model does not try other spellings. */
-function isToolAvailable(tool: SiteMcpTool, context?: Pick<SiteMcpContext, 'siteSetupEnabled'>) {
-  return !tool.requiresSiteSetup || !context || context.siteSetupEnabled()
+function isToolAvailable(tool: SiteMcpTool, context?: ToolGates): boolean {
+  if (!context) {
+    return true
+  }
+  if (tool.requiresSiteSetup && !context.siteSetupEnabled()) {
+    return false
+  }
+  const pages = context.projectPagesAccess?.() ?? 'off'
+  return !tool.pagesAccess || pages === 'write' || pages === tool.pagesAccess
 }
 
 /** The `tools/list` payload: descriptors only, never the handlers. No context lists every tool. */
-export function listSiteMcpToolDescriptors(
-  context?: Pick<SiteMcpContext, 'siteSetupEnabled'>
-): SiteMcpToolDescriptor[] {
+export function listSiteMcpToolDescriptors(context?: ToolGates): SiteMcpToolDescriptor[] {
   return SITE_MCP_TOOLS.filter((tool) => isToolAvailable(tool, context)).map((tool) => ({
     name: tool.name,
     description: tool.description,
@@ -111,7 +122,9 @@ export async function dispatchSiteMcpTool(
       tool.name,
       {
         ok: false,
-        error: `${tool.name} is off. The user can turn on "Let agents create and set up projects" in Muster's Agent Capabilities settings. Nothing was run.`
+        error: tool.pagesAccess
+          ? `${tool.name} is off. The user can let agents use Pages in Muster's Agent Capabilities settings. Nothing was run.`
+          : `${tool.name} is off. The user can turn on "Let agents create and set up projects" in Muster's Agent Capabilities settings. Nothing was run.`
       },
       true
     )

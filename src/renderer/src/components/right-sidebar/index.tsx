@@ -4,12 +4,18 @@ import {
   Globe,
   Plug,
   Files,
+  FileText,
   GitBranch,
   ListChecks,
   ListTodo,
+  MessageSquareText,
   PanelRight,
   Workflow
 } from 'lucide-react'
+import { useScopedCommentDrafts } from '../comment-drafts/comment-draft-project-filter'
+
+// Checks tab is parked; a persisted or shortcut route to it falls back to a visible tab.
+const CHECKS_TAB_ENABLED = false
 import { useAppStore } from '@/store'
 import type { ActiveRightSidebarTab } from '@/store/slices/editor'
 import { useRepoById } from '@/store/selectors'
@@ -105,6 +111,9 @@ function RightSidebarInner(): React.JSX.Element {
   const activeProjectPath = activeRepo?.path ?? null
   useSiteListRefreshOnProjectChange(activeProjectPath)
   const activeSite = useSiteForActiveProject(activeProjectPath)
+  // Badge counts this project's drafts; the tab stays reachable while any project has some.
+  const { drafts: allDrafts, scoped: projectDrafts } = useScopedCommentDrafts()
+  const draftCount = projectDrafts.length
 
   const activityItems = useMemo<ActivityBarItem[]>(
     () => [
@@ -172,20 +181,51 @@ function RightSidebarInner(): React.JSX.Element {
         title: translate('auto.components.right.sidebar.index.siteTab', 'Site'),
         shortcut: '',
         siteOnly: true
+      },
+      {
+        id: 'comment-drafts',
+        icon: MessageSquareText,
+        title: translate('auto.components.right.sidebar.index.commentDraftsTab', 'Comment drafts'),
+        shortcut: '',
+        draftsOnly: true
+      },
+      {
+        id: 'pages',
+        icon: FileText,
+        title: translate('auto.components.right.sidebar.index.pagesTab', 'Pages'),
+        shortcut: '',
+        pagesOnly: true
       }
     ],
     [checksShortcut, explorerShortcut, portsShortcut, sourceControlShortcut, tasksShortcut]
   )
+  const enabledActivityItems = useMemo(
+    () =>
+      CHECKS_TAB_ENABLED ? activityItems : activityItems.filter((item) => item.id !== 'checks'),
+    [activityItems]
+  )
 
+  const pagesEnabled = useAppStore((s) => s.settings?.experimentalProjectPages === true)
   const visibleItems = useMemo(
     () =>
-      getVisibleRightSidebarActivityItems(activityItems, {
+      getVisibleRightSidebarActivityItems(enabledActivityItems, {
         isFolder,
         isFolderWorkspace,
         isSshRepo,
-        hasSite: activeSite !== null
+        hasSite: activeSite !== null,
+        hasDrafts: allDrafts.length > 0 || rightSidebarTab === 'comment-drafts',
+        pagesEnabled
       }),
-    [activityItems, isFolder, isFolderWorkspace, isSshRepo, activeSite]
+    [
+      enabledActivityItems,
+      isFolder,
+      isFolderWorkspace,
+      isSshRepo,
+      activeSite,
+      allDrafts.length,
+      rightSidebarTab,
+      pagesEnabled
+    ]
   )
 
   const rememberedFolderTabByWorkspaceKeyRef = useRef<Record<string, ActiveRightSidebarTab>>({})
@@ -282,6 +322,7 @@ function RightSidebarInner(): React.JSX.Element {
       onClick={() => selectActivityTab(item.id)}
       layout="side"
       statusIndicator={item.id === 'checks' ? checksStatus : null}
+      count={item.id === 'comment-drafts' ? draftCount : undefined}
     />
   ))
 
@@ -360,6 +401,7 @@ function RightSidebarInner(): React.JSX.Element {
                               onClick={() => selectActivityTab(item.id)}
                               layout="top"
                               statusIndicator={item.id === 'checks' ? checksStatus : null}
+                              count={item.id === 'comment-drafts' ? draftCount : undefined}
                             />
                           ))}
                         </div>
@@ -417,6 +459,7 @@ function RightSidebarInner(): React.JSX.Element {
                           onClick={() => selectActivityTab(item.id)}
                           layout="top"
                           statusIndicator={item.id === 'checks' ? checksStatus : null}
+                          count={item.id === 'comment-drafts' ? draftCount : undefined}
                         />
                       ))}
                     </div>

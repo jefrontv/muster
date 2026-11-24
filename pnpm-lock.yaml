@@ -41,6 +41,9 @@ importers:
       '@linear/sdk':
         specifier: ^82.1.0
         version: 82.1.0(graphql@16.14.2)
+      '@maxgraph/core':
+        specifier: 0.25.2
+        version: 0.25.2
       '@modelcontextprotocol/sdk':
         specifier: 1.29.0
         version: 1.29.0(zod@4.4.3)
@@ -1076,6 +1079,9 @@ packages:
   '@malept/flatpak-bundler@0.4.0':
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
+
+  '@maxgraph/core@0.25.2':
+    resolution: {integrity: sha512-oEGR8uF7p6UhPa0hTi4KBs7496bB9Bx3O76BOYPhOmJIi+V2ioWr1MNg+M1IeVre41tzUpWeo8KLJPmlNDzhrg==}
 
   '@mermaid-js/parser@1.1.1':
     resolution: {integrity: sha512-VuHdsYMK1bT6X2JbcAaWAhugTRvRBRyuZgd+c22swUeI9g/ntaxF7CY7dYarhZovofCbUNO0G7JesfmNtjYOCw==}
@@ -7295,6 +7301,8 @@ snapshots:
       tmp-promise: 3.0.3
     transitivePeerDependencies:
       - supports-color
+
+  '@maxgraph/core@0.25.2': {}
 
   '@mermaid-js/parser@1.1.1':
     dependencies:

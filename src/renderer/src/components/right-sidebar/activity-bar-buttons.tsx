@@ -28,6 +28,10 @@ export type ActivityBarItem = {
   sshOnly?: boolean
   /** When true, shown only when the active project resolves to a Site record. */
   siteOnly?: boolean
+  /** When true, shown only while comment drafts are waiting. */
+  draftsOnly?: boolean
+  /** When true, shown only while the experimental Pages setting is on. */
+  pagesOnly?: boolean
 }
 
 const STATUS_DOT_COLOR: Record<CheckStatus, string> = {
@@ -111,13 +115,16 @@ export function ActivityBarButton({
   active,
   onClick,
   layout,
-  statusIndicator
+  statusIndicator,
+  count
 }: {
   item: ActivityBarItem
   active: boolean
   onClick: () => void
   layout: 'top' | 'side'
   statusIndicator?: CheckStatus | null
+  /** A small number badge, e.g. waiting drafts. */
+  count?: number
 }): React.JSX.Element {
   const Icon = item.icon
   const isTop = layout === 'top'
@@ -140,6 +147,11 @@ export function ActivityBarButton({
           aria-label={item.shortcut ? `${item.title} (${item.shortcut})` : item.title}
         >
           <Icon size={14} />
+          {count ? (
+            <span className="absolute top-0 right-0 flex h-3 min-w-3 items-center justify-center rounded-full bg-foreground px-[3px] text-[8px] leading-none font-semibold text-background tabular-nums ring-[1.5px] ring-sidebar">
+              {count > 9 ? '9+' : count}
+            </span>
+          ) : null}
 
           {statusIndicator && statusIndicator !== 'neutral' && (
             <div

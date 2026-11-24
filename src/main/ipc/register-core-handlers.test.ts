@@ -215,6 +215,10 @@ vi.mock('./export', () => ({
   registerExportHandlers: registerExportHandlersMock
 }))
 
+vi.mock('./project-pages', () => ({
+  registerProjectPagesHandlers: vi.fn()
+}))
+
 vi.mock('./stats', () => ({
   registerStatsHandlers: registerStatsHandlersMock
 }))

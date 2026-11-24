@@ -498,7 +498,8 @@ function hydratedUIPartialMatchesState(state: AppState, hydrated: Partial<UISlic
 function sanitizeHydratedActiveView(
   value: PersistedUIState['activeView'],
   experimentalActivityEnabled: boolean,
-  experimentalBotsEnabled: boolean
+  experimentalBotsEnabled: boolean,
+  experimentalPagesEnabled = false
 ): TopLevelView {
   // Why: older data (pre-activeView) or a view a different build doesn't have
   // falls back to terminal rather than rendering nothing.
@@ -511,6 +512,9 @@ function sanitizeHydratedActiveView(
   }
   // Why: Bots has no other entry point than its tab, so a hidden tab must not restore a blank page.
   if (value === 'bots' && (!experimentalBotsEnabled || !botsSupported())) {
+    return 'terminal'
+  }
+  if (value === 'pages' && !experimentalPagesEnabled) {
     return 'terminal'
   }
   return value
@@ -617,6 +621,7 @@ export type UISlice = {
   previousViewBeforeSpace: Exclude<TopLevelView, 'space'>
   previousViewBeforeSkills: Exclude<TopLevelView, 'skills'>
   previousViewBeforeSites: Exclude<TopLevelView, 'sites'>
+  previousViewBeforePages: Exclude<TopLevelView, 'pages'>
   previousViewBeforeMobile: Exclude<TopLevelView, 'mobile'>
   previousViewBeforeChat: Exclude<TopLevelView, 'chat' | 'bots'>
   openChatPage: () => void
@@ -704,6 +709,8 @@ export type UISlice = {
   closeSkillsPage: () => void
   openSitesPage: () => void
   closeSitesPage: () => void
+  openPagesPage: () => void
+  closePagesPage: () => void
   openMobilePage: () => void
   closeMobilePage: () => void
   setNewWorkspaceDraft: (draft: NonNullable<UISlice['newWorkspaceDraft']>) => void
@@ -1189,6 +1196,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   previousViewBeforeSpace: 'terminal',
   previousViewBeforeSkills: 'terminal',
   previousViewBeforeSites: 'terminal',
+  previousViewBeforePages: 'terminal',
   previousViewBeforeMobile: 'terminal',
   previousViewBeforeChat: 'terminal',
   previousViewBeforeBots: 'terminal',
@@ -1459,6 +1467,20 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   closeSitesPage: () =>
     set((state) => ({
       activeView: state.previousViewBeforeSites
+    })),
+  openPagesPage: () => {
+    if (get().settings?.experimentalProjectPages !== true) {
+      return
+    }
+    set((state) => ({
+      activeView: 'pages',
+      previousViewBeforePages:
+        state.activeView === 'pages' ? state.previousViewBeforePages : state.activeView
+    }))
+  },
+  closePagesPage: () =>
+    set((state) => ({
+      activeView: state.previousViewBeforePages
     })),
   openMobilePage: () =>
     set((state) => ({
@@ -2550,7 +2572,8 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
             ? sanitizeHydratedActiveView(
                 ui.activeView,
                 s.settings?.experimentalActivity === true,
-                s.settings?.experimentalBots === true
+                s.settings?.experimentalBots === true,
+                s.settings?.experimentalProjectPages === true
               )
             : s.activeView,
         persistedUIReady: true

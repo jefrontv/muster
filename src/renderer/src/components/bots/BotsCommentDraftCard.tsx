@@ -20,6 +20,7 @@ import { BotsCommentDraftPostButton } from './BotsCommentDraftPostButton'
 import { postCommentDraft } from './bots-comment-draft-post-action'
 import { describeBotsCommentDraftFailure } from './bots-comment-draft-failure-message'
 import { canonicalActiveCollabCommentHtml } from '../activecollab-comment-canonical-html'
+import { commentDraftAuthorLabel } from '../comment-drafts/comment-draft-author'
 
 type Action = 'post' | 'discard' | 'undo' | 'ask'
 
@@ -66,7 +67,7 @@ function editedLine(draft: BotsCommentDraft): string | null {
   }
   if (draft.version > 1) {
     return translate('auto.components.bots.commentDrafts.amendedBy', 'Amended by {{value0}}', {
-      value0: draft.botName
+      value0: commentDraftAuthorLabel(draft)
     })
   }
   return null
@@ -82,11 +83,15 @@ function postArgs(draft: BotsCommentDraft): BotsCommentDraftPostArgs {
 
 export function BotsCommentDraftCard({
   draft,
-  task
+  task,
+  bare = false
 }: {
   draft: BotsCommentDraft
   task: BotsCommentDraftTask | undefined
+  /** Body and actions only, for a list row that already shows the header. */
+  bare?: boolean
 }): React.JSX.Element {
+  const author = commentDraftAuthorLabel(draft)
   const [dialogView, setDialogView] = useState<BotsDraftDialogView | null>(null)
   const [asking, setAsking] = useState(false)
   const [note, setNote] = useState('')
@@ -105,7 +110,7 @@ export function BotsCommentDraftCard({
     const result = await call()
     setBusy(null)
     if (!result.ok) {
-      setError(describeBotsCommentDraftFailure(result))
+      setError(describeBotsCommentDraftFailure(result, draft))
     }
     return result.ok
   }
@@ -122,7 +127,7 @@ export function BotsCommentDraftCard({
       setAsking(false)
       setNotice({
         text: translate('auto.components.bots.commentDrafts.askSent', 'Sent to {{value0}}', {
-          value0: draft.botName
+          value0: author
         }),
         version: draft.version
       })
@@ -141,30 +146,35 @@ export function BotsCommentDraftCard({
   return (
     <article
       aria-label={title}
-      className="flex flex-col gap-2 rounded-2xl bg-chat-raised p-3 shadow-chat-soft"
+      className={cn(
+        'flex flex-col gap-2',
+        !bare && 'rounded-2xl bg-chat-raised p-3 shadow-chat-soft'
+      )}
     >
-      <header className="flex items-start gap-2.5">
-        <span
-          aria-hidden
-          className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/[0.07] text-2xs font-medium text-chat-ink-secondary tabular-nums"
-        >
-          {draft.number ?? '–'}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium text-foreground" title={title}>
-            {title}
-          </p>
-          <p className="truncate text-xs text-chat-ink-tertiary">
-            {[task?.projectName, draft.botName].filter(Boolean).join(' · ')}
-            {age ? (
-              <>
-                {' · '}
-                <time dateTime={age.iso}>{age.label}</time>
-              </>
-            ) : null}
-          </p>
-        </div>
-      </header>
+      {bare ? null : (
+        <header className="flex items-start gap-2.5">
+          <span
+            aria-hidden
+            className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/[0.07] text-2xs font-medium text-chat-ink-secondary tabular-nums"
+          >
+            {draft.number ?? '–'}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium text-foreground" title={title}>
+              {title}
+            </p>
+            <p className="truncate text-xs text-chat-ink-tertiary">
+              {[task?.projectName, author].filter(Boolean).join(' · ')}
+              {age ? (
+                <>
+                  {' · '}
+                  <time dateTime={age.iso}>{age.label}</time>
+                </>
+              ) : null}
+            </p>
+          </div>
+        </header>
+      )}
 
       {edited ? (
         <p className="text-xs text-chat-ink-secondary">
@@ -213,7 +223,7 @@ export function BotsCommentDraftCard({
             aria-label={translate(
               'auto.components.bots.commentDrafts.askLabel',
               'What should {{value0}} change?',
-              { value0: draft.botName }
+              { value0: author }
             )}
             placeholder={translate(
               'auto.components.bots.commentDrafts.askPlaceholder',
@@ -259,7 +269,7 @@ export function BotsCommentDraftCard({
               'auto.components.bots.commentDrafts.ask',
               'Ask {{value0}} to change…',
               {
-                value0: draft.botName
+                value0: author
               }
             )}
             disabled={locked}

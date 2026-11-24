@@ -3,6 +3,7 @@
 import { SquareArrowOutUpRight } from 'lucide-react'
 import type React from 'react'
 import { useRef } from 'react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,6 +22,7 @@ import type {
 } from '../../../../shared/bots-comment-draft-types'
 import { ActiveCollabTaskWorkspace } from '../ActiveCollabTaskWorkspace'
 import { BotsCommentDraftEditor, type BotsDraftEditorGuard } from './BotsCommentDraftEditor'
+import { commentDraftAuthorLabel } from '../comment-drafts/comment-draft-author'
 
 export type BotsDraftDialogView = 'comment' | 'task'
 
@@ -71,7 +73,11 @@ export function BotsDraftDialog({
       <DialogContent
         // minmax(0,1fr): a long truncated subtitle otherwise widens the grid past the dialog.
         // Fixed height so switching views never resizes the dialog.
-        className="h-[min(85vh,760px)] grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-3 sm:max-w-3xl"
+        // The comment view hugs its content; only the task view takes the tall fixed height.
+        className={cn(
+          'max-h-[85vh] grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-3 transition-[height] duration-200 ease-out [interpolate-size:allow-keywords] sm:max-w-3xl',
+          view === 'task' ? 'h-[min(85vh,760px)]' : 'h-auto'
+        )}
         // Escape first closes an open @mention menu, not the whole dialog.
         onEscapeKeyDown={(event) =>
           view === 'comment' && guard.current.menuOpen ? event.preventDefault() : undefined
@@ -85,11 +91,7 @@ export function BotsDraftDialog({
         >
           <DialogHeader className="min-w-0 gap-2 pr-8">
             <div className="flex min-w-0 items-center gap-3">
-              <DialogTitle className="min-w-0 flex-1 truncate">
-                {view === 'comment'
-                  ? translate('auto.components.bots.commentDrafts.editTitle', 'Edit comment')
-                  : taskTitle}
-              </DialogTitle>
+              <DialogTitle className="min-w-0 flex-1 truncate">{taskTitle}</DialogTitle>
               {view === 'task' ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -124,7 +126,15 @@ export function BotsDraftDialog({
               </TabsList>
             </div>
             <DialogDescription className="truncate">
-              {[taskTitle, task?.projectName, draft.botName].filter(Boolean).join(' · ')}
+              {[
+                task?.taskNumber ? `#${task.taskNumber}` : null,
+                task?.projectName,
+                translate('auto.components.commentDrafts.draftedBy', 'Drafted by {{value0}}', {
+                  value0: commentDraftAuthorLabel(draft)
+                })
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </DialogDescription>
           </DialogHeader>
           <TabsContent

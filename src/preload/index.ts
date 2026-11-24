@@ -2,6 +2,7 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { preloadE2EConfig } from './e2e-config'
+import type { DiagramWorkMessage } from '../shared/project-pages-diagram-agent'
 import { glApi } from './gitlab'
 import type { AppIdentity } from '../shared/app-identity'
 import type {
@@ -959,6 +960,66 @@ const api = {
       return () => ipcRenderer.removeListener('bots:commentDraftsChanged', listener)
     }
   } satisfies PreloadApi['bots'],
+
+  projectPages: {
+    list: (scopeKey) => ipcRenderer.invoke('projectPages:list', scopeKey),
+    read: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:read', scopeKey, pageId),
+    create: (scopeKey, input) => ipcRenderer.invoke('projectPages:create', scopeKey, input),
+    update: (scopeKey, pageId, input) =>
+      ipcRenderer.invoke('projectPages:update', scopeKey, pageId, input),
+    move: (scopeKey, pageId, input) =>
+      ipcRenderer.invoke('projectPages:move', scopeKey, pageId, input),
+    archive: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:archive', scopeKey, pageId),
+    restore: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:restore', scopeKey, pageId),
+    history: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:history', scopeKey, pageId),
+    readRevision: (scopeKey, pageId, revision) =>
+      ipcRenderer.invoke('projectPages:readRevision', scopeKey, pageId, revision),
+    search: (scopeKey, query) => ipcRenderer.invoke('projectPages:search', scopeKey, query),
+    backlinks: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:backlinks', scopeKey, pageId),
+    graph: (scopeKey) => ipcRenderer.invoke('projectPages:graph', scopeKey),
+    tags: (scopeKey) => ipcRenderer.invoke('projectPages:tags', scopeKey),
+    saveFile: (scopeKey, name, bytes) =>
+      ipcRenderer.invoke('projectPages:saveFile', scopeKey, name, bytes),
+    readFile: (scopeKey, ref) => ipcRenderer.invoke('projectPages:readFile', scopeKey, ref),
+    attachPaths: (scopeKey, paths) =>
+      ipcRenderer.invoke('projectPages:attachPaths', scopeKey, paths),
+    database: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:database', scopeKey, pageId),
+    diagram: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:diagram', scopeKey, pageId),
+    enableDiagram: (scopeKey, pageId) =>
+      ipcRenderer.invoke('projectPages:enableDiagram', scopeKey, pageId),
+    saveDiagram: (scopeKey, pageId, input) =>
+      ipcRenderer.invoke('projectPages:saveDiagram', scopeKey, pageId, input),
+    exportDiagramFile: (name, extension, data) =>
+      ipcRenderer.invoke('projectPages:exportDiagramFile', name, extension, data),
+    onDiagramWork: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, request: DiagramWorkMessage) =>
+        callback(request)
+      ipcRenderer.on('projectPages:diagramWork', listener)
+      return () => ipcRenderer.removeListener('projectPages:diagramWork', listener)
+    },
+    respondDiagramWork: (response) =>
+      ipcRenderer.send('projectPages:diagramWorkResponse', response),
+    enableDatabase: (scopeKey, pageId) =>
+      ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),
+    updateDatabase: (scopeKey, pageId, schema) =>
+      ipcRenderer.invoke('projectPages:updateDatabase', scopeKey, pageId, schema),
+    setProperties: (scopeKey, pageId, patch) =>
+      ipcRenderer.invoke('projectPages:setProperties', scopeKey, pageId, patch),
+    addRow: (scopeKey, databaseId, input) =>
+      ipcRenderer.invoke('projectPages:addRow', scopeKey, databaseId, input),
+    exportToFolder: (scopeKey, folderName) =>
+      ipcRenderer.invoke('projectPages:export', scopeKey, folderName),
+    importFromFolder: (scopeKey) => ipcRenderer.invoke('projectPages:import', scopeKey),
+    importFiles: (scopeKey) => ipcRenderer.invoke('projectPages:importFiles', scopeKey),
+    onChanged: (callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        change: Parameters<typeof callback>[0]
+      ): void => callback(change)
+      ipcRenderer.on('projectPages:changed', listener)
+      return () => ipcRenderer.removeListener('projectPages:changed', listener)
+    }
+  } satisfies PreloadApi['projectPages'],
 
   chatConnector: {
     respondConfirm: (args) => ipcRenderer.invoke('chatConnector:respondConfirm', args),

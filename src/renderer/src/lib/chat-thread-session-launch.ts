@@ -8,6 +8,7 @@
 // variants slot in behind the thread transport later.
 
 import { useAppStore } from '@/store'
+import { chatThreadExtraBrief } from '@/lib/chat-thread-extra-brief'
 import {
   buildAgentResumeStartupPlan,
   buildAgentStartupPlan,
@@ -97,7 +98,14 @@ export async function launchChatThreadSession(args: {
   // Stuffing the multiline string into agentArgs went through tokenize + zsh -lc
   // and never reached Claude.
   const workspaceBrief =
-    thread.claudeSessionId === null && workspace ? buildChatWorkspaceAgentBrief(workspace) : null
+    thread.claudeSessionId === null
+      ? [
+          workspace ? buildChatWorkspaceAgentBrief(workspace) : null,
+          chatThreadExtraBrief(thread.id)
+        ]
+          .filter(Boolean)
+          .join('\n\n') || null
+      : null
   const baseArgs = resolveTuiAgentLaunchArgs(agent, store.settings?.agentDefaultArgs)
   const agentArgs = [baseArgs, addDirArgs, CLAUDE_STREAM_FLAGS]
     .filter((part) => part.length > 0)

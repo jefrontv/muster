@@ -1,0 +1,298 @@
+/* Pages editor: page links read as mentions, #tags as pills. */
+.rich-markdown-editor.project-page-editor a[href^='muster-page://'] {
+  color: var(--foreground);
+  font-weight: 500;
+  text-decoration: none;
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0 0.3em;
+  box-decoration-break: clone;
+  cursor: pointer;
+}
+
+.rich-markdown-editor.project-page-editor a[href^='muster-page://']:hover {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.project-page-editor .page-tag {
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-radius: 999px;
+  padding: 0 0.4em;
+  cursor: pointer;
+}
+
+.project-page-editor .page-tag:hover {
+  color: var(--foreground);
+}
+
+/* Callouts: GitHub-style [!NOTE] quotes. */
+.project-page-editor blockquote.page-callout {
+  --callout: var(--status-info);
+  --callout-bg: var(--status-info-background);
+  --callout-border: var(--status-info-border);
+  margin: 0.75em 0;
+  padding: 0.65em 0.9em;
+  border: 1px solid var(--callout-border);
+  border-radius: var(--radius-md);
+  background: var(--callout-bg);
+  font-style: normal;
+  color: var(--foreground);
+}
+
+.project-page-editor blockquote.page-callout-tip {
+  --callout: var(--status-success);
+  --callout-bg: var(--status-success-background);
+  --callout-border: var(--status-success-border);
+}
+
+.project-page-editor blockquote.page-callout-warning {
+  --callout: var(--status-attention);
+  --callout-bg: var(--status-attention-background);
+  --callout-border: var(--status-attention-border);
+}
+
+.project-page-editor blockquote.page-callout-caution {
+  --callout: var(--status-danger);
+  --callout-bg: var(--status-danger-background);
+  --callout-border: var(--status-danger-border);
+}
+
+.project-page-editor .page-callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  width: fit-content;
+  margin-bottom: 0.2em;
+  color: var(--callout);
+  font-size: 0.875em;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.project-page-editor .page-callout-title svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.project-page-editor .page-callout-marker {
+  font-size: 0;
+}
+
+.project-page-editor img.page-image {
+  display: block;
+  max-width: 100%;
+  margin: 0.75em 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.project-page-editor img.page-image.ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
+}
+
+/* ActiveCollab task and project links: a card when alone on a line, a chip inside a sentence. */
+.project-page-editor p.page-ac-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  margin: 0.75em 0;
+  padding: 0.7em 0.9em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+}
+
+.project-page-editor p.page-ac-card a {
+  color: var(--foreground);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.project-page-editor p.page-ac-card.is-done a {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+}
+
+.project-page-editor .page-ac-head,
+.project-page-editor .page-ac-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--muted-foreground);
+  font-size: 0.8em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.project-page-editor .page-ac-meta:empty {
+  display: none;
+}
+
+.project-page-editor .page-ac-head svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.project-page-editor .page-ac-status {
+  padding: 0.05em 0.55em;
+  border: 1px solid var(--status-info-border);
+  border-radius: 999px;
+  background: var(--status-info-background);
+  color: var(--status-info);
+  font-weight: 600;
+}
+
+.project-page-editor .page-ac-status.is-done {
+  border-color: var(--status-success-border);
+  background: var(--status-success-background);
+  color: var(--status-success);
+}
+
+.project-page-editor .page-ac-status.is-missing {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+.project-page-editor .page-ac-detail.is-late {
+  color: var(--status-danger);
+}
+
+.project-page-editor .page-ac-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.project-page-editor .page-ac-label::before {
+  content: '';
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 999px;
+  background: var(--label, var(--muted-foreground));
+}
+
+.project-page-editor .page-ac-chip {
+  padding: 0.05em 0.35em 0.05em 0.2em;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+}
+
+.project-page-editor .page-ac-chip a,
+.project-page-editor a:has(.page-ac-chip) {
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+/* ProseMirror pads a widget at the end of a line with these; the card has its own spacing. */
+.project-page-editor p.page-ac-card > img.ProseMirror-separator,
+.project-page-editor p.page-ac-card > br.ProseMirror-trailingBreak {
+  display: none;
+}
+
+.project-page-editor .page-ac-dot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin: 0 0.3em 0.1em 0.25em;
+  border-radius: 999px;
+  background: var(--status-info);
+  cursor: pointer;
+}
+
+.project-page-editor .page-ac-dot.is-done {
+  background: var(--status-success);
+}
+
+.project-page-editor .page-ac-dot.is-missing,
+.project-page-editor .page-ac-dot.is-loading {
+  background: var(--muted-foreground);
+}
+
+/* Why: after an insert the caret sits on an empty line; the hint shows what that line is for. */
+.project-page-editor.ProseMirror-focused > p.is-empty:not(.is-editor-empty)::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+}
+
+/* Diagram editor: maxGraph's own CSS is not shipped, so its runtime elements are styled here. */
+.project-page-diagram div.mxRubberband {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid var(--ring);
+  background: color-mix(in srgb, var(--ring) 14%, transparent);
+}
+
+.project-page-diagram .mxCellEditor {
+  position: absolute;
+  display: inline-block;
+  overflow: visible;
+  min-width: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  word-wrap: normal;
+  background: transparent;
+  cursor: text;
+}
+
+.project-page-diagram .mxPlainTextEditor * {
+  margin: 0;
+  padding: 0;
+}
+
+/* A diagram page embedded in a page: a lone link to it renders this preview. */
+.project-page-editor .page-diagram-embed {
+  display: block;
+  margin: 0.25rem 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.project-page-editor .page-diagram-embed:hover {
+  border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+}
+
+.project-page-editor .page-diagram-embed-canvas {
+  display: grid;
+  place-items: center;
+  max-height: 22rem;
+  padding: 0.75rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--foreground) 3%, var(--background));
+}
+
+.project-page-editor .page-diagram-embed-canvas svg {
+  max-width: 100%;
+  max-height: 20.5rem;
+  height: auto;
+}
+
+.project-page-editor .page-diagram-embed-caption {
+  display: block;
+  padding: 0.35rem 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}

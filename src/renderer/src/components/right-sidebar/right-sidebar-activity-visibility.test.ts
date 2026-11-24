@@ -82,3 +82,21 @@ describe('getVisibleRightSidebarActivityItems', () => {
     ).toEqual(['explorer', 'ports'])
   })
 })
+
+describe('comment drafts tab', () => {
+  const drafts: ActivityBarItem = {
+    id: 'comment-drafts',
+    icon: Files,
+    title: 'Comment drafts',
+    shortcut: '',
+    draftsOnly: true
+  }
+  const base = { isFolder: false, isFolderWorkspace: false, isSshRepo: false, hasSite: false }
+
+  it('shows only while drafts are waiting or the tab is open', () => {
+    expect(getVisibleRightSidebarActivityItems([drafts], base)).toEqual([])
+    expect(getVisibleRightSidebarActivityItems([drafts], { ...base, hasDrafts: true })).toEqual([
+      drafts
+    ])
+  })
+})

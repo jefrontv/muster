@@ -83,6 +83,7 @@ import {
   releaseBrowserAutomationVisibility
 } from '@/components/browser-pane/browser-automation-visibility'
 import { attachMobileMarkdownBridge } from '@/runtime/mobile-markdown-bridge'
+import { attachDiagramAgentBridge } from '@/components/project-pages/project-pages-diagram-agent-bridge'
 import { closeMobileSessionTabInStore } from '@/runtime/mobile-session-tab-close'
 import { createWorktreeChangeRefreshQueue } from './worktree-change-refresh-queue'
 import { subscribeRuntimeClientEvents } from '@/runtime/runtime-client-events'
@@ -883,6 +884,7 @@ export function useIpcEvents(): void {
     let isFlushingAgentStatuses = false
 
     unsubs.push(attachMobileMarkdownBridge())
+    unsubs.push(attachDiagramAgentBridge())
 
     const handleWorktreesChanged = async (
       repoId: string,

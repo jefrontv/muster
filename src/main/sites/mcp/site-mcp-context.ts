@@ -15,6 +15,8 @@ import type { AcfStateStore } from '../wp-acf-state-store'
 import type { PlanAnnotationOpenInput } from '../../../shared/plan-annotation-types'
 import type { PlanReviewOutcome } from './site-mcp-plan-bridge'
 import type { GlobalSettings } from '../../../shared/types'
+import type { ProjectPagesAgentAccess } from '../../../shared/agent-capabilities'
+import type { ProjectPagesToolOp } from '../../project-pages/project-pages-tool-ops'
 import type {
   SiteSetupApprovalDecision,
   SiteSetupApprovalInput,
@@ -34,7 +36,10 @@ export type SiteMcpStore = {
   getSiteStepLibrary?: () => SiteCustomStep[]
   setSiteStepLibrary?: (steps: readonly SiteCustomStep[]) => void
   /** Read fresh, so a toggle in the GUI reaches a server that is already running. */
-  getSettings?: () => Pick<GlobalSettings, 'agentCapabilitySiteSetup'> | null
+  getSettings?: () => Pick<
+    GlobalSettings,
+    'agentCapabilitySiteSetup' | 'experimentalProjectPages' | 'agentCapabilityProjectPages'
+  > | null
 }
 
 /** ocsites' get_git_status payload, snake_cased to keep existing agent prompts working. */
@@ -82,6 +87,15 @@ export type SiteMcpContext = {
     requestId: string
     waitMs: number
   }) => Promise<SiteSetupApprovalOutcome>
+  /** Comment draft tools, answered by the GUI's draft store. Absent in tests and old transports. */
+  commentDraftTool?: (
+    op: 'queue' | 'list' | 'amend',
+    args: Record<string, unknown>
+  ) => Promise<unknown>
+  /** Agents' Pages access from settings. Absent = off. */
+  projectPagesAccess?: () => ProjectPagesAgentAccess
+  /** Pages tools, answered by the GUI's page store. Absent in tests and old transports. */
+  projectPagesTool?: (op: ProjectPagesToolOp, args: Record<string, unknown>) => Promise<unknown>
   /** A read-only setup lookup the GUI answers (projects, clone sources, stacks). Needs Muster open. */
   readSetup: (op: SiteSetupReadOp, args: Record<string, unknown>) => Promise<unknown>
   /** Runs an approved setup write in the GUI, which spends `approvalId` before acting. */
@@ -179,5 +193,7 @@ export type SiteMcpTool = {
   concurrent?: boolean
   /** Hidden from agents unless "Let agents create and set up projects" is on. */
   requiresSiteSetup?: boolean
+  /** Hidden unless the Pages agent capability allows this level. */
+  pagesAccess?: 'read' | 'write'
   run: (context: SiteMcpContext, args: Record<string, unknown>) => Promise<unknown>
 }

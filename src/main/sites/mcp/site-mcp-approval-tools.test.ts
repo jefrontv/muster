@@ -13,7 +13,7 @@ const GATED = [
   'set_deployment_toggles'
 ]
 
-function parse(result: { content: { text: string }[] }): Record<string, unknown> {
+function parse(result: { content: [{ text: string }, ...unknown[]] }): Record<string, unknown> {
   return JSON.parse(result.content[0].text) as Record<string, unknown>
 }
 
