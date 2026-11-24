@@ -5,9 +5,10 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
-import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
+import type { ProjectPageMeta, ProjectPageMoveInput } from '../../../../shared/project-pages-types'
 import { buildPageTree, pageTitle, trashedPages } from './project-pages-tree-model'
 import { ProjectPagesTreeRow } from './ProjectPagesTreeRow'
+import { useProjectPagesTreeDrag } from './use-project-pages-tree-drag'
 
 type Props = {
   pages: ProjectPageMeta[]
@@ -17,6 +18,7 @@ type Props = {
   onCreate: (parentId: string | null) => void
   onTrash: (pageId: string) => void
   onRestore: (pageId: string) => void
+  onMove: (pageId: string, move: ProjectPageMoveInput) => void
   /** Replaces the default column width and border, e.g. inside the right sidebar. */
   className?: string
 }
@@ -29,6 +31,7 @@ export function ProjectPagesSidebar({
   onCreate,
   onTrash,
   onRestore,
+  onMove,
   className = 'w-[clamp(14rem,26%,18rem)] shrink-0 border-r border-border'
 }: Props): React.JSX.Element {
   const [query, setQuery] = useState('')
@@ -36,6 +39,13 @@ export function ProjectPagesSidebar({
   const [showTrash, setShowTrash] = useState(false)
   const tree = useMemo(() => buildPageTree(pages, query), [pages, query])
   const trash = useMemo(() => trashedPages(pages), [pages])
+  const drag = useProjectPagesTreeDrag(pages, (pageId, move) => {
+    const parentId = move.parentId
+    if (parentId) {
+      setExpanded((current) => new Set(current).add(parentId))
+    }
+    onMove(pageId, move)
+  })
 
   const toggle = (pageId: string): void =>
     setExpanded((current) => {
@@ -91,6 +101,7 @@ export function ProjectPagesSidebar({
             onSelect={onSelect}
             onAddChild={addChild}
             onTrash={onTrash}
+            drag={query.trim() ? null : drag}
           />
         ))}
       </nav>

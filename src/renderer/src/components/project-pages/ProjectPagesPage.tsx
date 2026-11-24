@@ -279,6 +279,9 @@ export default function ProjectPagesPage(): React.JSX.Element {
             onCreate={(parentId) => void create(parentId)}
             onTrash={(id) => void window.api.projectPages.archive(scopeKey, id).then(report)}
             onRestore={(id) => void window.api.projectPages.restore(scopeKey, id).then(report)}
+            onMove={(id, move) =>
+              void window.api.projectPages.move(scopeKey, id, move).then(report)
+            }
           />
           <section className="flex min-w-0 flex-1 flex-col">
             {mapOpen ? (

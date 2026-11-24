@@ -67,6 +67,9 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
         }
         onTrash={(pageId) => void window.api.projectPages.archive(activeKey, pageId).then(report)}
         onRestore={(pageId) => void window.api.projectPages.restore(activeKey, pageId).then(report)}
+        onMove={(pageId, move) =>
+          void window.api.projectPages.move(activeKey, pageId, move).then(report)
+        }
       />
     </div>
   )

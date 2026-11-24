@@ -11,6 +11,7 @@ import {
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { pageTitle, type PageTreeNode } from './project-pages-tree-model'
+import type { ProjectPagesTreeDrag } from './use-project-pages-tree-drag'
 
 type Props = {
   node: PageTreeNode
@@ -22,6 +23,8 @@ type Props = {
   onSelect: (pageId: string) => void
   onAddChild: (pageId: string) => void
   onTrash: (pageId: string) => void
+  /** Absent while the tree is filtered. */
+  drag?: ProjectPagesTreeDrag | null
 }
 
 export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
@@ -34,20 +37,35 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
     onToggle,
     onSelect,
     onAddChild,
-    onTrash
+    onTrash,
+    drag
   } = props
   const { page, children } = node
   const open = forceExpanded || expanded.has(page.id)
   const selected = selectedId === page.id
+  const zone = drag?.over?.id === page.id ? drag.over.zone : null
   return (
     <>
       <div
+        {...drag?.rowProps(page.id)}
         className={cn(
-          'group flex h-7 items-center gap-1 rounded-md pr-1 text-sm',
-          selected ? 'bg-accent text-accent-foreground' : 'text-foreground/80 hover:bg-accent/60'
+          'group relative flex h-7 items-center gap-1 rounded-md pr-1 text-sm',
+          selected ? 'bg-accent text-accent-foreground' : 'text-foreground/80 hover:bg-accent/60',
+          drag?.dragId === page.id && 'opacity-50',
+          zone === 'inside' && 'bg-accent ring-1 ring-ring ring-inset'
         )}
         style={{ paddingLeft: 4 + depth * 14 }}
       >
+        {zone === 'before' || zone === 'after' ? (
+          <span
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute right-1 h-0.5 rounded-full bg-ring',
+              zone === 'before' ? '-top-px' : '-bottom-px'
+            )}
+            style={{ left: 4 + depth * 14 }}
+          />
+        ) : null}
         <button
           type="button"
           aria-label={
