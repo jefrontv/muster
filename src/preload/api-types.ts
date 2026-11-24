@@ -22,6 +22,7 @@ import type {
   ProjectPagesTree,
   ProjectPageUpdateInput
 } from '../shared/project-pages-types'
+import type { PagesGraph } from '../shared/project-pages-graph-types'
 import type {
   PageDatabaseSchema,
   ProjectPageDatabase
@@ -1058,6 +1059,7 @@ export type ProjectPagesApi = {
     query: string
   ) => Promise<ProjectPagesResult<ProjectPageSearchResult[]>>
   backlinks: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageMeta[]>>
+  graph: (scopeKey: string) => Promise<ProjectPagesResult<PagesGraph>>
   database: (scopeKey: string, pageId: string) => Promise<ProjectPagesResult<ProjectPageDatabase>>
   enableDatabase: (
     scopeKey: string,

@@ -8,6 +8,7 @@ import type {
 import { isPagesScopeKey } from '../../shared/project-pages-space-key'
 import { ProjectPagesError } from '../project-pages/project-pages-store'
 import { projectPages, projectPagesSearch } from '../project-pages/project-pages'
+import { buildPagesGraph } from '../project-pages/project-pages-graph'
 import { registerProjectPagesDatabaseHandlers } from './project-pages-databases'
 import { registerProjectPagesTransferHandlers } from './project-pages-transfer'
 import { sendToTrustedUIRenderer } from './ui'
@@ -23,7 +24,8 @@ const CHANNELS = [
   'projectPages:history',
   'projectPages:readRevision',
   'projectPages:search',
-  'projectPages:backlinks'
+  'projectPages:backlinks',
+  'projectPages:graph'
 ] as const
 
 const USER = { kind: 'user' } as const
@@ -160,6 +162,9 @@ export function registerProjectPagesHandlers(): void {
   )
   ipcMain.handle('projectPages:backlinks', (_e, key: unknown, id: unknown) =>
     guarded(() => projectPagesSearch().backlinks(scope(key), pageId(id)))
+  )
+  ipcMain.handle('projectPages:graph', (_e, key: unknown) =>
+    guarded(() => buildPagesGraph(projectPagesSearch().snapshot(scope(key))))
   )
   registerProjectPagesDatabaseHandlers()
   registerProjectPagesTransferHandlers()

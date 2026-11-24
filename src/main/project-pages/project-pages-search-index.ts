@@ -5,18 +5,28 @@ import {
   extractPageLinks,
   markdownToPlainText
 } from '../../shared/project-pages-plain-text'
+import { extractTags, type PageTag } from '../../shared/project-pages-tags'
 import type { ProjectPageMeta } from '../../shared/project-pages-types'
 import { matchSnippet } from './project-pages-markdown-ops'
 import type { ProjectPagesStore } from './project-pages-store'
 
-type Entry = { revision: number; headings: string[]; text: string; links: string[] }
+export type ProjectPageIndexEntry = {
+  revision: number
+  headings: string[]
+  text: string
+  links: string[]
+  tags: PageTag[]
+}
+type Entry = ProjectPageIndexEntry
+
+export type ProjectPagesSnapshot = { pages: ProjectPageMeta[]; entries: Map<string, Entry> }
 
 export type ProjectPageSearchHit = { page: ProjectPageMeta; snippet: string; score: number }
 
 export function createProjectPagesSearchIndex(store: ProjectPagesStore) {
   const spaces = new Map<string, Map<string, Entry>>()
 
-  function refresh(scopeKey: string): { pages: ProjectPageMeta[]; entries: Map<string, Entry> } {
+  function refresh(scopeKey: string): ProjectPagesSnapshot {
     const pages = store.listPages(scopeKey).pages.filter((page) => page.archivedAt === null)
     const entries = spaces.get(scopeKey) ?? new Map<string, Entry>()
     spaces.set(scopeKey, entries)
@@ -33,7 +43,8 @@ export function createProjectPagesSearchIndex(store: ProjectPagesStore) {
           revision: page.revision,
           headings: extractHeadings(markdown),
           text: markdownToPlainText(markdown),
-          links: extractPageLinks(markdown)
+          links: extractPageLinks(markdown),
+          tags: extractTags(markdown)
         })
       }
     }
@@ -73,7 +84,7 @@ export function createProjectPagesSearchIndex(store: ProjectPagesStore) {
     )
   }
 
-  return { search, backlinks }
+  return { search, backlinks, snapshot: refresh }
 }
 
 export type ProjectPagesSearchIndex = ReturnType<typeof createProjectPagesSearchIndex>

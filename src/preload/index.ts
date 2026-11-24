@@ -975,6 +975,7 @@ const api = {
       ipcRenderer.invoke('projectPages:readRevision', scopeKey, pageId, revision),
     search: (scopeKey, query) => ipcRenderer.invoke('projectPages:search', scopeKey, query),
     backlinks: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:backlinks', scopeKey, pageId),
+    graph: (scopeKey) => ipcRenderer.invoke('projectPages:graph', scopeKey),
     database: (scopeKey, pageId) => ipcRenderer.invoke('projectPages:database', scopeKey, pageId),
     enableDatabase: (scopeKey, pageId) =>
       ipcRenderer.invoke('projectPages:enableDatabase', scopeKey, pageId),
