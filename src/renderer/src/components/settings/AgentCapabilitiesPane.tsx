@@ -14,7 +14,6 @@ import { SearchableSetting } from './SearchableSetting'
 import { SettingsSubsectionHeader, SettingsSwitchRow } from './SettingsFormControls'
 import { SiteMcpInstallCard } from './site-mcp-install-card'
 import { SiteSetupAlwaysAllowList } from './SiteSetupAlwaysAllowList'
-import { ProjectPagesAgentAccessSection } from './ProjectPagesAgentAccessSection'
 import { getAgentCapabilitiesPaneSearchEntries } from './agent-capabilities-search'
 import { translate } from '@/i18n/i18n'
 
@@ -89,14 +88,6 @@ export function AgentCapabilitiesPane({
           <SiteMcpInstallCard enabled={sitesMcpEnabled} />
         </SearchableSetting>
       </section>
-
-      {settings.experimentalProjectPages === true ? (
-        <ProjectPagesAgentAccessSection
-          settings={settings}
-          updateSettings={updateSettings}
-          sitesMcpEnabled={sitesMcpEnabled}
-        />
-      ) : null}
 
       {/* Bundled agent skills section removed from Settings on request: installs still run at
           startup and per-skill enable state persists; there is just no surface to toggle it. */}

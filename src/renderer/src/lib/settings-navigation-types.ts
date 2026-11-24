@@ -21,6 +21,7 @@ export type SettingsNavTarget =
   | 'appearance'
   | 'input'
   | 'floating-workspace'
+  | 'pages'
   | 'terminal'
   | 'quick-commands'
   | 'notifications'

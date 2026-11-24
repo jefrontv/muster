@@ -1,4 +1,4 @@
-// Agent access to Pages. Shown only while the experimental Pages view is on.
+// Agent access to Pages, in Settings → Pages. Shown only while Pages is on.
 import type React from 'react'
 import {
   isCrossProjectPagesAllowed,

@@ -1,6 +1,7 @@
 // The last revision of each page the user has looked at, so agent edits since then can be flagged.
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
+import { useAppStore } from '@/store'
 
 const STORAGE_KEY = 'muster.projectPages.seenRevisions.v1'
 type SeenByScope = Record<string, Record<string, number>>
@@ -90,9 +91,13 @@ export function useAgentChangedPages(
   }, [scopeKey, loaded, seen, pages])
   // After the baseline, or a first look at one page would stop the rest being baselined.
   useMarkPageSeen(scopeKey, openPage)
+  const showDots = useAppStore((s) => s.settings?.projectPagesAgentChangeDots !== false)
   return useMemo(
-    () => new Set(pages.filter((page) => isChangedByAgent(seen, page)).map((page) => page.id)),
-    [pages, seen]
+    () =>
+      showDots
+        ? new Set(pages.filter((page) => isChangedByAgent(seen, page)).map((page) => page.id))
+        : new Set<string>(),
+    [pages, seen, showDots]
   )
 }
 

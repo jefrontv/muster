@@ -41,6 +41,7 @@ import { InputPane } from './InputPane'
 import { ShortcutsPane } from './ShortcutsPane'
 import { TerminalPane } from './TerminalPane'
 import { FloatingWorkspacePane } from './FloatingWorkspacePane'
+import { ProjectPagesPane } from './ProjectPagesPane'
 import { useGhosttyImport } from './useGhosttyImport'
 import { useWarpThemeImport } from './useWarpThemeImport'
 import { RepositoryPane } from './RepositoryPane'
@@ -1467,6 +1468,20 @@ function Settings(): React.JSX.Element {
                   >
                     {isSectionMounted('floating-workspace') ? (
                       <FloatingWorkspacePane settings={settings} updateSettings={updateSettings} />
+                    ) : null}
+                  </SettingsSection>
+
+                  <SettingsSection
+                    id="pages"
+                    title={translate('auto.components.settings.Settings.pagesTitle', 'Pages')}
+                    description={translate(
+                      'auto.components.settings.Settings.pagesDescription',
+                      'Project docs and diagrams, agent access and change dots.'
+                    )}
+                    searchEntries={getSectionSearchEntries('pages')}
+                  >
+                    {isSectionMounted('pages') ? (
+                      <ProjectPagesPane settings={settings} updateSettings={updateSettings} />
                     ) : null}
                   </SettingsSection>
 
