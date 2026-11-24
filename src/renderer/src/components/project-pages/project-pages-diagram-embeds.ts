@@ -53,14 +53,27 @@ function lonePageLink(block: ProseMirrorNode): string | null {
   return !other && found?.startsWith(PAGE_LINK_SCHEME) ? found.slice(PAGE_LINK_SCHEME.length) : null
 }
 
+// Wide diagrams scroll sideways rather than shrinking past this, so labels stay legible.
+const MIN_EMBED_SCALE = 0.7
+
+function sizeEmbeddedSvg(svg: SVGSVGElement | null): void {
+  const width = Number(svg?.getAttribute('width'))
+  if (!svg || !(width > 0)) {
+    return
+  }
+  svg.style.width = `min(${width}px, 100%)`
+  svg.style.minWidth = `${Math.round(width * MIN_EMBED_SCALE)}px`
+}
+
 function embed(pageId: string, preview: Extract<Preview, { state: 'ready' }>): HTMLElement {
   const anchor = document.createElement('a')
   anchor.className = 'page-diagram-embed'
   anchor.href = `${PAGE_LINK_SCHEME}${pageId}`
   anchor.contentEditable = 'false'
   const canvas = document.createElement('span')
-  canvas.className = 'page-diagram-embed-canvas'
+  canvas.className = 'page-diagram-embed-canvas scrollbar-sleek'
   canvas.innerHTML = preview.svg
+  sizeEmbeddedSvg(canvas.querySelector('svg'))
   const caption = document.createElement('span')
   caption.className = 'page-diagram-embed-caption'
   caption.textContent = preview.empty
