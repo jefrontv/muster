@@ -27,22 +27,15 @@ import { useProjectPageDiagram, type DiagramContent } from './use-project-page-d
 import { useProjectPageDiagramLinks } from './use-project-page-diagram-links'
 import { useProjectPageDiagramSelection } from './use-project-page-diagram-selection'
 import { insertMermaidText } from './ProjectPageDiagramMermaidDialog'
+import { dotGridStyle } from './project-pages-dot-grid'
 
 function diagramContent(editor: DiagramEditor): DiagramContent {
   const cells = snapshotDiagram(editor.graph)
   return { xml: writeDiagramXml(cells), outline: diagramOutlineText(cells) }
 }
 
-/** Dot grid that pans and zooms with the canvas; coarser when zoomed far out. */
 function gridStyle(scale: number, translate: { x: number; y: number }): React.CSSProperties {
-  const fine = 10 * scale
-  const step = fine < 8 ? fine * 5 : fine
-  return {
-    backgroundImage:
-      'radial-gradient(circle, color-mix(in srgb, var(--foreground) 16%, transparent) 1px, transparent 1.2px)',
-    backgroundSize: `${step}px ${step}px`,
-    backgroundPosition: `${translate.x * scale}px ${translate.y * scale}px`
-  }
+  return dotGridStyle(scale, translate.x * scale, translate.y * scale)
 }
 
 export function ProjectPageDiagramView({

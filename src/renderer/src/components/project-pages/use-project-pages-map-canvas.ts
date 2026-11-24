@@ -9,6 +9,7 @@ import {
   type MapPalette,
   type MapView
 } from './project-pages-map-draw'
+import { dotGridStyle } from './project-pages-dot-grid'
 import {
   createMapSim,
   neighboursOf,
@@ -58,6 +59,10 @@ export function useProjectPagesMapCanvas({
     palette.current ??= readMapPalette(canvas)
     const dpr = window.devicePixelRatio || 1
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    if (wrapRef.current) {
+      const { k, x, y } = view.current
+      Object.assign(wrapRef.current.style, dotGridStyle(k, x, y))
+    }
     drawMap(ctx, {
       sim: layout,
       view: view.current,
