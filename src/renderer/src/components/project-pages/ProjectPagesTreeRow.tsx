@@ -97,7 +97,13 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
           type="button"
           aria-current={selected ? 'page' : undefined}
           className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-          onClick={() => onSelect(page.id)}
+          onClick={() => {
+            onSelect(page.id)
+            // Opening a folder also expands it; only the chevron collapses.
+            if (page.folder && children.length > 0 && !open) {
+              onToggle(page.id)
+            }
+          }}
         >
           {page.icon ? (
             <span className="w-4 shrink-0 text-center text-sm leading-none">{page.icon}</span>
