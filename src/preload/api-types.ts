@@ -1236,6 +1236,8 @@ export type PlanAnnotationApi = {
   listPending: () => Promise<PlanAnnotationRequest[]>
   /** Writes an attached image to disk and returns its absolute path for the agent. */
   saveAttachment: (args: { name: string; dataBase64: string }) => Promise<string>
+  /** "Add to Pages": saves the open review as a page (folder id or path, null = Plans). */
+  saveToPages: (args: { requestId: string; folder: string | null }) => Promise<string | null>
   /** Fires when a review is settled anywhere, so a stale modal can drop it. */
   /** How many reviews are stacked behind the one on screen. Main owns the queue, so it says. */
   onQueued: (callback: (count: number) => void) => () => void

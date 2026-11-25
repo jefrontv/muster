@@ -858,7 +858,7 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
       // on the old direct-to-disk path rather than blocking startup.
       if (store) {
         const bridgeStore = store
-        setPlanAnnotationPageBinder((input, prior) =>
+        setPlanAnnotationPageBinder((input, prior, options) =>
           bindPlanReviewPage(
             {
               store: projectPages(),
@@ -866,7 +866,8 @@ function startTerminalRuntimeStartupServices(): Promise<void> {
               settings: () => bridgeStore.getSettings()
             },
             input,
-            prior
+            prior,
+            options
           )
         )
         try {

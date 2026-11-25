@@ -1054,6 +1054,7 @@ const api = {
     respond: (args) => ipcRenderer.invoke('planAnnotation:respond', args),
     listPending: () => ipcRenderer.invoke('planAnnotation:listPending'),
     saveAttachment: (args) => ipcRenderer.invoke('planAnnotation:saveAttachment', args),
+    saveToPages: (args) => ipcRenderer.invoke('planAnnotation:saveToPages', args),
     onQueued: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, count: number): void => callback(count)
       ipcRenderer.on('planAnnotation:queued', listener)

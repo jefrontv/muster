@@ -105,7 +105,8 @@ function rememberRound(
 /** Saves the plan to a Pages page and names it; null leaves the review off Pages. */
 export type PlanReviewPageBinder = (
   input: PlanAnnotationOpenInput,
-  prior: PlanReviewPageRef | null
+  prior: PlanReviewPageRef | null,
+  options?: { force?: boolean }
 ) => PlanReviewPageRef | null
 
 let bindPage: PlanReviewPageBinder | null = null
@@ -122,12 +123,16 @@ function reviewKey(input: PlanAnnotationOpenInput): string {
   return input.planPath ?? `inline:${input.agent ?? ''}:${input.title}`
 }
 
-function pageFor(input: PlanAnnotationOpenInput, prior: PlanReviewPageRef | null) {
+function pageFor(
+  input: PlanAnnotationOpenInput,
+  prior: PlanReviewPageRef | null,
+  options?: { force?: boolean }
+) {
   if (!bindPage) {
     return input.page ?? null
   }
   try {
-    return bindPage(input, prior)
+    return bindPage(input, prior, options)
   } catch (error) {
     // A Pages failure must not cost the review; it falls back to the plan-review tab.
     console.warn('[plan-review] could not save the plan to Pages:', error)
@@ -347,6 +352,38 @@ export function respondPlanAnnotation(requestId: string, result: PlanAnnotationR
   settle(entry, page ? { ...result, pageId: page.pageId } : result)
   startFront()
   return true
+}
+
+/**
+ * "Add to Pages": saves an open path/content review as a page and resends it, so the window moves
+ * the review onto that page. Later rounds of the plan keep updating the same page.
+ */
+export function savePlanAnnotationToPages(
+  requestId: string,
+  pagesFolder: string | null
+): PlanReviewPageRef | null {
+  const entry = queue.get(requestId)
+  if (!entry || entry.request.page) {
+    return entry?.request.page ?? null
+  }
+  const key = reviewKey(entry.request)
+  const page = pageFor({ ...entry.request, pagesFolder }, null, { force: true })
+  if (!page) {
+    return null
+  }
+  entry.request = { ...entry.request, page, pageIsSource: false }
+  const memo = roundsByPlanPath.get(key)
+  if (memo) {
+    rememberRound(key, { ...memo, page })
+  }
+  if (head() === entry) {
+    try {
+      sendRequest?.(entry.request)
+    } catch {
+      // The page is saved either way; a reopened window lists the review with its page.
+    }
+  }
+  return page
 }
 
 /** Every review still waiting, front first. Lets a reopened window rebuild its queue. */

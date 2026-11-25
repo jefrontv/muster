@@ -10,6 +10,7 @@ import {
   respondPlanAnnotation,
   setPlanAnnotationQueuedSender,
   setPlanAnnotationResolvedSender,
+  savePlanAnnotationToPages,
   setPlanAnnotationPageBinder,
   setPlanAnnotationSender
 } from './plan-annotation-requests'
@@ -334,6 +335,35 @@ describe('round memory', () => {
         status: 'settled',
         result: { pageId: 'p_plan' }
       })
+    } finally {
+      setPlanAnnotationPageBinder(null)
+    }
+  })
+
+  it('moves an open review onto a page on "Add to Pages" and keeps it there next round', () => {
+    const calls: unknown[] = []
+    setPlanAnnotationPageBinder((input, prior, options) => {
+      calls.push({ folder: input.pagesFolder, prior, force: options?.force === true })
+      return options?.force || prior ? { scopeKey: 'repo:r1', pageId: 'p_added' } : null
+    })
+    try {
+      const first = openAt('/plans/added.md', 'v1')
+      expect(first).not.toHaveProperty('pageId')
+      const id = 'requestId' in first ? first.requestId : ''
+      sent.length = 0
+      expect(savePlanAnnotationToPages(id, 'Specs/Q4')).toEqual({
+        scopeKey: 'repo:r1',
+        pageId: 'p_added'
+      })
+      expect(sent[0]).toMatchObject({
+        requestId: id,
+        page: { pageId: 'p_added' },
+        pageIsSource: false
+      })
+      respondPlanAnnotation(id, { decision: 'approved', annotations: [] })
+      expect(openAt('/plans/added.md', 'v2')).toMatchObject({ round: 2, pageId: 'p_added' })
+      expect(calls.at(1)).toEqual({ folder: 'Specs/Q4', prior: null, force: true })
+      expect(calls.at(2)).toMatchObject({ prior: { pageId: 'p_added' }, force: false })
     } finally {
       setPlanAnnotationPageBinder(null)
     }

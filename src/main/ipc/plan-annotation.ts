@@ -10,6 +10,7 @@ import { notifyWhenUnfocused } from './muster-window-attention'
 import {
   listPendingPlanAnnotations,
   respondPlanAnnotation,
+  savePlanAnnotationToPages,
   setPlanAnnotationQueuedSender,
   setPlanAnnotationResolvedSender,
   setPlanAnnotationSender
@@ -59,6 +60,7 @@ export function registerPlanAnnotationHandlers(): void {
   ipcMain.removeHandler('planAnnotation:respond')
   ipcMain.removeHandler('planAnnotation:listPending')
   ipcMain.removeHandler('planAnnotation:saveAttachment')
+  ipcMain.removeHandler('planAnnotation:saveToPages')
 
   ipcMain.handle(
     'planAnnotation:respond',
@@ -67,6 +69,18 @@ export function registerPlanAnnotationHandlers(): void {
         throw new Error('planAnnotation: requestId must be a non-empty string')
       }
       return respondPlanAnnotation(args.requestId, readResult(args.result))
+    }
+  )
+
+  // Returns the page id, or null when Pages is off or no project holds the agent's folder.
+  ipcMain.handle(
+    'planAnnotation:saveToPages',
+    (_event, args: { requestId?: unknown; folder?: unknown }): string | null => {
+      if (typeof args?.requestId !== 'string' || args.requestId === '') {
+        throw new Error('planAnnotation: requestId must be a non-empty string')
+      }
+      const folder = typeof args.folder === 'string' && args.folder.trim() ? args.folder : null
+      return savePlanAnnotationToPages(args.requestId, folder)?.pageId ?? null
     }
   )
 
