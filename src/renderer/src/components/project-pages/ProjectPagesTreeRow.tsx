@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
+import { CONTROL_HOVER, ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { pageTitle, type PageTreeNode } from './project-pages-tree-model'
 import { ProjectPageKindIcon } from './ProjectPageKindIcon'
 import type { ProjectPagesTreeDrag } from './use-project-pages-tree-drag'
@@ -62,7 +63,7 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
         {...drag?.rowProps(page.id)}
         className={cn(
           'group relative flex h-7 items-center gap-1 rounded-md pr-1 text-sm',
-          selected ? 'bg-accent text-accent-foreground' : 'text-foreground/80 hover:bg-accent/60',
+          selected ? 'bg-accent text-accent-foreground' : cn('text-foreground/80', ROW_HOVER),
           drag?.dragId === page.id && 'opacity-50',
           zone === 'inside' && 'bg-accent ring-1 ring-ring ring-inset'
         )}
@@ -86,7 +87,8 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
               : translate('auto.components.projectPages.expand', 'Expand')
           }
           className={cn(
-            'grid size-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-foreground/10',
+            'grid size-5 shrink-0 place-items-center rounded text-muted-foreground',
+            CONTROL_HOVER,
             children.length === 0 && 'invisible'
           )}
           onClick={() => onToggle(page.id)}

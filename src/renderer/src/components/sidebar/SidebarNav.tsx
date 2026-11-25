@@ -60,6 +60,9 @@ const DASHBOARD_BUCKET_DOT_CLASS: Record<'working' | 'idle', string> = {
 // Shared chrome for Tasks / Automations / Agents / Sites so one row can't drift in height or type.
 const SIDEBAR_NAV_ITEM_CLASS =
   'flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] font-medium tracking-tight transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring'
+// The sidebar has its own surface colour, so idle nav rows tint with its foreground, not bg-accent.
+const SIDEBAR_NAV_IDLE_CLASS =
+  'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
 
 function dashboardBucketLabel(bucket: DashboardBucket): string {
   switch (bucket) {
@@ -121,10 +124,7 @@ function AgentDashboardSidebarEntry(): React.JSX.Element {
           setAgentDashboardDrawerOpen(!drawerOpen)
         }
       }}
-      className={cn(
-        SIDEBAR_NAV_ITEM_CLASS,
-        'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
-      )}
+      className={cn(SIDEBAR_NAV_ITEM_CLASS, SIDEBAR_NAV_IDLE_CLASS)}
     >
       <LayoutDashboard className="size-4 shrink-0 text-worktree-sidebar-foreground/55" />
       <span className="flex-1">{translate('dashboard.sidebar.label', 'Agent dashboard')}</span>
@@ -177,7 +177,7 @@ const SidebarNav = React.memo(function SidebarNav() {
           SIDEBAR_NAV_ITEM_CLASS,
           sitesActive
             ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
-            : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+            : SIDEBAR_NAV_IDLE_CLASS
         )}
       >
         <Globe
@@ -196,7 +196,7 @@ const SidebarNav = React.memo(function SidebarNav() {
             SIDEBAR_NAV_ITEM_CLASS,
             pagesActive
               ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
-              : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+              : SIDEBAR_NAV_IDLE_CLASS
           )}
         >
           <FileText
@@ -219,7 +219,7 @@ const SidebarNav = React.memo(function SidebarNav() {
                 SIDEBAR_NAV_ITEM_CLASS,
                 automationsActive
                   ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
-                  : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+                  : SIDEBAR_NAV_IDLE_CLASS
               )}
             >
               <CalendarClock
@@ -246,7 +246,7 @@ const SidebarNav = React.memo(function SidebarNav() {
             SIDEBAR_NAV_ITEM_CLASS,
             activityActive
               ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
-              : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+              : SIDEBAR_NAV_IDLE_CLASS
           )}
         >
           <Bell

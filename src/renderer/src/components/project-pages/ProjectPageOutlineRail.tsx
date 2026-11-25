@@ -132,7 +132,7 @@ export function ProjectPageOutlineRail({ items, activeIndex, onJump }: Props): R
               data-current={index === activeIndex}
               onClick={() => onJump(index)}
               style={{ paddingLeft: 8 + Math.min(item.depth, 4) * ROW_INDENT_PX }}
-              className="flex min-h-7 w-full shrink-0 items-center rounded-md py-1 pr-2 text-left text-[13px] leading-[18px] text-muted-foreground outline-hidden hover:bg-foreground/[0.06] hover:text-foreground focus-visible:bg-foreground/[0.06] focus-visible:text-foreground data-[current=true]:bg-accent data-[current=true]:text-foreground"
+              className="flex min-h-7 w-full shrink-0 items-center rounded-md py-1 pr-2 text-left text-[13px] leading-[18px] text-muted-foreground outline-hidden hover:bg-foreground/[0.07] hover:text-foreground focus-visible:bg-foreground/[0.07] focus-visible:text-foreground data-[current=true]:bg-accent data-[current=true]:text-foreground"
             >
               <span className="truncate">{item.title}</span>
             </button>

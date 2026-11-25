@@ -2,6 +2,7 @@
 import { FileText, Plus } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
+import { CONTROL_HOVER, ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { translate } from '@/i18n/i18n'
 import type { DatabaseRow } from '../../../../shared/project-pages-database-query'
 import type { PageDatabaseSchema } from '../../../../shared/project-pages-database-types'
@@ -34,7 +35,7 @@ function RowTitle({
       value={draft}
       placeholder={placeholder}
       aria-label={placeholder}
-      className="h-7 min-w-0 flex-1 rounded-md bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 hover:bg-accent/60 focus:bg-accent/60"
+      className={`h-7 min-w-0 flex-1 rounded-md bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-muted-foreground ${ROW_HOVER} focus:bg-accent`}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() => {
         if (draft.trim() !== title.trim()) {
@@ -84,7 +85,7 @@ export function ProjectPageDatabaseTable({
                     type="button"
                     aria-label={translate('auto.components.projectPages.openRow', 'Open page')}
                     title={translate('auto.components.projectPages.openRow', 'Open page')}
-                    className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                    className={`grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground ${CONTROL_HOVER} hover:text-foreground`}
                     onClick={() => onOpenPage(row.id)}
                   >
                     <FileText className="size-3.5" />
@@ -117,7 +118,7 @@ export function ProjectPageDatabaseTable({
       </table>
       <button
         type="button"
-        className="mt-1 flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+        className={`mt-1 flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm text-muted-foreground ${ROW_HOVER} hover:text-foreground`}
         onClick={() => void actions.addRow()}
       >
         <Plus className="size-3.5" />

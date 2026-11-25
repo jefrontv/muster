@@ -2,6 +2,7 @@
 import { Bot, SquareTerminal } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { translate } from '@/i18n/i18n'
 import type {
   BotsCommentDraft,
@@ -33,7 +34,9 @@ function DraftRow({
   const bodyId = `comment-draft-${draft.id}`
 
   return (
-    <li className="border-b border-border px-3 py-2.5 transition-colors last:border-b-0 hover:bg-accent/30 has-[button:focus-visible]:bg-accent/40">
+    <li
+      className={`border-b border-border px-3 py-2.5 transition-colors last:border-b-0 ${ROW_HOVER} has-[button:focus-visible]:bg-accent`}
+    >
       <button
         type="button"
         aria-expanded={open}

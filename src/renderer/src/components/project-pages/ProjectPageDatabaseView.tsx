@@ -119,7 +119,7 @@ export function ProjectPageDatabaseView({
               <Filter className="size-3.5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
+          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto scrollbar-sleek">
             {schema.properties.map((property) => (
               <div key={property.id}>
                 <DropdownMenuLabel className="text-xs text-muted-foreground">

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import type {
   PageProperty,
   PagePropertyValue
@@ -23,8 +24,7 @@ type Props = {
   className?: string
 }
 
-const FIELD =
-  'h-7 w-full min-w-0 rounded-md bg-transparent px-1.5 text-sm text-foreground outline-none hover:bg-accent/60 focus:bg-accent/60'
+const FIELD = `h-7 w-full min-w-0 rounded-md bg-transparent px-1.5 text-sm text-foreground outline-none ${ROW_HOVER} focus:bg-accent`
 
 function TextField({ property, value, onChange, className }: Props): React.JSX.Element {
   const [draft, setDraft] = useState(value === null ? '' : String(value))
@@ -86,7 +86,7 @@ export function ProjectPagePropertyCell(props: Props): React.JSX.Element {
           {option ? (
             <span className="truncate rounded bg-accent px-1.5 py-0.5 text-xs">{option.name}</span>
           ) : (
-            <span className="text-muted-foreground/60">
+            <span className="text-muted-foreground">
               {translate('auto.components.projectPages.propertyEmpty', 'Empty')}
             </span>
           )}

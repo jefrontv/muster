@@ -33,6 +33,7 @@ function notificationStatus(value: string | null): ChatTaskNotification['status'
       return 'stopped'
     case 'running':
       return 'running'
+    case null:
     default:
       return null
   }

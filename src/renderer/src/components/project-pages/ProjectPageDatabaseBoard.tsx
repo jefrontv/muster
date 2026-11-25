@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { translate } from '@/i18n/i18n'
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { cn } from '@/lib/utils'
 import {
   groupRowsByOption,
@@ -74,7 +75,7 @@ export function ProjectPageDatabaseBoard({
                 key={row.id}
                 type="button"
                 draggable
-                className="rounded-md border border-border bg-background px-2 py-1.5 text-left text-sm shadow-xs hover:bg-accent/60"
+                className={`rounded-md border border-border bg-background px-2 py-1.5 text-left text-sm shadow-xs ${ROW_HOVER}`}
                 onDragStart={(event) => {
                   event.dataTransfer.setData(DRAG_TYPE, row.id)
                   event.dataTransfer.effectAllowed = 'move'
@@ -86,7 +87,7 @@ export function ProjectPageDatabaseBoard({
             ))}
             <button
               type="button"
-              className="flex h-7 items-center gap-1.5 rounded-md px-1 text-xs text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+              className={`flex h-7 items-center gap-1.5 rounded-md px-1 text-xs text-muted-foreground ${ROW_HOVER} hover:text-foreground`}
               onClick={() =>
                 void actions.addRow(column.optionId ? { [groupBy.id]: column.optionId } : undefined)
               }

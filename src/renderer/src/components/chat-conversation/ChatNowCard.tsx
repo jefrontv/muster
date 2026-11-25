@@ -34,7 +34,8 @@ function stepState(item: StepItem): StepState {
       return 'failed'
     case 'awaiting-approval':
       return 'waiting'
-    default:
+    case 'denied':
+    case 'interrupted':
       return 'idle'
   }
 }

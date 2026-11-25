@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 import type { ProjectPageMeta, ProjectPageMoveInput } from '../../../../shared/project-pages-types'
@@ -158,7 +159,7 @@ export function ProjectPagesSidebar({
           <button
             type="button"
             aria-expanded={showTrash}
-            className="flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent/60"
+            className={`flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground ${ROW_HOVER}`}
             onClick={() => setShowTrash((open) => !open)}
           >
             <Trash2 className="size-3.5" />
@@ -172,7 +173,7 @@ export function ProjectPagesSidebar({
               {trash.map((page) => (
                 <li
                   key={page.id}
-                  className="flex h-7 items-center gap-1 rounded-md pr-1 pl-2 text-xs text-muted-foreground hover:bg-accent/60"
+                  className={`flex h-7 items-center gap-1 rounded-md pr-1 pl-2 text-xs text-muted-foreground ${ROW_HOVER}`}
                 >
                   <span className="min-w-0 flex-1 truncate">{pageTitle(page)}</span>
                   <Button

@@ -90,7 +90,7 @@ export function BotsReassignMemberMenu({
           )}
           className="mb-1 h-8 w-full rounded-md bg-foreground/[0.05] px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
-        <div className="max-h-64 overflow-y-auto">
+        <div className="max-h-64 overflow-y-auto scrollbar-sleek">
           {members.state === 'loading' ? (
             <DropdownMenuItem disabled>
               {translate('auto.components.bots.commentDrafts.reassignLoading', 'Loading people…')}

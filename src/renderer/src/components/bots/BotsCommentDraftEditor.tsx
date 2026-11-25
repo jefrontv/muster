@@ -216,7 +216,7 @@ export function BotsCommentDraftEditor({
       <div
         data-slot="bots-draft-editor"
         // The editor takes the dialog's spare height; a long comment scrolls inside it.
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [&_.ProseMirror]:min-h-[140px]"
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto scrollbar-sleek [&_.ProseMirror]:min-h-[140px]"
         onPaste={files.onPaste}
         {...files.dropTargetProps}
       >

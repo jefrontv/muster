@@ -72,7 +72,7 @@ function Tile({
         <TooltipTrigger asChild>
           <button
             type="button"
-            className="flex size-full flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-foreground/[0.05] ring-1 ring-inset ring-foreground/[0.06] outline-none focus-visible:ring-2 focus-visible:ring-ring/50 enabled:hover:bg-foreground/[0.08]"
+            className="flex size-full flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-foreground/[0.05] ring-1 ring-inset ring-foreground/[0.06] outline-none focus-visible:ring-2 focus-visible:ring-ring/50 enabled:hover:bg-foreground/[0.07]"
             aria-disabled={!url}
             onClick={() => url && onOpen(url)}
             aria-label={
@@ -89,7 +89,7 @@ function Tile({
               <>
                 <FileText aria-hidden className="size-4 text-chat-ink-tertiary" />
                 {ext ? (
-                  <span className="text-[9px] leading-none font-medium text-chat-ink-tertiary">
+                  <span className="text-[11px] leading-none font-medium text-chat-ink-tertiary">
                     {ext}
                   </span>
                 ) : null}
@@ -144,7 +144,7 @@ function Chip({
               })
             : `${file.name}, ${formatBytes(file.size)}`
         }
-        className="flex h-7 max-w-[15rem] min-w-0 items-center gap-1.5 rounded-md border border-border bg-foreground/[0.03] pr-2 pl-1 text-xs outline-none hover:bg-foreground/[0.06] focus-visible:ring-2 focus-visible:ring-ring/50 aria-disabled:cursor-default aria-disabled:hover:bg-foreground/[0.03]"
+        className="flex h-7 max-w-[15rem] min-w-0 items-center gap-1.5 rounded-md border border-border bg-foreground/[0.03] pr-2 pl-1 text-xs outline-none not-aria-disabled:hover:bg-foreground/[0.07] focus-visible:ring-2 focus-visible:ring-ring/50 aria-disabled:cursor-default"
       >
         {url ? (
           <img src={url} alt="" className="size-5 shrink-0 rounded-sm object-cover" />

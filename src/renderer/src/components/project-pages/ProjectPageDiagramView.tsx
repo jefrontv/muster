@@ -129,7 +129,7 @@ export function ProjectPageDiagramView({
         autoFocus={autoFocusTitle}
         aria-label={translate('auto.components.projectPages.titleLabel', 'Page title')}
         placeholder={translate('auto.components.projectPages.untitled', 'Untitled')}
-        className="w-full bg-transparent px-6 pt-6 pb-2 text-2xl font-semibold text-foreground outline-none placeholder:text-muted-foreground/60"
+        className="w-full bg-transparent px-6 pt-6 pb-2 text-2xl font-semibold text-foreground outline-none placeholder:text-muted-foreground"
         onChange={(event) => setTitle(event.target.value)}
         onBlur={commitTitle}
         onKeyDown={(event) => {

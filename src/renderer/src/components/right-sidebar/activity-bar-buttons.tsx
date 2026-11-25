@@ -148,7 +148,7 @@ export function ActivityBarButton({
         >
           <Icon size={14} />
           {count ? (
-            <span className="absolute top-0 right-0 flex h-3 min-w-3 items-center justify-center rounded-full bg-foreground px-[3px] text-[8px] leading-none font-semibold text-background tabular-nums ring-[1.5px] ring-sidebar">
+            <span className="absolute top-0 right-0 flex h-3 min-w-3 items-center justify-center rounded-full bg-foreground px-[3px] text-2xs leading-none font-semibold text-background tabular-nums ring-[1.5px] ring-sidebar">
               {count > 9 ? '9+' : count}
             </span>
           ) : null}

@@ -3,6 +3,7 @@ import { FolderPlus, Plus, Workflow } from 'lucide-react'
 import type React from 'react'
 import { childrenOf } from '../../../../shared/project-pages-tree'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
+import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { translate } from '@/i18n/i18n'
 import { pageTitle } from './project-pages-tree-model'
 import { ProjectPageKindIcon } from './ProjectPageKindIcon'
@@ -39,7 +40,7 @@ export function ProjectPagesFolderView({
           <button
             key={page.id}
             type="button"
-            className={`${CARD} bg-card hover:bg-accent/60`}
+            className={`${CARD} bg-card ${ROW_HOVER}`}
             onClick={() => onOpenPage(page.id)}
           >
             {page.icon ? (

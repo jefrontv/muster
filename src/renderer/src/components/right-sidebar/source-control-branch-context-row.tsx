@@ -32,7 +32,7 @@ function BaseRefButton({
   return (
     <button
       type="button"
-      className="min-w-0 max-w-full truncate rounded-sm border-0 bg-transparent p-0 text-left text-xs text-muted-foreground underline decoration-transparent underline-offset-2 transition-colors hover:text-foreground hover:decoration-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="min-w-0 max-w-full truncate rounded-full border-0 bg-transparent p-0 text-left text-xs text-muted-foreground underline decoration-transparent underline-offset-2 transition-colors hover:text-foreground hover:decoration-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onClick={onClick}
       title={`${title} (${baseRef})`}
       aria-label={accessibleName}
@@ -191,7 +191,7 @@ function BaseLine({
       {showArrow ? (
         // Why: size-3.5 box matches the branch icon above so the base ref lines up with the branch name.
         <CornerDownRight
-          className="size-3.5 shrink-0 p-px text-muted-foreground/70"
+          className="size-3.5 shrink-0 p-px text-muted-foreground"
           aria-hidden="true"
         />
       ) : (

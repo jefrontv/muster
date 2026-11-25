@@ -79,7 +79,7 @@ export function ProjectPageHistoryDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex h-96 min-h-0 gap-3">
-          <ul className="w-48 shrink-0 space-y-0.5 overflow-auto">
+          <ul className="scrollbar-sleek w-48 shrink-0 space-y-0.5 overflow-auto">
             {revisions.length === 0 ? (
               <li className="px-2 py-1 text-xs text-muted-foreground">
                 {translate('auto.components.projectPages.noHistory', 'No earlier versions yet.')}
@@ -102,7 +102,7 @@ export function ProjectPageHistoryDialog({
               </li>
             ))}
           </ul>
-          <pre className="min-w-0 flex-1 overflow-auto rounded-md border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
+          <pre className="scrollbar-sleek min-w-0 flex-1 overflow-auto rounded-md border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
             {preview ?? ''}
           </pre>
         </div>

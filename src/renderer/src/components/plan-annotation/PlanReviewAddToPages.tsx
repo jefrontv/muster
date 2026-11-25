@@ -138,7 +138,10 @@ export function PlanReviewAddToPages({
           {translate('auto.components.planAnnotation.addToPages.button', 'Add to Pages')}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-h-80 min-w-56 overflow-y-auto">
+      <DropdownMenuContent
+        align="end"
+        className="max-h-80 min-w-56 overflow-y-auto scrollbar-sleek"
+      >
         <DropdownMenuLabel>
           {translate('auto.components.planAnnotation.addToPages.label', 'Save to folder')}
         </DropdownMenuLabel>
