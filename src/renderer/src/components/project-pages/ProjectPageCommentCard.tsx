@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import type { PageCommentThread } from '../../../../shared/project-pages-comment-types'
 import { KIND_CLASS } from '../plan-annotation/PlanReviewNoteLayer'
 import { PLAN_NOTE_KIND_LABEL } from '../plan-annotation/plan-review-comments'
+import { PageTooltipButton } from './PageTooltipButton'
 
 function when(at: number): string {
   return new Date(at).toLocaleString([], {
@@ -170,16 +171,15 @@ export function ProjectPageCommentCard({
               ? translate('auto.components.projectPages.comments.reopen', 'Reopen')
               : translate('auto.components.projectPages.comments.resolve', 'Resolve')}
           </Button>
-          <Button
+          <PageTooltipButton
             size="icon-xs"
             variant="ghost"
             className="ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-            aria-label={translate('auto.components.projectPages.comments.delete', 'Delete thread')}
-            title={translate('auto.components.projectPages.comments.delete', 'Delete thread')}
+            label={translate('auto.components.projectPages.comments.delete', 'Delete thread')}
             onClick={onDelete}
           >
             <Trash2 className="size-3.5" />
-          </Button>
+          </PageTooltipButton>
         </div>
       )}
     </div>

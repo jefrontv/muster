@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 
 type Props = { scopeKey: string; projectName: string }
@@ -63,18 +64,24 @@ export function ProjectPagesTransferMenu({ scopeKey, projectName }: Props): Reac
   const label = translate('auto.components.projectPages.transfer.menu', 'More')
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0 text-muted-foreground"
-          aria-label={label}
-          title={label}
-          disabled={busy}
-        >
-          <MoreHorizontal className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0 text-muted-foreground"
+              aria-label={label}
+              disabled={busy}
+            >
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={6}>
+          {label}
+        </TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => void run('export')}>
           <Download className="size-4" />

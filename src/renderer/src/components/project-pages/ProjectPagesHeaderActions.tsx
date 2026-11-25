@@ -8,9 +8,9 @@ import {
   Waypoints
 } from 'lucide-react'
 import type React from 'react'
-import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
+import { PageTooltipButton } from './PageTooltipButton'
 import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
 import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
@@ -43,43 +43,40 @@ export function ProjectPagesHeaderActions({
   onPick: (pageId: string) => void
 }): React.JSX.Element {
   const annotate = usePageAnnotateMode()
-  const annotateLabel = translate('auto.components.projectPages.annotate', 'Annotate')
   return (
     <>
       {scopeKey ? (
         <>
-          <Button
+          <PageTooltipButton
             variant={mapOpen ? 'secondary' : 'ghost'}
             size="icon-sm"
             className="shrink-0 text-muted-foreground"
-            aria-label={translate('auto.components.projectPages.map.open', 'Map')}
+            label={translate('auto.components.projectPages.map.open', 'Map')}
             aria-pressed={mapOpen}
-            title={translate('auto.components.projectPages.map.open', 'Map')}
             onClick={() => setMapOpen((open) => !open)}
           >
             <Waypoints className="size-4" />
-          </Button>
-          <Button
+          </PageTooltipButton>
+          <PageTooltipButton
             variant="ghost"
             size="icon-sm"
             className="shrink-0 text-muted-foreground"
-            aria-label={translate('auto.components.projectPages.switcher', 'Go to page')}
-            title={`${translate('auto.components.projectPages.switcher', 'Go to page')} (${isMac ? '⌘P' : 'Ctrl+P'})`}
+            label={translate('auto.components.projectPages.switcher', 'Go to page')}
+            shortcut={isMac ? '⌘P' : 'Ctrl+P'}
             onClick={() => setSwitcherOpen(true)}
           >
             <Search className="size-4" />
-          </Button>
-          <Button
+          </PageTooltipButton>
+          <PageTooltipButton
             variant={agentOpen ? 'secondary' : 'ghost'}
             size="icon-sm"
             className="shrink-0 text-muted-foreground"
-            aria-label={translate('auto.components.projectPages.askAgent', 'Ask agent')}
+            label={translate('auto.components.projectPages.askAgent', 'Ask agent')}
             aria-pressed={agentOpen}
-            title={translate('auto.components.projectPages.askAgent', 'Ask agent')}
             onClick={() => setAgentOpen((open) => !open)}
           >
             <MessageSquareText className="size-4" />
-          </Button>
+          </PageTooltipButton>
           <ProjectPagesTransferMenu scopeKey={scopeKey} projectName={projectName} />
           <ProjectPagesQuickSwitcher
             scopeKey={scopeKey}
@@ -92,47 +89,42 @@ export function ProjectPagesHeaderActions({
       ) : null}
       {meta && !meta.diagram ? (
         <>
-          <Button
+          <PageTooltipButton
             variant={annotate ? 'secondary' : 'ghost'}
             size="icon-sm"
             className={annotate ? 'shrink-0 text-foreground' : 'shrink-0 text-muted-foreground'}
-            aria-label={annotateLabel}
+            label={translate('auto.components.projectPages.annotate', 'Annotate')}
+            shortcut={isMac ? '⌘⇧A' : 'Ctrl+Shift+A'}
             aria-pressed={annotate}
-            title={`${annotateLabel} (${isMac ? '⌘⇧A' : 'Ctrl+Shift+A'})`}
             onClick={togglePageAnnotateMode}
           >
             <Highlighter className="size-4" />
-          </Button>
-          <Button
+          </PageTooltipButton>
+          <PageTooltipButton
             variant="ghost"
             size="icon-sm"
             className="shrink-0 text-muted-foreground"
-            aria-label={translate(
-              'auto.components.projectPages.comments.wholePageAction',
-              'Comment on page'
-            )}
-            title={translate(
+            label={translate(
               'auto.components.projectPages.comments.wholePageAction',
               'Comment on page'
             )}
             onClick={() => requestWholePageComment(meta.id)}
           >
             <MessageSquarePlus className="size-4" />
-          </Button>
+          </PageTooltipButton>
         </>
       ) : null}
       {meta && scopeKey ? (
         <>
-          <Button
+          <PageTooltipButton
             variant="ghost"
             size="icon-sm"
             className="shrink-0 text-muted-foreground"
-            aria-label={translate('auto.components.projectPages.history', 'Page history')}
-            title={translate('auto.components.projectPages.history', 'Page history')}
+            label={translate('auto.components.projectPages.history', 'Page history')}
             onClick={() => setHistoryOpen(true)}
           >
             <History className="size-4" />
-          </Button>
+          </PageTooltipButton>
           <ProjectPageHistoryDialog
             scopeKey={scopeKey}
             page={meta}

@@ -7,6 +7,7 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { PageCommentThread } from '../../../../shared/project-pages-comment-types'
 import { ProjectPageCommentCard } from './ProjectPageCommentCard'
+import { PageTooltipButton } from './PageTooltipButton'
 import type { PageCommentController } from './use-page-comment-controller'
 
 function SectionLabel({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -91,16 +92,16 @@ export function ProjectPageComments({
         <span className="flex-1 text-[13px] font-medium">
           {translate('auto.components.projectPages.comments.title', 'Comments')}
         </span>
-        <Button
+        <PageTooltipButton
           size="icon-xs"
           variant="ghost"
           className="text-muted-foreground"
-          aria-label={translate('auto.components.projectPages.comments.new', 'Comment')}
-          title={`${translate('auto.components.projectPages.comments.new', 'Comment')} (${controller.shortcutLabel})`}
+          label={translate('auto.components.projectPages.comments.new', 'Comment')}
+          shortcut={controller.shortcutLabel}
           onClick={() => controller.startComment()}
         >
           <MessageSquarePlus className="size-3.5" />
-        </Button>
+        </PageTooltipButton>
         <Button
           size="icon-xs"
           variant="ghost"
