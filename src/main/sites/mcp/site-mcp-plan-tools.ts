@@ -55,7 +55,7 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'annotate_plan',
     description:
-      'Open a markdown plan in Muster for human review and return review_id at once; then poll collect_plan_review in a loop until a decision returns. Use path for a plan that lives in the repo (prefer it over content so the plan survives compaction). Use page when the plan should live in Pages or the user asks for it there: write it with the pages tools in whatever folder fits, then pass its id or path; edits save to the page and notes become comment threads. When a path/content review is also saved to Pages, pages_folder picks the folder (default Plans). Returns page_id when the review is on a page.',
+      'Open a markdown plan in Muster for human review and return review_id at once; then poll collect_plan_review in a loop until a decision returns. Use path for a plan in the repo (prefer it over content; it survives compaction). Use page when the plan should live in Pages or the user asks for it there: write it with the pages tools in any folder, then pass its id or path; notes become comment threads, and edits are already saved to the page (reported as applied, do not re-apply). pages_folder picks the folder when a path/content review is saved to Pages (default Plans). Returns page_id for a page review.',
     inputSchema: objectSchema({
       path: {
         type: 'string',

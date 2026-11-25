@@ -42,7 +42,7 @@ export function formatPlanFeedback(result: PlanAnnotationResult): string {
     lines.push(
       '',
       result.edits.appliedToDisk
-        ? '**Direct edits — already saved to the plan file, do not re-apply:**'
+        ? `**Direct edits — already saved to the ${result.pageId ? 'page' : 'plan file'}, do not re-apply:**`
         : '**Direct edits — apply these:**',
       '```diff',
       result.edits.unifiedDiff.trimEnd(),
