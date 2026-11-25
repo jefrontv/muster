@@ -3,6 +3,7 @@ import { getFileTypeIcon } from '@/lib/file-type-icons'
 import { AgentIcon } from '@/lib/agent-catalog'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
 import { getTabColorStyle } from './tab-colors'
+import { stripLeadingAgentTitleDecoration } from '../../../../shared/agent-title-decoration'
 
 // Why: a terminal tab running an agent leads with the provider glyph so the
 // ghost matches the resting tab; plain terminals keep the generic icon.
@@ -36,7 +37,10 @@ export default function TabDragPreview({ drag }: { drag: TabDragItemData }): Rea
         <span className="grid size-4 shrink-0 place-items-center">
           <LeadingIcon drag={drag} />
         </span>
-        <span className="min-w-0 flex-1 truncate">{drag.label}</span>
+        <span className="min-w-0 flex-1 truncate">
+          {/* Why: matches the resting tab, which drops the agent's own glyph next to the provider icon. */}
+          {drag.agent ? stripLeadingAgentTitleDecoration(drag.label) : drag.label}
+        </span>
       </div>
     </div>
   )
