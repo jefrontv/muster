@@ -35,6 +35,12 @@ describe('buildProjectPagesAgentBrief', () => {
     expect(brief).not.toContain('Old')
   })
 
+  it('says [[links]] resolve without re-saving', () => {
+    const brief = buildProjectPagesAgentBrief({ projectName: 'Acme', pages: [] })
+    expect(brief).toContain('Never re-save a page to fix links')
+    expect(brief).toContain('unresolved_links')
+  })
+
   it('says when there are no pages', () => {
     expect(buildProjectPagesAgentBrief({ projectName: 'Empty', pages: [] })).toContain(
       'no pages yet'

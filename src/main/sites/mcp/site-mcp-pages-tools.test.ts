@@ -83,6 +83,14 @@ describe('pages MCP tools', () => {
     expect(calls).toHaveLength(3)
   })
 
+  it('tells agents [[links]] resolve by themselves', () => {
+    for (const name of ['create_page', 'edit_page', 'read_page']) {
+      expect(findSiteMcpTool(name)!.description).toMatch(/resolve|links once/)
+    }
+    expect(findSiteMcpTool('read_page')!.description).toContain('unresolved_links')
+    expect(findSiteMcpTool('edit_page')!.description).toContain('unresolved_links')
+  })
+
   it('keeps aliased arguments out of the schema required list', () => {
     const schema = (name: string): unknown => findSiteMcpTool(name)!.inputSchema
     expect(schema('grep_pages')).toMatchObject({ required: [] })

@@ -30,7 +30,8 @@ export function buildProjectPagesAgentBrief(input: ProjectPagesBriefInput): stri
   const { lines, omitted } = outline(input.pages)
   const parts = [
     `You are helping with the "${input.projectName}" project's pages in Muster. Pages are markdown notes the team keeps for this project.`,
-    'Use the page tools (list_pages, search_pages, grep_pages, read_page, create_page, edit_page, append_to_page, check_page_items, update_page, move_page, archive_page, restore_page) and pass page ids from the outline below. Find facts with search_pages before reading whole pages; grep_pages finds exact text with line numbers, and read_page from_line/to_line jumps to them. Read one section of a long page. Prefer edit_page, append_to_page or check_page_items over rewriting a whole page. Draw diagrams with create_page (diagram: true), edit_diagram, read_diagram and render_diagram, never raw XML.'
+    'Use the page tools (list_pages, search_pages, grep_pages, read_page, create_page, edit_page, append_to_page, check_page_items, update_page, move_page, archive_page, restore_page) and pass page ids from the outline below. Find facts with search_pages before reading whole pages; grep_pages finds exact text with line numbers, and read_page from_line/to_line jumps to them. Read one section of a long page. Prefer edit_page, append_to_page or check_page_items over rewriting a whole page. Draw diagrams with create_page (diagram: true), edit_diagram, read_diagram and render_diagram, never raw XML.',
+    'A [[Title]] link resolves by itself once that page exists, and the page text keeps [[Title]] on purpose. Never re-save a page to fix links; read_page unresolved_links is the list to trust.'
   ]
   if (input.openPage) {
     parts.push(
