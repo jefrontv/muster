@@ -314,3 +314,8 @@
 .project-page-editor .page-comment-highlight.is-active {
   background: color-mix(in srgb, var(--annotation-highlight) 30%, transparent);
 }
+
+/* Remove / looks-good threads wear the plan review's marks (plan-annotation.css). */
+.project-page-editor [data-comment-thread] {
+  cursor: pointer;
+}

@@ -4,6 +4,7 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { anchorAt, locateAnchor } from '../../../../shared/project-pages-comment-anchor'
+import { planNoteTone } from '../plan-annotation/plan-review-comments'
 import type {
   PageCommentAnchor,
   PageCommentThread
@@ -88,6 +89,14 @@ function locateAll(doc: ProseMirrorNode, threads: PageCommentThread[]): LocatedT
   return located
 }
 
+/** Remove / looks-good threads take the plan review's own marks for those kinds. */
+function highlightClass(thread: PageCommentThread): string {
+  const tone = thread.kind ? planNoteTone(thread.kind) : undefined
+  return tone
+    ? `rich-markdown-annotation-selection rich-markdown-annotation-selection-${tone}`
+    : 'page-comment-highlight'
+}
+
 function build(
   doc: ProseMirrorNode,
   threads: PageCommentThread[],
@@ -100,8 +109,9 @@ function build(
     if (range && thread.status === 'open') {
       decorations.push(
         Decoration.inline(range.from, range.to, {
-          class:
-            thread.id === activeId ? 'page-comment-highlight is-active' : 'page-comment-highlight',
+          class: [highlightClass(thread), thread.id === activeId ? 'is-active' : '']
+            .filter(Boolean)
+            .join(' '),
           'data-comment-thread': thread.id
         })
       )

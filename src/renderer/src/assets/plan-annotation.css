@@ -41,11 +41,13 @@
   overflow-wrap: anywhere;
 }
 
-.plan-review-note-card.is-remove > .orca-diff-comment-card {
+.plan-review-note-card.is-remove > .orca-diff-comment-card,
+.page-comment-card.is-remove {
   border-left: 2px solid var(--annotation-remove);
 }
 
-.plan-review-note-card.is-good > .orca-diff-comment-card {
+.plan-review-note-card.is-good > .orca-diff-comment-card,
+.page-comment-card.is-good {
   border-left: 2px solid var(--annotation-good);
 }
 

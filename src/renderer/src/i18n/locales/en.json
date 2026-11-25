@@ -15279,9 +15279,7 @@
           "submit": "Comment",
           "textChanged": "Text changed",
           "resolved": "Resolved ({{count}})",
-          "wholePageAction": "Comment on page",
-          "kindRemove": "Remove",
-          "kindLooksGood": "Looks good"
+          "wholePageAction": "Comment on page"
         }
       },
       "planAnnotation": {

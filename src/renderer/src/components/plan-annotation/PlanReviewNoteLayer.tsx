@@ -7,7 +7,7 @@ import { getMarkdownReviewCardQuote } from '@/lib/markdown-review-notes'
 import type { RichMarkdownReviewNotePosition } from '../editor/rich-markdown-review-note-layout'
 import { PLAN_NOTE_KIND_LABEL, type PlanReviewComment } from './plan-review-comments'
 
-const KIND_CLASS: Record<PlanReviewComment['planKind'], string> = {
+export const KIND_CLASS: Record<PlanReviewComment['planKind'], string> = {
   comment: '',
   delete: 'is-remove',
   looks_good: 'is-good',

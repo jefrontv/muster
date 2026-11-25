@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { PageCommentThread } from '../../../../shared/project-pages-comment-types'
+import { KIND_CLASS } from '../plan-annotation/PlanReviewNoteLayer'
+import { PLAN_NOTE_KIND_LABEL } from '../plan-annotation/plan-review-comments'
 
 function when(at: number): string {
   return new Date(at).toLocaleString([], {
@@ -96,11 +98,18 @@ export function ProjectPageCommentCard({
     <div
       data-active={active}
       className={cn(
-        'group rounded-xl border border-border bg-card p-3 text-[13px] text-card-foreground transition-colors data-[active=true]:border-ring',
+        'page-comment-card group rounded-xl border border-border bg-card p-3 text-[13px] text-card-foreground transition-colors data-[active=true]:border-ring',
+        // Same kind classes as the plan review's margin cards, so Remove / Looks good read alike.
+        thread.kind && KIND_CLASS[thread.kind],
         resolved && 'opacity-70'
       )}
       onClick={onActivate}
     >
+      {thread.kind ? (
+        <p className="mb-1 text-[11px] font-semibold tracking-[0.05em] text-muted-foreground uppercase">
+          {PLAN_NOTE_KIND_LABEL[thread.kind]}
+        </p>
+      ) : null}
       {thread.anchor ? (
         <p className="mb-2 line-clamp-2 border-l-2 border-annotation-highlight pl-2 text-xs text-muted-foreground">
           {thread.anchor.quote}
@@ -121,12 +130,9 @@ export function ProjectPageCommentCard({
               </span>
               <span className="text-muted-foreground">{when(message.createdAt)}</span>
             </div>
-            <p className="whitespace-pre-wrap break-words">
-              {message.body ||
-                (thread.kind === 'delete'
-                  ? translate('auto.components.projectPages.comments.kindRemove', 'Remove')
-                  : translate('auto.components.projectPages.comments.kindLooksGood', 'Looks good'))}
-            </p>
+            {message.body ? (
+              <p className="whitespace-pre-wrap break-words">{message.body}</p>
+            ) : null}
           </div>
         ))}
       </div>
