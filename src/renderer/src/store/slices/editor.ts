@@ -597,6 +597,13 @@ export type EditorSlice = {
     review: { requestId: string; title: string },
     opts?: { focus?: boolean }
   ) => void
+  /** Opens the worktree's Pages tab on a page under review and marks it; focus only on request. */
+  openProjectPagesReview: (
+    worktreeId: string,
+    scopeKey: string,
+    pageId: string,
+    opts?: { focus?: boolean }
+  ) => void
   /** Records the page the tab is showing and retitles the tab; never steals focus. */
   showProjectPagesTabPage: (fileId: string, pageId: string | null, title: string | null) => void
   patchOpenCheckRunDetails: (
@@ -3564,6 +3571,62 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
     }
     if (tabId) {
       state.setTabLabel?.(tabId, label)
+      state.setTabAttention?.(tabId, 'review')
+    }
+  },
+
+  openProjectPagesReview: (worktreeId, scopeKey, pageId, opts) => {
+    const id = buildProjectPagesTabId(worktreeId)
+    if (opts?.focus) {
+      get().openProjectPagesTab(worktreeId, scopeKey, pageId)
+    } else {
+      set((s) => {
+        const existing = s.openFiles.find((f) => f.id === id)
+        // Never move a Pages tab the person is reading to another page.
+        const inView = s.activeWorktreeId === worktreeId && s.activeFileId === id
+        if (inView && existing?.projectPages?.pageId !== pageId) {
+          return {}
+        }
+        const projectPages: OpenProjectPagesState = {
+          scopeKey,
+          pageId,
+          request:
+            (existing?.projectPages?.request ?? 0) +
+            (existing?.projectPages?.pageId === pageId ? 0 : 1)
+        }
+        const openFiles = existing
+          ? s.openFiles.map((f) => (f.id === id ? { ...f, projectPages } : f))
+          : [
+              ...s.openFiles,
+              {
+                id,
+                filePath: id,
+                relativePath: projectPagesTabLabel(null),
+                worktreeId,
+                language: 'plaintext',
+                isDirty: false,
+                mode: 'project-pages' as const,
+                projectPages
+              }
+            ]
+        return { openFiles }
+      })
+    }
+    const state = get()
+    let tabId = state.unifiedTabsByWorktree[worktreeId]?.find(
+      (tab) => tab.entityId === id && tab.contentType === 'project-pages'
+    )?.id
+    if (!tabId) {
+      const groupId = resolveEditorOpenTargetGroupId(state, worktreeId)
+      tabId = state.createUnifiedTab?.(worktreeId, 'project-pages', {
+        entityId: id,
+        label: projectPagesTabLabel(null),
+        activate: false,
+        recordInteraction: false,
+        ...(groupId ? { targetGroupId: groupId } : {})
+      })?.id
+    }
+    if (tabId) {
       state.setTabAttention?.(tabId, 'review')
     }
   },

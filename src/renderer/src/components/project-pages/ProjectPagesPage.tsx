@@ -18,6 +18,7 @@ import { ProjectPageEditor } from './ProjectPageEditor'
 import { ProjectPageRowProperties } from './ProjectPageRowProperties'
 import { ProjectPagesAgentPanel } from './ProjectPagesAgentPanel'
 import { ProjectPagesHeaderActions } from './ProjectPagesHeaderActions'
+import { ProjectPageReviewFrame } from '../plan-annotation/ProjectPageReviewFrame'
 import { ProjectPagesMap } from './ProjectPagesMap'
 import { ProjectPagesFolderView } from './ProjectPagesFolderView'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
@@ -253,95 +254,99 @@ export default function ProjectPagesPage({
             />
           </PagesPanelSlot>
           <section className="flex min-w-0 flex-1 flex-col">
-            {mapOpen ? (
-              <ProjectPagesMap
-                scopeKey={scopeKey}
-                version={spaceVersion}
-                currentPageId={pageId}
-                focus={mapFocus}
-                onFocusChange={setMapFocus}
-                onOpenPage={(id) => {
-                  setSelectedId(id)
-                  setMapOpen(false)
-                }}
-                onClose={() => setMapOpen(false)}
-              />
-            ) : meta?.diagram ? (
-              <ProjectPageDiagramViewLazy
-                key={`${scopeKey}/${meta.id}`}
-                scopeKey={scopeKey}
-                meta={meta}
-                autoFocusTitle={fresh === meta.id}
-                pages={pages}
-                onOpenPage={setSelectedId}
-                onSaveState={setSaveState}
-              />
-            ) : doc && meta && doc.meta.id === meta.id ? (
-              <ProjectPageEditor
-                key={`${scopeKey}/${doc.meta.id}`}
-                scopeKey={scopeKey}
-                doc={doc}
-                latestRevision={meta.revision}
-                latestAuthor={meta.editedBy}
-                autoFocusTitle={fresh === doc.meta.id}
-                pages={pages}
-                onOpenPage={setSelectedId}
-                onOpenTag={(tag) => {
-                  setMapFocus(tagNodeId(tag.toLowerCase()))
-                  setMapOpen(true)
-                }}
-                onSaveState={setSaveState}
-                onMakeDatabase={
-                  meta.database
-                    ? undefined
-                    : () =>
-                        void window.api.projectPages.enableDatabase(scopeKey, meta.id).then(report)
-                }
-                afterTitle={
-                  parentDatabaseId ? (
-                    <ProjectPageRowProperties
-                      scopeKey={scopeKey}
-                      row={meta}
-                      databaseId={parentDatabaseId}
-                      pages={pages}
-                    />
-                  ) : meta.folder ? (
-                    <ProjectPagesFolderView
-                      folderId={meta.id}
-                      pages={pages}
-                      onOpenPage={setSelectedId}
-                      onCreate={(kind) =>
-                        void create(meta.id, kind === 'folder', kind === 'diagram')
-                      }
-                    />
-                  ) : null
-                }
-                footer={
-                  <>
-                    {meta.database ? (
-                      <ProjectPageDatabaseView
+            <ProjectPageReviewFrame scopeKey={scopeKey} pageId={pageId}>
+              {mapOpen ? (
+                <ProjectPagesMap
+                  scopeKey={scopeKey}
+                  version={spaceVersion}
+                  currentPageId={pageId}
+                  focus={mapFocus}
+                  onFocusChange={setMapFocus}
+                  onOpenPage={(id) => {
+                    setSelectedId(id)
+                    setMapOpen(false)
+                  }}
+                  onClose={() => setMapOpen(false)}
+                />
+              ) : meta?.diagram ? (
+                <ProjectPageDiagramViewLazy
+                  key={`${scopeKey}/${meta.id}`}
+                  scopeKey={scopeKey}
+                  meta={meta}
+                  autoFocusTitle={fresh === meta.id}
+                  pages={pages}
+                  onOpenPage={setSelectedId}
+                  onSaveState={setSaveState}
+                />
+              ) : doc && meta && doc.meta.id === meta.id ? (
+                <ProjectPageEditor
+                  key={`${scopeKey}/${doc.meta.id}`}
+                  scopeKey={scopeKey}
+                  doc={doc}
+                  latestRevision={meta.revision}
+                  latestAuthor={meta.editedBy}
+                  autoFocusTitle={fresh === doc.meta.id}
+                  pages={pages}
+                  onOpenPage={setSelectedId}
+                  onOpenTag={(tag) => {
+                    setMapFocus(tagNodeId(tag.toLowerCase()))
+                    setMapOpen(true)
+                  }}
+                  onSaveState={setSaveState}
+                  onMakeDatabase={
+                    meta.database
+                      ? undefined
+                      : () =>
+                          void window.api.projectPages
+                            .enableDatabase(scopeKey, meta.id)
+                            .then(report)
+                  }
+                  afterTitle={
+                    parentDatabaseId ? (
+                      <ProjectPageRowProperties
                         scopeKey={scopeKey}
-                        pageId={meta.id}
+                        row={meta}
+                        databaseId={parentDatabaseId}
+                        pages={pages}
+                      />
+                    ) : meta.folder ? (
+                      <ProjectPagesFolderView
+                        folderId={meta.id}
                         pages={pages}
                         onOpenPage={setSelectedId}
+                        onCreate={(kind) =>
+                          void create(meta.id, kind === 'folder', kind === 'diagram')
+                        }
                       />
-                    ) : null}
-                    <ProjectPageBacklinks
-                      scopeKey={scopeKey}
-                      pageId={doc.meta.id}
-                      spaceVersion={spaceVersion}
-                      onOpenPage={setSelectedId}
-                    />
-                  </>
-                }
-              />
-            ) : loaded && live.length === 0 ? (
-              <div className="grid flex-1 place-items-center">
-                <Button variant="outline" onClick={() => void create(null)}>
-                  {translate('auto.components.projectPages.firstPage', 'Create the first page')}
-                </Button>
-              </div>
-            ) : null}
+                    ) : null
+                  }
+                  footer={
+                    <>
+                      {meta.database ? (
+                        <ProjectPageDatabaseView
+                          scopeKey={scopeKey}
+                          pageId={meta.id}
+                          pages={pages}
+                          onOpenPage={setSelectedId}
+                        />
+                      ) : null}
+                      <ProjectPageBacklinks
+                        scopeKey={scopeKey}
+                        pageId={doc.meta.id}
+                        spaceVersion={spaceVersion}
+                        onOpenPage={setSelectedId}
+                      />
+                    </>
+                  }
+                />
+              ) : loaded && live.length === 0 ? (
+                <div className="grid flex-1 place-items-center">
+                  <Button variant="outline" onClick={() => void create(null)}>
+                    {translate('auto.components.projectPages.firstPage', 'Create the first page')}
+                  </Button>
+                </div>
+              ) : null}
+            </ProjectPageReviewFrame>
           </section>
           {agentOpen ? (
             <ProjectPagesAgentPanel

@@ -32,6 +32,7 @@ import { ProjectPageOutline } from './ProjectPageOutline'
 import { ProjectPageComments, ProjectPageCommentsToggle } from './ProjectPageComments'
 import { ProjectPageCommentBubble } from './ProjectPageCommentBubble'
 import { usePageCommentController } from './use-page-comment-controller'
+import { registerPageEditor } from './page-editor-registry'
 
 type Props = {
   scopeKey: string
@@ -309,6 +310,22 @@ export function ProjectPageEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestRevision])
 
+  useEffect(
+    () =>
+      registerPageEditor(scopeKey, pageId, {
+        markdown: () => liveEditor()?.getMarkdown() ?? null,
+        flush: () => {
+          const live = liveEditor()
+          if (autosave.isDirty() && live) {
+            const markdown = live.getMarkdown()
+            autosave.queue({ markdown: () => markdown })
+          }
+          return autosave.flush()
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- liveEditor reads a ref
+    [scopeKey, pageId, autosave]
+  )
   const commentsRootRef = useRef<HTMLDivElement | null>(null)
   const comments = usePageCommentController({ scopeKey, pageId, editor, rootRef: commentsRootRef })
 
