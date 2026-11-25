@@ -53,7 +53,9 @@ export function projectPagesComments(): ProjectPagesComments {
 }
 
 export function projectPagesSearch(): ProjectPagesSearchIndex {
-  searchIndex ??= createProjectPagesSearchIndex(projectPages())
+  searchIndex ??= createProjectPagesSearchIndex(projectPages(), {
+    diagramXml: (scopeKey, pageId) => projectPagesDiagrams().readDiagram(scopeKey, pageId).xml
+  })
   return searchIndex
 }
 

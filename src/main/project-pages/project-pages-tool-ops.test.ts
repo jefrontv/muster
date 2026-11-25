@@ -145,11 +145,27 @@ describe('project pages tool ops', () => {
     await expect(run('restore', { page: 'Folder' })).rejects.toMatchObject({ code: 'not_found' })
   })
 
+  it('reads a line range and refuses one beside a section', async () => {
+    await run('create', { title: 'Notes', markdown: '# A\n\none\ntwo\n' })
+    const read = (await run('read', { page: 'Notes', from_line: 3 })) as Result & {
+      lines: unknown
+    }
+    expect(read.markdown).toBe('one\ntwo')
+    expect(read.lines).toEqual({ from: 3, to: 4, total: 4 })
+    await expect(run('read', { page: 'Notes', from_line: 9 })).rejects.toMatchObject({
+      code: 'invalid'
+    })
+    await expect(run('read', { page: 'Notes', section: 'A', from_line: 1 })).rejects.toMatchObject({
+      code: 'invalid'
+    })
+  })
+
   it('honours the read-only and off capability levels', async () => {
     settings.agentCapabilityProjectPages = 'read'
     await expect(run('list')).resolves.toMatchObject({ count: 0 })
     await expect(run('create', { title: 'x' })).rejects.toMatchObject({ code: 'forbidden' })
     await expect(run('restore', { page: 'x' })).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(run('grep', { query: 'x' })).resolves.toMatchObject({ count: 0 })
     settings.experimentalProjectPages = false
     await expect(run('list')).rejects.toMatchObject({ code: 'forbidden' })
   })

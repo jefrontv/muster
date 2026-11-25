@@ -9,15 +9,20 @@ import {
   activeCollabTaskLinks,
   type ActiveCollabTaskLink
 } from '../../shared/project-pages-activecollab-links'
+import { scanDiagramText, type DiagramTextRow } from '../../shared/project-pages-diagram-text'
 import { extractTags, type PageTag } from '../../shared/project-pages-tags'
 import type { ProjectPageMeta } from '../../shared/project-pages-types'
-import { matchSnippet } from './project-pages-markdown-ops'
+import { bodyLines, matchSnippet } from './project-pages-markdown-ops'
 import type { ProjectPagesStore } from './project-pages-store'
 
 export type ProjectPageIndexEntry = {
   revision: number
   headings: string[]
   text: string
+  /** Raw body lines, numbered like read_page; grep_pages matches these. */
+  lines: string[]
+  /** Diagram pages: label and tooltip text by cell id. */
+  shapes?: DiagramTextRow[]
   links: string[]
   tags: PageTag[]
   /** ActiveCollab task links, for related pages and the map. */
@@ -29,7 +34,10 @@ export type ProjectPagesSnapshot = { pages: ProjectPageMeta[]; entries: Map<stri
 
 export type ProjectPageSearchHit = { page: ProjectPageMeta; snippet: string; score: number }
 
-export function createProjectPagesSearchIndex(store: ProjectPagesStore) {
+export function createProjectPagesSearchIndex(
+  store: ProjectPagesStore,
+  options: { diagramXml?: (scopeKey: string, pageId: string) => string } = {}
+) {
   const spaces = new Map<string, Map<string, Entry>>()
 
   function refresh(scopeKey: string): ProjectPagesSnapshot {
@@ -49,6 +57,8 @@ export function createProjectPagesSearchIndex(store: ProjectPagesStore) {
           revision: page.revision,
           headings: extractHeadings(markdown),
           text: markdownToPlainText(markdown),
+          lines: bodyLines(markdown),
+          shapes: page.diagram ? diagramShapes(scopeKey, page.id) : undefined,
           links: extractPageLinks(markdown),
           tags: extractTags(markdown),
           tasks: activeCollabTaskLinks(markdown)
@@ -56,6 +66,14 @@ export function createProjectPagesSearchIndex(store: ProjectPagesStore) {
       }
     }
     return { pages, entries }
+  }
+
+  function diagramShapes(scopeKey: string, pageId: string): DiagramTextRow[] {
+    try {
+      return options.diagramXml ? scanDiagramText(options.diagramXml(scopeKey, pageId)) : []
+    } catch {
+      return []
+    }
   }
 
   function search(scopeKey: string, query: string, limit = 20): ProjectPageSearchHit[] {

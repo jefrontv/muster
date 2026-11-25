@@ -4,6 +4,7 @@ import type { ProjectPagesToolOp } from '../../project-pages/project-pages-tool-
 import { SiteMcpToolError } from './site-mcp-arguments'
 import type { SiteMcpTool } from './site-mcp-context'
 import { PROJECT_PROPERTY } from './site-mcp-project-resolve'
+import { sitePagesDiagramTools } from './site-mcp-pages-diagram-tools'
 import { objectSchema } from './site-mcp-schemas'
 
 const PAGE = { type: 'string', description: 'Page id or title path, e.g. Launch/Checklist.' }
@@ -13,21 +14,12 @@ const MARKDOWN = {
   description: 'Markdown; [[Title]] links a page, #tag tags it. page_blocks lists all blocks.'
 }
 const STRINGS = { type: 'array', items: { type: 'string' } }
-const ROWS = (description: string) => ({ type: 'array', items: { type: 'object' }, description })
-const DIAGRAM_EDIT = {
-  add: ROWS('[{label, shape?, id?, in?, x?, y?, color?, link?}]; no x/y: placed by its links.'),
-  connect: ROWS('[{from, to, label?, dashed?, arrow?: end|both|none}]'),
-  update: ROWS('[{target, label?, shape?, color?, link?, dashed?, arrow?}]'),
-  move: ROWS('[{target, x?, y?, dx?, dy?, width?, height?, in?}]'),
-  remove: STRINGS,
-  layout: { type: 'string', description: 'down|right|tree|organic|circle' },
-  mermaid: { type: 'string', description: 'Mermaid flowchart to add.' }
-}
 const ANY_ROWS = { type: 'array', items: { type: 'object' } }
 const OPS_BY_TOOL = new Map<string, ProjectPagesToolOp>()
 const READ_TOOL_OPS = new Set<ProjectPagesToolOp>([
   'list',
   'search',
+  'grep',
   'read',
   'query_database',
   'related',
@@ -80,9 +72,25 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
   pagesTool(
     'search_pages',
     'search',
-    'Search page titles and text. The snippets often answer a question without read_page.',
+    'Ranked search of page titles and text, with snippets. For exact lines use grep_pages.',
     {
       query: { type: 'string' }
+    },
+    ['query']
+  ),
+  pagesTool(
+    'grep_pages',
+    'grep',
+    'Exact text hits: body lines (as read_page from_line counts), diagram shapes, database cells.',
+    {
+      query: { type: 'string' },
+      regex: { type: 'boolean' },
+      case_sensitive: { type: 'boolean' },
+      folder: { type: 'string', description: 'Page id or path to search under.' },
+      tag: { type: 'string' },
+      limit: { type: 'number', description: 'Max 200.' },
+      context: { type: 'number', description: 'Lines around hits, 0-3.' },
+      comments: { type: 'boolean' }
     },
     ['query']
   ),
@@ -94,7 +102,9 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
       page: PAGE,
       section: { type: 'string', description: 'Heading text; returns only that section.' },
       max_chars: { type: 'number' },
-      offset: { type: 'number', description: 'Character to start from when truncated.' }
+      offset: { type: 'number', description: 'Character to start from when truncated.' },
+      from_line: { type: 'number' },
+      to_line: { type: 'number' }
     },
     ['page']
   ),
@@ -248,33 +258,7 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     'Markdown for every page block: callouts, toggles, tables, math, checklists, images, links.',
     {}
   ),
-  pagesTool(
-    'diagram_shapes',
-    'diagram_shapes',
-    'Shape names, colours and layouts for diagrams.',
-    {}
-  ),
-  pagesTool(
-    'read_diagram',
-    'read_diagram',
-    'A diagram as shape rows and connector rows.',
-    { page: PAGE, detail: { type: 'boolean', description: 'Add geometry.' } },
-    ['page']
-  ),
-  pagesTool(
-    'edit_diagram',
-    'edit_diagram',
-    'Edit a diagram in one call: remove, add, connect, update, move, layout. Shapes go by id or label, even ones added in the same call.',
-    { page: PAGE, ...DIAGRAM_EDIT },
-    ['page']
-  ),
-  pagesTool(
-    'render_diagram',
-    'render_diagram',
-    'PNG of a diagram, to check for overlaps before finishing.',
-    { page: PAGE, scale: { type: 'number', description: '1 or 2' } },
-    ['page']
-  ),
+  ...sitePagesDiagramTools(pagesTool, PAGE),
   pagesTool(
     'attach_page_file',
     'attach',

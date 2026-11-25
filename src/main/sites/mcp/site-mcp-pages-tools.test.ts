@@ -19,6 +19,7 @@ describe('pages MCP tools', () => {
     expect(listed({ ...context, projectPagesAccess: () => 'read' })).toEqual([
       'list_pages',
       'search_pages',
+      'grep_pages',
       'read_page',
       'list_page_comments',
       'query_database',

@@ -9,11 +9,13 @@ import {
   PROJECT_PAGES_DIAGRAM_OPS,
   PROJECT_PAGES_DIAGRAM_READ_OPS
 } from './project-pages-diagram-tool-ops'
+import { PROJECT_PAGES_GREP_OPS } from './project-pages-grep-tool-ops'
 import { PROJECT_PAGES_LINK_OPS } from './project-pages-link-tool-ops'
 
 export const PROJECT_PAGES_TOOL_OPS = [
   'list',
   'search',
+  ...PROJECT_PAGES_GREP_OPS,
   'read',
   'create',
   'update',
@@ -33,6 +35,7 @@ export type ProjectPagesToolOp = (typeof PROJECT_PAGES_TOOL_OPS)[number]
 export const PROJECT_PAGES_READ_OPS: ReadonlySet<ProjectPagesToolOp> = new Set([
   'list',
   'search',
+  ...PROJECT_PAGES_GREP_OPS,
   'read',
   'query_database',
   'related',

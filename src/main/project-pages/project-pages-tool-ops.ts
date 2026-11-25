@@ -32,7 +32,8 @@ import {
 import { tickChecklist } from './project-pages-checklist-ops'
 import type { ProjectPagesComments } from './project-pages-comments'
 import { isProjectPagesCommentOp, runProjectPagesCommentOp } from './project-pages-comment-tool-ops'
-import { appendMarkdown, readSection, replaceAnchor } from './project-pages-markdown-ops'
+import { appendMarkdown, pageBodyForRead, replaceAnchor } from './project-pages-markdown-ops'
+import { isProjectPagesGrepOp, runProjectPagesGrepOp } from './project-pages-grep-tool-ops'
 import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
 import { toolCount, toolText, type ToolArgs } from './project-pages-tool-args'
@@ -133,6 +134,9 @@ export async function runProjectPagesToolOp(
       pagePath: pagePathOf
     })
   }
+  if (isProjectPagesGrepOp(op)) {
+    return runProjectPagesGrepOp({ ...deps, scopeKey, project, args, pages })
+  }
   if (isProjectPagesLinkOp(op)) {
     return runProjectPagesLinkOp(op, {
       snapshot: deps.search.snapshot(scopeKey),
@@ -183,8 +187,7 @@ export async function runProjectPagesToolOp(
     }
     case 'read': {
       const doc = store.readPage(scopeKey, page().id)
-      const section = toolText(args, 'section')
-      const body = section ? readSection(doc.markdown, section) : doc.markdown
+      const { body, lines } = pageBodyForRead(doc.markdown, args)
       const max = toolCount(args, 'max_chars') ?? 50_000
       const offset = toolCount(args, 'offset') ?? 0
       const activecollab = await deps.activeCollab?.describe(doc.markdown)
@@ -194,6 +197,7 @@ export async function runProjectPagesToolOp(
         title: doc.meta.title,
         markdown: body.slice(offset, offset + max),
         truncated: body.length > offset + max,
+        ...(lines ? { lines } : {}),
         linked_from: deps.search
           .backlinks(scopeKey, doc.meta.id)
           .map((p) => ({ id: p.id, path: pagePath(pages(), p.id) })),

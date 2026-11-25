@@ -1,5 +1,6 @@
 // Text operations agents run on a page body: anchored replace, append under a heading, sections.
 import { ProjectPagesError } from './project-pages-store'
+import { toolCount, toolText, type ToolArgs } from './project-pages-tool-args'
 
 type Heading = { line: number; level: number; text: string }
 
@@ -101,4 +102,41 @@ export function matchSnippet(text: string, query: string, radius = 60): string |
   const end = Math.min(text.length, index + query.length + radius)
   const excerpt = text.slice(start, end).replace(/\s+/g, ' ').trim()
   return `${start > 0 ? '…' : ''}${excerpt}${end < text.length ? '…' : ''}`
+}
+/** Body lines as read_page, grep_pages and review notes number them (1-based, title excluded). */
+export function bodyLines(markdown: string): string[] {
+  const lines = markdown.split('\n')
+  if (lines.length > 1 && lines.at(-1) === '') {
+    lines.pop()
+  }
+  return lines
+}
+
+/** What read_page returns as markdown: the body, one section, or a from_line/to_line slice. */
+export function pageBodyForRead(
+  markdown: string,
+  args: ToolArgs
+): { body: string; lines?: { from: number; to: number; total: number } } {
+  const section = toolText(args, 'section')
+  const from = toolCount(args, 'from_line')
+  const to = toolCount(args, 'to_line')
+  if (from === undefined && to === undefined) {
+    return { body: section ? readSection(markdown, section) : markdown }
+  }
+  if (section) {
+    throw new ProjectPagesError('invalid', 'Pass section or from_line/to_line, not both.')
+  }
+  const all = bodyLines(markdown)
+  const start = from ?? 1
+  const end = Math.min(to ?? all.length, all.length)
+  if (start < 1 || start > all.length || end < start) {
+    throw new ProjectPagesError(
+      'invalid',
+      `Lines run from 1 to ${all.length}; from_line must start there and to_line must not be before it.`
+    )
+  }
+  return {
+    body: all.slice(start - 1, end).join('\n'),
+    lines: { from: start, to: end, total: all.length }
+  }
 }

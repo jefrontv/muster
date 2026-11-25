@@ -123,6 +123,7 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   amend_comment_draft: { draft: '1', body_html: '<p>Shorter.</p>' },
   list_pages: {},
   search_pages: { query: 'launch' },
+  grep_pages: { query: 'launch' },
   read_page: { page: 'Launch' },
   create_page: { title: 'Launch' },
   update_page: { page: 'Launch', base_revision: 1, markdown: 'x' },
@@ -199,8 +200,8 @@ describe('site MCP tool table', () => {
     const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
     // Pages tools only appear once the user turns Pages on, so they get their own budget.
     expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
-    // Twenty-five pages tools (four for diagrams, three for comments, one for the Trash), each with the project selector.
-    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(14_300)
+    // Twenty-six pages tools (four for diagrams, three for comments, one each for Trash and grep), each with the project selector.
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(15_000)
   })
 })
 
