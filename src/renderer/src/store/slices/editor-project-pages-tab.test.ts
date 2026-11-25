@@ -83,3 +83,47 @@ describe('project pages tab', () => {
     expect(store.getState().activeFileId).not.toBe(TAB_ID)
   })
 })
+
+describe('project pages review', () => {
+  function openOther(store: StoreApi<AppState>): void {
+    store.getState().openFile({
+      filePath: '/repo/other.ts',
+      relativePath: 'other.ts',
+      worktreeId: 'wt-1',
+      language: 'typescript',
+      mode: 'edit'
+    })
+  }
+
+  it('opens the page in a background Pages tab with a review dot', () => {
+    const store = createStoreWithTabs()
+    openOther(store)
+    store.getState().openProjectPagesReview('wt-1', 'repo:repo-1', 'page-r')
+
+    const file = store.getState().openFiles.find((f) => f.id === TAB_ID)
+    expect(file?.projectPages).toMatchObject({ pageId: 'page-r' })
+    expect(store.getState().activeFileId).not.toBe(TAB_ID)
+    expect(pagesTabs(store)[0]?.attention).toBe('review')
+  })
+
+  it('leaves a Pages tab the person is reading on its page', () => {
+    const store = createStoreWithTabs()
+    store.getState().openProjectPagesTab('wt-1', 'repo:repo-1', 'page-a')
+    store.getState().openProjectPagesReview('wt-1', 'repo:repo-1', 'page-r')
+
+    const file = store.getState().openFiles.find((f) => f.id === TAB_ID)
+    expect(file?.projectPages).toMatchObject({ pageId: 'page-a' })
+    expect(pagesTabs(store)[0]?.attention).toBe('review')
+  })
+
+  it('moves a Pages tab in the background to the review page', () => {
+    const store = createStoreWithTabs()
+    store.getState().openProjectPagesTab('wt-1', 'repo:repo-1', 'page-a')
+    openOther(store)
+    store.getState().openProjectPagesReview('wt-1', 'repo:repo-1', 'page-r')
+
+    const file = store.getState().openFiles.find((f) => f.id === TAB_ID)
+    expect(file?.projectPages).toMatchObject({ pageId: 'page-r', request: 2 })
+    expect(store.getState().activeFileId).not.toBe(TAB_ID)
+  })
+})

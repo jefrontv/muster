@@ -3582,8 +3582,15 @@ export const createEditorSlice: StateCreator<AppState, [], [], EditorSlice> = (s
     } else {
       set((s) => {
         const existing = s.openFiles.find((f) => f.id === id)
-        // Never move a Pages tab the person is reading to another page.
-        const inView = s.activeWorktreeId === worktreeId && s.activeFileId === id
+        const pagesTabId = s.unifiedTabsByWorktree[worktreeId]?.find(
+          (tab) => tab.entityId === id && tab.contentType === 'project-pages'
+        )?.id
+        // Never move a Pages tab the person is reading to another page; split groups count too.
+        const inView =
+          s.activeWorktreeId === worktreeId &&
+          (s.activeFileId === id ||
+            (pagesTabId !== undefined &&
+              (s.groupsByWorktree[worktreeId] ?? []).some((g) => g.activeTabId === pagesTabId)))
         if (inView && existing?.projectPages?.pageId !== pageId) {
           return {}
         }
