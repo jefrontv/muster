@@ -13,7 +13,7 @@ import { BotsFailedActions } from './BotsFailedActions'
 import { BotsIntroDialog } from './BotsIntroDialog'
 import { connectBotsDictation } from './bots-dictation-bridge'
 import { botsDictationHost } from './bots-dictation-host'
-import { BOTS_TOGGLE_CHROME_TOP, watchBotsSidebarRoom } from './bots-guest-layout'
+import { createBotsGuestLayout, watchBotsSidebarRoom } from './bots-guest-layout'
 import { syncBotsHostTheme } from './bots-host-theme'
 import { connectBotsNotifications } from './bots-notification-bridge'
 import { syncBotsWebviewZoom } from './bots-webview-zoom'
@@ -48,19 +48,20 @@ function useBotsWebview(
     webviewRef.current = webview
     stopThemeSyncRef.current?.()
     setSidebarRoom(false)
-    const stopTheme = syncBotsHostTheme(webview, {
-      get: () => ({
-        sidebarWidth: useAppStore.getState().sidebarWidth,
-        chromeTop: BOTS_TOGGLE_CHROME_TOP
-      }),
-      subscribe: (onChange) =>
+    const layout = createBotsGuestLayout({
+      getWidth: () => useAppStore.getState().sidebarWidth,
+      subscribeWidth: (onChange) =>
         useAppStore.subscribe((state, prev) => {
           if (state.sidebarWidth !== prev.sidebarWidth) {
             onChange()
           }
         })
     })
-    const stopRoom = watchBotsSidebarRoom(webview, setSidebarRoom)
+    const stopTheme = syncBotsHostTheme(webview, layout)
+    const stopRoom = watchBotsSidebarRoom(webview, (room) => {
+      layout.setRoom(room)
+      setSidebarRoom(room)
+    })
     const stopDictation = connectBotsDictation(webview, botsDictationHost)
     const stopZoom = syncBotsWebviewZoom(webview)
     const stopNotifications = connectBotsNotifications(webview, () => {
