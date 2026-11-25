@@ -186,6 +186,27 @@ export const getAgentCapabilitiesPaneSearchEntries = createLocalizedCatalog(
           'annotate'
         )
       ]
+    },
+    {
+      title: translate(
+        'auto.components.settings.agentCapabilities.search.planReviewPagesTitle',
+        'Save plan reviews to Pages'
+      ),
+      description: translate(
+        'auto.components.settings.agentCapabilities.search.planReviewPagesDescription',
+        "A plan review is saved as a page in the project's Plans folder and reviewed there. Off uses the plan review tab."
+      ),
+      keywords: [
+        ...sharedKeywords(),
+        ...translateSearchKeyword(
+          'auto.components.settings.agentCapabilities.search.planReview',
+          'plan review'
+        ),
+        ...translateSearchKeyword(
+          'auto.components.settings.agentCapabilities.search.pages',
+          'pages'
+        )
+      ]
     }
     // Bundled-skills entry removed with its Settings section: a search hit that navigates to a
     // section that no longer renders is worse than no hit.

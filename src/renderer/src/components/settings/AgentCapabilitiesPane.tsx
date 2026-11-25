@@ -35,9 +35,12 @@ export function AgentCapabilitiesPane({
     siteSetupEntry,
     sitesMcpInstallEntry,
     alwaysAllowEntry,
-    planReviewTabEntry
+    planReviewTabEntry,
+    planReviewPagesEntry
   ] = entries
   const planReviewInTab = settings.planReviewInProjectTab !== false
+  const planReviewsToPages = settings.planReviewsToPages !== false
+  const pagesOn = settings.experimentalProjectPages === true
 
   const sitesMcpEnabled = isSitesMcpExposedToAgents(settings)
   const siteSetupEnabled = isSiteSetupExposedToAgents(settings)
@@ -112,6 +115,17 @@ export function AgentCapabilitiesPane({
             onChange={() => updateSettings({ planReviewInProjectTab: !planReviewInTab })}
           />
         </SearchableSetting>
+        {/* Pages-backed reviews need Pages and a routed review, so the switch hides otherwise. */}
+        {pagesOn && planReviewInTab ? (
+          <SearchableSetting {...planReviewPagesEntry}>
+            <SettingsSwitchRow
+              label={planReviewPagesEntry.title}
+              description={planReviewPagesEntry.description}
+              checked={planReviewsToPages}
+              onChange={() => updateSettings({ planReviewsToPages: !planReviewsToPages })}
+            />
+          </SearchableSetting>
+        ) : null}
       </section>
 
       {/* Bundled agent skills section removed from Settings on request: installs still run at
