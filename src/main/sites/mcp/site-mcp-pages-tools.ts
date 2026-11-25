@@ -74,10 +74,11 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
   pagesTool(
     'list_pages',
     'list',
-    "List the project's Muster pages (shared notes) as id and path rows.",
+    "List the project's Muster pages (shared notes) as id and path rows. For a large project pass parent and depth, or compact.",
     {
       parent: PARENT,
       depth: { type: 'number', description: 'Levels below parent. Omit for all.' },
+      compact: { type: 'boolean', description: 'One "<id> <path>" string per page.' },
       archived: { type: 'boolean', description: 'List the Trash instead.' }
     }
   ),

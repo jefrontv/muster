@@ -176,6 +176,10 @@ export async function runProjectPagesToolOp(
       const parentRef = toolText(args, 'parent')
       const parentId = parentRef ? resolvePageRef(all, parentRef).id : null
       const listed = pagesBelow(all, parentId, toolCount(args, 'depth') ?? Number.POSITIVE_INFINITY)
+      if (args.compact === true) {
+        const lines = listed.map((p) => `${p.id} ${pagePath(all, p.id)}`)
+        return { project, count: listed.length, pages: lines }
+      }
       return { project, count: listed.length, pages: listed.map((p) => row(all, p)) }
     }
     case 'search': {

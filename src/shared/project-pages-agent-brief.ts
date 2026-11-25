@@ -43,7 +43,9 @@ export function buildProjectPagesAgentBrief(input: ProjectPagesBriefInput): stri
       ? [
           'Page outline:',
           ...lines,
-          ...(omitted > 0 ? [`(${omitted} more pages; use list_pages)`] : [])
+          ...(omitted > 0
+            ? [`(${omitted} more pages; list_pages with parent and depth, or compact: true)`]
+            : [])
         ].join('\n')
       : 'This project has no pages yet.'
   )

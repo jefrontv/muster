@@ -91,6 +91,12 @@ describe('pages MCP tools', () => {
     expect(findSiteMcpTool('edit_page')!.description).toContain('unresolved_links')
   })
 
+  it('offers compact listing for large projects', () => {
+    const list = findSiteMcpTool('list_pages')!
+    expect(list.description).toMatch(/parent and depth, or compact/)
+    expect(list.inputSchema).toMatchObject({ properties: { compact: { type: 'boolean' } } })
+  })
+
   it('keeps aliased arguments out of the schema required list', () => {
     const schema = (name: string): unknown => findSiteMcpTool(name)!.inputSchema
     expect(schema('grep_pages')).toMatchObject({ required: [] })

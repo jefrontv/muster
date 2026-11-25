@@ -41,6 +41,12 @@ describe('buildProjectPagesAgentBrief', () => {
     expect(brief).toContain('unresolved_links')
   })
 
+  it('points at list_pages parent, depth and compact when the outline is cut', () => {
+    const many = Array.from({ length: 85 }, (_, i) => page(`p_${i}`, `Page ${i}`, null, i))
+    const brief = buildProjectPagesAgentBrief({ projectName: 'Big', pages: many })
+    expect(brief).toContain('(5 more pages; list_pages with parent and depth, or compact: true)')
+  })
+
   it('says when there are no pages', () => {
     expect(buildProjectPagesAgentBrief({ projectName: 'Empty', pages: [] })).toContain(
       'no pages yet'

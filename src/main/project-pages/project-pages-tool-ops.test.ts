@@ -68,6 +68,9 @@ describe('project pages tool ops', () => {
     expect(read.page.edited_by).toBe('claude')
     const list = await run('list', { depth: 1 })
     expect(list.pages.map((p) => p.path)).toEqual(['Launch'])
+    const compact = await run('list', { compact: true })
+    expect(compact.count).toBe(2)
+    expect(compact.pages).toEqual([`${again.page.id} Launch`, `${child.page.id} Launch/Checklist`])
   })
 
   it('edits, appends and refuses a stale update with the current revision', async () => {
