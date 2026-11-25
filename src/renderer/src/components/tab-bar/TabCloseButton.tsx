@@ -30,7 +30,7 @@ export function TabCloseButton({
         <button
           type="button"
           className={cn(
-            'hit-area z-10 size-4 shrink-0 place-items-center rounded-full hover:!bg-muted hover:!text-foreground focus-visible:!bg-muted focus-visible:!text-foreground',
+            'hit-area z-10 size-4 shrink-0 place-items-center rounded-full hover:bg-foreground/[0.07] hover:!text-foreground focus-visible:bg-foreground/[0.07] focus-visible:!text-foreground',
             MODE_CLASSES[mode]
           )}
           // Why: E2E drives the real close path through this attribute, not the tab chrome.

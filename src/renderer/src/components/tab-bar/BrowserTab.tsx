@@ -15,13 +15,8 @@ import type { BrowserTab as BrowserTabState } from '../../../../shared/types'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from './SortableTab'
 import { getLiveBrowserUrl } from '../browser-pane/browser-runtime'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
-import {
-  ACTIVE_TAB_INDICATOR_CLASSES,
-  getDropIndicatorClasses,
-  getTabRootStateClasses,
-  getTabStripBorderClasses,
-  type DropIndicator
-} from './drop-indicator'
+import { getDropIndicatorClasses, type DropIndicator } from './drop-indicator'
+import { TAB_PILL_CLASSES, getTabStateClasses } from './tab-state-classes'
 import { preventMiddleButtonDefault } from './middle-button-default-guard'
 import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
@@ -114,8 +109,7 @@ export default function BrowserTab({
   onDuplicate,
   onTogglePin,
   dragData,
-  dropIndicator,
-  includeTopTabBorder = true
+  dropIndicator
 }: {
   tab: BrowserTabState
   isActive: boolean
@@ -128,7 +122,6 @@ export default function BrowserTab({
   onTogglePin: () => void
   dragData: TabDragItemData
   dropIndicator?: DropIndicator
-  includeTopTabBorder?: boolean
 }): React.JSX.Element {
   // Why: no transform/transition/isDragging styling — the drag design is
   // that tabs stay visually anchored; only the blue insertion bar moves.
@@ -183,7 +176,7 @@ export default function BrowserTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...listeners}
-      className={`group relative flex items-center gap-1 h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
           e,
@@ -207,7 +200,6 @@ export default function BrowserTab({
         }
       }}
     >
-      {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       {/* Why: the browser tab icon is the only non-terminal, non-editor
           surface in the tab strip. Coloring the Globe blue (matching the
           in-app browser's identity and the default tab insertion bar)

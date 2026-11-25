@@ -9,13 +9,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { TerminalTab } from '../../../../shared/types'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
 import { useAppStore } from '../../store'
-import {
-  ACTIVE_TAB_INDICATOR_CLASSES,
-  getDropIndicatorClasses,
-  getTabRootStateClasses,
-  getTabStripBorderClasses,
-  type DropIndicator
-} from './drop-indicator'
+import { getDropIndicatorClasses, type DropIndicator } from './drop-indicator'
+import { TAB_PILL_CLASSES, TAB_UNREAD_FILL_CLASSES, getTabStateClasses } from './tab-state-classes'
 import { preventMiddleButtonDefault } from './middle-button-default-guard'
 import { SortableTabContextMenu } from './SortableTabContextMenu'
 import { translate } from '@/i18n/i18n'
@@ -49,7 +44,6 @@ type SortableTabProps = {
   onToggleExpand: (tabId: string) => void
   dragData: TabDragItemData
   dropIndicator?: DropIndicator
-  includeTopTabBorder?: boolean
   /** True when this agent terminal can switch to native chat view; surfaces the "Switch view" context-menu item. */
   canToggleViewMode?: boolean
   /** True when the tab is currently showing the native chat view. */
@@ -79,7 +73,6 @@ export default function SortableTab({
   onToggleExpand,
   dragData,
   dropIndicator,
-  includeTopTabBorder = true,
   canToggleViewMode = false,
   isChatView = false,
   onToggleViewMode
@@ -219,7 +212,7 @@ export default function SortableTab({
       {...attributes}
       {...dragListeners}
       // Why: subtle amber wash flags unread activity at a glance, layered over the active highlight so it still reads selected.
-      className={`group relative flex items-center gap-1 h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onDoubleClick={(e) => {
         if (isEditing) {
           return
@@ -254,13 +247,9 @@ export default function SortableTab({
         }
       }}
     >
-      {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       {showUnreadActivity && (
         // Why: a real DOM child keeps both drop-indicator pseudo-elements free and pointer events reaching the tab.
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-status-attention-background"
-        />
+        <span aria-hidden className={TAB_UNREAD_FILL_CLASSES} />
       )}
       <TabLeadingSlot
         className={tab.color ? 'rounded-full' : undefined}
@@ -279,7 +268,7 @@ export default function SortableTab({
         {isExpanded && !isEditing && (
           <button
             type="button"
-            className="hit-area absolute inset-0 hidden place-items-center rounded-full text-muted-foreground group-hover:grid hover:bg-muted hover:text-foreground"
+            className="hit-area absolute inset-0 hidden place-items-center rounded-full text-muted-foreground group-hover:grid hover:bg-foreground/[0.07] hover:text-foreground"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation()

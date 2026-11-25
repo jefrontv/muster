@@ -55,16 +55,18 @@ export function TabStrip({
             ref={tabStripRef}
             data-tab-strip="true"
             className={[
-              'terminal-tab-strip flex h-full min-w-0 max-w-full flex-1 items-stretch overflow-x-auto overflow-y-hidden border-r border-border/70',
+              'terminal-tab-strip flex h-full min-w-0 max-w-full flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden pr-1 pl-1.5',
               getTabStripScrollMaskClassName(tabStripOverflowState)
             ]
               .filter(Boolean)
               .join(' ')}
             onPointerEnter={closeFreeze.onPointerEnter}
             onPointerLeave={closeFreeze.onPointerLeave}
+            onPointerDownCapture={closeFreeze.onPointerDownCapture}
           >
             {children}
-            <div ref={spacerRef} aria-hidden className="h-full flex-none" />
+            {/* Why: -ml-1 cancels the flex gap so an empty spacer adds no width. */}
+            <div ref={spacerRef} aria-hidden className="-ml-1 h-full flex-none" />
           </div>
           <TabStripScrollIndicator metrics={tabStripOverflowState} />
           {dragScroll.isTabDragActive ? (

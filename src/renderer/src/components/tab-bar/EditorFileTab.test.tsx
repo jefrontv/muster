@@ -199,10 +199,7 @@ vi.mock('./SortableTab', () => ({
 }))
 
 vi.mock('./drop-indicator', () => ({
-  ACTIVE_TAB_INDICATOR_CLASSES: 'active-tab-indicator',
-  getDropIndicatorClasses: () => '',
-  getTabStripBorderClasses: () => '',
-  getTabRootStateClasses: () => ''
+  getDropIndicatorClasses: () => ''
 }))
 
 vi.mock('@/components/editor/markdown-preview-controls', () => ({

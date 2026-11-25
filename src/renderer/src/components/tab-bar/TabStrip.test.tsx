@@ -32,6 +32,7 @@ describe('TabStrip', () => {
       /data-tab-strip="true"[^>]*overflow-x-auto|overflow-x-auto[^>]*data-tab-strip="true"/
     )
     expect(markup).not.toContain('scrollbar-sleek')
+    expect(markup).not.toMatch(/data-tab-strip="true" class="[^"]*border-r/)
   })
 
   it('reserves the all tabs button while nothing overflows, with no scroll chevrons', () => {

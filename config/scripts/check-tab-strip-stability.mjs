@@ -118,6 +118,9 @@ async function main() {
   }
   const worktreePath = worktreeId.split('::')[1] ?? ''
   const openedFileIds = []
+  const preexistingFileIds = await store('return s.openFiles.map((f) => f.id)')
+  const preexistingTabIds = (await snap()).tabs.map((t) => t.id)
+  const originalActiveTabId = await store('return s.getActiveTab(s.activeWorktreeId)?.id ?? null')
   let openedPagesTab = false
 
   const openFile = async (relativePath, preview) => {
@@ -168,7 +171,9 @@ async function main() {
     if (pageButton && !hadPagesTab) {
       before = await snap()
       await click(pageButton.x, pageButton.y)
-      const pagesOpened = await store("return s.openFiles.some((o) => o.mode === 'project-pages' && o.worktreeId === s.activeWorktreeId)")
+      const pagesOpened = await store(
+        "return s.openFiles.some((o) => o.mode === 'project-pages' && o.worktreeId === s.activeWorktreeId)"
+      )
       if (!pagesOpened) {
         // Why: a synthetic pointer click can land before the hidden window repaints; fall back to a DOM click.
         await evaluate(
@@ -204,7 +209,9 @@ async function main() {
       })
     }
 
-    for (const tab of (await snap()).tabs.slice(0, 4)) {
+    // Why: clicking the user's own tabs would clear their unread and attention state.
+    const ownTabs = (await snap()).tabs.filter((t) => !preexistingTabIds.includes(t.id))
+    for (const tab of ownTabs.slice(0, 4)) {
       before = await snap()
       const current = before.tabs.find((t) => t.id === tab.id)
       await click(current.x + Math.min(current.w / 2, 40), current.cy)
@@ -251,8 +258,15 @@ async function main() {
 
     for (const mode of ['overflowed', 'fitting']) {
       for (let i = 0; i < 3; i++) {
+        if (mode === 'overflowed') {
+          // Why: closing at the scrolled end is where the browser clamps scrollLeft.
+          await evaluate(
+            "(() => { const s = document.querySelector('[data-tab-strip]'); s.scrollLeft = s.scrollWidth })()"
+          )
+          await sleep(SETTLE_MS)
+        }
         const pre = await snap()
-        const index = Math.min(pre.tabs.length - 2, 5)
+        const index = mode === 'overflowed' ? pre.tabs.length - 3 : Math.min(pre.tabs.length - 2, 5)
         const target = pre.tabs[index]
         const entityId = await store(
           `return (s.unifiedTabsByWorktree[s.activeWorktreeId] ?? []).find((t) => t.id === ${JSON.stringify(target?.id ?? '')})?.entityId ?? null`
@@ -289,8 +303,12 @@ async function main() {
     }
   } finally {
     await store(
-      `for (const id of ${JSON.stringify(openedFileIds)}) { if (s.openFiles.some((f) => f.id === id && !f.isDirty)) s.closeFile(id) }`
+      // Why: a replaced preview can leave activeFileId pointing elsewhere, so sweep every tab-bar file this run opened.
+      `const keep = new Set(${JSON.stringify(preexistingFileIds)}); for (const f of [...s.openFiles]) { if (!keep.has(f.id) && !f.isDirty && f.worktreeId === s.activeWorktreeId && (f.relativePath ?? '').startsWith('src/renderer/src/components/tab-bar/')) s.closeFile(f.id) }`
     )
+    if (originalActiveTabId) {
+      await store(`s.activateTab(${JSON.stringify(originalActiveTabId)})`)
+    }
     if (openedPagesTab) {
       await store(
         "const f = s.openFiles.find((o) => o.mode === 'project-pages' && o.worktreeId === s.activeWorktreeId); if (f) s.closeFile(f.id)"

@@ -27,14 +27,16 @@ function LeadingIcon({ drag }: { drag: TabDragItemData }): React.JSX.Element {
 // the wrapper's top-left.
 export default function TabDragPreview({ drag }: { drag: TabDragItemData }): React.JSX.Element {
   return (
-    <div className="pointer-events-none flex h-full w-full items-center gap-1.5 rounded-sm border border-border bg-accent px-2 text-xs text-foreground shadow-floating">
-      <span className="inline-flex shrink-0">
-        <LeadingIcon drag={drag} />
-      </span>
-      <span className="truncate">{drag.label}</span>
-      {drag.color ? (
-        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: drag.color }} />
-      ) : null}
+    <div className="pointer-events-none h-full w-full rounded-full bg-card-solid shadow-floating">
+      <div className="flex size-full items-center gap-1 rounded-full bg-foreground/[0.1] px-2 text-xs text-foreground">
+        <span className="grid size-4 shrink-0 place-items-center">
+          <LeadingIcon drag={drag} />
+        </span>
+        <span className="min-w-0 flex-1 truncate">{drag.label}</span>
+        {drag.color ? (
+          <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: drag.color }} />
+        ) : null}
+      </div>
     </div>
   )
 }

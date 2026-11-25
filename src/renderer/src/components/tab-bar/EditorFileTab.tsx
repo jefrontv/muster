@@ -25,13 +25,8 @@ import { getUntitledFileRoot } from '@/components/editor/untitled-file-rename-pa
 import { preventMiddleButtonDefault } from './middle-button-default-guard'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from './SortableTab'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
-import {
-  ACTIVE_TAB_INDICATOR_CLASSES,
-  getDropIndicatorClasses,
-  getTabRootStateClasses,
-  getTabStripBorderClasses,
-  type DropIndicator
-} from './drop-indicator'
+import { getDropIndicatorClasses, type DropIndicator } from './drop-indicator'
+import { TAB_PILL_CLASSES, getTabStateClasses } from './tab-state-classes'
 import { canOpenMarkdownPreview } from '@/components/editor/markdown-preview-controls'
 import { EditorFileTabContextMenu } from './EditorFileTabContextMenu'
 import { translate } from '@/i18n/i18n'
@@ -55,8 +50,7 @@ export default function EditorFileTab({
   onMakePermanent,
   onTogglePin,
   dragData,
-  dropIndicator,
-  includeTopTabBorder = true
+  dropIndicator
 }: {
   file: OpenFile & { tabId?: string }
   isActive: boolean
@@ -71,7 +65,6 @@ export default function EditorFileTab({
   onTogglePin: () => void
   dragData: TabDragItemData
   dropIndicator?: DropIndicator
-  includeTopTabBorder?: boolean
 }): React.JSX.Element {
   const worktree = useWorktreeById(file.worktreeId)
   const repo = useRepoById(worktree?.repoId ?? null)
@@ -259,7 +252,7 @@ export default function EditorFileTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...dragListeners}
-      className={`group relative flex items-center gap-1 h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
           e,
@@ -288,7 +281,6 @@ export default function EditorFileTab({
         }
       }}
     >
-      {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
       <TabLeadingSlot>
         {isConflictReview ? (
           <ShieldAlert

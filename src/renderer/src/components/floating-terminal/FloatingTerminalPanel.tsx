@@ -1510,7 +1510,6 @@ export function FloatingTerminalPanel({
               onMakePreviewFilePermanent={makePreviewFilePermanent}
               onPinFile={pinFile}
               tabBarOrder={tabBarOrder}
-              tabStripChrome="floating-panel"
             />
           </div>
           <FloatingTerminalWindowControls

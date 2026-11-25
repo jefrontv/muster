@@ -35,7 +35,7 @@ export function useTabStripCloseFreeze(
   stripRef: RefObject<HTMLDivElement | null>,
   spacerRef: RefObject<HTMLDivElement | null>,
   resetKey: string
-): { onPointerEnter: () => void; onPointerLeave: () => void } {
+): { onPointerEnter: () => void; onPointerLeave: () => void; onPointerDownCapture: () => void } {
   const stateRef = useRef<FreezeState>({
     pointerInside: false,
     lastScrollLeft: 0,
@@ -98,6 +98,12 @@ export function useTabStripCloseFreeze(
     stateRef.current.pointerInside = true
   }, [])
 
+  // Why: scroll events wait for a rendered frame, so record the offset at the press that may close a tab.
+  const onPointerDownCapture = useCallback((): void => {
+    stateRef.current.pointerInside = true
+    stateRef.current.lastScrollLeft = stripRef.current?.scrollLeft ?? 0
+  }, [stripRef])
+
   const onPointerLeave = useCallback((): void => {
     stateRef.current.pointerInside = false
     if (stateRef.current.spacer === 0) {
@@ -107,5 +113,5 @@ export function useTabStripCloseFreeze(
     setSpacer(0, reduceMotion ? 'none' : RELEASE_TRANSITION)
   }, [setSpacer])
 
-  return { onPointerEnter, onPointerLeave }
+  return { onPointerEnter, onPointerLeave, onPointerDownCapture }
 }

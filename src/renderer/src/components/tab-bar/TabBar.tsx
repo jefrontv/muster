@@ -125,8 +125,6 @@ type TabBarProps = {
   onPinFile?: (fileId: string, tabId?: string) => void
   tabBarOrder?: string[]
   hoveredTabInsertion?: HoveredTabInsertion | null
-  /** Floating workspace panels are rounded; skip tab top borders that clash with the curve. */
-  tabStripChrome?: 'default' | 'floating-panel'
 }
 
 type TabItem =
@@ -234,10 +232,8 @@ function TabBarInner({
   onMakePreviewFilePermanent,
   onPinFile,
   tabBarOrder,
-  hoveredTabInsertion,
-  tabStripChrome = 'default'
+  hoveredTabInsertion
 }: TabBarProps): React.JSX.Element {
-  const includeTopTabBorder = tabStripChrome !== 'floating-panel'
   const newTerminalShortcut = useShortcutLabel('tab.newTerminal')
   const newBrowserShortcut = useShortcutLabel('tab.newBrowser')
   const newFileShortcut = useShortcutLabel('tab.newMarkdown')
@@ -852,7 +848,7 @@ function TabBarInner({
                 variant="ghost"
                 size="icon-md"
                 // Why: 28px matches the quick commands split beside it.
-                className="ml-2 my-auto text-muted-foreground"
+                className="ml-1 my-auto text-muted-foreground"
                 style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
                 title={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
                 // Why: aria-label matches the tooltip so E2E can locate the "+" via getByRole('button', { name: 'New tab' }).
@@ -970,7 +966,6 @@ function TabBarInner({
                 onToggleExpand={onTogglePaneExpand}
                 dragData={dragData}
                 dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
-                includeTopTabBorder={includeTopTabBorder}
               />
             )
           }
@@ -989,7 +984,6 @@ function TabBarInner({
                 onTogglePin={() => togglePinned(item)}
                 dragData={dragData}
                 dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
-                includeTopTabBorder={includeTopTabBorder}
               />
             )
           }
@@ -1009,7 +1003,6 @@ function TabBarInner({
               onTogglePin={() => togglePinned(item)}
               dragData={dragData}
               dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
-              includeTopTabBorder={includeTopTabBorder}
             />
           )
         })}
