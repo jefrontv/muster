@@ -62,7 +62,9 @@ async function carryDraft(
     await api.addComment(page.scopeKey, page.pageId, {
       anchor: note.kind === 'global' || !quote.trim() ? null : { quote, prefix: '', suffix: '' },
       body: note.body,
-      ...(note.attachments?.length ? { attachments: note.attachments } : {})
+      ...(note.attachments?.length ? { attachments: note.attachments } : {}),
+      // Keeps Remove / Looks good as kinds; without one, a note with no text would be refused.
+      ...(note.kind === 'delete' || note.kind === 'looks_good' ? { kind: note.kind } : {})
     })
   }
 }

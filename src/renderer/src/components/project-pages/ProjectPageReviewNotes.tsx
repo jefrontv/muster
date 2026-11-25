@@ -11,6 +11,7 @@ import {
 import { PlanReviewNoteLayer } from '../plan-annotation/PlanReviewNoteLayer'
 import { PlanReviewNotePopover } from '../plan-annotation/PlanReviewNotePopover'
 import { usePlanReviewHoverBlock } from '../plan-annotation/use-plan-review-hover-block'
+import { richMarkdownAnnotationHighlightPluginKey } from '../editor/rich-markdown-annotation-highlight'
 import type { PageCommentController } from './use-page-comment-controller'
 import { usePageReviewNotes } from './use-page-review-notes'
 
@@ -42,6 +43,21 @@ export function ProjectPageReviewNotes({
       reviewRef.current = null
     }
   }, [openPassageDraft, openWholePlanDraft, reviewRef])
+
+  // The review's marks live in the editor's plugin state, so they outlast this component unless cleared.
+  useEffect(
+    () => () => {
+      if (editor && !editor.isDestroyed) {
+        editor.view.dispatch(
+          editor.state.tr.setMeta(richMarkdownAnnotationHighlightPluginKey, {
+            noteRanges: [],
+            activeRange: null
+          })
+        )
+      }
+    },
+    [editor]
+  )
 
   // The plan review's shell classes: its popover motion, rail spacing and toggle placement.
   useEffect(() => {
