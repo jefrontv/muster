@@ -1,4 +1,5 @@
 // Plain text, headings and page links pulled out of page markdown, for search and backlinks.
+import { maskMarkdownCode } from './project-pages-markdown-code-mask'
 
 export const PAGE_LINK_SCHEME = 'muster-page://'
 
@@ -9,7 +10,9 @@ export function pageLinkHref(pageId: string): string {
 /** Page ids this markdown links to, once each. */
 export function extractPageLinks(markdown: string): string[] {
   const ids = new Set<string>()
-  for (const match of markdown.matchAll(/muster-page:\/\/([A-Za-z0-9_-]{1,64})/g)) {
+  for (const match of maskMarkdownCode(markdown).matchAll(
+    /muster-page:\/\/([A-Za-z0-9_-]{1,64})/g
+  )) {
     ids.add(match[1])
   }
   return [...ids]

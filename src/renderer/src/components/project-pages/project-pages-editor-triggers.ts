@@ -24,7 +24,8 @@ export function syncPagePicker(editor: Editor, root: HTMLElement | null): PagePi
     return null
   }
   const { $from } = selection
-  if ($from.parent.type.spec.code) {
+  // Code renders literally, so no link or tag picker inside it.
+  if ($from.parent.type.spec.code || $from.marks().some((mark) => mark.type.spec.code)) {
     return null
   }
   const before = $from.parent.textBetween(0, $from.parentOffset, '\n', '\uFFFC')

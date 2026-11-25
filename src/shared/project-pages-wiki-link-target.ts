@@ -1,10 +1,10 @@
 // Which page a [[Title]] or [[Parent/Child]] link names, checked against the pages that exist now,
 // so a link written before its page resolves once the page appears.
+import { maskMarkdownCode } from './project-pages-markdown-code-mask'
 import { childrenOf } from './project-pages-tree'
 import type { ProjectPageMeta } from './project-pages-types'
 
 export const WIKI_LINK = /\[\[([^[\]\n|]{1,200})(?:\|([^[\]\n]{1,200}))?\]\]/g
-const FENCE = /^\s{0,3}(`{3,}|~{3,})/
 
 const titleKey = (page: ProjectPageMeta): string => (page.title || 'Untitled').toLowerCase()
 
@@ -38,28 +38,13 @@ export function findWikiLinkPage(
   return matches.length === 1 ? matches[0] : null
 }
 
-/** Each line of markdown outside code fences, with whether it can hold a link. */
-export function* wikiLinkLines(markdown: string): Generator<{ line: string; linkable: boolean }> {
-  let inFence = false
-  for (const line of markdown.split('\n')) {
-    if (FENCE.test(line)) {
-      inFence = !inFence
-      yield { line, linkable: false }
-      continue
-    }
-    yield { line, linkable: !inFence && line.includes('[[') }
-  }
+/** The [[links]] outside code and escapes, with their spans in the original markdown. */
+export function wikiLinkMatches(markdown: string): RegExpExecArray[] {
+  const masked = maskMarkdownCode(markdown)
+  return masked.includes('[[') ? [...masked.matchAll(WIKI_LINK)] : []
 }
 
 /** The targets of the [[links]] in markdown, once each. */
 export function extractWikiLinkRefs(markdown: string): string[] {
-  const refs = new Set<string>()
-  for (const { line, linkable } of wikiLinkLines(markdown)) {
-    if (linkable) {
-      for (const match of line.matchAll(WIKI_LINK)) {
-        refs.add(match[1].trim())
-      }
-    }
-  }
-  return [...refs]
+  return [...new Set(wikiLinkMatches(markdown).map((match) => match[1].trim()))]
 }

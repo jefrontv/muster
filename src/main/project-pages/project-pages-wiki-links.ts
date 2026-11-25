@@ -2,29 +2,27 @@
 // Links to pages that don't exist yet stay as [[Title]] and resolve once the page appears.
 import { pageLinkHref } from '../../shared/project-pages-plain-text'
 import type { ProjectPageMeta } from '../../shared/project-pages-types'
-import {
-  findWikiLinkPage,
-  WIKI_LINK,
-  wikiLinkLines
-} from '../../shared/project-pages-wiki-link-target'
+import { findWikiLinkPage, wikiLinkMatches } from '../../shared/project-pages-wiki-link-target'
 
 export function resolveWikiLinks(
   markdown: string,
   pages: readonly ProjectPageMeta[]
 ): { markdown: string; unresolved: string[] } {
   const unresolved = new Set<string>()
-  const lines = [...wikiLinkLines(markdown)].map(({ line, linkable }) =>
-    linkable
-      ? line.replace(WIKI_LINK, (whole, ref: string, alias: string | undefined) => {
-          const page = findWikiLinkPage(pages, ref)
-          if (!page) {
-            unresolved.add(ref.trim())
-            return whole
-          }
-          const label = (alias ?? page.title).trim() || 'Untitled'
-          return `[${label.replace(/[[\]]/g, '')}](${pageLinkHref(page.id)})`
-        })
-      : line
-  )
-  return { markdown: lines.join('\n'), unresolved: [...unresolved] }
+  let out = ''
+  let last = 0
+  // Matches come from the code-masked text, so their spans copy straight from the original.
+  for (const match of wikiLinkMatches(markdown)) {
+    const [whole, ref, alias] = match
+    const page = findWikiLinkPage(pages, ref)
+    if (!page) {
+      unresolved.add(ref.trim())
+      continue
+    }
+    const label = (alias ?? page.title).trim() || 'Untitled'
+    const link = `[${label.replace(/[[\]]/g, '')}](${pageLinkHref(page.id)})`
+    out += `${markdown.slice(last, match.index)}${link}`
+    last = match.index + whole.length
+  }
+  return { markdown: out + markdown.slice(last), unresolved: [...unresolved] }
 }

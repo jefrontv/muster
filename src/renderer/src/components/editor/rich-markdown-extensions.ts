@@ -29,6 +29,7 @@ import { createMarkdownDocLink } from './rich-markdown-doc-link'
 import { RichMarkdownCodeBlock } from './RichMarkdownCodeBlock'
 import { safeReactNodeViewRenderer } from './safe-react-node-view-renderer'
 import { DragSelectionGuard } from './drag-selection-guard'
+import { RichMarkdownEscape } from './rich-markdown-escape'
 import { createRichMarkdownAnnotationHighlightExtension } from './rich-markdown-annotation-highlight'
 import type { RichMarkdownEditorCodec } from './rich-markdown-source-transport'
 import { createRichMarkdownHtmlSuperscriptLink } from './rich-markdown-html-superscript-link'
@@ -219,6 +220,7 @@ export function createRichMarkdownExtensions({
     createRawMarkdownHtmlInline(codec.transport),
     createRawMarkdownHtmlBlock(codec.transport),
     createMarkdownDocLink(codec.transport),
+    RichMarkdownEscape,
     DragSelectionGuard,
     Markdown.configure({
       marked: codec.marked,

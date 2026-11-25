@@ -50,6 +50,24 @@ describe('project pages search index', () => {
     expect(index.backlinks(SCOPE, target.meta.id)).toEqual([])
   })
 
+  it('ignores links inside code', () => {
+    const store = createProjectPagesStore({ rootDir: root })
+    const index = createProjectPagesSearchIndex(store)
+    const target = store.createPage(SCOPE, { title: 'Target' }, USER)
+    const href = pageLinkHref(target.meta.id)
+    const source = store.createPage(
+      SCOPE,
+      {
+        title: 'Source',
+        markdown: `\`[[Target]]\` \\[[Target]]\n\`\`\`\n[T](${href}) [[Ghost]]\n\`\`\``
+      },
+      USER
+    )
+    const entry = index.snapshot(SCOPE).entries.get(source.meta.id)
+    expect([entry?.links, entry?.pageLinks, entry?.wikiRefs]).toEqual([[], [], []])
+    expect(index.backlinks(SCOPE, target.meta.id)).toEqual([])
+  })
+
   it('resolves a [[link]] written before its page exists, and follows rename and Trash', () => {
     const store = createProjectPagesStore({ rootDir: root })
     const index = createProjectPagesSearchIndex(store)

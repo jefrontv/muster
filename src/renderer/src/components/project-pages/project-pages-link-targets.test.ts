@@ -5,6 +5,7 @@ import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import { encodeRawMarkdownHtmlForRichEditor } from '../editor/raw-markdown-html'
 import { createRichMarkdownEditorCodec } from '../editor/rich-markdown-source-transport'
 import { createProjectPagesExtensions } from './project-pages-editor-extensions'
+import { syncPagePicker } from './project-pages-editor-triggers'
 import { clickedPageId, syncPageLinkTargets } from './project-pages-link-targets'
 
 const page = (id: string, title: string, archivedAt: number | null = null): ProjectPageMeta =>
@@ -56,5 +57,20 @@ describe('page link targets in the open editor', () => {
     expect(current.view.dom.querySelector('.page-link-missing')).toBeNull()
     syncPageLinkTargets(current, [page('b', 'Later', 1)])
     expect(current.view.dom.querySelector('.page-link-missing')?.textContent).toBe('Later')
+  })
+
+  it('keeps [[links]] in inline code, fences and escapes literal through a save', () => {
+    const markdown = 'Use `[[A]]` or \\[[A]] and \\*b\\*.\n\n```\n[[A]]\n```'
+    const current = open(markdown)
+    current.view.dispatch(current.state.tr.insertText(' ', 1))
+    expect(current.view.dom.querySelector('[data-doc-link-target]')).toBeNull()
+    expect(current.getMarkdown().trimEnd()).toBe(` ${markdown}`)
+  })
+
+  it('opens no link picker inside inline code', () => {
+    const root = document.createElement('div')
+    const current = open('`code [[` and')
+    current.commands.setTextSelection(8)
+    expect(syncPagePicker(current as never, root)).toBeNull()
   })
 })
