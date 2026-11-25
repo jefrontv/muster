@@ -231,6 +231,8 @@ ORCA annotate --resume <reviewId> --json
 
 It blocks up to `--timeout` seconds (default 540). Branch on the exit code: `0` proceed (approved, approved_with_notes, dismissed), `2` still pending (run `--resume`), `3` annotated (revise the plan and run `annotate` again), `4` unknown or expired review (open a new one), `1` error. Pass the `.md` file, not its folder.
 
+When Pages is on, Muster saves each review as a page in the project's `Plans` folder and returns `page_id`; later rounds of the same plan update that page. To review a page that already exists, pass `page` (its id or path in Pages) to `annotate_plan` instead of `path` or `content`. The person's edits then land on that page and `edits.appliedToDisk` is true, so don't re-apply them. Notes stay on the page as comment threads: `list_page_comments` gives their ids, and `reply_page_comment` (with `resolve=true` once handled) answers them.
+
 ## Built-In Browser
 
 The built-in browser is Muster's embedded browser tab surface, scoped to Muster worktrees; it is not Chrome/Safari or desktop app UI.
