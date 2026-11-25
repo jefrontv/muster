@@ -134,6 +134,13 @@ function renderCard(
   }
 }
 
+function openMoreActions(): void {
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'More actions' }), {
+    button: 0,
+    ctrlKey: false
+  })
+}
+
 async function openEditor(): Promise<Editor> {
   fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
   await waitFor(() => expect(holder.editor).not.toBeNull())
@@ -186,11 +193,14 @@ describe('BotsCommentDraftsPanel', () => {
     expect(rows[0]).toHaveTextContent('Fix the header')
     expect(rows[0]).toHaveTextContent('Bob · Website')
     expect(rows[1]).toHaveTextContent('Task #2')
-    // Only the newest row opens by default.
-    expect(screen.getAllByRole('article')).toHaveLength(1)
+    // Every row keeps its actions and starts collapsed.
+    expect(screen.getAllByRole('article')).toHaveLength(3)
+    expect(
+      rows.map((row) => within(row).getAllByRole('button')[0].getAttribute('aria-expanded'))
+    ).toEqual(['false', 'false', 'false'])
     fireEvent.click(within(rows[1]).getAllByRole('button')[0])
     expect(rows[1]).toHaveTextContent('Amended by Ada · shorter')
-    expect(screen.getByRole('button', { name: 'Ask Ada to change…' })).toBeInTheDocument()
+    expect(within(rows[1]).getByRole('button', { name: 'Ask Ada to change…' })).toBeInTheDocument()
     fireEvent.click(within(rows[2]).getAllByRole('button')[0])
     expect(rows[2]).toHaveTextContent('Edited by you')
   })
@@ -336,11 +346,14 @@ describe('BotsCommentDraftCard', () => {
     expect(await screen.findByText('Sent to Bob')).toBeInTheDocument()
   })
 
-  it('offers undo only after an amend that kept the previous body', () => {
+  it('offers undo only after an amend that kept the previous body', async () => {
     const { rerenderDraft } = renderCard(draftFixture())
     expect(screen.queryByRole('button', { name: 'Undo last change' })).toBeNull()
+    openMoreActions()
+    expect(await screen.findByRole('menuitem', { name: 'Discard draft' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Undo last change' })).toBeNull()
     rerenderDraft(draftFixture({ canUndo: true, version: 2 }))
-    expect(screen.getByRole('button', { name: 'Undo last change' })).toBeInTheDocument()
+    expect(await screen.findByRole('menuitem', { name: 'Undo last change' })).toBeInTheDocument()
   })
 })
 
@@ -432,9 +445,10 @@ describe('BotsCommentDraftEditor', () => {
 })
 
 describe('BotsDraftDialog views', () => {
-  it('opens the task view from Open task without leaving the Bots view', () => {
+  it('opens the task view from Open task without leaving the Bots view', async () => {
     renderCard(draftFixture({ taskId: 42 }))
-    fireEvent.click(screen.getByRole('button', { name: 'Open task' }))
+    openMoreActions()
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Open task' }))
     expect(screen.getByRole('tab', { name: 'Task' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText('Task pane 42')).toBeVisible()
     expect(screen.getByRole('dialog')).toHaveTextContent('Fix the header')
