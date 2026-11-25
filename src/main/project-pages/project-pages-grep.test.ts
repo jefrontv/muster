@@ -82,6 +82,20 @@ describe('grep_pages', () => {
     expect(tagged.pages.map((p) => p.path)).toEqual(['Specs', 'Outside'])
   })
 
+  it('takes a regex up to 1,000 characters', async () => {
+    page('Long', 'alpha beta')
+    const alternation = (n: number): string => `(?:${'x|'.repeat(n)}beta)`
+    const ok = alternation(Math.floor((GREP_LIMITS.regexPattern - 7) / 2))
+    expect(GREP_LIMITS.regexPattern).toBe(1_000)
+    expect(ok.length).toBeLessThanOrEqual(1_000)
+    expect(ok.length).toBeGreaterThan(990)
+    const hits = await run('grep', { query: ok, regex: true })
+    expect(hits.pages.map((p) => p.path)).toEqual(['Long'])
+    await expect(run('grep', { query: `${ok}${'x'.repeat(10)}`, regex: true })).rejects.toThrow(
+      'at most 1000 characters'
+    )
+  })
+
   it('stops a catastrophic regex at the deadline and keeps earlier hits', async () => {
     page('Early', 'aaa')
     page('Bomb', `${'a'.repeat(40)}b`)

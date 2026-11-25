@@ -17,7 +17,7 @@ export const GREP_LIMITS = {
   text: 240,
   /** A bad regex only ever sees this much of a line. */
   regexLine: 2_000,
-  regexPattern: 200,
+  regexPattern: 1_000,
   chars: 30_000,
   ms: 250,
   /** Hard cap on the regex worker, startup included. */
