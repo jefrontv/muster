@@ -27,6 +27,9 @@ export const lockTabDragToSourceStrip: Modifier = ({ active, over, activeNodeRec
 
 export const TAB_DRAG_OVERLAY_MODIFIERS = [lockTabDragToSourceStrip]
 
+// Why: the overlay always sits under the pointer; letting events through keeps the strip's edge-scroll zones reachable.
+export const TAB_DRAG_OVERLAY_STYLE = { pointerEvents: 'none' } as const
+
 function isStillInSourceGroup(drag: TabDragItemData): boolean {
   const groups = useAppStore.getState().groupsByWorktree[drag.worktreeId] ?? []
   return groups.some(

@@ -18,7 +18,8 @@ export function getEditorTabIcon(file: Pick<OpenFile, 'mode' | 'filePath'>): Tab
       return GitCompareArrows
     case 'markdown-preview':
       return Eye
-    default:
+    case 'edit':
+    case 'conflict-review':
       return getFileTypeIcon(file.filePath)
   }
 }

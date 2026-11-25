@@ -38,7 +38,7 @@ describe('computeTabSlides', () => {
 
   it('animates the slide unless the user prefers reduced motion', () => {
     vi.stubGlobal('matchMedia', () => ({ matches: false }))
-    expect(getTabSlideStyle({ slots: 1, isSource: false })?.transition).toContain('transform 180ms')
+    expect(getTabSlideStyle({ slots: 1, isSource: false })?.transition).toContain('transform 150ms')
     vi.stubGlobal('matchMedia', () => ({ matches: true }))
     expect(getTabSlideStyle({ slots: 1, isSource: false })?.transition).toBeUndefined()
   })

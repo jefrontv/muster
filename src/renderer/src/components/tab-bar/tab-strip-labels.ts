@@ -48,7 +48,10 @@ export function getTabStripEditorKind(file: Pick<OpenFile, 'mode'>): string | nu
       return translate('auto.components.tab.bar.tabStripLabels.planReview', 'Plan review')
     case 'markdown-preview':
       return translate('auto.components.tab.bar.tabStripLabels.markdownPreview', 'Markdown preview')
-    default:
+    case 'edit':
+    case 'diff':
+    case 'conflict-review':
+    case 'check-details':
       return null
   }
 }

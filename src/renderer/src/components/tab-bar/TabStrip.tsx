@@ -62,6 +62,8 @@ export function TabStrip({
             onKeyDown={handleTabStripKeyDown}
             className={[
               'terminal-tab-strip flex h-full min-w-0 max-w-full flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden pr-1 pl-1.5',
+              // Why: the drag overlay lets the pointer through to the edge-scroll zones, so tabs must not hover or open tooltips under it.
+              dragScroll.isTabDragActive ? '[&_[role=tab]]:pointer-events-none' : null,
               getTabStripScrollMaskClassName(tabStripOverflowState)
             ]
               .filter(Boolean)

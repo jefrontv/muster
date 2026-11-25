@@ -6,7 +6,7 @@ export type TabSlide = { slots: number; isSource: boolean }
 
 // Why: matches the strip's gap-1, so one slot is a tab width plus the gap.
 const TAB_STRIP_GAP = '0.25rem'
-export const TAB_SLIDE_DURATION_MS = 180
+export const TAB_SLIDE_DURATION_MS = 150
 export const TAB_SLIDE_EASING = 'cubic-bezier(0.2, 0, 0, 1)'
 
 export function prefersReducedMotion(): boolean {

@@ -142,7 +142,15 @@ export function isPaneDropData(value: unknown): value is TabPaneDropData {
 
 const collisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args)
-  return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args)
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions
+  }
+  // Why: measure from the pointer, not the dragged rect, so the 4px gaps between tabs resolve to a neighbour.
+  const p = args.pointerCoordinates
+  const pointerRect = p
+    ? { top: p.y, bottom: p.y, left: p.x, right: p.x, width: 0, height: 0 }
+    : null
+  return closestCenter(pointerRect ? { ...args, collisionRect: pointerRect } : args)
 }
 
 export function getTabPaneBodyDroppableId(groupId: string): UniqueIdentifier {

@@ -6,7 +6,11 @@ import TabGroupPanel from './TabGroupPanel'
 import TabDragPreview from '../tab-bar/TabDragPreview'
 import { TabDragProvider } from './tab-drag-context'
 import TabPaneColumnSplitDragOverlay from './TabPaneColumnSplitDragOverlay'
-import { TAB_DRAG_OVERLAY_MODIFIERS, useTabDropSettle } from './tab-drag-overlay-motion'
+import {
+  TAB_DRAG_OVERLAY_MODIFIERS,
+  TAB_DRAG_OVERLAY_STYLE,
+  useTabDropSettle
+} from './tab-drag-overlay-motion'
 import { type HoveredTabInsertion, useTabDragSplit } from './useTabDragSplit'
 
 const MIN_RATIO = 0.15
@@ -340,7 +344,11 @@ export default function TabGroupSplitLayout({
           </div>
         </div>
         {/* Why: the source strip clips overflow, so a document-level overlay carries the dragged tab across groups. */}
-        <DragOverlay dropAnimation={settleDrop} modifiers={TAB_DRAG_OVERLAY_MODIFIERS}>
+        <DragOverlay
+          dropAnimation={settleDrop}
+          modifiers={TAB_DRAG_OVERLAY_MODIFIERS}
+          style={TAB_DRAG_OVERLAY_STYLE}
+        >
           {dragSplit.activeDrag ? <TabDragPreview drag={dragSplit.activeDrag} /> : null}
         </DragOverlay>
         {dragSplit.hoveredDropTarget &&

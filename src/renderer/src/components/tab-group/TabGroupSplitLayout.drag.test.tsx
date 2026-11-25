@@ -27,6 +27,7 @@ vi.mock('./TabGroupPanel', () => ({
 
 vi.mock('./tab-drag-overlay-motion', () => ({
   TAB_DRAG_OVERLAY_MODIFIERS: [],
+  TAB_DRAG_OVERLAY_STYLE: {},
   useTabDropSettle: () => null
 }))
 
