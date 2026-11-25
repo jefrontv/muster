@@ -49,4 +49,27 @@ describe('project pages search index', () => {
     store.archivePage(SCOPE, source.meta.id, USER)
     expect(index.backlinks(SCOPE, target.meta.id)).toEqual([])
   })
+
+  it('resolves a [[link]] written before its page exists, and follows rename and Trash', () => {
+    const store = createProjectPagesStore({ rootDir: root })
+    const index = createProjectPagesSearchIndex(store)
+    const source = store.createPage(SCOPE, { title: 'Source', markdown: 'See [[Later]].' }, USER)
+    const linksOf = (): string[] => index.snapshot(SCOPE).entries.get(source.meta.id)?.links ?? []
+    expect(linksOf()).toEqual([])
+
+    const later = store.createPage(SCOPE, { title: 'Later' }, USER)
+    expect(linksOf()).toEqual([later.meta.id])
+    expect(index.backlinks(SCOPE, later.meta.id).map((p) => p.id)).toEqual([source.meta.id])
+
+    store.updatePage(SCOPE, later.meta.id, { baseRevision: 1, title: 'Renamed' }, USER)
+    expect(linksOf()).toEqual([])
+    const renamed = store.createPage(SCOPE, { title: 'Other' }, USER)
+    store.updatePage(SCOPE, renamed.meta.id, { baseRevision: 1, title: 'Later' }, USER)
+    expect(linksOf()).toEqual([renamed.meta.id])
+
+    store.archivePage(SCOPE, renamed.meta.id, USER)
+    expect(linksOf()).toEqual([])
+    store.restorePage(SCOPE, renamed.meta.id, USER)
+    expect(linksOf()).toEqual([renamed.meta.id])
+  })
 })

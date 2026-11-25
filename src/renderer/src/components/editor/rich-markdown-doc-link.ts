@@ -26,6 +26,8 @@ const docLinkInlinePreviewKey = new PluginKey('docLinkInlinePreview')
 
 type DocLinkStorage = {
   documents: MarkdownDocument[]
+  /** Hosts whose links aren't files (Pages) decide resolution themselves. */
+  resolveTarget: ((target: string) => boolean) | null
   _cachedDocs: MarkdownDocument[] | null
   _cachedIndex: MarkdownDocumentIndex | null
 }
@@ -71,8 +73,7 @@ function buildPreviewDecorations(state: EditorState, storage: DocLinkStorage): D
       if (cursor <= from || cursor > to) {
         continue
       }
-      const resolved = resolveAgainstIndex(link.target, index)
-      const cls = resolved
+      const cls = isResolved(link.target, storage, index)
         ? 'rich-markdown-doc-link-preview'
         : 'rich-markdown-doc-link-preview rich-markdown-doc-link-preview--missing'
       decorations.push(Decoration.inline(from, to, { class: cls }))
@@ -81,11 +82,15 @@ function buildPreviewDecorations(state: EditorState, storage: DocLinkStorage): D
   return DecorationSet.create(state.doc, decorations)
 }
 
-function resolveAgainstIndex(target: string, index: MarkdownDocumentIndex | null): boolean {
-  if (!index) {
-    return false
+function isResolved(
+  target: string,
+  storage: DocLinkStorage,
+  index = getDocIndex(storage)
+): boolean {
+  if (storage.resolveTarget) {
+    return storage.resolveTarget(target)
   }
-  return resolveMarkdownDocLink(target, index).status === 'resolved'
+  return index !== null && resolveMarkdownDocLink(target, index).status === 'resolved'
 }
 
 function getDocLinkTarget(node: { attrs: Record<string, unknown> }): string {
@@ -111,6 +116,7 @@ export function createMarkdownDocLink(transport: RichMarkdownSourceTransport) {
     addStorage() {
       return {
         documents: [] as MarkdownDocument[],
+        resolveTarget: null as ((target: string) => boolean) | null,
         _cachedDocs: null as MarkdownDocument[] | null,
         _cachedIndex: null as MarkdownDocumentIndex | null
       }
@@ -189,8 +195,7 @@ export function createMarkdownDocLink(transport: RichMarkdownSourceTransport) {
         dom.textContent = getDocLinkDisplayText(node)
 
         const applyResolutionClass = (t: string): void => {
-          const resolved = resolveAgainstIndex(t, getDocIndex(storage))
-          dom.className = resolved
+          dom.className = isResolved(t, storage)
             ? 'rich-markdown-doc-link'
             : 'rich-markdown-doc-link rich-markdown-doc-link--missing'
         }

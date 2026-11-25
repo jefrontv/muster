@@ -10,7 +10,6 @@ import type {
   ProjectPageDocument,
   ProjectPageMeta
 } from '../../../../shared/project-pages-types'
-import { PAGE_LINK_SCHEME } from '../../../../shared/project-pages-plain-text'
 import { encodeRawMarkdownHtmlForRichEditor } from '../editor/raw-markdown-html'
 import { createRichMarkdownEditorCodec } from '../editor/rich-markdown-source-transport'
 import {
@@ -19,6 +18,7 @@ import {
   type PageSaveResult
 } from './project-pages-autosave'
 import { createProjectPagesExtensions } from './project-pages-editor-extensions'
+import { clickedPageId, syncPageLinkTargets } from './project-pages-link-targets'
 import { replaceEditorMarkdown } from './project-pages-editor-sync'
 import { ProjectPagesEditorMenus } from './ProjectPagesEditorMenus'
 import { createDiagramPage } from './project-pages-diagram-embeds'
@@ -247,6 +247,12 @@ export function ProjectPageEditor({
     []
   )
 
+  useEffect(() => {
+    if (editor) {
+      syncPageLinkTargets(editor, pages)
+    }
+  }, [editor, pages])
+
   // Save what is left when the page closes; the editor is still alive during this cleanup.
   useEffect(
     () => () => {
@@ -351,12 +357,11 @@ export function ProjectPageEditor({
               onOpenTag(tag)
               return
             }
-            const link = (event.target as HTMLElement).closest('a')
-            const href = link?.getAttribute('href') ?? ''
-            if (href.startsWith(PAGE_LINK_SCHEME)) {
+            const linked = clickedPageId(event.target as HTMLElement, pages)
+            if (linked) {
               event.preventDefault()
               event.stopPropagation()
-              onOpenPage(href.slice(PAGE_LINK_SCHEME.length))
+              onOpenPage(linked)
             }
           }}
         >

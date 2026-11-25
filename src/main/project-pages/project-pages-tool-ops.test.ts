@@ -160,6 +160,36 @@ describe('project pages tool ops', () => {
     })
   })
 
+  it('reports a [[link]] as unresolved until its page exists, and again once archived', async () => {
+    const created = (await run('create', {
+      title: 'Source',
+      markdown: 'See [[Later]].'
+    })) as Result & {
+      unresolved_links?: string[]
+    }
+    expect(created.unresolved_links).toEqual(['Later'])
+    const before = (await run('read', { page: 'Source' })) as Result & {
+      unresolved_links?: string[]
+    }
+    expect(before.unresolved_links).toEqual(['Later'])
+    await run('create', { title: 'Later' })
+    const after = (await run('read', { page: 'Source' })) as Result & {
+      links_to: { path: string }[]
+      unresolved_links?: string[]
+    }
+    expect(after.links_to.map((link) => link.path)).toEqual(['Later'])
+    expect(after.unresolved_links).toBeUndefined()
+    const target = (await run('read', { page: 'Later' })) as Result & {
+      linked_from: { path: string }[]
+    }
+    expect(target.linked_from.map((link) => link.path)).toEqual(['Source'])
+    await run('archive', { page: 'Later' })
+    const archived = (await run('read', { page: 'Source' })) as Result & {
+      unresolved_links?: string[]
+    }
+    expect(archived.unresolved_links).toEqual(['Later'])
+  })
+
   it('honours the read-only and off capability levels', async () => {
     settings.agentCapabilityProjectPages = 'read'
     await expect(run('list')).resolves.toMatchObject({ count: 0 })

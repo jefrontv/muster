@@ -39,7 +39,7 @@ export const PAGE_BLOCKS: PageBlockExample[] = [
   {
     block: 'Page link',
     markdown: '[[Page title]]',
-    note: '[[Parent/Child]] or [[Title|label]]; saved as a muster-page:// link.'
+    note: '[[Parent/Child]] or [[Title|label]]; saved as a muster-page:// link, or kept as [[Title]] until that page exists.'
   },
   { block: 'Tag', markdown: 'Text with a #tag' }
 ]

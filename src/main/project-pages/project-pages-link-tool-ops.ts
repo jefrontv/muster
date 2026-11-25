@@ -1,5 +1,6 @@
 // Agent ops over how pages connect: a page's related pages and the project's tags.
 import type { ProjectPageMeta } from '../../shared/project-pages-types'
+import { findWikiLinkPage } from '../../shared/project-pages-wiki-link-target'
 import { listPageTags, relatedPages } from './project-pages-graph'
 import type { ProjectPagesSearchIndex, ProjectPagesSnapshot } from './project-pages-search-index'
 import { pagePath } from './project-pages-tool-target'
@@ -11,19 +12,29 @@ export function isProjectPagesLinkOp(op: string): op is LinkOp {
   return PROJECT_PAGES_LINK_OPS.includes(op as LinkOp)
 }
 
-/** What read_page adds beside linked_from: the live pages this one links to, and its tags. */
+/** What read_page adds beside linked_from: the live pages this one links to, its tags, and
+ *  links that name no live page (not created yet, or in the Trash). */
 export function pageConnections(
   search: ProjectPagesSearchIndex,
   scopeKey: string,
   id: string,
   all: readonly ProjectPageMeta[]
-): { links_to: { id: string; path: string }[]; tags: string[] } {
+): { links_to: { id: string; path: string }[]; tags: string[]; unresolved_links?: string[] } {
   const entry = search.snapshot(scopeKey).entries.get(id)
+  const isLive = (target: string): boolean =>
+    all.some((p) => p.id === target && p.archivedAt === null)
+  const unresolved = [
+    ...(entry?.wikiRefs ?? []).filter((ref) => !findWikiLinkPage(all, ref)),
+    ...(entry?.pageLinks ?? [])
+      .filter((target) => !isLive(target))
+      .map((target) => all.find((p) => p.id === target)?.title || target)
+  ]
   return {
     links_to: (entry?.links ?? [])
-      .filter((target) => all.some((p) => p.id === target && p.archivedAt === null))
+      .filter(isLive)
       .map((target) => ({ id: target, path: pagePath(all, target) })),
-    tags: (entry?.tags ?? []).map((tag) => tag.label)
+    tags: (entry?.tags ?? []).map((tag) => tag.label),
+    ...(unresolved.length > 0 ? { unresolved_links: unresolved } : {})
   }
 }
 
