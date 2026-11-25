@@ -33,6 +33,17 @@ describe('page blocks', () => {
     expect(roundTrip(markdown)).toBe(markdown)
   })
 
+  it.each([
+    '\\[[x]] stays text',
+    '[foo\\_bar](https://x.com)',
+    '**a\\*b**',
+    '*a\\_b*',
+    '~~a\\~b~~',
+    '\\*\\*not bold\\*\\* and \\& \\< kept'
+  ])('keeps escapes exact: %s', (markdown) => {
+    expect(roundTrip(markdown)).toBe(markdown)
+  })
+
   it('keeps a resolved page link', () => {
     const link = '[Page title](muster-page://p_1)'
     expect(roundTrip(link)).toBe(link)
