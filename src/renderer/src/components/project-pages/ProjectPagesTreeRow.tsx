@@ -15,6 +15,9 @@ import { pageTitle, type PageTreeNode } from './project-pages-tree-model'
 import { ProjectPageKindIcon } from './ProjectPageKindIcon'
 import type { ProjectPagesTreeDrag } from './use-project-pages-tree-drag'
 
+// Hover shares bg-accent, so the open page adds the worktree card's inset ring to stay distinct.
+const SELECTED_ROW = 'bg-accent text-accent-foreground ring-1 ring-accent-foreground/20 ring-inset'
+
 type Props = {
   node: PageTreeNode
   depth: number
@@ -61,9 +64,10 @@ export function ProjectPagesTreeRow(props: Props): React.JSX.Element {
     <>
       <div
         {...drag?.rowProps(page.id)}
+        data-current={selected ? 'true' : undefined}
         className={cn(
           'group relative flex h-7 items-center gap-1 rounded-md pr-1 text-sm',
-          selected ? 'bg-accent text-accent-foreground' : cn('text-foreground/80', ROW_HOVER),
+          selected ? SELECTED_ROW : cn('text-foreground/80', ROW_HOVER),
           drag?.dragId === page.id && 'opacity-50',
           zone === 'inside' && 'bg-accent ring-1 ring-ring ring-inset'
         )}
