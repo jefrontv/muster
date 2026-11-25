@@ -1,5 +1,6 @@
 // Sets up a maxGraph editor the way draw.io behaves: guides, grid, drag-to-connect, undo, wheel pan/zoom.
 import {
+  EdgeHandler,
   getDefaultPlugins,
   Graph,
   InternalEvent,
@@ -18,6 +19,7 @@ import {
   type SelectionHandler
 } from '@maxgraph/core'
 import DOMPurify from 'dompurify'
+import { holdEdgeHandlesUntilDrag } from './project-pages-diagram-edge-drag'
 import { keepLabelsReadable } from './project-pages-diagram-label-contrast'
 import { applyDiagramTheme } from './project-pages-diagram-styles'
 
@@ -97,6 +99,8 @@ export function createDiagramEditor(container: HTMLElement, onChange: () => void
     const handler = createHandler(state)
     if (handler instanceof VertexHandler) {
       handler.livePreview = true
+    } else if (handler instanceof EdgeHandler) {
+      holdEdgeHandlesUntilDrag(handler, () => graph.getEventTolerance())
     }
     return handler
   }

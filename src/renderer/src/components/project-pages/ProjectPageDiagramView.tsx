@@ -1,11 +1,5 @@
 // A diagram page: title, toolbar, shape palette, canvas with minimap, and the format panel.
-import {
-  Clipboard,
-  InternalEvent,
-  Outline,
-  type EventObject,
-  type EventSource
-} from '@maxgraph/core'
+import { Clipboard, Outline } from '@maxgraph/core'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
@@ -13,11 +7,10 @@ import { diagramOutlineText } from '../../../../shared/project-pages-diagram-out
 import { writeDiagramXml } from '../../../../shared/project-pages-diagram-xml'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import type { AutosaveState } from './project-pages-autosave'
-import { insertShape } from './project-pages-diagram-actions'
+import { installDiagramDoubleClick } from './project-pages-diagram-double-click'
 import { createDiagramEditor, fitDiagram, type DiagramEditor } from './project-pages-diagram-graph'
 import { handleDiagramKey } from './project-pages-diagram-keys'
 import { loadDiagramXml, snapshotDiagram } from './project-pages-diagram-model'
-import { DIAGRAM_SHAPES } from './project-pages-diagram-styles'
 import { ProjectPageDiagramFormat } from './ProjectPageDiagramFormat'
 import { ProjectPageDiagramPalette } from './ProjectPageDiagramPalette'
 import { ProjectPageDiagramQuickConnect } from './ProjectPageDiagramQuickConnect'
@@ -77,16 +70,7 @@ export function ProjectPageDiagramView({
         scheduleRef.current(() => diagramContent(made))
       }
     })
-    // Double-click on empty canvas adds a rounded box there and starts typing its label.
-    made.graph.addListener(InternalEvent.DOUBLE_CLICK, (_sender: EventSource, evt: EventObject) => {
-      const event = evt.getProperty('event') as MouseEvent | undefined
-      if (evt.getProperty('cell') || !event) {
-        return
-      }
-      const point = made.graph.getPointForEvent(event)
-      const shape = DIAGRAM_SHAPES.find((s) => s.id === 'rounded')!
-      made.graph.startEditingAtCell(insertShape(made.graph, shape, point.x, point.y))
-    })
+    installDiagramDoubleClick(made.graph)
     const outline = new Outline(made.graph, minimap)
     setEditor(made)
     return () => {
