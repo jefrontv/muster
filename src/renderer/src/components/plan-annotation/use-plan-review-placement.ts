@@ -67,6 +67,8 @@ export function usePlanReviewPlacement(
   const inTab = useAppStore((s) => s.settings?.planReviewInProjectTab !== false)
   const pagesOn = useAppStore((s) => s.settings?.experimentalProjectPages === true)
   const worktreesByRepo = useAppStore((s) => s.worktreesByRepo)
+  // Session restore replaces the tab list, so a tab opened before it would vanish after a reload.
+  const sessionReady = useAppStore((s) => s.workspaceSessionReady)
   const worktreeId = useMemo(() => {
     if (!current || !inTab) {
       return null
@@ -84,7 +86,7 @@ export function usePlanReviewPlacement(
 
   useEffect(() => {
     const state = useAppStore.getState()
-    if (current && worktreeId) {
+    if (current && worktreeId && sessionReady) {
       if (placement === 'page' && current.page) {
         state.openProjectPagesReview(worktreeId, current.page.scopeKey, current.page.pageId)
       } else {
@@ -111,7 +113,7 @@ export function usePlanReviewPlacement(
         state.closeFile(file.id)
       }
     }
-  }, [current, worktreeId, waiting, placement])
+  }, [current, worktreeId, waiting, placement, sessionReady])
 
   return placement
 }
