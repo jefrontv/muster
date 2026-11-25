@@ -78,6 +78,10 @@ export type PlanAnnotationRequest = {
   cwd?: string | null
   /** Set when the review is shown on a Pages page: the agent asked for one, or Muster saved it. */
   page?: PlanReviewPageRef | null
+  /** True when the agent asked to review that page, so the page is the plan itself. */
+  pageIsSource?: boolean
+  /** When main queued this round; page comments made after it are this round's notes. */
+  openedAt?: number
   /** 1 on first review of this plan, incrementing while the agent revises it. */
   round: number
   /** Previous round's content, so the modal can show what changed. Null on round 1. */

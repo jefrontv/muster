@@ -12,10 +12,13 @@ function describeAnnotation(annotation: PlanAnnotation): string {
   if (annotation.kind === 'global') {
     return `- **General:** ${annotation.body}${files}`
   }
+  // Line 0 means the quote could not be placed in the plan text, e.g. a page comment.
   const where =
-    annotation.startLine === annotation.endLine
-      ? `line ${annotation.startLine}`
-      : `lines ${annotation.startLine}-${annotation.endLine}`
+    annotation.startLine === 0
+      ? 'quoted'
+      : annotation.startLine === annotation.endLine
+        ? `line ${annotation.startLine}`
+        : `lines ${annotation.startLine}-${annotation.endLine}`
   const head =
     annotation.kind === 'delete'
       ? `**Remove** (${where})`
@@ -48,6 +51,12 @@ export function formatPlanFeedback(result: PlanAnnotationResult): string {
   }
   if (lines.length === 0) {
     return result.decision === 'approved' ? 'Approved with no changes requested.' : 'No feedback.'
+  }
+  if (result.pageId && result.annotations.length > 0) {
+    lines.push(
+      '',
+      `These notes are comment threads on page ${result.pageId}. list_page_comments shows their ids; answer each with reply_page_comment (resolve=true once handled).`
+    )
   }
   return lines.join('\n')
 }

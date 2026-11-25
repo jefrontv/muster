@@ -267,8 +267,17 @@ export function openPlanAnnotation(
   const requestId = randomUUID()
   // Everything already queued settles first (FIFO), so the current depth is what is ahead of us.
   const queuedAhead = queue.size
-  const request: PlanAnnotationRequest = { ...input, page, requestId, round, previousContent }
-  queue.set(requestId, { request, timer: null, openedAt: Date.now(), shownAt: null })
+  const openedAt = Date.now()
+  const request: PlanAnnotationRequest = {
+    ...input,
+    page,
+    pageIsSource: Boolean(page && input.page),
+    openedAt,
+    requestId,
+    round,
+    previousContent
+  }
+  queue.set(requestId, { request, timer: null, openedAt, shownAt: null })
   startFront()
   // After startFront, so a review that went straight to the front reports a depth of zero.
   notifyQueued()
