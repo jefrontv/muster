@@ -12,6 +12,7 @@ import { chatModeSupported } from '@/lib/chat-mode-platform'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { handleTablistKeyDown } from '@/lib/tablist-keyboard'
+import { CodeModePlanReviewDot } from '../plan-annotation/plan-review-sidebar-markers'
 
 const SLIDE_MS = 280
 const SLIDE_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)'
@@ -144,6 +145,7 @@ export function ChatModeToggle({ mode }: { mode: AppMode }): React.JSX.Element |
             onClick={() => select(target)}
           >
             {label(target)}
+            {target === 'code' && !active ? <CodeModePlanReviewDot /> : null}
           </button>
         )
       })}

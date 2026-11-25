@@ -29,6 +29,8 @@ type PendingReview = {
   openedAt: number
   /** When it reached the front and was sent to a window; null while queued behind another. */
   shownAt: number | null
+  /** What a window reported after placing it; null until one has. True sticks. */
+  onScreen: boolean | null
 }
 
 /** A review still open: how long since it was sent, and whether it has reached the screen. */
@@ -38,6 +40,8 @@ export type PlanAnnotationPending = {
   /** Null while queued behind another review. */
   shownMs: number | null
   queuedAhead: number
+  /** True once a window showed it to the user; false when only placed off screen; null if no window has said. */
+  onScreen: boolean | null
 }
 
 type Waiter = {
@@ -282,7 +286,7 @@ export function openPlanAnnotation(
     round,
     previousContent
   }
-  queue.set(requestId, { request, timer: null, openedAt, shownAt: null })
+  queue.set(requestId, { request, timer: null, openedAt, shownAt: null, onScreen: null })
   startFront()
   // After startFront, so a review that went straight to the front reports a depth of zero.
   notifyQueued()
@@ -338,8 +342,25 @@ function pendingFor(requestId: string, entry: PendingReview): PlanAnnotationPend
     status: 'pending',
     openedMs: now - entry.openedAt,
     shownMs: entry.shownAt === null ? null : now - entry.shownAt,
-    queuedAhead: Math.max(0, [...queue.keys()].indexOf(requestId))
+    queuedAhead: Math.max(0, [...queue.keys()].indexOf(requestId)),
+    onScreen: entry.onScreen
   }
+}
+
+/**
+ * A window's report that it placed the review, and whether the user can see it there.
+ * Returns the request when it is still open, so the caller can announce it.
+ */
+export function markPlanAnnotationShown(
+  requestId: string,
+  onScreen: boolean
+): PlanAnnotationRequest | null {
+  const entry = queue.get(requestId)
+  if (!entry) {
+    return null
+  }
+  entry.onScreen = entry.onScreen === true || onScreen
+  return entry.request
 }
 
 export function respondPlanAnnotation(requestId: string, result: PlanAnnotationResult): boolean {
@@ -384,6 +405,12 @@ export function savePlanAnnotationToPages(
     }
   }
   return page
+}
+
+/** True once a window reported the review on screen; null once it is no longer open. */
+export function isPlanAnnotationOnScreen(requestId: string): boolean | null {
+  const entry = queue.get(requestId)
+  return entry ? entry.onScreen === true : null
 }
 
 /** Every review still waiting, front first. Lets a reopened window rebuild its queue. */

@@ -59,6 +59,30 @@ export function WorktreePlanReviewBadge({
   )
 }
 
+/** On the Code switch, so a review waiting in a project tab is visible from Chat and Bots. */
+export function CodeModePlanReviewDot(): React.JSX.Element | null {
+  const waiting = useAppStore((s) =>
+    Object.values(s.unifiedTabsByWorktree ?? {}).some((tabs) =>
+      tabs.some((tab) => tab.attention === 'review')
+    )
+  )
+  if (!waiting) {
+    return null
+  }
+  return (
+    <span
+      data-plan-review-marker=""
+      aria-label={translate(
+        'auto.components.planAnnotation.sidebar.projectDot',
+        'Plan waiting for review'
+      )}
+      className="flex shrink-0 items-center"
+    >
+      <PulseDot />
+    </span>
+  )
+}
+
 /** Worktree ids are `${repoId}::${path}`, so a prefix finds every worktree of the project. */
 export function ProjectPlanReviewDot({
   repoId

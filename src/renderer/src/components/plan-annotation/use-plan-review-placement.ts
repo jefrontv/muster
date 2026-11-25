@@ -1,13 +1,18 @@
 // Decides where the front plan review shows: on its Pages page, in a plan-review tab, or the popup.
-// Routed reviews never take focus; a toast and the tab's attention dot announce them.
-import { createElement, useEffect, useMemo, useRef } from 'react'
+// Routed reviews never take focus; a toast and the tab's attention dot announce them, and main
+// sends an OS notification when the review lands somewhere the user is not looking.
+import { createElement, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import type { PlanAnnotationRequest } from '../../../../shared/plan-annotation-types'
-import type { Worktree } from '../../../../shared/types'
 import { buildProjectPagesTabId } from '../project-pages/project-pages-tab'
-import { matchPlanReviewWorktree } from './plan-review-worktree-match'
+import { planReviewWorktree } from './plan-review-worktree-match'
+import {
+  planReviewOnScreen,
+  useWindowFocused,
+  worktreeShowsPlanReview
+} from './plan-review-visibility'
 import { PlanReviewToast } from './PlanReviewToast'
 
 export type PlanReviewPlacement = 'dialog' | 'tab' | 'page'
@@ -29,21 +34,6 @@ export function focusPlanReviewTab(worktreeId: string, request: PlanAnnotationRe
   state.openPlanReviewTab(worktreeId, request, { focus: true })
 }
 
-/** A page review belongs in a worktree of the page's own project when the match is elsewhere. */
-function pageWorktree(
-  request: PlanAnnotationRequest,
-  matched: string | null,
-  worktrees: Worktree[]
-): string | null {
-  const repoId = request.page?.scopeKey.startsWith('repo:')
-    ? request.page.scopeKey.slice('repo:'.length)
-    : null
-  if (!repoId || worktrees.find((w) => w.id === matched)?.repoId === repoId) {
-    return matched
-  }
-  return worktrees.find((w) => w.repoId === repoId)?.id ?? matched
-}
-
 /** Clears the review dot from Pages tabs that no longer show the front review. */
 function clearStalePageReviews(keepWorktreeId: string | null): void {
   const state = useAppStore.getState()
@@ -60,6 +50,21 @@ function clearStalePageReviews(keepWorktreeId: string | null): void {
   }
 }
 
+/** Opens the review in its worktree; false when no review tab came of it. */
+function placeInWorktree(
+  worktreeId: string,
+  request: PlanAnnotationRequest,
+  page: boolean
+): boolean {
+  const state = useAppStore.getState()
+  if (page && request.page) {
+    state.openProjectPagesReview(worktreeId, request.page.scopeKey, request.page.pageId)
+  } else {
+    state.openPlanReviewTab(worktreeId, request)
+  }
+  return worktreeShowsPlanReview(useAppStore.getState().unifiedTabsByWorktree, worktreeId)
+}
+
 export function usePlanReviewPlacement(
   current: PlanAnnotationRequest | null,
   waiting: number
@@ -69,29 +74,33 @@ export function usePlanReviewPlacement(
   const worktreesByRepo = useAppStore((s) => s.worktreesByRepo)
   // Session restore replaces the tab list, so a tab opened before it would vanish after a reload.
   const sessionReady = useAppStore((s) => s.workspaceSessionReady)
-  const worktreeId = useMemo(() => {
+  const activeView = useAppStore((s) => s.activeView)
+  const activeWorktreeId = useAppStore((s) => s.activeWorktreeId)
+  const windowFocused = useWindowFocused()
+  // A review whose tab could not be made falls back to the popup, so it never blocks the queue.
+  const [unplaceable, setUnplaceable] = useState<string | null>(null)
+  const matchedWorktreeId = useMemo(() => {
     // A plan already on a page opens there even when path reviews use the popup.
     if (!current || (!inTab && !(current.page && pagesOn))) {
       return null
     }
-    const worktrees = Object.values(worktreesByRepo).flat()
-    const matched = matchPlanReviewWorktree(current, worktrees)
-    return current.page && pagesOn ? pageWorktree(current, matched, worktrees) : matched
+    return planReviewWorktree(current, Object.values(worktreesByRepo).flat(), pagesOn)
   }, [current, inTab, pagesOn, worktreesByRepo])
+  const worktreeId = current && unplaceable === current.requestId ? null : matchedWorktreeId
   const placement: PlanReviewPlacement = !worktreeId
     ? 'dialog'
     : current?.page && pagesOn
       ? 'page'
       : 'tab'
   const announced = useRef<string | null>(null)
+  const reported = useRef<string | null>(null)
 
   useEffect(() => {
     const state = useAppStore.getState()
     if (current && worktreeId && sessionReady) {
-      if (placement === 'page' && current.page) {
-        state.openProjectPagesReview(worktreeId, current.page.scopeKey, current.page.pageId)
-      } else {
-        state.openPlanReviewTab(worktreeId, current)
+      if (!placeInWorktree(worktreeId, current, placement === 'page')) {
+        setUnplaceable(current.requestId)
+        return
       }
       if (announced.current !== current.requestId) {
         announced.current = current.requestId
@@ -115,6 +124,37 @@ export function usePlanReviewPlacement(
       }
     }
   }, [current, worktreeId, waiting, placement, sessionReady])
+
+  // Tells main whether the user can see the review, for collect_plan_review and the notification.
+  const placed = Boolean(current && (placement === 'dialog' || sessionReady))
+  const onScreen = planReviewOnScreen({
+    dialog: placement === 'dialog',
+    worktreeId,
+    activeView,
+    activeWorktreeId,
+    windowFocused
+  })
+  useEffect(() => {
+    const key = current ? `${current.requestId}:${placement}:${onScreen}` : null
+    if (!current || !placed || reported.current === key) {
+      return
+    }
+    reported.current = key
+    void window.api.planAnnotation
+      .shown({ requestId: current.requestId, onScreen })
+      .catch(() => undefined)
+  }, [current, placement, placed, onScreen])
+
+  // Clicking the notification brings the review forward.
+  useEffect(
+    () =>
+      window.api.planAnnotation.onReveal((requestId) => {
+        if (current?.requestId === requestId && worktreeId) {
+          focusPlanReviewTab(worktreeId, current)
+        }
+      }),
+    [current, worktreeId]
+  )
 
   return placement
 }

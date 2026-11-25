@@ -1245,11 +1245,15 @@ export type PlanAnnotationApi = {
     requestId: string
     folder: string | null
   }) => Promise<PlanReviewPageRef | null>
+  /** Reports where the review landed: onScreen false means only off screen, so main notifies. */
+  shown: (args: { requestId: string; onScreen: boolean }) => Promise<void>
   /** Fires when a review is settled anywhere, so a stale modal can drop it. */
   /** How many reviews are stacked behind the one on screen. Main owns the queue, so it says. */
   onQueued: (callback: (count: number) => void) => () => void
   onResolved: (callback: (requestId: string) => void) => () => void
   onRequest: (callback: (request: PlanAnnotationRequest) => void) => () => void
+  /** The user clicked the review's notification. */
+  onReveal: (callback: (requestId: string) => void) => () => void
 }
 
 /** Agent requests to create projects or write site config, answered by the user. */

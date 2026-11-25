@@ -35,18 +35,34 @@ export const COLLECT_MAX_SECONDS = HOLD_MAX_SECONDS
 const KEEP_WAITING =
   'Reviews often take 5 to 15 minutes, so pending is normal. Call collect_plan_review again now with the same review_id. Do not open the plan again, ask for a review in chat, end your turn or start the work until it returns a decision.'
 
+/** An older Muster sends no onScreen, so undefined keeps the old "reading" answer. */
+function userState(queued: boolean, onScreen: boolean | null | undefined): string {
+  if (queued) {
+    return 'queued'
+  }
+  return onScreen === false ? 'notified' : onScreen === null ? 'not_shown' : 'reading'
+}
+
+const STATE_MESSAGES: Record<string, string> = {
+  reading: 'The plan is open in Muster and the user is reading it.',
+  notified:
+    'Muster opened the plan in a tab the user is not looking at and notified them. They have not opened it yet.',
+  not_shown: 'Muster has the plan, but no Muster window has shown it yet.'
+}
+
 function pendingAnswer(reviewId: string, outcome: PlanReviewPending): Record<string, unknown> {
   const queued = (outcome.queuedAhead ?? 0) > 0
   const shownMs = outcome.shownMs ?? (queued ? null : outcome.openedMs)
+  const state = userState(queued, outcome.onScreen)
   return {
     review_id: reviewId,
     status: 'pending',
-    user_state: queued ? 'queued' : 'reading',
+    user_state: state,
     ...(queued ? { queued_ahead: outcome.queuedAhead } : {}),
     open_for_seconds: shownMs === null ? 0 : Math.round(shownMs / 1_000),
     message: queued
       ? `The plan is queued behind ${outcome.queuedAhead} other review(s) in Muster and opens when they finish.`
-      : 'The plan is open in Muster and the user is reading it.',
+      : STATE_MESSAGES[state],
     next_step: KEEP_WAITING
   }
 }

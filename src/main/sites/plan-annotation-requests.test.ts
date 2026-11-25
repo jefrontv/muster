@@ -3,6 +3,7 @@ import {
   clearPlanAnnotationsForTests,
   clearPlanRoundsForTests,
   listPendingPlanAnnotations,
+  markPlanAnnotationShown,
   PLAN_ANNOTATION_RESULT_RETENTION_MS,
   PLAN_ANNOTATION_TIMEOUT_MS,
   awaitPlanAnnotationResult,
@@ -96,6 +97,21 @@ describe('awaitPlanAnnotationResult', () => {
   it('answers pending while the user is still reading, so the caller can poll', async () => {
     const id = open('reading')
     await expect(collect(id)).resolves.toMatchObject({ status: 'pending' })
+  })
+
+  it('reports whether a window has put the review on screen', async () => {
+    const id = open('seen')
+    await expect(collect(id)).resolves.toMatchObject({ onScreen: null })
+    expect(markPlanAnnotationShown(id, false)?.requestId).toBe(id)
+    await expect(collect(id)).resolves.toMatchObject({ onScreen: false })
+    markPlanAnnotationShown(id, true)
+    // Once seen it stays seen, even if another window reports it off screen.
+    markPlanAnnotationShown(id, false)
+    await expect(collect(id)).resolves.toMatchObject({ onScreen: true })
+  })
+
+  it('ignores a shown report for a review that is not open', () => {
+    expect(markPlanAnnotationShown('missing', true)).toBeNull()
   })
 
   it('wakes a parked poll the moment the user answers', async () => {

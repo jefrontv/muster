@@ -11,12 +11,19 @@ export function focusMusterWindow(): void {
   window?.focus()
 }
 
-/** An OS notification (click focuses Muster) plus a Dock bounce, only while no window has focus. */
-export function notifyWhenUnfocused(content: { title: string; body: string }): void {
-  if (BrowserWindow.getFocusedWindow()) {
+/**
+ * An OS notification (click focuses Muster) plus a Dock bounce, only while no window has focus.
+ * evenWhenFocused: the thing waiting sits somewhere in Muster the user is not looking at.
+ */
+export function notifyWhenUnfocused(
+  content: { title: string; body: string },
+  options: { evenWhenFocused?: boolean; onClick?: () => void } = {}
+): void {
+  const focused = BrowserWindow.getFocusedWindow() !== null
+  if (focused && !options.evenWhenFocused) {
     return
   }
-  if (process.platform === 'darwin') {
+  if (process.platform === 'darwin' && !focused) {
     app.dock?.bounce('informational')
   }
   if (!Notification.isSupported()) {
@@ -29,6 +36,7 @@ export function notifyWhenUnfocused(content: { title: string; body: string }): v
   notification.on('click', () => {
     release()
     focusMusterWindow()
+    options.onClick?.()
   })
   notification.on('close', release)
   shownNotifications.add(notification)

@@ -28,3 +28,21 @@ export function matchPlanReviewWorktree(
   }
   return null
 }
+/**
+ * The review's worktree: the agent's own project first, then the reviewed page's project, then the
+ * plan file. The page or file can sit in another project, and a review routed there is one nobody sees.
+ */
+export function planReviewWorktree(
+  request: Pick<PlanAnnotationRequest, 'cwd' | 'planPath' | 'page'>,
+  worktrees: readonly { id: string; path: string; repoId: string }[],
+  pagesOn: boolean
+): string | null {
+  const byCwd = matchPlanReviewWorktree({ cwd: request.cwd, planPath: null }, worktrees)
+  if (byCwd) {
+    return byCwd
+  }
+  const scopeKey = pagesOn ? request.page?.scopeKey : undefined
+  const pageRepo = scopeKey?.startsWith('repo:') ? scopeKey.slice('repo:'.length) : null
+  const byPage = pageRepo ? worktrees.find((w) => w.repoId === pageRepo)?.id : undefined
+  return byPage ?? matchPlanReviewWorktree({ cwd: null, planPath: request.planPath }, worktrees)
+}

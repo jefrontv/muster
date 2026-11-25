@@ -1055,6 +1055,7 @@ const api = {
     listPending: () => ipcRenderer.invoke('planAnnotation:listPending'),
     saveAttachment: (args) => ipcRenderer.invoke('planAnnotation:saveAttachment', args),
     saveToPages: (args) => ipcRenderer.invoke('planAnnotation:saveToPages', args),
+    shown: (args) => ipcRenderer.invoke('planAnnotation:shown', args),
     onQueued: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, count: number): void => callback(count)
       ipcRenderer.on('planAnnotation:queued', listener)
@@ -1073,6 +1074,12 @@ const api = {
       ): void => callback(request)
       ipcRenderer.on('planAnnotation:request', listener)
       return () => ipcRenderer.removeListener('planAnnotation:request', listener)
+    },
+    onReveal: (callback) => {
+      const listener = (_event: Electron.IpcRendererEvent, requestId: string): void =>
+        callback(requestId)
+      ipcRenderer.on('planAnnotation:reveal', listener)
+      return () => ipcRenderer.removeListener('planAnnotation:reveal', listener)
     }
   } satisfies PreloadApi['planAnnotation'],
 

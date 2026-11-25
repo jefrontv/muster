@@ -45,8 +45,14 @@ function connectionRefused(error: unknown): boolean {
 
 export type PlanReviewOutcome =
   | { status: 'settled'; result: PlanAnnotationResult }
-  // shownMs and queuedAhead are absent from an older Muster.
-  | { status: 'pending'; openedMs: number; shownMs?: number | null; queuedAhead?: number }
+  // shownMs, queuedAhead and onScreen are absent from an older Muster.
+  | {
+      status: 'pending'
+      openedMs: number
+      shownMs?: number | null
+      queuedAhead?: number
+      onScreen?: boolean | null
+    }
   | { status: 'unknown' }
 
 /** POSTs to a GUI-only bridge route. `noGui` is the message when no window can answer. */

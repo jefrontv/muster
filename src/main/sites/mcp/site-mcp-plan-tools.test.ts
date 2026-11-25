@@ -224,6 +224,25 @@ describe('collect_plan_review', () => {
     expect(result.next_step).toContain('Do not open the plan again')
   })
 
+  it('says the review is waiting off screen when no window shows it in front of the user', async () => {
+    const pending = (onScreen: boolean | null) =>
+      collectTool.run(
+        collectContext(() =>
+          Promise.resolve({
+            status: 'pending',
+            openedMs: 9_000,
+            shownMs: 9_000,
+            queuedAhead: 0,
+            onScreen
+          })
+        ),
+        { review_id: 'r1' }
+      ) as Promise<{ user_state: string; message: string }>
+    await expect(pending(false)).resolves.toMatchObject({ user_state: 'notified' })
+    await expect(pending(null)).resolves.toMatchObject({ user_state: 'not_shown' })
+    await expect(pending(true)).resolves.toMatchObject({ user_state: 'reading' })
+  })
+
   it('says a review is queued rather than unread when another is in front of it', async () => {
     const result = (await collectTool.run(
       collectContext(() =>

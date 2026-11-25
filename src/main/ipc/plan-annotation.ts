@@ -8,7 +8,9 @@ import { getCanonicalUserDataPath } from '../persistence'
 import { savePlanAttachment } from '../sites/plan-annotation-attachments'
 import { notifyWhenUnfocused } from './muster-window-attention'
 import {
+  isPlanAnnotationOnScreen,
   listPendingPlanAnnotations,
+  markPlanAnnotationShown,
   respondPlanAnnotation,
   savePlanAnnotationToPages,
   setPlanAnnotationQueuedSender,
@@ -24,18 +26,46 @@ import type {
 export const PLAN_ANNOTATION_REQUEST_CHANNEL = 'planAnnotation:request'
 export const PLAN_ANNOTATION_RESOLVED_CHANNEL = 'planAnnotation:resolved'
 export const PLAN_ANNOTATION_QUEUED_CHANNEL = 'planAnnotation:queued'
+export const PLAN_ANNOTATION_REVEAL_CHANNEL = 'planAnnotation:reveal'
 
-function broadcast(request: PlanAnnotationRequest): void {
+const OFF_SCREEN_GRACE_MS = 1_500
+
+/** Reviews already announced by an OS notification, so a window's report does not repeat it. */
+const notified = new Set<string>()
+
+function sendToWindows(channel: string, payload: unknown): void {
   for (const window of BrowserWindow.getAllWindows()) {
     if (!window.isDestroyed()) {
-      window.webContents.send(PLAN_ANNOTATION_REQUEST_CHANNEL, request)
+      window.webContents.send(channel, payload)
     }
   }
+}
+
+function announce(request: PlanAnnotationRequest, evenWhenFocused: boolean): void {
+  if (notified.has(request.requestId)) {
+    return
+  }
+  // notifyWhenUnfocused may decline; only a shown banner counts as announced.
+  if (!evenWhenFocused && BrowserWindow.getFocusedWindow()) {
+    return
+  }
+  notified.add(request.requestId)
+  notifyWhenUnfocused(
+    {
+      title: 'A plan is waiting for your review',
+      body: `${request.agent ?? 'An agent'}: ${request.title}`
+    },
+    {
+      evenWhenFocused,
+      onClick: () => sendToWindows(PLAN_ANNOTATION_REVEAL_CHANNEL, request.requestId)
+    }
+  )
+}
+
+function broadcast(request: PlanAnnotationRequest): void {
+  sendToWindows(PLAN_ANNOTATION_REQUEST_CHANNEL, request)
   // A review behind the terminal is one the agent rightly thinks nobody saw.
-  notifyWhenUnfocused({
-    title: 'A plan is waiting for your review',
-    body: `${request.agent ?? 'An agent'}: ${request.title}`
-  })
+  announce(request, false)
 }
 
 function readResult(value: unknown): PlanAnnotationResult {
@@ -62,6 +92,7 @@ export function registerPlanAnnotationHandlers(): void {
   ipcMain.removeHandler('planAnnotation:listPending')
   ipcMain.removeHandler('planAnnotation:saveAttachment')
   ipcMain.removeHandler('planAnnotation:saveToPages')
+  ipcMain.removeHandler('planAnnotation:shown')
 
   ipcMain.handle(
     'planAnnotation:respond',
@@ -91,6 +122,25 @@ export function registerPlanAnnotationHandlers(): void {
     listPendingPlanAnnotations()
   )
 
+  // A window placed the review; off screen (another project, Bots view) earns a notification.
+  ipcMain.handle(
+    'planAnnotation:shown',
+    (_event, args: { requestId?: unknown; onScreen?: unknown }): void => {
+      if (typeof args?.requestId !== 'string' || typeof args.onScreen !== 'boolean') {
+        return
+      }
+      const request = markPlanAnnotationShown(args.requestId, args.onScreen)
+      if (request && !args.onScreen) {
+        // Another window may still report it on screen; only announce if none does.
+        setTimeout(() => {
+          if (isPlanAnnotationOnScreen(request.requestId) === false) {
+            announce(request, true)
+          }
+        }, OFF_SCREEN_GRACE_MS)
+      }
+    }
+  )
+
   ipcMain.handle(
     'planAnnotation:saveAttachment',
     (_event, args: { name?: unknown; dataBase64?: unknown }): Promise<string> => {
@@ -106,18 +156,9 @@ export function registerPlanAnnotationHandlers(): void {
   )
 
   setPlanAnnotationSender(broadcast)
-  setPlanAnnotationQueuedSender((count) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      if (!window.isDestroyed()) {
-        window.webContents.send(PLAN_ANNOTATION_QUEUED_CHANNEL, count)
-      }
-    }
-  })
+  setPlanAnnotationQueuedSender((count) => sendToWindows(PLAN_ANNOTATION_QUEUED_CHANNEL, count))
   setPlanAnnotationResolvedSender((requestId) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      if (!window.isDestroyed()) {
-        window.webContents.send(PLAN_ANNOTATION_RESOLVED_CHANNEL, requestId)
-      }
-    }
+    notified.delete(requestId)
+    sendToWindows(PLAN_ANNOTATION_RESOLVED_CHANNEL, requestId)
   })
 }
