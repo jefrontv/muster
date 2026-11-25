@@ -18,6 +18,7 @@ import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-widt
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
 import { TabLeadingSlot, TabTrailingSlot } from './tab-chrome-slots'
+import { getTabAccessibleName } from './tab-strip-labels'
 import { resolveTabTrailingState } from './tab-trailing-state'
 import {
   hasUnreadAgentCompletionForTerminalTab,
@@ -194,10 +195,12 @@ export default function SortableTab({
     onActivate(tab.id)
   }, [onActivate, tab.id])
   // Why: defer activation to pointer-up so a drag doesn't switch tabs or steal focus mid-gesture (tab-strip-pointer-activation).
-  const { onPointerDown: onTabPointerDown } = useTabStripPointerActivation({
-    onActivate: handleActivate,
-    disabled: isEditing
-  })
+  const { onPointerDown: onTabPointerDown, onKeyDown: onTabKeyDown } = useTabStripPointerActivation(
+    {
+      onActivate: handleActivate,
+      disabled: isEditing
+    }
+  )
   const tabTitle = tab.customTitle ?? tab.title
   const tabRoot = (
     <div
@@ -211,7 +214,16 @@ export default function SortableTab({
       data-agent-activity-status={activityStatus}
       {...attributes}
       {...dragListeners}
-      // Why: subtle amber wash flags unread activity at a glance, layered over the active highlight so it still reads selected.
+      role="tab"
+      aria-selected={isActive}
+      aria-roledescription={undefined}
+      aria-describedby={undefined}
+      tabIndex={isActive ? 0 : -1}
+      aria-label={getTabAccessibleName(tabTitle, {
+        isPinned,
+        hasUnreadActivity: showUnreadActivity
+      })}
+      onKeyDown={onTabKeyDown}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onDoubleClick={(e) => {
         if (isEditing) {

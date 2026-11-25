@@ -35,6 +35,8 @@ export function TabCloseButton({
           )}
           // Why: E2E drives the real close path through this attribute, not the tab chrome.
           data-tab-close-button="true"
+          // Why: tabs own keyboard focus; Cmd/Ctrl+W and the context menu close from the keyboard.
+          tabIndex={-1}
           aria-label={ariaLabel ?? closeLabel}
           onPointerDown={(e) => {
             if (e.button === 0) {

@@ -23,6 +23,7 @@ import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-widt
 import { TabWorkspaceLayoutMenuSection } from './TabWorkspaceLayoutMenuSection'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TabLeadingSlot, TabTrailingSlot } from './tab-chrome-slots'
+import { getCloseTabAccessibleName, getTabAccessibleName } from './tab-strip-labels'
 import { resolveTabTrailingState } from './tab-trailing-state'
 
 function formatBrowserTabUrlLabel(url: string): string {
@@ -167,7 +168,9 @@ export default function BrowserTab({
 
   // Why: defer activation to pointer-up so dragging the tab (reorder / move into
   // another pane / split) does not switch the active tab mid-gesture.
-  const { onPointerDown: onTabPointerDown } = useTabStripPointerActivation({ onActivate })
+  const { onPointerDown: onTabPointerDown, onKeyDown: onTabKeyDown } = useTabStripPointerActivation(
+    { onActivate }
+  )
 
   const tabRoot = (
     <div
@@ -176,6 +179,13 @@ export default function BrowserTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...listeners}
+      role="tab"
+      aria-selected={isActive}
+      aria-roledescription={undefined}
+      aria-describedby={undefined}
+      tabIndex={isActive ? 0 : -1}
+      aria-label={getTabAccessibleName(tabLabel, { isPinned })}
+      onKeyDown={onTabKeyDown}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
@@ -215,7 +225,11 @@ export default function BrowserTab({
         )}
       </TabLeadingSlot>
       <span className={TAB_LABEL_WIDTH_CLASSES}>{tabLabel}</span>
-      <TabTrailingSlot state={resolveTabTrailingState({ isActive, isPinned })} onClose={onClose} />
+      <TabTrailingSlot
+        state={resolveTabTrailingState({ isActive, isPinned })}
+        closeAriaLabel={getCloseTabAccessibleName(tabLabel)}
+        onClose={onClose}
+      />
     </div>
   )
 

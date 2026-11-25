@@ -4,6 +4,7 @@ import {
   beginTabStripPointerGesture,
   markTabStripPointerActivation
 } from './tab-strip-pointer-gesture'
+import { isTabActivationKey } from './tab-strip-keyboard'
 
 /**
  * Defer tab activation to pointer-up and suppress it when the press turns into a
@@ -31,6 +32,7 @@ export function useTabStripPointerActivation({
     event: React.PointerEvent,
     dragListener?: (event: React.PointerEvent<Element>) => void
   ) => void
+  onKeyDown: (event: React.KeyboardEvent) => void
 } {
   const onActivateRef = useRef(onActivate)
   onActivateRef.current = onActivate
@@ -88,5 +90,16 @@ export function useTabStripPointerActivation({
     [disabled]
   )
 
-  return { onPointerDown }
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent): void => {
+      if (disabled || !isTabActivationKey(event)) {
+        return
+      }
+      event.preventDefault()
+      onActivateRef.current()
+    },
+    [disabled]
+  )
+
+  return { onPointerDown, onKeyDown }
 }

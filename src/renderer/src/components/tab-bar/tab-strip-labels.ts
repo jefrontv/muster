@@ -69,6 +69,44 @@ export function getTabStripEditorContextLines(
   return lines
 }
 
+/** Screen reader name: the label plus states shown only as dots, pins or italics. */
+export function getTabAccessibleName(
+  label: string,
+  state: {
+    isDirty?: boolean
+    attention?: 'review' | 'changed' | null
+    isPinned?: boolean
+    isPreview?: boolean
+    hasUnreadActivity?: boolean
+  }
+): string {
+  const parts = [label]
+  if (state.isDirty) {
+    parts.push(translate('auto.components.tab.bar.tabStripLabels.a11yUnsaved', 'unsaved changes'))
+  }
+  if (state.attention === 'review') {
+    parts.push(translate('auto.components.tab.bar.tabStripLabels.a11yReview', 'needs review'))
+  } else if (state.attention === 'changed') {
+    parts.push(translate('auto.components.tab.bar.tabStripLabels.a11yChanged', 'changed'))
+  }
+  if (state.hasUnreadActivity) {
+    parts.push(translate('auto.components.tab.bar.tabStripLabels.a11yActivity', 'new activity'))
+  }
+  if (state.isPinned) {
+    parts.push(translate('auto.components.tab.bar.tabStripLabels.a11yPinned', 'pinned'))
+  }
+  if (state.isPreview) {
+    parts.push(translate('auto.components.tab.bar.tabStripLabels.a11yPreview', 'preview'))
+  }
+  return parts.join(', ')
+}
+
+export function getCloseTabAccessibleName(label: string): string {
+  return translate('auto.components.tab.bar.tabStripLabels.closeNamedTab', 'Close tab {{value0}}', {
+    value0: label
+  })
+}
+
 /** True when relativePath is a real file path worth showing or disambiguating. */
 export function hasFilePathLabel(file: Pick<OpenFile, 'mode' | 'diffSource'>): boolean {
   if (file.mode === 'edit' || file.mode === 'markdown-preview') {

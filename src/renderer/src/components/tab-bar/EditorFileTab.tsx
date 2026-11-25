@@ -30,7 +30,12 @@ import { canOpenMarkdownPreview } from '@/components/editor/markdown-preview-con
 import { EditorFileTabContextMenu } from './EditorFileTabContextMenu'
 import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
-import { getTabStripEditorContextLines, getTabStripEditorLabel } from './tab-strip-labels'
+import {
+  getCloseTabAccessibleName,
+  getTabAccessibleName,
+  getTabStripEditorContextLines,
+  getTabStripEditorLabel
+} from './tab-strip-labels'
 import { useTabAttention } from './TabStateDot'
 import { TabLeadingSlot, TabTooltipBody, TabTrailingSlot } from './tab-chrome-slots'
 import { resolveTabTrailingState } from './tab-trailing-state'
@@ -246,10 +251,12 @@ export default function EditorFileTab({
   const dragListeners = isRenaming ? undefined : listeners
   // Why: defer activation to pointer-up so dragging the tab (reorder / move into
   // another pane / split) does not switch the active tab mid-gesture.
-  const { onPointerDown: onTabPointerDown } = useTabStripPointerActivation({
-    onActivate,
-    disabled: isRenaming
-  })
+  const { onPointerDown: onTabPointerDown, onKeyDown: onTabKeyDown } = useTabStripPointerActivation(
+    {
+      onActivate,
+      disabled: isRenaming
+    }
+  )
 
   const tabRoot = (
     <div
@@ -258,6 +265,18 @@ export default function EditorFileTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...dragListeners}
+      role="tab"
+      aria-selected={isActive}
+      aria-roledescription={undefined}
+      aria-describedby={undefined}
+      tabIndex={isActive ? 0 : -1}
+      aria-label={getTabAccessibleName(tabLabel, {
+        isDirty: file.isDirty,
+        attention,
+        isPinned,
+        isPreview: file.isPreview
+      })}
+      onKeyDown={onTabKeyDown}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
@@ -363,7 +382,11 @@ export default function EditorFileTab({
           <span className="min-w-8 flex-1 truncate pl-1 text-muted-foreground">{nameHint}</span>
         ) : null}
       </span>
-      <TabTrailingSlot state={trailingState} onClose={onClose} />
+      <TabTrailingSlot
+        state={trailingState}
+        closeAriaLabel={getCloseTabAccessibleName(tabLabel)}
+        onClose={onClose}
+      />
     </div>
   )
 

@@ -7,6 +7,8 @@ import { useTabStripOverflowNavigation } from './tab-strip-overflow-navigation'
 import { useTabStripDragScrollHandlers } from './tab-strip-drag-scroll'
 import { useTabStripCloseFreeze } from './tab-strip-close-freeze'
 import { TabStripAllTabsMenu, type TabStripMenuEntry } from './TabStripAllTabsMenu'
+import { handleTabStripKeyDown } from './tab-strip-keyboard'
+import { translate } from '@/i18n/i18n'
 
 const NO_DRAG_STYLE = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
@@ -54,6 +56,10 @@ export function TabStrip({
           <div
             ref={tabStripRef}
             data-tab-strip="true"
+            role="tablist"
+            aria-orientation="horizontal"
+            aria-label={translate('auto.components.tab.bar.TabStrip.openTabs', 'Open tabs')}
+            onKeyDown={handleTabStripKeyDown}
             className={[
               'terminal-tab-strip flex h-full min-w-0 max-w-full flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden pr-1 pl-1.5',
               getTabStripScrollMaskClassName(tabStripOverflowState)

@@ -2970,7 +2970,17 @@
           "tabStripLabels": {
             "pages": "Pages",
             "planReview": "Plan review",
-            "markdownPreview": "Markdown preview"
+            "markdownPreview": "Markdown preview",
+            "a11yUnsaved": "unsaved changes",
+            "a11yReview": "needs review",
+            "a11yChanged": "changed",
+            "a11yActivity": "new activity",
+            "a11yPinned": "pinned",
+            "a11yPreview": "preview",
+            "closeNamedTab": "Close tab {{value0}}"
+          },
+          "TabStrip": {
+            "openTabs": "Open tabs"
           }
         }
       },

@@ -169,7 +169,10 @@ test.describe('SSH cold activation restore', () => {
       if (!firstTabId) {
         throw new Error('Restored SSH tabs disappeared')
       }
-      await orcaPage.getByRole('button', { name: /^Terminal 1 Close tab Terminal 1/ }).click()
+      await orcaPage
+        .getByRole('tab', { name: /^Terminal 1(,|$)/ })
+        .first()
+        .click()
       await expect
         .poll(() => orcaPage.evaluate(() => window.__store?.getState().activeTabId ?? null), {
           timeout: 10_000
