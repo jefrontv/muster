@@ -1,7 +1,7 @@
 // Hide/show for the Pages side panels; each panel remembers its choice.
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 export type PagesPanel = 'pagesSidebar' | 'diagramPalette'
@@ -17,6 +17,17 @@ export function usePagesPanelCollapsed(panel: PagesPanel): [boolean, () => void]
     })
   }, [panel])
   return [collapsed, toggle]
+}
+
+const AGENT_OPEN_KEY = 'muster.pages.agentPanel.open'
+
+/** Ask agent panel open state; one choice for all projects, like the other panels. */
+export function usePagesAgentPanelOpen(): [boolean, React.Dispatch<React.SetStateAction<boolean>>] {
+  const [open, setOpen] = useState(() => localStorage.getItem(AGENT_OPEN_KEY) === '1')
+  useEffect(() => {
+    localStorage.setItem(AGENT_OPEN_KEY, open ? '1' : '0')
+  }, [open])
+  return [open, setOpen]
 }
 
 /** Slides a panel shut; the content keeps its width so nothing reflows while it moves. */

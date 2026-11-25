@@ -23,7 +23,12 @@ import { ProjectPagesMap } from './ProjectPagesMap'
 import { ProjectPagesFolderView } from './ProjectPagesFolderView'
 import { ProjectPagesSidebar } from './ProjectPagesSidebar'
 import { ProjectPagesScopePicker } from './ProjectPagesScopePicker'
-import { PagesPanelSlot, PagesPanelToggle, usePagesPanelCollapsed } from './ProjectPagesPanelToggle'
+import {
+  PagesPanelSlot,
+  PagesPanelToggle,
+  usePagesAgentPanelOpen,
+  usePagesPanelCollapsed
+} from './ProjectPagesPanelToggle'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
 import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pages-location'
@@ -63,7 +68,7 @@ export default function ProjectPagesPage({
   const [saveState, setSaveState] = useState<AutosaveState>('saved')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
-  const [agentOpen, setAgentOpen] = useState(false)
+  const [agentOpen, setAgentOpen] = usePagesAgentPanelOpen()
   const [sidebarCollapsed, toggleSidebar] = usePagesPanelCollapsed('pagesSidebar')
   const [mapOpen, setMapOpen] = useState(false)
   const [mapFocus, setMapFocus] = useState<string | null>(null)
