@@ -20,6 +20,7 @@ import {
   writeNativeChatDraftCache
 } from '../native-chat/native-chat-draft-cache'
 import { pageTitle } from './project-pages-tree-model'
+import { ProjectPagesAgentDraft } from './ProjectPagesAgentDraft'
 import { useProjectPagesAgentPanelWidth } from './use-project-pages-agent-panel-width'
 import { useProjectPagesAgentThread } from './use-project-pages-agent-thread'
 
@@ -43,7 +44,12 @@ export function ProjectPagesAgentPanel({
     () => (repoRow && !remote ? { path: repoRow.path, displayName: repoRow.displayName } : null),
     [repoRow, remote]
   )
-  const { thread, workspace, error, startNew } = useProjectPagesAgentThread(scopeKey, repo)
+  const { thread, workspace, error, starting, start, startNew } = useProjectPagesAgentThread(
+    scopeKey,
+    repo
+  )
+  const [draft, setDraft] = useState('')
+  useEffect(() => setDraft(''), [scopeKey])
   const { containerRef, isResizing, separatorProps } = useProjectPagesAgentPanelWidth()
   const [mountKey, setMountKey] = useState(0)
   // The composer saves its draft when it unmounts, so the prefill is written between views.
@@ -63,13 +69,21 @@ export function ProjectPagesAgentPanel({
 
   // Puts a reference to the open page into the composer, keeping what was typed.
   function addOpenPage(): void {
-    if (!thread || !openPage) {
+    if (!openPage) {
       return
     }
-    const key = `chat-thread:${thread.id}`
-    const typed = readNativeChatDraftCache(key).trimEnd()
     const reference = `the page "${pageTitle(openPage)}" (id ${openPage.id})`
-    setPendingDraft(typed ? `${typed} ${reference} ` : `About ${reference}: `)
+    const withReference = (typed: string): string =>
+      typed ? `${typed} ${reference} ` : `About ${reference}: `
+    if (!thread) {
+      setDraft((typed) => withReference(typed.trimEnd()))
+      return
+    }
+    setPendingDraft(withReference(readNativeChatDraftCache(`chat-thread:${thread.id}`).trimEnd()))
+  }
+
+  function sendDraft(): void {
+    void start(draft).then(() => setDraft(''))
   }
 
   useEffect(() => {
@@ -114,7 +128,7 @@ export function ProjectPagesAgentPanel({
         <Button
           variant="ghost"
           size="icon-sm"
-          disabled={!thread || !openPage}
+          disabled={!openPage || starting}
           aria-label={translate('auto.components.projectPages.addPageToChat', 'Add this page')}
           title={translate('auto.components.projectPages.addPageToChat', 'Add this page')}
           onClick={addOpenPage}
@@ -146,10 +160,17 @@ export function ProjectPagesAgentPanel({
         <div className="flex min-h-0 flex-1 flex-col">
           <ChatThreadView key={`${thread.id}:${mountKey}`} thread={thread} workspace={workspace} />
         </div>
-      ) : (
+      ) : thread || starting ? (
         <p className="p-4 text-sm text-muted-foreground">
           {translate('auto.components.projectPages.agentStarting', 'Starting a chat…')}
         </p>
+      ) : (
+        <ProjectPagesAgentDraft
+          value={draft}
+          onChange={setDraft}
+          onSend={sendDraft}
+          sending={starting}
+        />
       )}
       <ChatConnectorConfirmDialog />
     </aside>

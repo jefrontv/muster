@@ -15439,7 +15439,11 @@
         "trashInsideOne": "1 page inside",
         "trashInside": "{{value0}} pages inside",
         "trashDeleted": "Deleted {{value0}}",
-        "trashDeletedJustNow": "Deleted just now"
+        "trashDeletedJustNow": "Deleted just now",
+        "agentDraftHint": "Ask about these pages, or ask the agent to write or edit one.",
+        "agentDraftLabel": "Message",
+        "agentDraftPlaceholder": "Ask agent…",
+        "agentDraftSend": "Send"
       },
       "planAnnotation": {
         "tab": {

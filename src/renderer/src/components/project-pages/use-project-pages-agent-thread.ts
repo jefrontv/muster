@@ -35,6 +35,8 @@ export function useProjectPagesAgentThread(
   thread: ChatThread | null
   workspace: ChatWorkspace | null
   error: string | null
+  starting: boolean
+  start: (prompt: string) => Promise<void>
   startNew: () => void
 } {
   const hydrated = useAppStore((s) => s.chatModeHydrated)
@@ -43,8 +45,10 @@ export function useProjectPagesAgentThread(
   const threads = useAppStore((s) => s.chatThreads)
   const createChatWorkspace = useAppStore((s) => s.createChatWorkspace)
   const createChatThread = useAppStore((s) => s.createChatThread)
+  const setChatThreadFirstMessage = useAppStore((s) => s.setChatThreadFirstMessage)
   const [threadId, setThreadId] = useState(() => rememberedThread(scopeKey))
   const [error, setError] = useState<string | null>(null)
+  const [starting, setStarting] = useState(false)
   const creating = useRef(false)
 
   useEffect(() => {
@@ -60,33 +64,38 @@ export function useProjectPagesAgentThread(
   const thread = threads.find((t) => t.id === threadId && t.archived !== true) ?? null
   const workspace = thread ? (workspaces.find((w) => w.id === thread.workspaceId) ?? null) : null
 
-  useEffect(() => {
-    if (!hydrated || !repo || thread || creating.current) {
+  // Only a sent message creates the workspace and thread, so browsing projects with the panel
+  // open leaves no empty chats behind.
+  const start = async (prompt: string): Promise<void> => {
+    if (!repo || creating.current || !prompt.trim()) {
       return
     }
     creating.current = true
-    void (async () => {
-      try {
-        const home =
-          workspaces.find((w) => w.directories[0] === repo.path) ??
-          (await createChatWorkspace({ name: repo.displayName, directories: [repo.path] }))
-        const created = await createChatThread(home.id, undefined, { activate: false })
-        if (created) {
-          rememberThread(scopeKey, created.id)
-          setThreadId(created.id)
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
-      } finally {
-        creating.current = false
+    setStarting(true)
+    try {
+      const home =
+        workspaces.find((w) => w.directories[0] === repo.path) ??
+        (await createChatWorkspace({ name: repo.displayName, directories: [repo.path] }))
+      const created = await createChatThread(home.id, undefined, { activate: false })
+      if (created) {
+        rememberThread(scopeKey, created.id)
+        setChatThreadFirstMessage(created.id, prompt.trim())
+        setThreadId(created.id)
       }
-    })()
-  }, [hydrated, repo, thread, workspaces, scopeKey, createChatWorkspace, createChatThread])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      creating.current = false
+      setStarting(false)
+    }
+  }
 
   return {
     thread,
     workspace,
     error,
+    starting,
+    start,
     startNew: () => {
       rememberThread(scopeKey, null)
       setThreadId(null)
