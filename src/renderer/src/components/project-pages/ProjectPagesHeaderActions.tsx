@@ -1,5 +1,12 @@
 // Page header actions: map, go to page, ask agent, transfer, comment and history.
-import { History, MessageSquarePlus, MessageSquareText, Search, Waypoints } from 'lucide-react'
+import {
+  Highlighter,
+  History,
+  MessageSquarePlus,
+  MessageSquareText,
+  Search,
+  Waypoints
+} from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
@@ -8,6 +15,7 @@ import { ProjectPageHistoryDialog } from './ProjectPageHistoryDialog'
 import { ProjectPagesQuickSwitcher } from './ProjectPagesQuickSwitcher'
 import { ProjectPagesTransferMenu } from './ProjectPagesTransferMenu'
 import { requestWholePageComment } from './use-page-comments'
+import { togglePageAnnotateMode, usePageAnnotateMode } from './page-annotate-mode'
 
 type Toggle = [boolean, React.Dispatch<React.SetStateAction<boolean>>]
 
@@ -34,6 +42,8 @@ export function ProjectPagesHeaderActions({
   history: Toggle
   onPick: (pageId: string) => void
 }): React.JSX.Element {
+  const annotate = usePageAnnotateMode()
+  const annotateLabel = translate('auto.components.projectPages.annotate', 'Annotate')
   return (
     <>
       {scopeKey ? (
@@ -81,22 +91,35 @@ export function ProjectPagesHeaderActions({
         </>
       ) : null}
       {meta && !meta.diagram ? (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0 text-muted-foreground"
-          aria-label={translate(
-            'auto.components.projectPages.comments.wholePageAction',
-            'Comment on page'
-          )}
-          title={translate(
-            'auto.components.projectPages.comments.wholePageAction',
-            'Comment on page'
-          )}
-          onClick={() => requestWholePageComment(meta.id)}
-        >
-          <MessageSquarePlus className="size-4" />
-        </Button>
+        <>
+          <Button
+            variant={annotate ? 'secondary' : 'ghost'}
+            size="icon-sm"
+            className={annotate ? 'shrink-0 text-foreground' : 'shrink-0 text-muted-foreground'}
+            aria-label={annotateLabel}
+            aria-pressed={annotate}
+            title={`${annotateLabel} (${isMac ? '⌘⇧A' : 'Ctrl+Shift+A'})`}
+            onClick={togglePageAnnotateMode}
+          >
+            <Highlighter className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0 text-muted-foreground"
+            aria-label={translate(
+              'auto.components.projectPages.comments.wholePageAction',
+              'Comment on page'
+            )}
+            title={translate(
+              'auto.components.projectPages.comments.wholePageAction',
+              'Comment on page'
+            )}
+            onClick={() => requestWholePageComment(meta.id)}
+          >
+            <MessageSquarePlus className="size-4" />
+          </Button>
+        </>
       ) : null}
       {meta && scopeKey ? (
         <>

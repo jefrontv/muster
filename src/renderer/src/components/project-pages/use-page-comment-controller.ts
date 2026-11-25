@@ -1,4 +1,4 @@
-// Wires page comments to the editor: highlights, the note box, ⌘⌥M and Mod+Shift+A.
+// Wires page comments to the editor: highlights, the note box, ⌘⌥M and Mod+Shift+A (annotate).
 // The note box is the plan review's own (PlanReviewNotePopover), so pages take notes like reviews.
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -14,6 +14,7 @@ import {
 } from './project-pages-comment-highlights'
 import { usePageComments, useWholePageCommentRequests } from './use-page-comments'
 import { useOpenNoteOnMouseSelection } from './page-review-note-selection'
+import { setPageAnnotateMode, usePageAnnotateMode } from './page-annotate-mode'
 import { roundStart, roundThreads } from '../plan-annotation/page-review-result'
 import { editorShortcutMatches } from '../editor/editor-shortcuts'
 import { getRichMarkdownAnnotationTarget } from '../editor/rich-markdown-review-annotations'
@@ -187,7 +188,8 @@ export function usePageCommentController({
     [editor, rootRef, startWholePage]
   )
 
-  useOpenNoteOnMouseSelection(rootRef, editor, startComment)
+  const annotate = usePageAnnotateMode()
+  useOpenNoteOnMouseSelection(rootRef, editor, startComment, inReview || annotate)
 
   const isMac = navigator.userAgent.includes('Mac')
   const onKeyDownCapture = useCallback(
@@ -196,12 +198,23 @@ export function usePageCommentController({
       const pageKey = mod && event.altKey && !event.shiftKey && event.code === 'KeyM'
       // The plan review's add-note shortcut (Mod+Shift+A) opens the same box on any page.
       const reviewKey = editorShortcutMatches('editor.addReviewNote', event.nativeEvent)
-      if ((pageKey || reviewKey) && !event.repeat && startComment(reviewKey && !pageKey)) {
-        event.preventDefault()
-        event.stopPropagation()
+      if ((!pageKey && !reviewKey) || event.repeat) {
+        return
       }
+      // Plain pages: Mod+Shift+A turns annotate on, opens on a selection, or turns it off.
+      const plainReviewKey = reviewKey && !pageKey && !inReviewRef.current
+      if (plainReviewKey && !annotate) {
+        setPageAnnotateMode(true)
+      } else if (!startComment(reviewKey && !pageKey)) {
+        if (!plainReviewKey) {
+          return
+        }
+        setPageAnnotateMode(false)
+      }
+      event.preventDefault()
+      event.stopPropagation()
     },
-    [isMac, startComment]
+    [annotate, isMac, startComment]
   )
 
   const reveal = useCallback(

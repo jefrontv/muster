@@ -1,6 +1,7 @@
-// The markdown plan review's open-on-selection behaviour, for every page.
+// The markdown plan review's open-on-selection behaviour, for reviews and annotate mode.
 import type { Editor } from '@tiptap/react'
 import { useEffect, type RefObject } from 'react'
+import { flushPendingProseMirrorSelection } from '../editor/rich-markdown-selection-flush'
 
 /**
  * Like PlanReviewEditor: a mouse selection opens the note box; keyboard selections use Mod+Shift+A.
@@ -10,11 +11,12 @@ import { useEffect, type RefObject } from 'react'
 export function useOpenNoteOnMouseSelection(
   rootRef: RefObject<HTMLElement | null>,
   editor: Editor | null,
-  open: (selectionOnly: boolean) => boolean
+  open: (selectionOnly: boolean) => boolean,
+  enabled: boolean
 ): void {
   useEffect(() => {
     const root = rootRef.current
-    if (!root || !editor) {
+    if (!root || !editor || !enabled) {
       return
     }
     let selecting = false
@@ -31,7 +33,12 @@ export function useOpenNoteOnMouseSelection(
       }
       selecting = false
       window.requestAnimationFrame(() => {
-        if (!editor.isDestroyed && !editor.state.selection.empty) {
+        if (editor.isDestroyed) {
+          return
+        }
+        // The first drag after focus elsewhere (e.g. the Annotate button) can leave editor state behind the DOM.
+        flushPendingProseMirrorSelection(editor)
+        if (!editor.state.selection.empty) {
           open(true)
         }
       })
@@ -42,5 +49,5 @@ export function useOpenNoteOnMouseSelection(
       root.removeEventListener('mousedown', down)
       window.removeEventListener('mouseup', up)
     }
-  }, [editor, open, rootRef])
+  }, [editor, enabled, open, rootRef])
 }

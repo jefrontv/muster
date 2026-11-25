@@ -15257,7 +15257,8 @@
           "textChanged": "Text changed",
           "resolved": "Resolved ({{count}})",
           "wholePageAction": "Comment on page"
-        }
+        },
+        "annotate": "Annotate"
       },
       "planAnnotation": {
         "tab": {
