@@ -25,8 +25,8 @@ if (
     enableFlag: import.meta.env.VITE_ENABLE_REACT_GRAB
   })
 ) {
+  // No react-grab/styles.css: its shadow root has its own, and the global copy overrides app utilities.
   void import('react-grab').then(({ init }) => init())
-  void import('react-grab/styles.css')
 }
 
 applyDocumentTheme('system', { disableTransitions: false })
