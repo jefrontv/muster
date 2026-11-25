@@ -28,7 +28,14 @@ type ConfirmationDialogRequest = {
 
 type ConfirmationDialogContextValue = (options: ConfirmationDialogOptions) => Promise<boolean>
 
-const ConfirmationDialogContext = createContext<ConfirmationDialogContextValue | null>(null)
+// Why: a hot update re-runs this module; reusing the dev context keeps the provider and its consumers matched.
+const ConfirmationDialogContext: React.Context<ConfirmationDialogContextValue | null> =
+  (import.meta.hot?.data.context as
+    | React.Context<ConfirmationDialogContextValue | null>
+    | undefined) ?? createContext<ConfirmationDialogContextValue | null>(null)
+if (import.meta.hot) {
+  import.meta.hot.data.context = ConfirmationDialogContext
+}
 
 export function ConfirmationDialogProvider({
   children
