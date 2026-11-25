@@ -209,6 +209,7 @@ import {
 } from '../shared/workspace-statuses'
 import { clampMarkdownTocPanelWidth } from '../shared/markdown-toc-panel-width'
 import { clampActiveCollabTaskPaneWidth } from '../shared/activecollab-task-pane-width'
+import { clampPagesAgentPanelWidth } from '../shared/project-pages-agent-panel-width'
 import { isLegacyRepoForExternalWorktreeVisibility } from '../shared/worktree-ownership'
 import { sanitizeRepoIcon } from '../shared/repo-icon'
 import { normalizeRepoBadgeColor } from '../shared/repo-badge-color'
@@ -5749,6 +5750,7 @@ export class Store {
       activeCollabTaskPaneWidth: clampActiveCollabTaskPaneWidth(
         this.state.ui?.activeCollabTaskPaneWidth
       ),
+      pagesAgentPanelWidth: clampPagesAgentPanelWidth(this.state.ui?.pagesAgentPanelWidth),
       visibleWorkspaceHostIds: normalizeVisibleExecutionHostIds(
         this.state.ui?.visibleWorkspaceHostIds
       ),
@@ -5854,6 +5856,9 @@ export class Store {
       ),
       activeCollabTaskPaneWidth: clampActiveCollabTaskPaneWidth(
         sanitizedUpdates.activeCollabTaskPaneWidth ?? this.state.ui?.activeCollabTaskPaneWidth
+      ),
+      pagesAgentPanelWidth: clampPagesAgentPanelWidth(
+        sanitizedUpdates.pagesAgentPanelWidth ?? this.state.ui?.pagesAgentPanelWidth
       ),
       visibleWorkspaceHostIds:
         updates.visibleWorkspaceHostIds !== undefined

@@ -110,6 +110,10 @@ import {
 } from '../../../../shared/workspace-statuses'
 import { clampMarkdownTocPanelWidth } from '../../../../shared/markdown-toc-panel-width'
 import { clampActiveCollabTaskPaneWidth } from '../../../../shared/activecollab-task-pane-width'
+import {
+  clampPagesAgentPanelWidth,
+  PAGES_AGENT_PANEL_DEFAULT_WIDTH
+} from '../../../../shared/project-pages-agent-panel-width'
 import { normalizeKagiSessionLink } from '../../../../shared/browser-url'
 import type { OrcaHookScriptKind } from '../../lib/orca-hook-trust'
 import type { SettingsNavTarget } from '@/lib/settings-navigation-types'
@@ -600,6 +604,8 @@ export type UISlice = {
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
   setSidebarWidth: (width: number) => void
+  pagesAgentPanelWidth: number
+  setPagesAgentPanelWidth: (width: number) => void
   agentSendPopoverTargetMode: AgentSendPopoverTargetMode | null
   openAgentSendPopoverTargetMode: (args: OpenAgentSendPopoverTargetModeArgs) => void
   closeAgentSendPopoverTargetMode: (id?: string, instanceId?: string) => void
@@ -963,6 +969,11 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setSidebarWidth: (width) => set({ sidebarWidth: width }),
+  pagesAgentPanelWidth: PAGES_AGENT_PANEL_DEFAULT_WIDTH,
+  setPagesAgentPanelWidth: (width) =>
+    set((s) => ({
+      pagesAgentPanelWidth: clampPagesAgentPanelWidth(width, undefined, s.pagesAgentPanelWidth)
+    })),
   agentSendPopoverTargetMode: null,
   openAgentSendPopoverTargetMode: (args) => {
     const targets = deriveRunningAgentSendTargets(get(), args.worktreeId)
@@ -2466,6 +2477,11 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (set, get)
           ui.activeCollabTaskPaneWidth,
           undefined,
           s.activeCollabTaskPaneWidth
+        ),
+        pagesAgentPanelWidth: clampPagesAgentPanelWidth(
+          ui.pagesAgentPanelWidth,
+          undefined,
+          s.pagesAgentPanelWidth
         ),
         ...rightSidebarState,
         rightSidebarTab: rightSidebarRoute.rightSidebarTab,

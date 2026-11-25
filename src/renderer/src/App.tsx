@@ -703,6 +703,7 @@ function App(): React.JSX.Element {
   const rightSidebarWidth = useAppStore((s) => s.rightSidebarWidth)
   const markdownTocPanelWidth = useAppStore((s) => s.markdownTocPanelWidth)
   const activeCollabTaskPaneWidth = useAppStore((s) => s.activeCollabTaskPaneWidth)
+  const pagesAgentPanelWidth = useAppStore((s) => s.pagesAgentPanelWidth)
   const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen)
   const rightSidebarAutoFolded = useAppStore((s) => s.rightSidebarAutoFolded)
   const rightSidebarTab = useAppStore((s) => s.rightSidebarTab)
@@ -1365,6 +1366,7 @@ function App(): React.JSX.Element {
         rightSidebarWidth,
         markdownTocPanelWidth,
         activeCollabTaskPaneWidth,
+        pagesAgentPanelWidth,
         groupBy,
         sortBy,
         projectOrderBy,
@@ -1399,6 +1401,7 @@ function App(): React.JSX.Element {
     rightSidebarWidth,
     markdownTocPanelWidth,
     activeCollabTaskPaneWidth,
+    pagesAgentPanelWidth,
     groupBy,
     sortBy,
     projectOrderBy,

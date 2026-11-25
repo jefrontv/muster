@@ -3,8 +3,13 @@ import { FilePlus2, MessageSquarePlus, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import {
+  LEFT_EDGE_RESIZE_HANDLE_CLASS_NAME,
+  WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME
+} from '@/components/sidebar/sidebar-resize-handle-style'
 import { translate } from '@/i18n/i18n'
 import { setChatThreadExtraBrief } from '@/lib/chat-thread-extra-brief'
+import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import { buildProjectPagesAgentBrief } from '../../../../shared/project-pages-agent-brief'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
@@ -15,6 +20,7 @@ import {
   writeNativeChatDraftCache
 } from '../native-chat/native-chat-draft-cache'
 import { pageTitle } from './project-pages-tree-model'
+import { useProjectPagesAgentPanelWidth } from './use-project-pages-agent-panel-width'
 import { useProjectPagesAgentThread } from './use-project-pages-agent-thread'
 
 type Props = {
@@ -38,6 +44,7 @@ export function ProjectPagesAgentPanel({
     [repoRow, remote]
   )
   const { thread, workspace, error, startNew } = useProjectPagesAgentThread(scopeKey, repo)
+  const { containerRef, isResizing, separatorProps } = useProjectPagesAgentPanelWidth()
   const [mountKey, setMountKey] = useState(0)
   // The composer saves its draft when it unmounts, so the prefill is written between views.
   const [pendingDraft, setPendingDraft] = useState<string | null>(null)
@@ -87,7 +94,19 @@ export function ProjectPagesAgentPanel({
       : error
 
   return (
-    <aside className="flex w-[420px] min-w-0 shrink-0 flex-col border-l border-border bg-background">
+    <aside
+      ref={containerRef}
+      className="relative flex min-w-0 shrink-0 flex-col border-l border-border bg-background"
+    >
+      <div {...separatorProps} className={LEFT_EDGE_RESIZE_HANDLE_CLASS_NAME}>
+        <div
+          className={cn(
+            WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME,
+            'group-focus-visible:bg-ring',
+            isResizing && 'bg-ring'
+          )}
+        />
+      </div>
       <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border px-3">
         <span className="flex-1 truncate text-sm font-medium text-foreground">
           {translate('auto.components.projectPages.askAgent', 'Ask agent')}

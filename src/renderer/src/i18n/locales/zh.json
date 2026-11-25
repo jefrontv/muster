@@ -15429,7 +15429,8 @@
           "diagramDescription": "A new diagram page, previewed here",
           "heading": "Heading",
           "toggleHeading": "Toggle heading"
-        }
+        },
+        "agentPanelResize": "Resize Ask agent"
       },
       "planAnnotation": {
         "tab": {

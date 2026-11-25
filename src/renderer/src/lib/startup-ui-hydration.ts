@@ -5,6 +5,7 @@ import {
   DEFAULT_WORKTREE_CARD_PROPERTIES
 } from '../../../shared/constants'
 import { ACTIVECOLLAB_TASK_PANE_DEFAULT_WIDTH } from '../../../shared/activecollab-task-pane-width'
+import { PAGES_AGENT_PANEL_DEFAULT_WIDTH } from '../../../shared/project-pages-agent-panel-width'
 import type { PersistedUIState } from '../../../shared/types'
 
 export function hydratePersistedUIAfterStartupRead({
@@ -43,6 +44,7 @@ export function getStartupErrorFallbackUI(uiHydrated: boolean): PersistedUIState
     rightSidebarWidth: 350,
     markdownTocPanelWidth: 240,
     activeCollabTaskPaneWidth: ACTIVECOLLAB_TASK_PANE_DEFAULT_WIDTH,
+    pagesAgentPanelWidth: PAGES_AGENT_PANEL_DEFAULT_WIDTH,
     groupBy: 'repo',
     sortBy: 'name',
     projectOrderBy: 'manual',
