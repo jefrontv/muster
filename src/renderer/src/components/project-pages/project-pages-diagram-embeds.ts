@@ -8,34 +8,30 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { toast } from 'sonner'
 import { PAGE_LINK_SCHEME } from '../../../../shared/project-pages-plain-text'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
-
-type Preview =
-  | { state: 'loading' | 'none' }
-  | { state: 'ready'; svg: string; empty: boolean; title: string; revision: number }
+import {
+  createDiagramPreviewCache,
+  type ReadyDiagramPreview
+} from './project-pages-diagram-preview-cache'
 
 const KEY = new PluginKey<DecorationSet>('projectPageDiagramEmbeds')
-const previews = new Map<string, Preview>()
-const listeners = new Set<() => void>()
+let watchingSaves = false
+const previews = createDiagramPreviewCache(async (scopeKey, pageId) => {
+  const result = await window.api.projectPages.diagram(scopeKey, pageId)
+  if (!result.ok) {
+    return null
+  }
+  const { renderDiagramPreview } = await import('./project-pages-diagram-preview')
+  const { page, xml } = result.value
+  return { ...renderDiagramPreview(xml), title: page.title, revision: page.revision }
+})
 
-function load(scopeKey: string, pageId: string): void {
-  previews.set(pageId, { state: 'loading' })
-  void (async () => {
-    const result = await window.api.projectPages.diagram(scopeKey, pageId)
-    if (!result.ok) {
-      previews.set(pageId, { state: 'none' })
-      return
-    }
-    const { renderDiagramPreview } = await import('./project-pages-diagram-preview')
-    const { page, xml } = result.value
-    previews.set(pageId, {
-      state: 'ready',
-      ...renderDiagramPreview(xml),
-      title: page.title,
-      revision: page.revision
-    })
-  })()
-    .catch(() => previews.set(pageId, { state: 'none' }))
-    .finally(() => listeners.forEach((listener) => listener()))
+// One app-wide listener, added with the first embed: agent edits, other tabs and restores
+// save a new revision, and the cache re-renders any preview it shows.
+function watchDiagramSaves(): void {
+  if (!watchingSaves) {
+    watchingSaves = true
+    window.api.projectPages.onChanged((change) => previews.changed(change))
+  }
 }
 
 /** The page id when a paragraph is nothing but one page link. */
@@ -66,7 +62,7 @@ function sizeEmbeddedSvg(svg: SVGSVGElement | null): void {
   svg.style.minWidth = `${Math.round(width * MIN_EMBED_SCALE)}px`
 }
 
-function embed(pageId: string, preview: Extract<Preview, { state: 'ready' }>): HTMLElement {
+function embed(pageId: string, preview: ReadyDiagramPreview): HTMLElement {
   const anchor = document.createElement('a')
   anchor.className = 'page-diagram-embed'
   anchor.href = `${PAGE_LINK_SCHEME}${pageId}`
@@ -100,7 +96,8 @@ function decorate(doc: ProseMirrorNode, scopeKey: string): DecorationSet {
     }
     const preview = previews.get(pageId)
     if (!preview) {
-      load(scopeKey, pageId)
+      watchDiagramSaves()
+      previews.load(scopeKey, pageId)
     } else if (preview.state === 'ready') {
       found.push(
         Decoration.widget(pos + node.nodeSize, () => embed(pageId, preview), {
@@ -153,9 +150,9 @@ export const ProjectPageDiagramEmbeds = Extension.create<{ scopeKey: string }>({
               view.dispatch(view.state.tr.setMeta(KEY, true))
             }
           }
-          listeners.add(redraw)
+          const stopRedraw = previews.subscribe(redraw)
           redraw()
-          return { destroy: () => listeners.delete(redraw) }
+          return { destroy: stopRedraw }
         },
         props: { decorations: (state) => KEY.getState(state) }
       })
