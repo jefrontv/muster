@@ -28,9 +28,11 @@ const previews = createDiagramPreviewCache(async (scopeKey, pageId) => {
 // One app-wide listener, added with the first embed: agent edits, other tabs and restores
 // save a new revision, and the cache re-renders any preview it shows.
 function watchDiagramSaves(): void {
-  if (!watchingSaves) {
+  // Editor tests mount without the preload bridge.
+  const pages = window.api?.projectPages
+  if (!watchingSaves && pages) {
     watchingSaves = true
-    window.api.projectPages.onChanged((change) => previews.changed(change))
+    pages.onChanged((change) => previews.changed(change))
   }
 }
 
