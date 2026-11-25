@@ -15294,6 +15294,12 @@
           "approveNotes": "Approve with notes",
           "approve": "Approve",
           "send": "Send feedback"
+        },
+        "addToPages": {
+          "failed": "Couldn't save this plan to Pages.",
+          "button": "Add to Pages",
+          "label": "Save to folder",
+          "default": "Plans (default)"
         }
       }
     },

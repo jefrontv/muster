@@ -58,7 +58,17 @@ export function usePlanReviewQueueSubscription(): void {
     () =>
       window.api.planAnnotation.onRequest((request) => {
         rememberFocusBeforeReview()
-        update((s) => ({ ...s, queue: [...s.queue, request] }))
+        // A resent review (moved to Pages) replaces its entry rather than queueing twice.
+        update((s) =>
+          s.queue.some((entry) => entry.requestId === request.requestId)
+            ? {
+                ...s,
+                queue: s.queue.map((entry) =>
+                  entry.requestId === request.requestId ? request : entry
+                )
+              }
+            : { ...s, queue: [...s.queue, request] }
+        )
       }),
     []
   )

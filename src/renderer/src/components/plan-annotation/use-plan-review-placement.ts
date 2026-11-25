@@ -70,7 +70,8 @@ export function usePlanReviewPlacement(
   // Session restore replaces the tab list, so a tab opened before it would vanish after a reload.
   const sessionReady = useAppStore((s) => s.workspaceSessionReady)
   const worktreeId = useMemo(() => {
-    if (!current || !inTab) {
+    // A plan already on a page opens there even when path reviews use the popup.
+    if (!current || (!inTab && !(current.page && pagesOn))) {
       return null
     }
     const worktrees = Object.values(worktreesByRepo).flat()

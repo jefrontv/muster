@@ -78,6 +78,7 @@ export function PlanAnnotationHeader({
   onToggleReadable,
   onWholePlanNote,
   onCopyPlan,
+  actions,
   inDialog = true
 }: {
   title: string
@@ -97,6 +98,8 @@ export function PlanAnnotationHeader({
   onToggleReadable: () => void
   onWholePlanNote: () => void
   onCopyPlan: () => void
+  /** Extra header actions, such as Add to Pages. */
+  actions?: React.ReactNode
   /** DialogTitle throws outside a Dialog, so the tab gets a plain heading. */
   inDialog?: boolean
 }): React.JSX.Element {
@@ -133,6 +136,7 @@ export function PlanAnnotationHeader({
             metadataOverride={VIEW_METADATA}
           />
         ) : null}
+        {actions}
         <HeaderIconButton
           label="Table of Contents"
           pressed={showTableOfContents && isRich}

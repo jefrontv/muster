@@ -14,6 +14,7 @@ import {
   PlanAnnotationHeader,
   type PlanReviewView
 } from './PlanAnnotationChrome'
+import { PlanReviewAddToPages } from './PlanReviewAddToPages'
 import { PlanReviewEditor } from './PlanReviewEditor'
 import { restoreFocusAfterReview } from './plan-review-focus-return'
 import { unifiedPlanDiff } from './plan-annotation-diff'
@@ -153,6 +154,14 @@ export function PlanReviewSession({
         onToggleReadable={() => setReadable((value) => !value)}
         onWholePlanNote={() => setWholePlanRequest((count) => count + 1)}
         onCopyPlan={() => void navigator.clipboard.writeText(editedContent ?? current.content)}
+        actions={
+          <PlanReviewAddToPages
+            request={current}
+            notes={draft.notes}
+            editedContent={edited ? editedContent : null}
+            onMoved={() => clearDraft(key)}
+          />
+        }
       />
 
       <div className="min-h-0 flex-1">
