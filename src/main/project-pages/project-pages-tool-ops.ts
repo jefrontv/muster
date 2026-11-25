@@ -36,6 +36,7 @@ import { appendMarkdown, readSection, replaceAnchor } from './project-pages-mark
 import type { ProjectPagesSearchIndex } from './project-pages-search-index'
 import { ProjectPagesError, type ProjectPagesStore } from './project-pages-store'
 import { toolCount, toolText, type ToolArgs } from './project-pages-tool-args'
+import { listTrash, restoreFromTrash } from './project-pages-trash-tool-ops'
 import {
   callerRepo,
   pagePath,
@@ -164,6 +165,9 @@ export async function runProjectPagesToolOp(
   }
   switch (op) {
     case 'list': {
+      if (args.archived === true) {
+        return { project, ...listTrash(pages()) }
+      }
       const all = pages().filter((p) => p.archivedAt === null)
       const parentRef = toolText(args, 'parent')
       const parentId = parentRef ? resolvePageRef(all, parentRef).id : null
@@ -276,7 +280,9 @@ export async function runProjectPagesToolOp(
     case 'archive': {
       const target = page()
       store.archivePage(scopeKey, target.id, author)
-      return { project, archived: target.id, note: 'Only the user can restore it, from Trash.' }
+      return { project, archived: target.id, note: 'restore_page brings it back from Trash.' }
     }
+    case 'restore':
+      return { project, ...restoreFromTrash(store, scopeKey, toolText(args, 'page', true), author) }
   }
 }

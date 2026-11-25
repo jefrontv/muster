@@ -231,12 +231,11 @@ export function createProjectPagesStore({ rootDir, now = Date.now, newId = newPa
         ? { ...p, archivedAt: stamp }
         : p
     )
-    // A restored page whose parent is still in the trash moves to the top level.
+    // A restored page whose parent is still in the trash, or gone, moves to the top level.
     const parent = root.parentId ? pages.find((p) => p.id === root.parentId) : undefined
+    const parentGone = root.parentId !== null && (!parent || parent.archivedAt !== null)
     const placed =
-      !archived && parent?.archivedAt
-        ? placePage(next, pageId, null, Number.MAX_SAFE_INTEGER)
-        : next
+      !archived && parentGone ? placePage(next, pageId, null, Number.MAX_SAFE_INTEGER) : next
     files.writeTree(dir, placed)
     emit({ scopeKey, pageId: null, revision: null, author })
   }

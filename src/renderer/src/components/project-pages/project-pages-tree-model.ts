@@ -2,6 +2,8 @@
 import { childrenOf } from '../../../../shared/project-pages-tree'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 
+export { trashedPages } from '../../../../shared/project-pages-trash'
+
 export type PageTreeNode = { page: ProjectPageMeta; children: PageTreeNode[] }
 
 /** Live pages as a tree; a title filter keeps matches plus the pages leading to them. */
@@ -17,20 +19,6 @@ export function buildPageTree(pages: ProjectPageMeta[], query = ''): PageTreeNod
           return matches || children.length > 0 ? [{ page, children }] : []
         })
   return build(null, 0)
-}
-
-/** Trashed pages that went in on their own, newest first; their children ride along. */
-export function trashedPages(pages: ProjectPageMeta[]): ProjectPageMeta[] {
-  const byId = new Map(pages.map((page) => [page.id, page]))
-  return pages
-    .filter((page) => {
-      if (page.archivedAt === null) {
-        return false
-      }
-      const parent = page.parentId ? byId.get(page.parentId) : undefined
-      return !parent || parent.archivedAt !== page.archivedAt
-    })
-    .sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0))
 }
 
 /** Ids of the pages above `pageId`, nearest first; stops on a cycle. */

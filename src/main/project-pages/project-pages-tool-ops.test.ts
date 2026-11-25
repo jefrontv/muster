@@ -32,10 +32,12 @@ const SOURCE: ProjectPagesToolSource = {
 let root: string
 let store: ProjectPagesStore
 let settings: Partial<GlobalSettings>
+let clock = 1_000
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'pages-tools-'))
-  store = createProjectPagesStore({ rootDir: root })
+  // Each archive gets its own stamp, as it would a moment apart in the app.
+  store = createProjectPagesStore({ rootDir: root, now: () => (clock += 1000) })
   settings = { experimentalProjectPages: true }
 })
 afterEach(() => rmSync(root, { recursive: true, force: true }))
@@ -99,10 +101,55 @@ describe('project pages tool ops', () => {
     })
   })
 
+  it('lists the Trash and restores a page to its old parent', async () => {
+    await run('create', { title: 'Folder', folder: true })
+    await run('create', { title: 'Note', parent: 'Folder' })
+    await run('create', { title: 'Keep' })
+    await run('archive', { page: 'Folder/Note' })
+    const trash = await run('list', { archived: true })
+    expect(trash.pages.map((p) => p.path)).toEqual(['Folder/Note'])
+    expect((await run('list')).pages.map((p) => p.path)).toEqual(['Folder', 'Keep'])
+    const restored = (await run('restore', { page: 'Note' })) as Result & { restored_to: string }
+    expect(restored.restored_to).toBe('Folder')
+    expect(restored.page.path).toBe('Folder/Note')
+    expect((await run('list', { archived: true })).count).toBe(0)
+  })
+
+  it('restores to the top level when the old parent is gone', async () => {
+    await run('create', { title: 'Folder', folder: true })
+    const note = await run('create', { title: 'Note', parent: 'Folder' })
+    await run('archive', { page: 'Folder/Note' })
+    await run('archive', { page: 'Folder' })
+    expect((await run('list', { archived: true })).pages.map((p) => p.path)).toEqual([
+      'Folder',
+      'Folder/Note'
+    ])
+    const restored = (await run('restore', { page: note.page.id })) as Result & {
+      restored_to: string
+    }
+    expect(restored.restored_to).toBe('top level')
+    expect((await run('list')).pages.map((p) => p.path)).toEqual(['Note'])
+  })
+
+  it('restores a folder with its pages, like the Trash button', async () => {
+    await run('create', { title: 'Folder', folder: true })
+    const child = await run('create', { title: 'Note', parent: 'Folder' })
+    await run('archive', { page: 'Folder' })
+    const trash = await run('list', { archived: true })
+    expect(trash.pages).toMatchObject([{ path: 'Folder', folder: true }])
+    await expect(run('restore', { page: child.page.id })).rejects.toMatchObject({
+      code: 'invalid'
+    })
+    await run('restore', { page: 'Folder' })
+    expect((await run('list')).pages.map((p) => p.path)).toEqual(['Folder', 'Folder/Note'])
+    await expect(run('restore', { page: 'Folder' })).rejects.toMatchObject({ code: 'not_found' })
+  })
+
   it('honours the read-only and off capability levels', async () => {
     settings.agentCapabilityProjectPages = 'read'
     await expect(run('list')).resolves.toMatchObject({ count: 0 })
     await expect(run('create', { title: 'x' })).rejects.toMatchObject({ code: 'forbidden' })
+    await expect(run('restore', { page: 'x' })).rejects.toMatchObject({ code: 'forbidden' })
     settings.experimentalProjectPages = false
     await expect(run('list')).rejects.toMatchObject({ code: 'forbidden' })
   })

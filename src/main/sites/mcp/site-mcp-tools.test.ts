@@ -131,6 +131,7 @@ const TOOL_ARGUMENTS: Record<string, Record<string, unknown>> = {
   check_page_items: { page: 'Launch', check: ['Ship'] },
   move_page: { page: 'Launch' },
   archive_page: { page: 'Launch' },
+  restore_page: { page: 'Launch' },
   list_page_comments: { page: 'Launch' },
   reply_page_comment: { thread: 'c_1', body: 'Done' },
   resolve_page_comment: { thread: 'c_1' },
@@ -198,8 +199,8 @@ describe('site MCP tool table', () => {
     const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
     // Pages tools only appear once the user turns Pages on, so they get their own budget.
     expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
-    // Twenty-four pages tools (four for diagrams, three for comments), each with the project selector.
-    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(13_800)
+    // Twenty-five pages tools (four for diagrams, three for comments, one for the Trash), each with the project selector.
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(14_300)
   })
 })
 

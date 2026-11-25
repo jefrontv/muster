@@ -71,7 +71,11 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     'list_pages',
     'list',
     "List the project's Muster pages (shared notes) as id and path rows.",
-    { parent: PARENT, depth: { type: 'number', description: 'Levels below parent. Omit for all.' } }
+    {
+      parent: PARENT,
+      depth: { type: 'number', description: 'Levels below parent. Omit for all.' },
+      archived: { type: 'boolean', description: 'List the Trash instead.' }
+    }
   ),
   pagesTool(
     'search_pages',
@@ -160,8 +164,15 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
   pagesTool(
     'archive_page',
     'archive',
-    'Move a page and its subpages to the trash.',
+    'Move a page and its subpages to the Trash.',
     { page: PAGE },
+    ['page']
+  ),
+  pagesTool(
+    'restore_page',
+    'restore',
+    'Restore a page or folder from the Trash to its old parent, else the top level.',
+    { page: { type: 'string', description: 'Trashed page id or title.' } },
     ['page']
   ),
   pagesTool(

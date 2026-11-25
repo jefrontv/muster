@@ -22,6 +22,7 @@ export const PROJECT_PAGES_TOOL_OPS = [
   'check',
   'move',
   'archive',
+  'restore',
   ...PROJECT_PAGES_DATABASE_OPS,
   ...PROJECT_PAGES_LINK_OPS,
   ...PROJECT_PAGES_BLOCK_OPS,
