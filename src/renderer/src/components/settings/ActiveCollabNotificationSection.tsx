@@ -14,6 +14,7 @@ import { NotificationSettingToggle } from './NotificationSettingToggle'
 import { ActiveCollabNotificationDelivery } from './ActiveCollabNotificationDelivery'
 import { SettingsRow, SettingsSegmentedControl } from './SettingsFormControls'
 import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 type ActiveCollabNotificationSectionProps = {
   notificationSettings: GlobalSettings['notifications']
@@ -25,13 +26,48 @@ type ActiveCollabNotificationSectionProps = {
 }
 
 // Within the poller's clamp bounds (15s–15min); the value stored is milliseconds.
-const POLL_INTERVAL_OPTIONS = [
-  { value: 30_000, label: '30s' },
-  { value: 60_000, label: '1m' },
-  { value: 180_000, label: '3m' },
-  { value: 300_000, label: '5m' },
-  { value: 900_000, label: '15m' }
-] as const
+const pollIntervalOptions = createLocalizedCatalog(() => [
+  {
+    value: 30_000,
+    label: translate(
+      'auto.components.settings.activeCollabNotifications.interval.seconds',
+      '{{value0}}s',
+      { value0: 30 }
+    )
+  },
+  {
+    value: 60_000,
+    label: translate(
+      'auto.components.settings.activeCollabNotifications.interval.minutes',
+      '{{value0}}m',
+      { value0: 1 }
+    )
+  },
+  {
+    value: 180_000,
+    label: translate(
+      'auto.components.settings.activeCollabNotifications.interval.minutes',
+      '{{value0}}m',
+      { value0: 3 }
+    )
+  },
+  {
+    value: 300_000,
+    label: translate(
+      'auto.components.settings.activeCollabNotifications.interval.minutes',
+      '{{value0}}m',
+      { value0: 5 }
+    )
+  },
+  {
+    value: 900_000,
+    label: translate(
+      'auto.components.settings.activeCollabNotifications.interval.minutes',
+      '{{value0}}m',
+      { value0: 15 }
+    )
+  }
+])
 
 /** The four ActiveCollab task alerts, grouped so the shared polling cost can be
  *  stated once. Split out of NotificationsPane to keep that file under budget. */
@@ -182,10 +218,7 @@ export function ActiveCollabNotificationSection({
               size="sm"
               value={effectiveInterval}
               onChange={(intervalMs) => void onPollIntervalChange(intervalMs)}
-              options={POLL_INTERVAL_OPTIONS.map((option) => ({
-                value: option.value,
-                label: option.label
-              }))}
+              options={pollIntervalOptions()}
             />
           }
         />

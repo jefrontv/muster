@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 import { insertShape } from './project-pages-diagram-actions'
 import { DIAGRAM_SHAPES, type DiagramShape } from './project-pages-diagram-styles'
+import { diagramShapeLabel } from './project-pages-diagram-shape-labels'
 
 const ICONS: Record<string, React.ReactNode> = {
   rect: <rect x="3" y="6" width="18" height="12" />,
@@ -61,7 +62,7 @@ function PaletteTile(props: { graph: Graph | null; shape: DiagramShape; compact:
     <button
       ref={ref}
       type="button"
-      title={shape.label}
+      title={diagramShapeLabel(shape)}
       className="flex flex-col items-center gap-1 rounded-md px-1 py-2 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
       onClick={() => graph && insertShape(graph, shape)}
     >
@@ -77,7 +78,7 @@ function PaletteTile(props: { graph: Graph | null; shape: DiagramShape; compact:
         {ICONS[shape.id]}
       </svg>
       <span className={props.compact ? 'sr-only' : 'w-full truncate text-center'}>
-        {shape.label}
+        {diagramShapeLabel(shape)}
       </span>
     </button>
   )
@@ -90,7 +91,7 @@ export function ProjectPageDiagramPalette(props: { graph: Graph | null; compact:
   const shapes = useMemo(() => {
     const words = compact ? [] : query.toLowerCase().split(/\s+/).filter(Boolean)
     return DIAGRAM_SHAPES.filter((shape) => {
-      const haystack = `${shape.label} ${shape.keywords}`.toLowerCase()
+      const haystack = `${diagramShapeLabel(shape)} ${shape.label} ${shape.keywords}`.toLowerCase()
       return words.every((word) => haystack.includes(word))
     })
   }, [query, compact])

@@ -1,5 +1,7 @@
 // Header and footer of the plan review, laid out like the editor panel's header.
 import { Badge } from '@/components/ui/badge'
+import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 //
 // The footer is the one part with no markdown viewer equivalent: the decision is what the waiting
 // agent acts on, so it stays visible rather than behind a menu.
@@ -22,10 +24,16 @@ import EditorViewToggle, { type EditorToggleValue } from '../editor/EditorViewTo
 
 export type PlanReviewView = 'rich' | 'changes'
 
-const VIEW_METADATA = {
-  rich: { label: 'Rich Editor', icon: Pencil },
-  changes: { label: 'Changes since last round', icon: GitCompareArrows }
-}
+const viewMetadata = createLocalizedCatalog(() => ({
+  rich: {
+    label: translate('auto.components.planAnnotation.chrome.richEditor', 'Rich Editor'),
+    icon: Pencil
+  },
+  changes: {
+    label: translate('auto.components.planAnnotation.chrome.changes', 'Changes since last round'),
+    icon: GitCompareArrows
+  }
+}))
 
 function HeaderIconButton({
   label,
@@ -111,10 +119,14 @@ export function PlanAnnotationHeader({
     <TooltipProvider delayDuration={300}>
       <div className="editor-header">
         <Title className="flex min-w-0 flex-1 items-center gap-2 text-[12px] font-normal">
-          <span className="shrink-0 font-medium text-foreground">Plan review</span>
+          <span className="shrink-0 font-medium text-foreground">
+            {translate('auto.components.planAnnotation.chrome.title', 'Plan review')}
+          </span>
           {round > 1 ? (
             <Badge variant="muted" className="shrink-0">
-              round {round}
+              {translate('auto.components.planAnnotation.chrome.round', 'round {{value0}}', {
+                value0: round
+              })}
             </Badge>
           ) : null}
           <span className="truncate text-muted-foreground">
@@ -122,7 +134,11 @@ export function PlanAnnotationHeader({
           </span>
           {waiting > 0 ? (
             <span className="shrink-0 text-[11px] text-muted-foreground">
-              {waiting} more waiting
+              {translate(
+                'auto.components.planAnnotation.chrome.waiting',
+                '{{value0}} more waiting',
+                { value0: waiting }
+              )}
             </span>
           ) : null}
         </Title>
@@ -133,12 +149,12 @@ export function PlanAnnotationHeader({
             onChange={(next: EditorToggleValue) =>
               onViewChange(next === 'changes' ? 'changes' : 'rich')
             }
-            metadataOverride={VIEW_METADATA}
+            metadataOverride={viewMetadata()}
           />
         ) : null}
         {actions}
         <HeaderIconButton
-          label="Table of Contents"
+          label={translate('auto.components.planAnnotation.chrome.toc', 'Table of Contents')}
           pressed={showTableOfContents && isRich}
           disabled={!isRich}
           onClick={onToggleTableOfContents}
@@ -146,7 +162,14 @@ export function PlanAnnotationHeader({
           <ListTree className="size-3.5" />
         </HeaderIconButton>
         <HeaderIconButton
-          label={readable ? 'Use full width' : 'Use readable width'}
+          label={
+            readable
+              ? translate('auto.components.planAnnotation.chrome.fullWidth', 'Use full width')
+              : translate(
+                  'auto.components.planAnnotation.chrome.readableWidth',
+                  'Use readable width'
+                )
+          }
           pressed={!readable}
           disabled={!isRich}
           onClick={onToggleReadable}
@@ -154,13 +177,19 @@ export function PlanAnnotationHeader({
           <MoveHorizontal className="size-3.5" />
         </HeaderIconButton>
         <HeaderIconButton
-          label="Comment on the whole plan"
+          label={translate(
+            'auto.components.planAnnotation.chrome.commentWhole',
+            'Comment on the whole plan'
+          )}
           disabled={!isRich}
           onClick={onWholePlanNote}
         >
           <MessageSquarePlus className="size-3.5" />
         </HeaderIconButton>
-        <HeaderIconButton label="Copy plan" onClick={onCopyPlan}>
+        <HeaderIconButton
+          label={translate('auto.components.planAnnotation.chrome.copy', 'Copy plan')}
+          onClick={onCopyPlan}
+        >
           <Copy className="size-3.5" />
         </HeaderIconButton>
       </div>
@@ -183,8 +212,13 @@ export function PlanAnnotationFooter({
 }): React.JSX.Element {
   const hasFeedback = noteCount > 0 || edited
   const summary = [
-    noteCount > 0 ? `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : null,
-    edited ? 'edited' : null
+    noteCount === 1 ? translate('auto.components.planAnnotation.chrome.oneNote', '1 note') : null,
+    noteCount > 1
+      ? translate('auto.components.planAnnotation.chrome.notes', '{{value0}} notes', {
+          value0: noteCount
+        })
+      : null,
+    edited ? translate('auto.components.planAnnotation.chrome.edited', 'edited') : null
   ]
     .filter(Boolean)
     .join(' · ')
@@ -192,20 +226,32 @@ export function PlanAnnotationFooter({
     <div className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-[var(--editor-surface)] px-4 py-2">
       <p className="text-[11px] text-muted-foreground">
         {hasFeedback
-          ? `${summary}, ready to send`
-          : 'Select text to add a note, or edit the plan directly'}
+          ? translate(
+              'auto.components.planAnnotation.chrome.readyToSend',
+              '{{value0}}, ready to send',
+              { value0: summary }
+            )
+          : translate(
+              'auto.components.planAnnotation.chrome.hint',
+              'Select text to add a note, or edit the plan directly'
+            )}
       </p>
       <div className="ml-auto flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onDismiss}>
-          Close
+          {translate('auto.components.planAnnotation.chrome.close', 'Close')}
         </Button>
         <Button variant="outline" size="sm" onClick={onApprove}>
           <Check className="size-4" />
-          {hasFeedback ? 'Approve with notes' : 'Approve'}
+          {hasFeedback
+            ? translate(
+                'auto.components.planAnnotation.chrome.approveWithNotes',
+                'Approve with notes'
+              )
+            : translate('auto.components.planAnnotation.chrome.approve', 'Approve')}
         </Button>
         <Button size="sm" disabled={!hasFeedback} onClick={onSend}>
           <Send className="size-4" />
-          Send feedback
+          {translate('auto.components.planAnnotation.chrome.send', 'Send feedback')}
         </Button>
       </div>
     </div>

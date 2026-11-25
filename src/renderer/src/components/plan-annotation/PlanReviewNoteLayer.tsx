@@ -1,6 +1,7 @@
 // Margin cards beside each annotated passage, laid out by the markdown viewer's rail controller.
 
 import type React from 'react'
+import { translate } from '@/i18n/i18n'
 import { Image as ImageIcon } from 'lucide-react'
 import { DiffCommentCard } from '../diff-comments/DiffCommentCard'
 import { getMarkdownReviewCardQuote } from '@/lib/markdown-review-notes'
@@ -41,7 +42,10 @@ export function PlanReviewNoteLayer({
   onContentResize: () => void
 }): React.JSX.Element {
   return (
-    <div className="rich-markdown-review-note-layer" aria-label="Review notes">
+    <div
+      className="rich-markdown-review-note-layer"
+      aria-label={translate('auto.components.planAnnotation.note.layer', 'Review notes')}
+    >
       {positions.map(({ comment: base, top }) => {
         const comment = base as PlanReviewComment
         const isWholePlan = comment.planKind === 'global'

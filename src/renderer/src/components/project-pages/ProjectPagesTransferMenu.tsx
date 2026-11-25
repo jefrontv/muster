@@ -15,7 +15,11 @@ import { translate } from '@/i18n/i18n'
 type Props = { scopeKey: string; projectName: string }
 
 function pageCount(count: number): string {
-  return count === 1 ? '1 page' : `${count} pages`
+  return count === 1
+    ? translate('auto.components.projectPages.transfer.onePage', '1 page')
+    : translate('auto.components.projectPages.transfer.pages', '{{value0}} pages', {
+        value0: count
+      })
 }
 
 export function ProjectPagesTransferMenu({ scopeKey, projectName }: Props): React.JSX.Element {
@@ -42,20 +46,39 @@ export function ProjectPagesTransferMenu({ scopeKey, projectName }: Props): Reac
       if (kind !== 'export') {
         const skipped = done.skipped ?? []
         if (skipped.length > 0) {
-          toast.warning(`Imported ${pageCount(done.count)}, skipped ${skipped.length}`, {
-            description: skipped.slice(0, 3).join('\n')
-          })
+          toast.warning(
+            translate(
+              'auto.components.projectPages.transfer.importedSkipped',
+              'Imported {{value0}}, skipped {{value1}}',
+              {
+                value0: pageCount(done.count),
+                value1: skipped.length
+              }
+            ),
+            {
+              description: skipped.slice(0, 3).join('\n')
+            }
+          )
         } else {
-          toast.success(`Imported ${pageCount(done.count)}`)
+          toast.success(
+            translate('auto.components.projectPages.transfer.imported', 'Imported {{value0}}', {
+              value0: pageCount(done.count)
+            })
+          )
         }
         return
       }
-      toast.success(`Exported ${pageCount(done.count)}`, {
-        action: {
-          label: translate('auto.components.projectPages.transfer.show', 'Show folder'),
-          onClick: () => void window.api.shell.openInFileManager(done.path)
+      toast.success(
+        translate('auto.components.projectPages.transfer.exported', 'Exported {{value0}}', {
+          value0: pageCount(done.count)
+        }),
+        {
+          action: {
+            label: translate('auto.components.projectPages.transfer.show', 'Show folder'),
+            onClick: () => void window.api.shell.openInFileManager(done.path)
+          }
         }
-      })
+      )
     } finally {
       setBusy(false)
     }

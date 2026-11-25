@@ -7,17 +7,33 @@ import {
   type Cell,
   type Graph
 } from '@maxgraph/core'
+import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export type DiagramLayoutKind = 'down' | 'right' | 'tree' | 'organic' | 'circle'
 export type LayoutDirection = 'north' | 'south' | 'east' | 'west'
 
-export const DIAGRAM_LAYOUTS: { id: DiagramLayoutKind; label: string }[] = [
-  { id: 'down', label: 'Flow top to bottom' },
-  { id: 'right', label: 'Flow left to right' },
-  { id: 'tree', label: 'Tree' },
-  { id: 'organic', label: 'Organic' },
-  { id: 'circle', label: 'Circle' }
-]
+export const diagramLayouts = createLocalizedCatalog(
+  (): { id: DiagramLayoutKind; label: string }[] => [
+    {
+      id: 'down',
+      label: translate('auto.components.projectPages.diagram.layout.down', 'Flow top to bottom')
+    },
+    {
+      id: 'right',
+      label: translate('auto.components.projectPages.diagram.layout.right', 'Flow left to right')
+    },
+    { id: 'tree', label: translate('auto.components.projectPages.diagram.layout.tree', 'Tree') },
+    {
+      id: 'organic',
+      label: translate('auto.components.projectPages.diagram.layout.organic', 'Organic')
+    },
+    {
+      id: 'circle',
+      label: translate('auto.components.projectPages.diagram.layout.circle', 'Circle')
+    }
+  ]
+)
 
 /** A selected container lays out its own contents; otherwise the whole diagram. */
 export function layoutParent(graph: Graph): Cell {

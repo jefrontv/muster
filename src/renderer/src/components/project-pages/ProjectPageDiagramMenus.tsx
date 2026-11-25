@@ -12,23 +12,30 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { writeDiagramXml } from '../../../../shared/project-pages-diagram-xml'
 import { exportDiagram, type DiagramExportFormat } from './project-pages-diagram-export'
 import type { DiagramEditor } from './project-pages-diagram-graph'
-import { DIAGRAM_LAYOUTS, runLayout } from './project-pages-diagram-layout'
+import { diagramLayouts, runLayout } from './project-pages-diagram-layout'
 import { snapshotDiagram } from './project-pages-diagram-model'
-import { applyColourTheme, DIAGRAM_THEMES } from './project-pages-diagram-themes'
+import { applyColourTheme, diagramThemes } from './project-pages-diagram-themes'
 import { ProjectPageDiagramMermaidDialog } from './ProjectPageDiagramMermaidDialog'
 
 const t = (key: string, fallback: string): string =>
   translate(`auto.components.projectPages.diagram.${key}`, fallback)
 
-const EXPORTS: { id: DiagramExportFormat; label: string }[] = [
-  { id: 'svg', label: 'SVG (opens in draw.io)' },
+const exportFormats = createLocalizedCatalog((): { id: DiagramExportFormat; label: string }[] => [
+  {
+    id: 'svg',
+    label: translate('auto.components.projectPages.diagram.export.svg', 'SVG (opens in draw.io)')
+  },
   { id: 'png', label: 'PNG' },
-  { id: 'png2x', label: 'PNG at 2x' },
+  {
+    id: 'png2x',
+    label: translate('auto.components.projectPages.diagram.export.png2x', 'PNG at 2x')
+  },
   { id: 'pdf', label: 'PDF' }
-]
+])
 
 function Menu(props: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -62,9 +69,9 @@ export function ProjectPageDiagramMenus({
   return (
     <>
       <Menu label={t('layout', 'Layout')} icon={<Network className="size-3.5" />}>
-        {DIAGRAM_LAYOUTS.map((layout) => (
+        {diagramLayouts().map((layout) => (
           <DropdownMenuItem key={layout.id} onSelect={() => runLayout(graph, layout.id)}>
-            {t(`layout.${layout.id}`, layout.label)}
+            {layout.label}
           </DropdownMenuItem>
         ))}
       </Menu>
@@ -73,9 +80,9 @@ export function ProjectPageDiagramMenus({
           {scope}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {DIAGRAM_THEMES.map((theme) => (
+        {diagramThemes().map((theme) => (
           <DropdownMenuItem key={theme.id} onSelect={() => applyColourTheme(graph, theme)}>
-            {t(`theme.${theme.id}`, theme.label)}
+            {theme.label}
           </DropdownMenuItem>
         ))}
       </Menu>
@@ -89,7 +96,7 @@ export function ProjectPageDiagramMenus({
         {t('fromMermaid', 'From Mermaid')}
       </Button>
       <Menu label={t('export', 'Export')} icon={<Download className="size-3.5" />}>
-        {EXPORTS.map((format) => (
+        {exportFormats().map((format) => (
           <DropdownMenuItem
             key={format.id}
             onSelect={() =>

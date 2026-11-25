@@ -4,6 +4,8 @@
 import type React from 'react'
 import type { Editor } from '@tiptap/react'
 import { useRef, useState } from 'react'
+import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { Image as ImageIcon, MessageSquare, ThumbsUp, Trash2, X } from 'lucide-react'
 import type { PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
 import { DiffCommentPopover } from '../diff-comments/DiffCommentPopover'
@@ -11,11 +13,25 @@ import { isStandaloneKind } from './plan-review-comments'
 import { forwardNoteShortcut } from './plan-review-note-shortcuts'
 import type { PlanNoteDraft } from './use-plan-review-annotations'
 
-const PASSAGE_KINDS: { kind: PlanAnnotationKind; label: string; icon: typeof MessageSquare }[] = [
-  { kind: 'comment', label: 'Comment', icon: MessageSquare },
-  { kind: 'delete', label: 'Remove', icon: Trash2 },
-  { kind: 'looks_good', label: 'Looks good', icon: ThumbsUp }
-]
+const passageKinds = createLocalizedCatalog(
+  (): { kind: PlanAnnotationKind; label: string; icon: typeof MessageSquare }[] => [
+    {
+      kind: 'comment',
+      label: translate('auto.components.planAnnotation.note.comment', 'Comment'),
+      icon: MessageSquare
+    },
+    {
+      kind: 'delete',
+      label: translate('auto.components.planAnnotation.note.remove', 'Remove'),
+      icon: Trash2
+    },
+    {
+      kind: 'looks_good',
+      label: translate('auto.components.planAnnotation.note.looksGood', 'Looks good'),
+      icon: ThumbsUp
+    }
+  ]
+)
 
 /** Writes each image to disk and returns its path: the agent can open a file, not base64. */
 async function saveImages(files: readonly File[]): Promise<string[]> {
@@ -84,9 +100,15 @@ export function PlanReviewNotePopover({
         top={isPassage ? draft.target.top : draft.top}
         left={isPassage ? draft.target.left : draft.left}
         lineHeight={isPassage ? draft.flipHeight : 0}
-        title={isPassage ? 'Selected text' : wholeTitle}
+        title={
+          isPassage
+            ? translate('auto.components.planAnnotation.note.selectedText', 'Selected text')
+            : wholeTitle
+        }
         placeholder={
-          kind === 'comment' || kind === 'global' ? notePlaceholder : 'Add a reason (optional)'
+          kind === 'comment' || kind === 'global'
+            ? notePlaceholder
+            : translate('auto.components.planAnnotation.note.reason', 'Add a reason (optional)')
         }
         allowEmptySubmit={isStandaloneKind(kind) || attachments.length > 0}
         onFiles={attach}
@@ -94,8 +116,12 @@ export function PlanReviewNotePopover({
         onSubmit={async (body) => onSubmit(kind, body, attachments)}
         beforeInput={
           isPassage ? (
-            <div className="flex items-center gap-1" role="radiogroup" aria-label="Note kind">
-              {PASSAGE_KINDS.map((entry) => (
+            <div
+              className="flex items-center gap-1"
+              role="radiogroup"
+              aria-label={translate('auto.components.planAnnotation.note.kind', 'Note kind')}
+            >
+              {passageKinds().map((entry) => (
                 <button
                   key={entry.kind}
                   type="button"
@@ -130,8 +156,11 @@ export function PlanReviewNotePopover({
             />
             <button
               type="button"
-              aria-label="Attach image"
-              title="Attach image, or drop or paste one"
+              aria-label={translate('auto.components.planAnnotation.note.attach', 'Attach image')}
+              title={translate(
+                'auto.components.planAnnotation.note.attachHint',
+                'Attach image, or drop or paste one'
+              )}
               onClick={() => fileInput.current?.click()}
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
@@ -145,7 +174,10 @@ export function PlanReviewNotePopover({
                 <span className="max-w-[90px] truncate">{path.split(/[\\/]/).pop()}</span>
                 <button
                   type="button"
-                  aria-label="Remove attachment"
+                  aria-label={translate(
+                    'auto.components.planAnnotation.note.removeAttachment',
+                    'Remove attachment'
+                  )}
                   onClick={() => setAttachments((current) => current.filter((p) => p !== path))}
                   className="hover:text-foreground"
                 >

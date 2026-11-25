@@ -2,6 +2,7 @@
 // apply it — unless the user already picked their own icon.
 
 import { useEffect, useRef } from 'react'
+import { translate } from '@/i18n/i18n'
 import type { RepoIcon } from '../../../shared/repo-icon'
 import { websiteHostname } from '../../../shared/chat-workspace-site-info'
 
@@ -52,7 +53,7 @@ export function useChatWorkspaceFaviconSync(args: {
             type: 'image',
             src: result.dataUrl,
             source: 'favicon',
-            label: 'Website favicon'
+            label: translate('auto.lib.chatWorkspaceFavicon.label', 'Website favicon')
           })
         })
         .catch(() => undefined)

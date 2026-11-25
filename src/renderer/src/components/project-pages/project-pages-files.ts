@@ -1,6 +1,7 @@
 // Page images: saving pasted, dropped or picked files to the project, and showing files/...
 // references, which the file editor's image loader cannot resolve.
 import type { Editor } from '@tiptap/react'
+import { translate } from '@/i18n/i18n'
 import type { AnyExtension } from '@tiptap/core'
 import { Selection, TextSelection, type Transaction } from '@tiptap/pm/state'
 import { toast } from 'sonner'
@@ -79,7 +80,11 @@ export async function insertPageImages(
 ): Promise<void> {
   for (const file of images) {
     if (file.size > MAX_BYTES) {
-      toast.error(`${file.name} is over 20 MB.`)
+      toast.error(
+        translate('auto.components.projectPages.files.tooLarge', '{{value0}} is over 20 MB.', {
+          value0: file.name
+        })
+      )
       continue
     }
     const bytes = new Uint8Array(await file.arrayBuffer())

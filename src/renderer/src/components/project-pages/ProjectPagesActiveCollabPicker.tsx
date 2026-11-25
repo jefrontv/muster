@@ -11,6 +11,8 @@ import {
   CommandItem,
   CommandList
 } from '@/components/ui/command'
+import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
 import type { ActiveCollabProject, ActiveCollabTask } from '../../../../shared/activecollab-types'
@@ -24,11 +26,22 @@ import {
 
 type Request = Parameters<Parameters<typeof onActiveCollabPicker>[0]>[0]
 
-const MODES: { mode: ActiveCollabInsertMode; label: string }[] = [
-  { mode: 'card', label: 'Card' },
-  { mode: 'link', label: 'Link' },
-  { mode: 'quote', label: 'Quote' }
-]
+const insertModes = createLocalizedCatalog(
+  (): { mode: ActiveCollabInsertMode; label: string }[] => [
+    {
+      mode: 'card',
+      label: translate('auto.components.projectPages.activeCollab.mode.card', 'Card')
+    },
+    {
+      mode: 'link',
+      label: translate('auto.components.projectPages.activeCollab.mode.link', 'Link')
+    },
+    {
+      mode: 'quote',
+      label: translate('auto.components.projectPages.activeCollab.mode.quote', 'Quote')
+    }
+  ]
+)
 
 function matches(text: string, needle: string): boolean {
   return text.toLowerCase().includes(needle)
@@ -60,7 +73,11 @@ function ProjectRow({ project, onPick }: { project: ActiveCollabProject; onPick:
       <FolderKanban className="size-4 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate">{project.name}</span>
       {project.openTaskCount !== null ? (
-        <span className="shrink-0 text-xs text-muted-foreground">{project.openTaskCount} open</span>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {translate('auto.components.projectPages.activeCollab.openCount', '{{value0}} open', {
+            value0: project.openTaskCount
+          })}
+        </span>
       ) : null}
     </CommandItem>
   )
@@ -136,15 +153,28 @@ export function ProjectPagesActiveCollabPicker(): React.JSX.Element | null {
     .filter((p) => !needle || matches(p.name, needle))
     .slice(0, forTask ? 6 : 50)
   const loading = forTask ? (project ? projectTasks : assigned) === null : projects === null
-  const modes = forTask ? MODES : MODES.slice(0, 2)
+  const modes = forTask ? insertModes() : insertModes().slice(0, 2)
 
   return (
     <CommandDialog
       open
       onOpenChange={(open) => !open && close()}
       shouldFilter={false}
-      title={forTask ? 'Add an ActiveCollab task' : 'Add an ActiveCollab project'}
-      description="Search by name or task number."
+      title={
+        forTask
+          ? translate(
+              'auto.components.projectPages.activeCollab.addTask',
+              'Add an ActiveCollab task'
+            )
+          : translate(
+              'auto.components.projectPages.activeCollab.addProject',
+              'Add an ActiveCollab project'
+            )
+      }
+      description={translate(
+        'auto.components.projectPages.activeCollab.searchHint',
+        'Search by name or task number.'
+      )}
     >
       <CommandInput
         value={query}
@@ -156,14 +186,26 @@ export function ProjectPagesActiveCollabPicker(): React.JSX.Element | null {
         }}
         placeholder={
           project
-            ? `Tasks in ${project.name}…`
+            ? translate(
+                'auto.components.projectPages.activeCollab.tasksIn',
+                'Tasks in {{value0}}…',
+                { value0: project.name }
+              )
             : forTask
-              ? 'Find a task or project…'
-              : 'Find a project…'
+              ? translate(
+                  'auto.components.projectPages.activeCollab.findTaskOrProject',
+                  'Find a task or project…'
+                )
+              : translate(
+                  'auto.components.projectPages.activeCollab.findProject',
+                  'Find a project…'
+                )
         }
       />
       <div className="flex items-center gap-1 border-b border-border px-3 py-2">
-        <span className="mr-1 text-xs text-muted-foreground">Add as</span>
+        <span className="mr-1 text-xs text-muted-foreground">
+          {translate('auto.components.projectPages.activeCollab.addAs', 'Add as')}
+        </span>
         {modes.map((item) => (
           <button
             key={item.mode}
@@ -181,11 +223,20 @@ export function ProjectPagesActiveCollabPicker(): React.JSX.Element | null {
         ))}
       </div>
       <CommandList>
-        <CommandEmpty>{loading ? 'Loading from ActiveCollab…' : 'Nothing matches.'}</CommandEmpty>
+        <CommandEmpty>
+          {loading
+            ? translate(
+                'auto.components.projectPages.activeCollab.loading',
+                'Loading from ActiveCollab…'
+              )
+            : translate('auto.components.projectPages.activeCollab.empty', 'Nothing matches.')}
+        </CommandEmpty>
         {project ? (
           <CommandItem value="back" onSelect={() => setProject(null)}>
             <Undo2 className="size-4 shrink-0 text-muted-foreground" />
-            <span className="flex-1 text-muted-foreground">All my tasks</span>
+            <span className="flex-1 text-muted-foreground">
+              {translate('auto.components.projectPages.activeCollab.allMyTasks', 'All my tasks')}
+            </span>
           </CommandItem>
         ) : null}
         {forTask && taskRows.length > 0 ? (

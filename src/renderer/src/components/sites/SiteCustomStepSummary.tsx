@@ -14,8 +14,17 @@ export function SiteCustomStepSummary({ step }: { step: SiteCustomStep }): React
       <div className="flex items-center gap-2">
         <span className="truncate text-xs font-medium leading-4">{step.name}</span>
         <span className="shrink-0 text-[11px] uppercase leading-4 tracking-wider text-muted-foreground">
-          {step.group} · {step.position === 'before' ? 'pre' : 'post'} ·{' '}
-          {step.runsOn === 'local' ? 'local' : 'server'}
+          {step.group === 'import'
+            ? translate('auto.components.sites.customStep.summary.import', 'import')
+            : translate('auto.components.sites.customStep.summary.deploy', 'deploy')}{' '}
+          ·{' '}
+          {step.position === 'before'
+            ? translate('auto.components.sites.customStep.summary.pre', 'pre')
+            : translate('auto.components.sites.customStep.summary.post', 'post')}{' '}
+          ·{' '}
+          {step.runsOn === 'local'
+            ? translate('auto.components.sites.customStep.summary.local', 'local')
+            : translate('auto.components.sites.customStep.summary.server', 'server')}
         </span>
       </div>
       {/* Always shown: a step's name is user-authored, so it is not evidence of what will run. */}

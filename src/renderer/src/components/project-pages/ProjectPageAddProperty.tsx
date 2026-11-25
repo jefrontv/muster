@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { cn } from '@/lib/utils'
 import type {
   PageDatabaseSchema,
@@ -13,13 +14,13 @@ import type {
   PagePropertyType
 } from '../../../../shared/project-pages-database-types'
 
-const TYPES: { type: PagePropertyType; label: string }[] = [
-  { type: 'text', label: 'Text' },
-  { type: 'number', label: 'Number' },
-  { type: 'select', label: 'Select' },
-  { type: 'checkbox', label: 'Checkbox' },
-  { type: 'date', label: 'Date' }
-]
+const propertyTypes = createLocalizedCatalog((): { type: PagePropertyType; label: string }[] => [
+  { type: 'text', label: translate('auto.components.projectPages.type.text', 'Text') },
+  { type: 'number', label: translate('auto.components.projectPages.type.number', 'Number') },
+  { type: 'select', label: translate('auto.components.projectPages.type.select', 'Select') },
+  { type: 'checkbox', label: translate('auto.components.projectPages.type.checkbox', 'Checkbox') },
+  { type: 'date', label: translate('auto.components.projectPages.type.date', 'Date') }
+])
 
 function propertyId(name: string, taken: Set<string>): string {
   const base =
@@ -96,7 +97,7 @@ export function ProjectPageAddProperty({
           }}
         />
         <div className="flex flex-wrap gap-1" role="radiogroup">
-          {TYPES.map((entry) => (
+          {propertyTypes().map((entry) => (
             <button
               key={entry.type}
               type="button"
@@ -108,7 +109,7 @@ export function ProjectPageAddProperty({
               )}
               onClick={() => setType(entry.type)}
             >
-              {translate(`auto.components.projectPages.type.${entry.type}`, entry.label)}
+              {entry.label}
             </button>
           ))}
         </div>

@@ -1,6 +1,7 @@
 // A link to a diagram page on its own line shows a live preview under it. The markdown stays a
 // plain page link, so agents and exports see an ordinary link.
 import { Extension } from '@tiptap/core'
+import { translate } from '@/i18n/i18n'
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
@@ -118,7 +119,10 @@ export async function createDiagramPage(
   scopeKey: string,
   parentId: string
 ): Promise<ProjectPageMeta | null> {
-  const created = await window.api.projectPages.create(scopeKey, { parentId, title: 'Diagram' })
+  const created = await window.api.projectPages.create(scopeKey, {
+    parentId,
+    title: translate('auto.components.projectPages.diagram.newTitle', 'Diagram')
+  })
   const enabled = created.ok
     ? await window.api.projectPages.enableDiagram(scopeKey, created.value.meta.id)
     : created

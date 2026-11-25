@@ -1,5 +1,6 @@
 // Loads a diagram page, saves edits after a short pause, and reloads when someone else changes it.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { translate } from '@/i18n/i18n'
 import { toast } from 'sonner'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import type { AutosaveState } from './project-pages-autosave'
@@ -65,7 +66,12 @@ export function useProjectPageDiagram(
         onSaveState(pending.current ? 'pending' : 'saved')
       } else if (result.code === 'conflict') {
         onSaveState('conflict')
-        toast.error('This diagram changed elsewhere, so it was reloaded.')
+        toast.error(
+          translate(
+            'auto.components.projectPages.diagram.reloaded',
+            'This diagram changed elsewhere, so it was reloaded.'
+          )
+        )
         await reload()
       } else {
         onSaveState('error')

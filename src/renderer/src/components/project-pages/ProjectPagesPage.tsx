@@ -30,12 +30,18 @@ import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pag
 import { useAgentChangedPages } from './project-pages-seen'
 import { useProjectPagesEmbed, type ProjectPagesEmbed } from './use-project-pages-embed'
 
-const SAVE_LABELS: Record<AutosaveState, string> = {
-  saved: 'Saved',
-  pending: 'Unsaved',
-  saving: 'Saving…',
-  conflict: 'Not saved',
-  error: 'Not saved'
+function saveLabel(state: AutosaveState): string {
+  switch (state) {
+    case 'saved':
+      return translate('auto.components.projectPages.save.saved', 'Saved')
+    case 'pending':
+      return translate('auto.components.projectPages.save.pending', 'Unsaved')
+    case 'saving':
+      return translate('auto.components.projectPages.save.saving', 'Saving…')
+    case 'conflict':
+    case 'error':
+      return translate('auto.components.projectPages.save.failed', 'Not saved')
+  }
 }
 
 export default function ProjectPagesPage({
@@ -202,7 +208,7 @@ export default function ProjectPagesPage({
         </nav>
         {doc ? (
           <span className="shrink-0 text-xs text-muted-foreground" role="status">
-            {translate(`auto.components.projectPages.save.${saveState}`, SAVE_LABELS[saveState])}
+            {saveLabel(saveState)}
           </span>
         ) : null}
         <ProjectPagesHeaderActions

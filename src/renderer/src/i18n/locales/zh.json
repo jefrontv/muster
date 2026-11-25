@@ -607,6 +607,9 @@
             "triageFollowupsPrompt": "Use {{value0}} to triage the linked Linear issue — set priority and estimate — and create a parented follow-up ticket for the deferred cleanup."
           }
         }
+      },
+      "chatWorkspaceFavicon": {
+        "label": "Website favicon"
       }
     },
     "hooks": {
@@ -7376,6 +7379,10 @@
             "usagePercentageDisplayDescription": "选择以已用或剩余百分比显示提供商限额。",
             "terminalZoom": "Terminal Zoom",
             "terminalZoomDesc": "Default zoom for terminal panes."
+          },
+          "editorTheme": {
+            "title": "Editor theme",
+            "description": "Import a theme from VS Code or Cursor"
           }
         },
         "auto": {
@@ -9641,6 +9648,12 @@
           "outline": {
             "title": "Show page outline",
             "description": "A rail of headings on the right of pages with two or more headings."
+          }
+        },
+        "activeCollabNotifications": {
+          "interval": {
+            "seconds": "{{value0}}s",
+            "minutes": "{{value0}}m"
           }
         }
       },
@@ -14473,6 +14486,28 @@
           "failed": "Couldn't check the Local site.",
           "slow": "Still checking the Local site…",
           "retry": "Retry"
+        },
+        "customStep": {
+          "group": {
+            "import": "Import",
+            "deploy": "Deploy"
+          },
+          "position": {
+            "before": "Before built-ins",
+            "after": "After built-ins"
+          },
+          "runsOn": {
+            "remote": "Server (SSH)",
+            "local": "Local checkout"
+          },
+          "summary": {
+            "import": "import",
+            "deploy": "deploy",
+            "pre": "pre",
+            "post": "post",
+            "local": "local",
+            "server": "server"
+          }
         }
       },
       "activecollab": {
@@ -15160,7 +15195,43 @@
           "searchShapes": "Search shapes",
           "noShapes": "No matching shapes",
           "addConnected": "Add a connected shape",
-          "canvas": "Diagram canvas"
+          "canvas": "Diagram canvas",
+          "export": {
+            "svg": "SVG (opens in draw.io)",
+            "png2x": "PNG at 2x"
+          },
+          "newTitle": "Diagram",
+          "layout": {
+            "down": "Flow top to bottom",
+            "right": "Flow left to right",
+            "tree": "Tree",
+            "organic": "Organic",
+            "circle": "Circle"
+          },
+          "shape": {
+            "rect": "Rectangle",
+            "rounded": "Rounded",
+            "ellipse": "Ellipse",
+            "circle": "Circle",
+            "rhombus": "Decision",
+            "triangle": "Triangle",
+            "hexagon": "Hexagon",
+            "cylinder": "Database",
+            "cloud": "Cloud",
+            "actor": "Person",
+            "note": "Note",
+            "text": "Text",
+            "container": "Container",
+            "start": "Start",
+            "end": "End"
+          },
+          "theme": {
+            "muster": "Muster (follows light and dark)",
+            "blueprint": "Blueprint",
+            "mono": "Monochrome",
+            "contrast": "High contrast"
+          },
+          "reloaded": "This diagram changed elsewhere, so it was reloaded."
         },
         "titleLabel": "Page title",
         "bodyPlaceholder": "Type / for blocks, @ to link a page, # to tag.",
@@ -15198,7 +15269,15 @@
           "label": "Page map",
           "empty": "No pages yet.",
           "filtered": "Nothing matches these filters.",
-          "open": "Map"
+          "open": "Map",
+          "tags": "Tags",
+          "tasks": "Tasks",
+          "subpages": "Subpages",
+          "unlinked": "Unlinked",
+          "oneHop": "1 hop",
+          "twoHops": "2 hops",
+          "onePage": "1 page",
+          "pages": "{{value0}} pages"
         },
         "back": "Back",
         "showSidebar": "Show pages",
@@ -15225,7 +15304,12 @@
           "menu": "More",
           "export": "Export to folder…",
           "import": "Import folder…",
-          "importFiles": "Import diagram files…"
+          "importFiles": "Import diagram files…",
+          "onePage": "1 page",
+          "pages": "{{value0}} pages",
+          "importedSkipped": "Imported {{value0}}, skipped {{value1}}",
+          "imported": "Imported {{value0}}",
+          "exported": "Exported {{value0}}"
         },
         "collapse": "Collapse",
         "expand": "Expand",
@@ -15277,7 +15361,60 @@
           "resolved": "Resolved ({{count}})",
           "wholePageAction": "Comment on page"
         },
-        "annotate": "Annotate"
+        "annotate": "Annotate",
+        "type": {
+          "text": "Text",
+          "number": "Number",
+          "select": "Select",
+          "checkbox": "Checkbox",
+          "date": "Date"
+        },
+        "activeCollab": {
+          "mode": {
+            "card": "Card",
+            "link": "Link",
+            "quote": "Quote"
+          },
+          "openCount": "{{value0}} open",
+          "addTask": "Add an ActiveCollab task",
+          "addProject": "Add an ActiveCollab project",
+          "searchHint": "Search by name or task number.",
+          "tasksIn": "Tasks in {{value0}}…",
+          "findTaskOrProject": "Find a task or project…",
+          "findProject": "Find a project…",
+          "addAs": "Add as",
+          "loading": "Loading from ActiveCollab…",
+          "empty": "Nothing matches.",
+          "allMyTasks": "All my tasks"
+        },
+        "save": {
+          "saved": "Saved",
+          "pending": "Unsaved",
+          "saving": "Saving…",
+          "failed": "Not saved"
+        },
+        "files": {
+          "tooLarge": "{{value0}} is over 20 MB."
+        },
+        "slash": {
+          "callout": {
+            "note": "Note",
+            "tip": "Tip",
+            "warning": "Warning",
+            "caution": "Caution",
+            "label": "{{value0}} callout",
+            "description": "A highlighted {{value0}} box",
+            "group": "Callout"
+          },
+          "databaseDescription": "Turn this page into a database with table and board views",
+          "acTask": "ActiveCollab task",
+          "acTaskDescription": "Add a task as a card, link or quote",
+          "acProject": "ActiveCollab project",
+          "acProjectDescription": "Add a project card",
+          "diagramDescription": "A new diagram page, previewed here",
+          "heading": "Heading",
+          "toggleHeading": "Toggle heading"
+        }
       },
       "planAnnotation": {
         "tab": {
@@ -15320,6 +15457,39 @@
           "button": "Add to Pages",
           "label": "Save to folder",
           "default": "Plans (default)"
+        },
+        "chrome": {
+          "richEditor": "Rich Editor",
+          "changes": "Changes since last round",
+          "title": "Plan review",
+          "round": "round {{value0}}",
+          "waiting": "{{value0}} more waiting",
+          "toc": "Table of Contents",
+          "fullWidth": "Use full width",
+          "readableWidth": "Use readable width",
+          "commentWhole": "Comment on the whole plan",
+          "copy": "Copy plan",
+          "oneNote": "1 note",
+          "notes": "{{value0}} notes",
+          "edited": "edited",
+          "readyToSend": "{{value0}}, ready to send",
+          "hint": "Select text to add a note, or edit the plan directly",
+          "close": "Close",
+          "approveWithNotes": "Approve with notes",
+          "approve": "Approve",
+          "send": "Send feedback"
+        },
+        "note": {
+          "layer": "Review notes",
+          "comment": "Comment",
+          "remove": "Remove",
+          "looksGood": "Looks good",
+          "selectedText": "Selected text",
+          "reason": "Add a reason (optional)",
+          "kind": "Note kind",
+          "attach": "Attach image",
+          "attachHint": "Attach image, or drop or paste one",
+          "removeAttachment": "Remove attachment"
         }
       }
     },

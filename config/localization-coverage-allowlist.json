@@ -55,5 +55,299 @@
     "text": "chat title generation failed",
     "dynamic": false,
     "count": 2
+  },
+  {
+    "filePath": "src/renderer/src/components/brand/muster-wordmark.tsx",
+    "kind": "jsx-attribute:aria-label",
+    "text": "Muster",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/ProjectPageDiagramMenus.tsx",
+    "kind": "object-property:label",
+    "text": "PNG",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/ProjectPageDiagramMenus.tsx",
+    "kind": "object-property:label",
+    "text": "PDF",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/ProjectPageDiagramToolbar.tsx",
+    "kind": "jsx-attribute:label",
+    "text": "Z)",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/ProjectPageDiagramToolbar.tsx",
+    "kind": "jsx-attribute:label",
+    "text": "D)",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-agent-refs.ts",
+    "kind": "object-property:label",
+    "text": "text",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Rectangle",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "box process step",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Rounded",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "box process card",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Ellipse",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "oval circle",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Circle",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "round",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Decision",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "diamond if choice rhombus",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Triangle",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "arrow",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Hexagon",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "preparation",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Database",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "cylinder storage db data",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Cloud",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "internet service",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Person",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "actor user human role",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Note",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "sticky comment",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Text",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "label heading words",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Container",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "group lane swimlane frame",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "Start",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "begin uml initial",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:label",
+    "text": "End",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/project-pages/project-pages-diagram-styles.ts",
+    "kind": "object-property:keywords",
+    "text": "finish stop uml final",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/NotificationsPane.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "https://hooks.slack.com/services/…",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/settings/general-search.ts",
+    "kind": "object-property:keywords",
+    "text": "muster",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/sites/SiteCustomStepEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "/purge.sh",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/sites/SiteCustomStepEditor.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "wp cache flush",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/sites/SiteImportRulesSection.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "wp-content/ai1wm-backups",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/stats/share-card-utils.tsx",
+    "kind": "jsx-attribute:title",
+    "text": "Muster",
+    "dynamic": false,
+    "count": 1
   }
 ]

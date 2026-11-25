@@ -1,5 +1,7 @@
 // Named colour themes applied to the selection, or to every shape and line when nothing is selected.
 import type { Cell, CellStateStyle, Graph } from '@maxgraph/core'
+import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 type Colours = Partial<Record<keyof CellStateStyle, string | number | undefined>>
 export type DiagramTheme = { id: string; label: string; vertex: Colours; edge: Colours }
@@ -11,10 +13,13 @@ const CLEAR = {
   strokeWidth: undefined
 }
 
-export const DIAGRAM_THEMES: DiagramTheme[] = [
+export const diagramThemes = createLocalizedCatalog((): DiagramTheme[] => [
   {
     id: 'muster',
-    label: 'Muster (follows light and dark)',
+    label: translate(
+      'auto.components.projectPages.diagram.theme.muster',
+      'Muster (follows light and dark)'
+    ),
     vertex: CLEAR,
     edge: {
       strokeColor: undefined,
@@ -25,7 +30,7 @@ export const DIAGRAM_THEMES: DiagramTheme[] = [
   },
   {
     id: 'blueprint',
-    label: 'Blueprint',
+    label: translate('auto.components.projectPages.diagram.theme.blueprint', 'Blueprint'),
     vertex: {
       fillColor: '#0f2a47',
       strokeColor: '#7fb8ff',
@@ -41,7 +46,7 @@ export const DIAGRAM_THEMES: DiagramTheme[] = [
   },
   {
     id: 'mono',
-    label: 'Monochrome',
+    label: translate('auto.components.projectPages.diagram.theme.mono', 'Monochrome'),
     vertex: {
       fillColor: '#ffffff',
       strokeColor: '#1f1f1f',
@@ -57,7 +62,7 @@ export const DIAGRAM_THEMES: DiagramTheme[] = [
   },
   {
     id: 'contrast',
-    label: 'High contrast',
+    label: translate('auto.components.projectPages.diagram.theme.contrast', 'High contrast'),
     vertex: { fillColor: '#000000', strokeColor: '#ffffff', fontColor: '#ffffff', strokeWidth: 2 },
     edge: {
       strokeColor: '#ffd400',
@@ -66,7 +71,7 @@ export const DIAGRAM_THEMES: DiagramTheme[] = [
       strokeWidth: 2
     }
   }
-]
+])
 
 const named = (cell: Cell): string[] => cell.getStyle().baseStyleNames ?? []
 const isText = (cell: Cell): boolean => named(cell).some((n) => n === 'text' || n === 'edgeLabel')

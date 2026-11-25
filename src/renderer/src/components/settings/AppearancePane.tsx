@@ -144,7 +144,13 @@ export function AppearancePane({
   ]
   const editorSearchEntries = [
     { title: editorTitle, description: editorSummary },
-    { title: 'Editor theme', description: 'Import a theme from VS Code or Cursor' }
+    {
+      title: translate('auto.components.settings.appearance.editorTheme.title', 'Editor theme'),
+      description: translate(
+        'auto.components.settings.appearance.editorTheme.description',
+        'Import a theme from VS Code or Cursor'
+      )
+    }
   ]
   const terminalSearchEntries = [
     { title: terminalTitle },

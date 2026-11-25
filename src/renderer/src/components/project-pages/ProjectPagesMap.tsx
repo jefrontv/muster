@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { parseActiveCollabUrl } from '../../../../shared/project-pages-activecollab-links'
 import type { PagesGraph, PagesGraphNode } from '../../../../shared/project-pages-graph-types'
 import { activeCollabInstance, openActiveCollabRef } from './project-pages-activecollab-data'
@@ -24,12 +25,12 @@ type Props = {
 }
 
 type Toggle = 'tags' | 'tasks' | 'subpages' | 'orphans'
-const TOGGLES: { key: Toggle; label: string }[] = [
-  { key: 'tags', label: 'Tags' },
-  { key: 'tasks', label: 'Tasks' },
-  { key: 'subpages', label: 'Subpages' },
-  { key: 'orphans', label: 'Unlinked' }
-]
+const mapToggles = createLocalizedCatalog((): { key: Toggle; label: string }[] => [
+  { key: 'tags', label: translate('auto.components.projectPages.map.tags', 'Tags') },
+  { key: 'tasks', label: translate('auto.components.projectPages.map.tasks', 'Tasks') },
+  { key: 'subpages', label: translate('auto.components.projectPages.map.subpages', 'Subpages') },
+  { key: 'orphans', label: translate('auto.components.projectPages.map.unlinked', 'Unlinked') }
+])
 const EMPTY: PagesGraph = { nodes: [], edges: [] }
 
 export function ProjectPagesMap(props: Props): React.JSX.Element {
@@ -117,7 +118,7 @@ export function ProjectPagesMap(props: Props): React.JSX.Element {
           aria-label={translate('auto.components.projectPages.map.filter', 'Filter…')}
           className="h-7 w-44 text-xs"
         />
-        {TOGGLES.map((toggle) => (
+        {mapToggles().map((toggle) => (
           <Button
             key={toggle.key}
             size="xs"
@@ -126,7 +127,7 @@ export function ProjectPagesMap(props: Props): React.JSX.Element {
             disabled={toggle.key === 'orphans' && Boolean(focus)}
             onClick={() => setFilters((f) => ({ ...f, [toggle.key]: !f[toggle.key] }))}
           >
-            {translate(`auto.components.projectPages.map.${toggle.key}`, toggle.label)}
+            {toggle.label}
           </Button>
         ))}
         {focusNode ? (
@@ -139,7 +140,9 @@ export function ProjectPagesMap(props: Props): React.JSX.Element {
               onClick={() => setFilters((f) => ({ ...f, depth: f.depth === 1 ? 2 : 1 }))}
               title={translate('auto.components.projectPages.map.depth', 'Links away')}
             >
-              {filters.depth === 1 ? '1 hop' : '2 hops'}
+              {filters.depth === 1
+                ? translate('auto.components.projectPages.map.oneHop', '1 hop')
+                : translate('auto.components.projectPages.map.twoHops', '2 hops')}
             </Button>
             <Button
               size="icon-xs"
@@ -156,7 +159,11 @@ export function ProjectPagesMap(props: Props): React.JSX.Element {
           </Button>
         ) : null}
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-          {pageCount} {pageCount === 1 ? 'page' : 'pages'}
+          {pageCount === 1
+            ? translate('auto.components.projectPages.map.onePage', '1 page')
+            : translate('auto.components.projectPages.map.pages', '{{value0}} pages', {
+                value0: pageCount
+              })}
         </span>
         <Button
           size="icon-sm"

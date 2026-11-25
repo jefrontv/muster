@@ -163,8 +163,14 @@ export function SiteCustomStepEditor({
           value={draft.group}
           onChange={(group: SiteRunGroup) => onChange({ ...draft, group })}
           options={[
-            { value: 'import', label: 'Import' },
-            { value: 'deploy', label: 'Deploy' }
+            {
+              value: 'import',
+              label: translate('auto.components.sites.customStep.group.import', 'Import')
+            },
+            {
+              value: 'deploy',
+              label: translate('auto.components.sites.customStep.group.deploy', 'Deploy')
+            }
           ]}
         />
         <Select
@@ -172,8 +178,17 @@ export function SiteCustomStepEditor({
           value={draft.position}
           onChange={(position: SiteCustomStepPosition) => onChange({ ...draft, position })}
           options={[
-            { value: 'before', label: 'Before built-ins' },
-            { value: 'after', label: 'After built-ins' }
+            {
+              value: 'before',
+              label: translate(
+                'auto.components.sites.customStep.position.before',
+                'Before built-ins'
+              )
+            },
+            {
+              value: 'after',
+              label: translate('auto.components.sites.customStep.position.after', 'After built-ins')
+            }
           ]}
         />
         <Select
@@ -181,8 +196,14 @@ export function SiteCustomStepEditor({
           value={draft.runsOn}
           onChange={(runsOn: 'remote' | 'local') => onChange({ ...draft, runsOn })}
           options={[
-            { value: 'remote', label: 'Server (SSH)' },
-            { value: 'local', label: 'Local checkout' }
+            {
+              value: 'remote',
+              label: translate('auto.components.sites.customStep.runsOn.remote', 'Server (SSH)')
+            },
+            {
+              value: 'local',
+              label: translate('auto.components.sites.customStep.runsOn.local', 'Local checkout')
+            }
           ]}
         />
       </div>

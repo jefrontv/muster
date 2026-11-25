@@ -10,6 +10,7 @@ import {
   Workflow
 } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
+import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { slashCommands } from '../editor/rich-markdown-slash-command-catalog'
 import { filterRichMarkdownSlashCommands } from '../editor/rich-markdown-slash-command-filter'
 import { icon, type SlashCommand } from '../editor/rich-markdown-slash-command-primitives'
@@ -28,12 +29,14 @@ export type PageSlashItem = {
   chips?: string[]
 }
 
-const CALLOUTS = [
-  ['note', 'Note'],
-  ['tip', 'Tip'],
-  ['warning', 'Warning'],
-  ['caution', 'Caution']
-] as const
+const CALLOUT_KINDS = ['note', 'tip', 'warning', 'caution'] as const
+
+const calloutNames = createLocalizedCatalog(() => ({
+  note: translate('auto.components.projectPages.slash.callout.note', 'Note'),
+  tip: translate('auto.components.projectPages.slash.callout.tip', 'Tip'),
+  warning: translate('auto.components.projectPages.slash.callout.warning', 'Warning'),
+  caution: translate('auto.components.projectPages.slash.callout.caution', 'Caution')
+}))
 
 const byId = (id: string): SlashCommand | undefined => slashCommands.find((c) => c.id === id)
 const levels = (prefix: string): SlashCommand[] =>
@@ -69,19 +72,30 @@ export function pageSlashCommands(actions: {
           aliases: ['table', 'board', 'tracker'],
           icon: icon(Database),
           group: 'Templates',
-          description: 'Turn this page into a database with table and board views',
+          description: translate(
+            'auto.components.projectPages.slash.databaseDescription',
+            'Turn this page into a database with table and board views'
+          ),
           run: () => makeDatabase()
         }
       ]
     : []
-  const callouts = CALLOUTS.map(
-    ([kind, label]): SlashCommand => ({
+  const callouts = CALLOUT_KINDS.map(
+    (kind): SlashCommand => ({
       id: `page-callout-${kind}`,
-      label: `${label} callout`,
+      label: translate('auto.components.projectPages.slash.callout.label', '{{value0}} callout', {
+        value0: calloutNames()[kind]
+      }),
       aliases: ['callout', 'alert', 'admonition', kind],
       icon: icon(Info),
       group: 'Basic blocks',
-      description: `A highlighted ${kind} box`,
+      description: translate(
+        'auto.components.projectPages.slash.callout.description',
+        'A highlighted {{value0}} box',
+        {
+          value0: calloutNames()[kind].toLocaleLowerCase()
+        }
+      ),
       run: (editor) =>
         editor
           .chain()
@@ -98,20 +112,26 @@ export function pageSlashCommands(actions: {
   const activeCollab: SlashCommand[] = [
     {
       id: 'page-ac-task',
-      label: 'ActiveCollab task',
+      label: translate('auto.components.projectPages.slash.acTask', 'ActiveCollab task'),
       aliases: ['task', 'activecollab', 'ticket', 'quote'],
       icon: icon(SquareCheckBig),
       group: 'Basic blocks',
-      description: 'Add a task as a card, link or quote',
+      description: translate(
+        'auto.components.projectPages.slash.acTaskDescription',
+        'Add a task as a card, link or quote'
+      ),
       run: (editor) => openActiveCollabPicker(editor, 'task')
     },
     {
       id: 'page-ac-project',
-      label: 'ActiveCollab project',
+      label: translate('auto.components.projectPages.slash.acProject', 'ActiveCollab project'),
       aliases: ['project', 'activecollab'],
       icon: icon(FolderKanban),
       group: 'Basic blocks',
-      description: 'Add a project card',
+      description: translate(
+        'auto.components.projectPages.slash.acProjectDescription',
+        'Add a project card'
+      ),
       run: (editor) => openActiveCollabPicker(editor, 'project')
     }
   ]
@@ -124,7 +144,10 @@ export function pageSlashCommands(actions: {
           aliases: ['draw', 'drawio', 'flowchart', 'whiteboard', 'chart'],
           icon: icon(Workflow),
           group: 'Basic blocks',
-          description: 'A new diagram page, previewed here',
+          description: translate(
+            'auto.components.projectPages.slash.diagramDescription',
+            'A new diagram page, previewed here'
+          ),
           run: (editor) =>
             void newDiagram().then((page) => {
               if (page) {
@@ -155,16 +178,16 @@ export function filterPageSlashItems(
   const lastBasic = base.map((item) => item.group).lastIndexOf('Basic blocks')
   base.splice(lastBasic + 1, 0, {
     key: 'callout',
-    label: 'Callout',
+    label: translate('auto.components.projectPages.slash.callout.group', 'Callout'),
     group: 'Basic blocks',
     icon: callouts[0]?.icon ?? icon(Info),
     variants: callouts,
-    chips: CALLOUTS.map(([, label]) => label)
+    chips: CALLOUT_KINDS.map((kind) => calloutNames()[kind])
   })
   const items: PageSlashItem[] = [
     {
       key: 'heading',
-      label: 'Heading',
+      label: translate('auto.components.projectPages.slash.heading', 'Heading'),
       group: 'Headings',
       icon: HEADINGS[0].icon,
       variants: HEADINGS,
@@ -172,7 +195,7 @@ export function filterPageSlashItems(
     },
     {
       key: 'toggle-heading',
-      label: 'Toggle heading',
+      label: translate('auto.components.projectPages.slash.toggleHeading', 'Toggle heading'),
       group: 'Headings',
       icon: TOGGLE_HEADINGS[0].icon,
       variants: TOGGLE_HEADINGS,
