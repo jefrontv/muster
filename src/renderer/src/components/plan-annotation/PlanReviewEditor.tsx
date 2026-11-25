@@ -8,7 +8,6 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { EditorContent } from '@tiptap/react'
-import { MessageSquare, Plus } from 'lucide-react'
 import { useAppStore } from '@/store'
 import type { DiffComment } from '../../../../shared/types'
 import { MarkdownTableOfContentsPanel } from '../editor/MarkdownTableOfContentsPanel'
@@ -17,12 +16,13 @@ import { RichMarkdownToolbar } from '../editor/RichMarkdownToolbar'
 import { useRichMarkdownSearch } from '../editor/useRichMarkdownSearch'
 import { useRichMarkdownTableOfContents } from '../editor/use-rich-markdown-table-of-contents'
 import type { DraftNote } from './plan-annotation-notes'
+import { PlanReviewGutterAdd, PlanReviewRailToggle } from './PlanReviewMarginControls'
 import { PlanReviewNoteLayer } from './PlanReviewNoteLayer'
 import { PlanReviewNotePopover } from './PlanReviewNotePopover'
 import { usePlanReviewAnnotations } from './use-plan-review-annotations'
 import { usePlanReviewEditor } from './use-plan-review-editor'
 import { usePlanReviewHeadingJump } from './use-plan-review-heading-jump'
-import { usePlanReviewHoverBlock, type PlanReviewHoverBlock } from './use-plan-review-hover-block'
+import { usePlanReviewHoverBlock } from './use-plan-review-hover-block'
 
 export function PlanReviewEditor({
   initialContent,
@@ -111,16 +111,6 @@ export function PlanReviewEditor({
     scrollContainerRef,
     disabled: annotations.draft !== null
   })
-  const openBlockDraft = (block: PlanReviewHoverBlock): void => {
-    if (!editor) {
-      return
-    }
-    // view.focus() rather than the focus command: that defers a frame, and ProseMirror only writes
-    // the selection to the DOM, where the draft reads it, once the view has focus.
-    editor.view.focus()
-    editor.commands.setTextSelection({ from: block.from, to: block.to })
-    annotations.openPassageDraft(true)
-  }
 
   // A mouse selection opens the note box straight away; keyboard selections (often edits) use
   // Mod+Shift+A instead, so selecting text to retype it does not keep popping a box.
@@ -196,27 +186,11 @@ export function PlanReviewEditor({
               />
             ) : null}
             {hover.block && !annotations.draft ? (
-              <button
-                type="button"
-                className="orca-diff-comment-add-btn rich-markdown-comment-add-btn plan-review-gutter-add"
-                style={{ top: hover.block.top, left: hover.block.left }}
-                title="Add a note on this line"
-                aria-label="Add a note on this line"
-                // Keeps the editor focused, so the block selection it makes is live.
-                onMouseDown={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                }}
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  if (hover.block) {
-                    openBlockDraft(hover.block)
-                  }
-                }}
-              >
-                <Plus className="size-3.5" />
-              </button>
+              <PlanReviewGutterAdd
+                block={hover.block}
+                editor={editor}
+                openPassageDraft={annotations.openPassageDraft}
+              />
             ) : null}
             {annotations.reviewRailVisible && annotations.notePositions.length > 0 ? (
               <PlanReviewNoteLayer
@@ -263,21 +237,7 @@ export function PlanReviewEditor({
             onSubmit={annotations.submitDraft}
           />
         ) : null}
-        {annotations.comments.length > 0 ? (
-          <div className="rich-markdown-review-rail-actions">
-            <button
-              type="button"
-              className="rich-markdown-review-rail-toggle"
-              aria-expanded={annotations.reviewRailOpen}
-              aria-label={annotations.reviewRailOpen ? 'Hide review notes' : 'Show review notes'}
-              title={annotations.reviewRailOpen ? 'Hide review notes' : 'Show review notes'}
-              onClick={() => annotations.setReviewRailOpen((open) => !open)}
-            >
-              <MessageSquare className="size-3.5" />
-              <span>{annotations.comments.length}</span>
-            </button>
-          </div>
-        ) : null}
+        <PlanReviewRailToggle annotations={annotations} />
       </div>
     </div>
   )

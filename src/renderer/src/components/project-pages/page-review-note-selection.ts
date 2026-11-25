@@ -1,19 +1,6 @@
-// Page review notes: the markdown plan review's open-on-selection behaviour and kind wording.
+// The markdown plan review's open-on-selection behaviour, for page comments and page reviews.
 import type { Editor } from '@tiptap/react'
 import { useEffect, type RefObject } from 'react'
-import type { PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
-
-/** Page threads have no kinds, so a remove / looks-good note says so in its text. */
-export function pageNoteText(kind: PlanAnnotationKind, body: string): string {
-  const text = body.trim()
-  if (kind === 'delete') {
-    return text ? `Remove: ${text}` : 'Remove this.'
-  }
-  if (kind === 'looks_good') {
-    return text ? `Looks good: ${text}` : 'Looks good.'
-  }
-  return body
-}
 
 /** Like PlanReviewEditor: a mouse selection opens the note box; keyboard selections use the shortcut. */
 export function useOpenNoteOnMouseSelection(

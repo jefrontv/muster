@@ -13,7 +13,8 @@ import {
   pageCommentHighlights
 } from './project-pages-comment-highlights'
 import { usePageComments, useWholePageCommentRequests } from './use-page-comments'
-import { pageNoteText, useOpenNoteOnMouseSelection } from './page-review-note-selection'
+import { useOpenNoteOnMouseSelection } from './page-review-note-selection'
+import { roundStart, roundThreads } from '../plan-annotation/page-review-result'
 import { editorShortcutMatches } from '../editor/editor-shortcuts'
 import { getRichMarkdownAnnotationTarget } from '../editor/rich-markdown-review-annotations'
 import { flushPendingProseMirrorSelection } from '../editor/rich-markdown-selection-flush'
@@ -62,11 +63,25 @@ export function usePageCommentController({
   editor: Editor | null
   rootRef: React.RefObject<HTMLElement | null>
 }) {
-  const { threads, actions } = usePageComments(scopeKey, pageId)
+  const { threads: allThreads, actions } = usePageComments(scopeKey, pageId)
   const { current } = usePlanReviewFront()
   const inReview = current?.page?.scopeKey === scopeKey && current.page.pageId === pageId
   const inReviewRef = useRef(inReview)
   inReviewRef.current = inReview
+  // Under review, this round's threads are review notes (ProjectPageReviewNotes draws them).
+  const { threads, reviewThreads } = useMemo(() => {
+    if (!inReview || !current) {
+      return { threads: allThreads, reviewThreads: [] }
+    }
+    const round = roundThreads(allThreads, roundStart(current))
+    const ids = new Set(round.map((t) => t.id))
+    return { threads: allThreads.filter((t) => !ids.has(t.id)), reviewThreads: round }
+  }, [allThreads, current, inReview])
+  /** Filled by the review notes while they are mounted. */
+  const reviewRef = useRef<{
+    openPassage: (selectionOnly: boolean) => boolean
+    openWhole: () => void
+  } | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [draft, setDraft] = useState<PageCommentDraft | null>(null)
   const [note, setNote] = useState<PlanNoteDraft | null>(null)
@@ -149,6 +164,10 @@ export function usePageCommentController({
   }, [editor, rootRef])
 
   const startWholePage = useCallback(() => {
+    if (inReviewRef.current) {
+      reviewRef.current?.openWhole()
+      return
+    }
     const width = rootRef.current?.getBoundingClientRect().width ?? 0
     setNote({
       scope: 'whole-plan',
@@ -163,6 +182,9 @@ export function usePageCommentController({
   /** Opens the note box on the selection, or on the whole page when nothing is selected. */
   const startComment = useCallback(
     (selectionOnly = false): boolean => {
+      if (inReviewRef.current) {
+        return reviewRef.current?.openPassage(selectionOnly) ?? false
+      }
       const root = rootRef.current
       if (!editor || !root) {
         return false
@@ -227,9 +249,10 @@ export function usePageCommentController({
     setNote(null)
   }, [])
   const submitNote = useCallback(
-    (kind: PlanAnnotationKind, body: string, attachments: string[]) => {
+    // Outside a review the note box shows no kinds, so every note here is a plain comment.
+    (_kind: PlanAnnotationKind, body: string, attachments: string[]) => {
       const anchor = draft?.anchor ?? null
-      void actions.add(anchor, pageNoteText(kind, body), attachments).then((ok) => {
+      void actions.add(anchor, body, attachments).then((ok) => {
         if (ok) {
           cancelDraft()
           window.getSelection()?.removeAllRanges()
@@ -260,6 +283,8 @@ export function usePageCommentController({
     draft,
     note,
     inReview,
+    reviewThreads,
+    reviewRef,
     submitNote,
     cancelDraft,
     collapsed,

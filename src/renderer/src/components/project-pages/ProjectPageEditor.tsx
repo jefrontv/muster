@@ -2,7 +2,6 @@
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { toast } from 'sonner'
 import { mergeMarkdownBlocks } from '../../../../shared/project-pages-block-merge'
@@ -31,6 +30,8 @@ import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
 import { ProjectPageOutline } from './ProjectPageOutline'
 import { ProjectPageComments, ProjectPageCommentsToggle } from './ProjectPageComments'
 import { ProjectPageCommentInput } from './ProjectPageCommentInput'
+import { ProjectPageReviewNotes } from './ProjectPageReviewNotes'
+import { ProjectPageConflictBanner } from './ProjectPageConflictBanner'
 import { usePageCommentController } from './use-page-comment-controller'
 import { registerPageEditor } from './page-editor-registry'
 
@@ -332,23 +333,7 @@ export function ProjectPageEditor({
   return (
     <div className="rich-markdown-editor-shell">
       {conflict !== null ? (
-        <div
-          role="alert"
-          className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/50 px-8 py-2 text-xs"
-        >
-          <span className="flex-1 text-foreground">
-            {translate(
-              'auto.components.projectPages.conflict',
-              'This page changed somewhere else while you were editing.'
-            )}
-          </span>
-          <Button size="xs" variant="outline" onClick={() => void loadStored(false)}>
-            {translate('auto.components.projectPages.useTheirs', 'Load their version')}
-          </Button>
-          <Button size="xs" onClick={() => void loadStored(true)}>
-            {translate('auto.components.projectPages.keepMine', 'Keep mine')}
-          </Button>
-        </div>
+        <ProjectPageConflictBanner onLoad={(keepMine) => void loadStored(keepMine)} />
       ) : null}
       <div
         ref={commentsRootRef}
@@ -377,7 +362,7 @@ export function ProjectPageEditor({
         >
           <div
             ref={bodyRef}
-            className="min-h-0 flex-1 overflow-auto scrollbar-editor"
+            className="relative min-h-0 flex-1 overflow-auto scrollbar-editor"
             {...PAGE_FILE_DROP_PROPS}
           >
             <input
@@ -405,6 +390,14 @@ export function ProjectPageEditor({
             <div aria-hidden className="mx-8 mt-3 mb-1 border-b border-border" />
             {afterTitle}
             <EditorContent editor={editor} />
+            {comments.inReview ? (
+              <ProjectPageReviewNotes
+                controller={comments}
+                editor={editor}
+                rootRef={commentsRootRef}
+                scrollRef={bodyRef}
+              />
+            ) : null}
             {footer}
           </div>
           {doc.meta.database ? null : (
