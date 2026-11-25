@@ -3051,7 +3051,7 @@ export type GlobalSettings = {
   agentCapabilitySiteSetup?: boolean
   /** Absent or true = a plan review opens as a tab in the agent's project; false = full-window popup. */
   planReviewInProjectTab?: boolean
-  /** Absent or true = a routed plan review is saved as a page in the project's Pages "Plans" folder. */
+  /** True = path/content plan reviews are also saved as pages (opt-in; page reviews always use Pages). */
   planReviewsToPages?: boolean
   /** Absent = write. Only applies while experimentalProjectPages is on. */
   agentCapabilityProjectPages?: 'off' | 'read' | 'write'

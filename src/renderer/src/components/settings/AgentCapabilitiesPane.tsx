@@ -39,7 +39,7 @@ export function AgentCapabilitiesPane({
     planReviewPagesEntry
   ] = entries
   const planReviewInTab = settings.planReviewInProjectTab !== false
-  const planReviewsToPages = settings.planReviewsToPages !== false
+  const planReviewsToPages = settings.planReviewsToPages === true
   const pagesOn = settings.experimentalProjectPages === true
 
   const sitesMcpEnabled = isSitesMcpExposedToAgents(settings)

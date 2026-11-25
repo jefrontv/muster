@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
+import { getDefaultSettings } from '../../shared/constants'
 import type { GlobalSettings } from '../../shared/types'
 import { createProjectPagesStore } from '../project-pages/project-pages-store'
 import { bindPlanReviewPage, planReviewsSaveToPages } from './plan-review-pages'
@@ -9,7 +10,9 @@ import { bindPlanReviewPage, planReviewsSaveToPages } from './plan-review-pages'
 const dirs: string[] = []
 const SCOPE = 'repo:r1'
 
-function setup(settings: Partial<GlobalSettings> = { experimentalProjectPages: true }) {
+function setup(
+  settings: Partial<GlobalSettings> = { experimentalProjectPages: true, planReviewsToPages: true }
+) {
   const rootDir = mkdtempSync(join(tmpdir(), 'plan-pages-'))
   dirs.push(rootDir)
   const store = createProjectPagesStore({ rootDir })
@@ -70,17 +73,65 @@ describe('plan reviews saved to Pages', () => {
 
   it('stays off Pages when the settings say so or no project holds the cwd', () => {
     expect(bindPlanReviewPage(setup({}).deps, input('v1'), null)).toBeNull()
+    // Saving every review to Pages is opt-in.
+    expect(planReviewsSaveToPages(getDefaultSettings('/tmp'))).toBe(false)
+    expect(bindPlanReviewPage(setup(getDefaultSettings('/tmp')).deps, input('v1'), null)).toBeNull()
     expect(
-      bindPlanReviewPage(
-        setup({ experimentalProjectPages: true, planReviewsToPages: false }).deps,
-        input('v1'),
-        null
-      )
+      bindPlanReviewPage(setup({ experimentalProjectPages: true }).deps, input('v1'), null)
     ).toBeNull()
+    expect(planReviewsSaveToPages({ experimentalProjectPages: true })).toBe(false)
     expect(bindPlanReviewPage(setup().deps, input('v1', { cwd: '/elsewhere' }), null)).toBeNull()
     expect(
       planReviewsSaveToPages({ experimentalProjectPages: true, planReviewInProjectTab: false })
     ).toBe(false)
+  })
+
+  it('saves on "Add to Pages" even with the setting off', () => {
+    const { deps } = setup({ experimentalProjectPages: true })
+    expect(bindPlanReviewPage(deps, input('v1'), null, { force: true })?.scopeKey).toBe(SCOPE)
+    expect(bindPlanReviewPage(setup({}).deps, input('v1'), null, { force: true })).toBeNull()
+  })
+
+  it('files the page in a named folder path, creating what is missing', () => {
+    const { store, deps } = setup()
+    const ref = bindPlanReviewPage(deps, input('v1', { pagesFolder: 'Specs / Q4' }), null)
+    const pages = store.listPages(SCOPE).pages
+    const specs = pages.find((p) => p.folder && p.title === 'Specs')
+    const q4 = pages.find((p) => p.folder && p.title === 'Q4')
+    expect(specs?.parentId).toBeNull()
+    expect(q4?.parentId).toBe(specs?.id)
+    expect(store.readPage(SCOPE, ref!.pageId).meta.parentId).toBe(q4?.id)
+    expect(pages.some((p) => p.title === 'Plans')).toBe(false)
+
+    const byId = bindPlanReviewPage(
+      deps,
+      input('v1', { title: 'Other', pagesFolder: specs!.id }),
+      null
+    )
+    expect(store.readPage(SCOPE, byId!.pageId).meta.parentId).toBe(specs?.id)
+  })
+
+  it('keeps the title out of the page body and names the page from the H1', () => {
+    const { store, deps } = setup()
+    const plan = '# Tab strip polish\n\n## Goal\n\nKeep tabs still.\n'
+    const named = bindPlanReviewPage(deps, input(plan, { title: 'tab-strip.md' }), null)
+    expect(store.readPage(SCOPE, named!.pageId)).toMatchObject({
+      meta: { title: 'Tab strip polish' },
+      markdown: '## Goal\n\nKeep tabs still.\n'
+    })
+    const again = bindPlanReviewPage(
+      deps,
+      input(plan.replace('still', 'put'), { title: 'tab-strip.md' }),
+      named
+    )
+    expect(store.readPage(SCOPE, again!.pageId).markdown).toBe('## Goal\n\nKeep tabs put.\n')
+
+    const titled = bindPlanReviewPage(
+      deps,
+      input('# Draft\n\nBody\n', { title: 'Ship plan' }),
+      null
+    )
+    expect(store.readPage(SCOPE, titled!.pageId).markdown).toBe('# Draft\n\nBody\n')
   })
 
   it('uses the page an agent asked to review when it exists', () => {

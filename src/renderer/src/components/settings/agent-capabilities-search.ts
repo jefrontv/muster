@@ -194,7 +194,7 @@ export const getAgentCapabilitiesPaneSearchEntries = createLocalizedCatalog(
       ),
       description: translate(
         'auto.components.settings.agentCapabilities.search.planReviewPagesDescription',
-        "A plan review is saved as a page in the project's Plans folder and reviewed there. Off uses the plan review tab."
+        "Plans an agent sends as a file are also saved as pages in the project's Plans folder and reviewed there. Plans written as pages always open in Pages."
       ),
       keywords: [
         ...sharedKeywords(),

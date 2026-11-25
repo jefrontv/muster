@@ -25,6 +25,7 @@ export function planAnnotationOpenInput(
     agent: text(body.agent),
     project: text(body.project),
     cwd: text(body.cwd),
-    page: pageRef(body.page)
+    page: pageRef(body.page),
+    pagesFolder: text(body.pagesFolder)
   }
 }

@@ -55,7 +55,7 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
   {
     name: 'annotate_plan',
     description:
-      'Open a markdown plan in Muster for human review and return review_id at once; then poll collect_plan_review in a loop until a decision returns. Prefer path over content so the plan survives compaction. Pass page (a Muster page id or path) to review a page; its edits save to the page. A routed review is also saved as a page under Plans; the result returns page_id.',
+      'Open a markdown plan in Muster for human review and return review_id at once; then poll collect_plan_review in a loop until a decision returns. Use path for a plan that lives in the repo (prefer it over content so the plan survives compaction). Use page when the plan should live in Pages or the user asks for it there: write it with the pages tools in whatever folder fits, then pass its id or path; edits save to the page and notes become comment threads. When a path/content review is also saved to Pages, pages_folder picks the folder (default Plans). Returns page_id when the review is on a page.',
     inputSchema: objectSchema({
       path: {
         type: 'string',
@@ -68,6 +68,10 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
       page: {
         type: 'string',
         description: 'A Muster page id or title path to review instead of path/content.'
+      },
+      pages_folder: {
+        type: 'string',
+        description: 'Pages folder id or path (e.g. "Specs/Q4") for a saved path/content review.'
       }
     }),
     // Still concurrent: opening is quick, but it must not queue behind a long collect.
@@ -101,7 +105,8 @@ export const SITE_MCP_PLAN_TOOLS: readonly SiteMcpTool[] = [
         agent: siteMcpClientName(),
         project: describePlanProject(context.cwd, context.store.listSites()),
         cwd: context.cwd,
-        page
+        page,
+        pagesFolder: readString(args, 'pages_folder') || null
       })
 
       return {
