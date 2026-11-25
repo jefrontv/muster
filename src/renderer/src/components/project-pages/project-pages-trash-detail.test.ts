@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { i18n } from '@/i18n/i18n'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 import { trashRowDetail } from './project-pages-trash-detail'
 
@@ -26,4 +27,16 @@ describe('trashRowDetail', () => {
     const fresh = page('h', null, NOW - 20_000)
     expect(trashRowDetail(fresh, [fresh], NOW)).toBe('Page · Deleted just now')
   })
+
+  it('words the time in the app language, not the system one', async () => {
+    await i18n.changeLanguage('ja')
+    const gone = page('j', null, NOW - 2 * HOUR)
+    expect(trashRowDetail(gone, [gone], NOW)).toContain(
+      new Intl.RelativeTimeFormat('ja', { numeric: 'auto' }).format(-2, 'hour')
+    )
+  })
+})
+
+afterEach(async () => {
+  await i18n.changeLanguage('en')
 })

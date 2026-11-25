@@ -1,10 +1,26 @@
 // Tooltip text for a Trash row: what kind of page it was, what went with it, and when.
-import { translate } from '@/i18n/i18n'
+import { i18n, translate } from '@/i18n/i18n'
 import type { ProjectPageMeta } from '../../../../shared/project-pages-types'
 
-const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+const formatters = new Map<string, Intl.RelativeTimeFormat>()
+
+/** Relative times in the app's language, not the system's. */
+function relativeFormat(): Intl.RelativeTimeFormat {
+  const language = i18n.language || 'en'
+  let formatter = formatters.get(language)
+  if (!formatter) {
+    try {
+      formatter = new Intl.RelativeTimeFormat(language, { numeric: 'auto' })
+    } catch {
+      formatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+    }
+    formatters.set(language, formatter)
+  }
+  return formatter
+}
 
 function deletedAgo(archivedAt: number, now: number): string {
+  const relative = relativeFormat()
   const minutes = Math.round((archivedAt - now) / 60_000)
   if (Math.abs(minutes) < 60) {
     return relative.format(minutes, 'minute')
