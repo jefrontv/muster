@@ -54,10 +54,14 @@ export function trashRowDetail(
           })
     )
   }
+  const archivedAt = page.archivedAt ?? now
+  // Intl's "this minute" reads oddly for something just trashed.
   parts.push(
-    translate('auto.components.projectPages.trashDeleted', 'Deleted {{value0}}', {
-      value0: deletedAgo(page.archivedAt ?? now, now)
-    })
+    Math.abs(now - archivedAt) < 60_000
+      ? translate('auto.components.projectPages.trashDeletedJustNow', 'Deleted just now')
+      : translate('auto.components.projectPages.trashDeleted', 'Deleted {{value0}}', {
+          value0: deletedAgo(archivedAt, now)
+        })
   )
   return parts.join(' · ')
 }

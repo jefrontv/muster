@@ -15438,7 +15438,8 @@
         },
         "trashInsideOne": "1 page inside",
         "trashInside": "{{value0}} pages inside",
-        "trashDeleted": "Deleted {{value0}}"
+        "trashDeleted": "Deleted {{value0}}",
+        "trashDeletedJustNow": "Deleted just now"
       },
       "planAnnotation": {
         "tab": {

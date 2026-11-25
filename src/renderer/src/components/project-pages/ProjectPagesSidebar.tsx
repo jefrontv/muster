@@ -186,7 +186,7 @@ export function ProjectPagesSidebar({
                         <span className="sr-only">, {trashRowDetail(page, pages)}</span>
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent side="right" sideOffset={6}>
+                    <TooltipContent side="top" align="start" sideOffset={6}>
                       {trashRowDetail(page, pages)}
                     </TooltipContent>
                   </Tooltip>

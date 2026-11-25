@@ -23,5 +23,7 @@ describe('trashRowDetail', () => {
     expect(trashRowDetail(pages[3], pages, NOW)).toBe('Page · Deleted 5 hours ago')
     const diagram = page('g', null, NOW - 3 * 24 * HOUR, { diagram: true })
     expect(trashRowDetail(diagram, [diagram], NOW)).toBe('Diagram · Deleted 3 days ago')
+    const fresh = page('h', null, NOW - 20_000)
+    expect(trashRowDetail(fresh, [fresh], NOW)).toBe('Page · Deleted just now')
   })
 })
