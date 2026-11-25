@@ -18,6 +18,8 @@ import type { ProjectPagesStore } from './project-pages-store'
 
 export type ProjectPageIndexEntry = {
   revision: number
+  /** Turning a page into a diagram keeps its revision, so the flag is part of the cache key. */
+  diagram: boolean
   headings: string[]
   text: string
   /** Raw body lines, numbered like read_page; grep_pages matches these. */
@@ -59,12 +61,14 @@ export function createProjectPagesSearchIndex(
     }
     let changed = false
     for (const page of pages) {
-      if (entries.get(page.id)?.revision !== page.revision) {
+      const cached = entries.get(page.id)
+      if (cached?.revision !== page.revision || cached.diagram !== Boolean(page.diagram)) {
         changed = true
         const markdown = store.readPage(scopeKey, page.id).markdown
         const pageLinks = extractPageLinks(markdown)
         entries.set(page.id, {
           revision: page.revision,
+          diagram: Boolean(page.diagram),
           headings: extractHeadings(markdown),
           text: markdownToPlainText(markdown),
           lines: bodyLines(markdown),

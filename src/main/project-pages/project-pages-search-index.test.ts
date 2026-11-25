@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pageLinkHref } from '../../shared/project-pages-plain-text'
+import { createProjectPagesDiagrams } from './project-pages-diagram-store'
 import { createProjectPagesSearchIndex } from './project-pages-search-index'
 import { createProjectPagesStore } from './project-pages-store'
 
@@ -89,5 +90,20 @@ describe('project pages search index', () => {
     expect(linksOf()).toEqual([])
     store.restorePage(SCOPE, renamed.meta.id, USER)
     expect(linksOf()).toEqual([renamed.meta.id])
+  })
+  it('re-reads a page that turns into a diagram without a new revision', () => {
+    const store = createProjectPagesStore({ rootDir: root })
+    const diagrams = createProjectPagesDiagrams({ rootDir: root, store })
+    const xml =
+      '<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>' +
+      '<mxCell id="s1" value="Billing service" vertex="1" parent="1"/></root></mxGraphModel>'
+    const index = createProjectPagesSearchIndex(store, { diagramXml: () => xml })
+    const { meta } = store.createPage(SCOPE, { title: 'Map', markdown: 'Billing notes' }, USER)
+    expect(index.snapshot(SCOPE).entries.get(meta.id)?.shapes).toBeUndefined()
+    const { page } = diagrams.enableDiagram(SCOPE, meta.id, USER)
+    expect(page.revision).toBe(meta.revision)
+    expect(index.snapshot(SCOPE).entries.get(meta.id)?.shapes).toEqual([
+      expect.objectContaining({ shape: 's1', text: 'Billing service' })
+    ])
   })
 })
