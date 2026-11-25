@@ -72,10 +72,10 @@ export function BotsDraftDialog({
     <Dialog open onOpenChange={(open) => (open ? undefined : close())}>
       <DialogContent
         // minmax(0,1fr): a long truncated subtitle otherwise widens the grid past the dialog.
-        // Fixed height so switching views never resizes the dialog.
         // The comment view hugs its content; only the task view takes the tall fixed height.
+        // Pinned to the top, not centred, so a height change grows downward and the header never moves.
         className={cn(
-          'max-h-[85vh] grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-3 transition-[height] duration-200 ease-out [interpolate-size:allow-keywords] sm:max-w-3xl',
+          'top-[7.5vh] max-h-[85vh] translate-y-0 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-3 transition-[height] duration-200 ease-out [interpolate-size:allow-keywords] sm:max-w-3xl',
           view === 'task' ? 'h-[min(85vh,760px)]' : 'h-auto'
         )}
         // Escape first closes an open @mention menu, not the whole dialog.
@@ -92,7 +92,11 @@ export function BotsDraftDialog({
           <DialogHeader className="min-w-0 gap-2 pr-8">
             <div className="flex min-w-0 items-center gap-3">
               <DialogTitle className="min-w-0 flex-1 truncate">{taskTitle}</DialogTitle>
-              {view === 'task' ? (
+              {/* Kept mounted in both views so the title and toggle never shift sideways. */}
+              <div
+                className={view === 'task' ? undefined : 'invisible'}
+                aria-hidden={view !== 'task'}
+              >
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -104,6 +108,7 @@ export function BotsDraftDialog({
                         'Open on Tasks page'
                       )}
                       onClick={openOnTasksPage}
+                      tabIndex={view === 'task' ? undefined : -1}
                     >
                       <SquareArrowOutUpRight className="size-3.5" />
                     </Button>
@@ -115,7 +120,7 @@ export function BotsDraftDialog({
                     )}
                   </TooltipContent>
                 </Tooltip>
-              ) : null}
+              </div>
               <TabsList className="h-8 shrink-0">
                 <TabsTrigger value="comment" title={`${mod}1`}>
                   {translate('auto.components.bots.commentDrafts.viewComment', 'Comment')}
@@ -140,7 +145,7 @@ export function BotsDraftDialog({
           <TabsContent
             value="comment"
             forceMount
-            className="flex min-h-0 flex-col data-[state=inactive]:hidden"
+            className="flex min-h-0 flex-col data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-150 data-[state=inactive]:hidden"
           >
             <BotsCommentDraftEditor draft={draft} task={task} guard={guard} onClose={onClose} />
           </TabsContent>
@@ -148,7 +153,7 @@ export function BotsDraftDialog({
             value="task"
             forceMount
             // Negative margin lets the task pane run to the dialog's edges like it does in a pane.
-            className="-mx-6 -mb-6 min-h-0 overflow-hidden border-t border-border data-[state=inactive]:hidden"
+            className="-mx-6 -mb-6 min-h-0 overflow-hidden border-t border-border data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-150 data-[state=inactive]:hidden"
           >
             <ActiveCollabTaskWorkspace projectId={draft.projectId} taskId={draft.taskId} />
           </TabsContent>
