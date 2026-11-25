@@ -44,10 +44,17 @@ async function saveImages(files: readonly File[]): Promise<string[]> {
 
 export function PlanReviewNotePopover({
   draft,
+  showKinds = true,
+  wholeTitle = 'Whole plan',
+  notePlaceholder = 'Add note for the agent',
   onCancel,
   onSubmit
 }: {
   draft: PlanNoteDraft
+  /** Off for page comments outside a review, which have no remove / looks good. */
+  showKinds?: boolean
+  wholeTitle?: string
+  notePlaceholder?: string
   onCancel: () => void
   onSubmit: (kind: PlanAnnotationKind, body: string, attachments: string[]) => void
 }): React.JSX.Element {
@@ -69,18 +76,16 @@ export function PlanReviewNotePopover({
       top={isPassage ? draft.target.top : draft.top}
       left={isPassage ? draft.target.left : draft.left}
       lineHeight={isPassage ? draft.flipHeight : 0}
-      title={isPassage ? 'Selected text' : 'Whole plan'}
+      title={isPassage ? 'Selected text' : wholeTitle}
       placeholder={
-        kind === 'comment' || kind === 'global'
-          ? 'Add note for the agent'
-          : 'Add a reason (optional)'
+        kind === 'comment' || kind === 'global' ? notePlaceholder : 'Add a reason (optional)'
       }
       allowEmptySubmit={isStandaloneKind(kind) || attachments.length > 0}
       onFiles={attach}
       onCancel={onCancel}
       onSubmit={async (body) => onSubmit(kind, body, attachments)}
       beforeInput={
-        isPassage ? (
+        isPassage && showKinds ? (
           <div className="flex items-center gap-1" role="radiogroup" aria-label="Note kind">
             {PASSAGE_KINDS.map((entry) => (
               <button

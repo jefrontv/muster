@@ -44,7 +44,11 @@ export async function loadPageComments(
 }
 
 export type PageCommentActions = {
-  add: (anchor: PageCommentAnchor | null, body: string) => Promise<boolean>
+  add: (
+    anchor: PageCommentAnchor | null,
+    body: string,
+    attachments?: readonly string[]
+  ) => Promise<boolean>
   reply: (threadId: string, body: string) => Promise<boolean>
   setStatus: (threadId: string, status: PageCommentStatus) => Promise<boolean>
   remove: (threadId: string) => Promise<boolean>
@@ -94,7 +98,14 @@ export function usePageComments(
   )
   const api = window.api.projectPages
   const actions: PageCommentActions = {
-    add: (anchor, body) => run(api.addComment(scopeKey, pageId, { anchor, body })),
+    add: (anchor, body, attachments) =>
+      run(
+        api.addComment(scopeKey, pageId, {
+          anchor,
+          body,
+          ...(attachments?.length ? { attachments: [...attachments] } : {})
+        })
+      ),
     reply: (threadId, body) => run(api.replyComment(scopeKey, pageId, threadId, { body })),
     setStatus: (threadId, status) => run(api.setCommentStatus(scopeKey, pageId, threadId, status)),
     remove: (threadId) => run(api.deleteComment(scopeKey, pageId, threadId))

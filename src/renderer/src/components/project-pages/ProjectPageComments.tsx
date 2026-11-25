@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type { PageCommentThread } from '../../../../shared/project-pages-comment-types'
-import { PageCommentComposer, ProjectPageCommentCard } from './ProjectPageCommentCard'
+import { ProjectPageCommentCard } from './ProjectPageCommentCard'
 import type { PageCommentController } from './use-page-comment-controller'
 
 function SectionLabel({ children }: { children: React.ReactNode }): React.JSX.Element {
@@ -63,8 +63,8 @@ export function ProjectPageComments({
   overlay: boolean
 }): React.JSX.Element | null {
   const [showResolved, setShowResolved] = useState(false)
-  const { threads, draft, actions } = controller
-  if (controller.collapsed || (threads.length === 0 && !draft)) {
+  const { threads, actions } = controller
+  if (controller.collapsed || threads.length === 0) {
     return null
   }
   const groups = group(controller)
@@ -97,7 +97,7 @@ export function ProjectPageComments({
           className="text-muted-foreground"
           aria-label={translate('auto.components.projectPages.comments.new', 'Comment')}
           title={`${translate('auto.components.projectPages.comments.new', 'Comment')} (${controller.shortcutLabel})`}
-          onClick={controller.startComment}
+          onClick={() => controller.startComment()}
         >
           <MessageSquarePlus className="size-3.5" />
         </Button>
@@ -112,29 +112,6 @@ export function ProjectPageComments({
         </Button>
       </div>
       <div className="scrollbar-editor min-h-0 flex-1 space-y-2 overflow-auto p-2">
-        {draft ? (
-          <div className="rounded-xl border border-ring bg-card p-3">
-            {draft.anchor ? (
-              <p className="mb-2 line-clamp-2 border-l-2 border-annotation-highlight pl-2 text-xs text-muted-foreground">
-                {draft.anchor.quote}
-              </p>
-            ) : (
-              <SectionLabel>
-                {translate('auto.components.projectPages.comments.wholePage', 'Whole page')}
-              </SectionLabel>
-            )}
-            <PageCommentComposer
-              autoFocus
-              placeholder={translate(
-                'auto.components.projectPages.comments.placeholder',
-                'Add a comment'
-              )}
-              submitLabel={translate('auto.components.projectPages.comments.submit', 'Comment')}
-              onSubmit={controller.submitDraft}
-              onCancel={controller.cancelDraft}
-            />
-          </div>
-        ) : null}
         {[...groups.wholePage, ...groups.placed].map(card)}
         {groups.changed.length > 0 ? (
           <>

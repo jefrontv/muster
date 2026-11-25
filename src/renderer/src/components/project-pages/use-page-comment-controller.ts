@@ -1,6 +1,8 @@
-// Wires page comments to the editor: highlights, the selection bubble, ⌘⌥M and the draft thread.
+// Wires page comments to the editor: highlights, the selection bubble, ⌘⌥M and the note box.
+// The note box is the plan review's own (PlanReviewNotePopover), so page reviews take notes alike.
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
 import type {
   PageCommentAnchor,
   PageCommentThread
@@ -11,11 +13,22 @@ import {
   pageCommentHighlights
 } from './project-pages-comment-highlights'
 import { usePageComments, useWholePageCommentRequests } from './use-page-comments'
+import { pageNoteText, useOpenNoteOnMouseSelection } from './page-review-note-selection'
+import { editorShortcutMatches } from '../editor/editor-shortcuts'
+import { getRichMarkdownAnnotationTarget } from '../editor/rich-markdown-review-annotations'
+import { flushPendingProseMirrorSelection } from '../editor/rich-markdown-selection-flush'
+import {
+  placeNoteBelowSelection,
+  type PlanNoteDraft
+} from '../plan-annotation/use-plan-review-annotations'
+import { usePlanReviewFront } from '../plan-annotation/use-plan-review-queue'
 
 export const DRAFT_THREAD_ID = '__draft'
 const BUBBLE_OFFSET_PX = 36
 /** Below this the column floats over the page instead of squeezing it. */
 const NARROW_PX = 760
+const NOTE_WIDTH_PX = 420
+const WHOLE_PAGE_NOTE_TOP_PX = 56
 
 export type PageCommentDraft = { anchor: PageCommentAnchor | null }
 
@@ -50,8 +63,15 @@ export function usePageCommentController({
   rootRef: React.RefObject<HTMLElement | null>
 }) {
   const { threads, actions } = usePageComments(scopeKey, pageId)
+  const { current } = usePlanReviewFront()
+  const inReview = current?.page?.scopeKey === scopeKey && current.page.pageId === pageId
+  const inReviewRef = useRef(inReview)
+  inReviewRef.current = inReview
   const [activeId, setActiveId] = useState<string | null>(null)
   const [draft, setDraft] = useState<PageCommentDraft | null>(null)
+  const [note, setNote] = useState<PlanNoteDraft | null>(null)
+  const noteRef = useRef(note)
+  noteRef.current = note
   const [collapsed, setCollapsed] = useState(false)
   const [layout, setLayout] = useState<{ order: string[]; missing: string[] }>({
     order: [],
@@ -100,7 +120,15 @@ export function usePageCommentController({
       }
       const { from, to, empty } = editor.state.selection
       const root = rootRef.current
-      if (empty || !editor.isFocused || !root || !editor.state.doc.textBetween(from, to).trim()) {
+      // Under review the note box opens on selection, so the chip would only duplicate it.
+      const quiet = inReviewRef.current || noteRef.current !== null
+      if (
+        quiet ||
+        empty ||
+        !editor.isFocused ||
+        !root ||
+        !editor.state.doc.textBetween(from, to).trim()
+      ) {
         setBubble(null)
         return
       }
@@ -120,29 +148,62 @@ export function usePageCommentController({
     }
   }, [editor, rootRef])
 
-  const startComment = useCallback(() => {
-    if (!editor) {
-      return
-    }
-    const { from, to, empty } = editor.state.selection
-    setDraft({ anchor: empty ? null : anchorForSelection(editor.state.doc, from, to) })
-    setCollapsed(false)
-    setBubble(null)
-  }, [editor])
   const startWholePage = useCallback(() => {
+    const width = rootRef.current?.getBoundingClientRect().width ?? 0
+    setNote({
+      scope: 'whole-plan',
+      top: WHOLE_PAGE_NOTE_TOP_PX,
+      left: Math.max(WHOLE_PAGE_NOTE_TOP_PX, width - NOTE_WIDTH_PX - 24)
+    })
     setDraft({ anchor: null })
-    setCollapsed(false)
-  }, [])
+    setBubble(null)
+  }, [rootRef])
   useWholePageCommentRequests(pageId, startWholePage)
+
+  /** Opens the note box on the selection, or on the whole page when nothing is selected. */
+  const startComment = useCallback(
+    (selectionOnly = false): boolean => {
+      const root = rootRef.current
+      if (!editor || !root) {
+        return false
+      }
+      if (noteRef.current) {
+        return true
+      }
+      flushPendingProseMirrorSelection(editor)
+      const target = getRichMarkdownAnnotationTarget(editor, root)
+      if (!target) {
+        if (!selectionOnly) {
+          startWholePage()
+        }
+        return !selectionOnly
+      }
+      const place = placeNoteBelowSelection(root)
+      setNote({
+        scope: 'passage',
+        target: place ? { ...target, top: place.top, left: place.left } : target,
+        flipHeight: place?.flipHeight ?? 0
+      })
+      setDraft({ anchor: anchorForSelection(editor.state.doc, target.from, target.to) })
+      setBubble(null)
+      return true
+    },
+    [editor, rootRef, startWholePage]
+  )
+
+  useOpenNoteOnMouseSelection(rootRef, editor, inReview, startComment)
 
   const isMac = navigator.userAgent.includes('Mac')
   const onKeyDownCapture = useCallback(
     (event: React.KeyboardEvent) => {
       const mod = isMac ? event.metaKey : event.ctrlKey
-      if (mod && event.altKey && !event.shiftKey && event.code === 'KeyM') {
+      const pageKey = mod && event.altKey && !event.shiftKey && event.code === 'KeyM'
+      // The plan review's own add-note shortcut works here too while the page is under review.
+      const reviewKey =
+        inReviewRef.current && editorShortcutMatches('editor.addReviewNote', event.nativeEvent)
+      if ((pageKey || reviewKey) && !event.repeat && startComment(reviewKey && !pageKey)) {
         event.preventDefault()
         event.stopPropagation()
-        startComment()
       }
     },
     [isMac, startComment]
@@ -161,15 +222,21 @@ export function usePageCommentController({
     [editor]
   )
 
-  const submitDraft = useCallback(
-    async (body: string) => {
-      if (!draft || !(await actions.add(draft.anchor, body))) {
-        return false
-      }
-      setDraft(null)
-      return true
+  const cancelDraft = useCallback(() => {
+    setDraft(null)
+    setNote(null)
+  }, [])
+  const submitNote = useCallback(
+    (kind: PlanAnnotationKind, body: string, attachments: string[]) => {
+      const anchor = draft?.anchor ?? null
+      void actions.add(anchor, pageNoteText(kind, body), attachments).then((ok) => {
+        if (ok) {
+          cancelDraft()
+          window.getSelection()?.removeAllRanges()
+        }
+      })
     },
-    [actions, draft]
+    [actions, cancelDraft, draft]
   )
 
   const onClick = useCallback((event: React.MouseEvent) => {
@@ -191,8 +258,10 @@ export function usePageCommentController({
     setActiveId,
     reveal,
     draft,
-    submitDraft,
-    cancelDraft: () => setDraft(null),
+    note,
+    inReview,
+    submitNote,
+    cancelDraft,
     collapsed,
     setCollapsed,
     bubble,

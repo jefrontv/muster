@@ -30,7 +30,7 @@ import { RichMarkdownEmojiMenu } from '../editor/RichMarkdownEmojiMenu'
 import { useProjectPagesEditorMenus } from './use-project-pages-editor-menus'
 import { ProjectPageOutline } from './ProjectPageOutline'
 import { ProjectPageComments, ProjectPageCommentsToggle } from './ProjectPageComments'
-import { ProjectPageCommentBubble } from './ProjectPageCommentBubble'
+import { ProjectPageCommentInput } from './ProjectPageCommentInput'
 import { usePageCommentController } from './use-page-comment-controller'
 import { registerPageEditor } from './page-editor-registry'
 
@@ -422,7 +422,7 @@ export function ProjectPageEditor({
           <ProjectPageCommentsToggle controller={comments} />
         </div>
         <ProjectPageComments controller={comments} overlay={comments.narrow} />
-        <ProjectPageCommentBubble controller={comments} />
+        <ProjectPageCommentInput controller={comments} />
       </div>
     </div>
   )

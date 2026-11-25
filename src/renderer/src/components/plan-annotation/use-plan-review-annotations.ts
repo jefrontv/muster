@@ -43,7 +43,7 @@ export type PlanNoteDraft =
  * Why not the markdown viewer's placement: that docks the box at the pane's right edge, which
  * leaves the reviewer's eyes travelling across the page between the text and what they type.
  */
-function placeBelowSelection(
+export function placeNoteBelowSelection(
   root: HTMLElement
 ): { top: number; left: number; flipHeight: number } | null {
   const selection = window.getSelection()
@@ -196,7 +196,7 @@ export function usePlanReviewAnnotations({
           activeRange: { from: next.from, to: next.to }
         })
       )
-      const placement = root ? placeBelowSelection(root) : null
+      const placement = root ? placeNoteBelowSelection(root) : null
       const opened: PlanNoteDraft = {
         scope: 'passage',
         target: placement ? { ...next, top: placement.top, left: placement.left } : next,
