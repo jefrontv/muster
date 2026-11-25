@@ -87,6 +87,8 @@ export function createDiagramEditor(container: HTMLElement, onChange: () => void
   graph.setDropEnabled(true)
   graph.setSplitEnabled(false)
   graph.gridSize = 10
+  // A reload after an agent edit replaces the model root; keep the user's pan and zoom.
+  graph.resetViewOnRootChange = false
   // Leaving the text editor (e.g. for the format panel) commits it, so formatting shows at once.
   graph.getPlugin<CellEditorHandler>('CellEditorHandler')!.blurEnabled = true
   const selection = graph.getPlugin<SelectionHandler>('SelectionHandler')!
