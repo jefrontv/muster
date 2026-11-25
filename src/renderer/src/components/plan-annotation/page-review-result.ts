@@ -20,7 +20,7 @@ export function samePlanText(a: string, b: string): boolean {
 }
 
 /** 1-based lines of the quote in the plan; 0 when the rendered quote is not in the markdown. */
-function linesOf(markdown: string, quote: string): { startLine: number; endLine: number } {
+export function linesOf(markdown: string, quote: string): { startLine: number; endLine: number } {
   const probe = [quote, quote.split('\n')[0], quote.slice(0, 24)].find(
     (candidate) => candidate.trim() && markdown.includes(candidate)
   )
@@ -29,6 +29,18 @@ function linesOf(markdown: string, quote: string): { startLine: number; endLine:
   }
   const startLine = markdown.slice(0, markdown.indexOf(probe)).split('\n').length
   return { startLine, endLine: startLine + (quote.match(/\n/g)?.length ?? 0) }
+}
+
+const firstSeen = new Map<string, number>()
+
+/** When this round opened; older builds of main did not say, so the first sighting stands in. */
+export function roundStart(review: PlanAnnotationRequest): number {
+  if (review.openedAt) {
+    return review.openedAt
+  }
+  const seen = firstSeen.get(review.requestId) ?? Date.now()
+  firstSeen.set(review.requestId, seen)
+  return seen
 }
 
 /** Open threads with something the person wrote since the round opened, oldest first. */
@@ -57,7 +69,8 @@ export function threadsToAnnotations(
       return { kind: 'global' as const, quote: '', startLine: 0, endLine: 0, body, ...extra }
     }
     const quote = thread.anchor.quote
-    return { kind: 'comment' as const, quote, ...linesOf(markdown, quote), body, ...extra }
+    const kind = thread.kind ?? ('comment' as const)
+    return { kind, quote, ...linesOf(markdown, quote), body, ...extra }
   })
 }
 

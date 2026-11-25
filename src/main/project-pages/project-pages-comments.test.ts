@@ -54,6 +54,23 @@ describe('page comments store', () => {
     expect(() => comments.create(SCOPE, 'p_missing', { anchor: null, body: 'x' }, USER)).toThrow()
   })
 
+  it('keeps a review note kind, lets it go without text, and drops it on a whole-page note', () => {
+    const { comments, pageId } = setup()
+    const anchor = { quote: 'the thing', prefix: 'Ship ', suffix: '.' }
+    const remove = comments.create(SCOPE, pageId, { anchor, body: ' ', kind: 'delete' }, USER)
+    expect(remove).toMatchObject({ kind: 'delete', messages: [{ body: '' }] })
+    const whole = comments.create(
+      SCOPE,
+      pageId,
+      { anchor: null, body: 'x', kind: 'looks_good' },
+      USER
+    )
+    expect(whole.kind).toBeUndefined()
+    expect(() =>
+      comments.create(SCOPE, pageId, { anchor: null, body: ' ', kind: 'delete' }, USER)
+    ).toThrow()
+  })
+
   it('announces changes and deletes a thread', () => {
     const { comments, pageId } = setup()
     const seen: string[] = []
@@ -86,7 +103,9 @@ describe('page comments store', () => {
       args: { thread: thread.id }
     }) as { thread: { status: string } }
     expect(resolved.thread.status).toBe('resolved')
-    const open = runProjectPagesCommentOp('list_comments', { ...ctx, args: {} }) as { count: number }
+    const open = runProjectPagesCommentOp('list_comments', { ...ctx, args: {} }) as {
+      count: number
+    }
     expect(open.count).toBe(0)
   })
 })

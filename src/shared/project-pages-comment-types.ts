@@ -15,10 +15,14 @@ export type PageCommentMessage = {
 
 export type PageCommentStatus = 'open' | 'resolved'
 
+/** A plan review's remove / looks-good note; a plain comment has none. */
+export type PageCommentKind = 'delete' | 'looks_good'
+
 export type PageCommentThread = {
   id: string
   anchor: PageCommentAnchor | null
   status: PageCommentStatus
+  kind?: PageCommentKind
   createdAt: number
   updatedAt: number
   messages: PageCommentMessage[]
@@ -28,6 +32,8 @@ export type PageCommentCreateInput = {
   anchor: PageCommentAnchor | null
   body: string
   attachments?: string[]
+  /** Remove and looks-good notes may have no text, like their plan review counterparts. */
+  kind?: PageCommentKind
 }
 
 export type PageCommentsChange = { scopeKey: string; pageId: string; author: ProjectPageAuthor }

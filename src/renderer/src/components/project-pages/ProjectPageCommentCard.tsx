@@ -121,7 +121,12 @@ export function ProjectPageCommentCard({
               </span>
               <span className="text-muted-foreground">{when(message.createdAt)}</span>
             </div>
-            <p className="whitespace-pre-wrap break-words">{message.body}</p>
+            <p className="whitespace-pre-wrap break-words">
+              {message.body ||
+                (thread.kind === 'delete'
+                  ? translate('auto.components.projectPages.comments.kindRemove', 'Remove')
+                  : translate('auto.components.projectPages.comments.kindLooksGood', 'Looks good'))}
+            </p>
           </div>
         ))}
       </div>

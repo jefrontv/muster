@@ -13,20 +13,8 @@ import { restoreTitleHeading } from '../../../../shared/plan-page-heading'
 import { livePageEditor } from '../project-pages/page-editor-registry'
 import { loadPageComments, usePageComments } from '../project-pages/use-page-comments'
 import { serializePageMarkdown } from './page-review-baseline'
-import { buildPageReviewResult, roundThreads, samePlanText } from './page-review-result'
+import { buildPageReviewResult, roundStart, roundThreads, samePlanText } from './page-review-result'
 import { popPlanReview } from './use-plan-review-queue'
-
-const firstSeen = new Map<string, number>()
-
-/** When this round opened; older builds of main did not say, so the first sighting stands in. */
-function roundStart(review: PlanAnnotationRequest): number {
-  if (review.openedAt) {
-    return review.openedAt
-  }
-  const seen = firstSeen.get(review.requestId) ?? Date.now()
-  firstSeen.set(review.requestId, seen)
-  return seen
-}
 
 /** Whether the saved page text differs from the round's plan; formatting noise does not count. */
 function useEditedPage(review: PlanAnnotationRequest, scopeKey: string, pageId: string): boolean {

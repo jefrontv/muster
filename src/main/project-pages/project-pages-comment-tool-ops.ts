@@ -25,6 +25,7 @@ export function threadRow(thread: PageCommentThread): Record<string, unknown> {
   return {
     id: thread.id,
     status: thread.status,
+    ...(thread.kind ? { kind: thread.kind } : {}),
     // Null means the comment is about the whole page.
     quote: thread.anchor?.quote ?? null,
     messages: thread.messages.map((message) => ({

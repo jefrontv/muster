@@ -6,6 +6,7 @@ import {
   PAGE_COMMENT_LIMITS,
   type PageCommentAnchor,
   type PageCommentCreateInput,
+  type PageCommentKind,
   type PageCommentsChange,
   type PageCommentStatus,
   type PageCommentThread
@@ -30,6 +31,10 @@ function cleanBody(body: unknown): string {
     )
   }
   return text
+}
+
+function cleanKind(kind: unknown): PageCommentKind | undefined {
+  return kind === 'delete' || kind === 'looks_good' ? kind : undefined
 }
 
 function cleanAnchor(anchor: PageCommentAnchor | null | undefined): PageCommentAnchor | null {
@@ -170,17 +175,24 @@ export function createProjectPagesComments({
       }
       const at = now()
       const attachments = cleanAttachments(input.attachments)
+      const anchor = cleanAnchor(input.anchor)
+      // A kind only means something on a passage; a whole-page note is always a comment.
+      const kind = anchor ? cleanKind(input.kind) : undefined
       const thread: PageCommentThread = {
         id: newId(),
-        anchor: cleanAnchor(input.anchor),
+        anchor,
         status: 'open',
+        ...(kind ? { kind } : {}),
         createdAt: at,
         updatedAt: at,
         messages: [
           {
             id: newId(),
             author,
-            body: cleanBody(input.body),
+            body:
+              kind && typeof input.body === 'string' && !input.body.trim()
+                ? ''
+                : cleanBody(input.body),
             createdAt: at,
             ...(attachments ? { attachments } : {})
           }

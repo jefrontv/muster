@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import type {
   PageCommentAnchor,
+  PageCommentKind,
   PageCommentStatus,
   PageCommentThread
 } from '../../../../shared/project-pages-comment-types'
@@ -47,7 +48,8 @@ export type PageCommentActions = {
   add: (
     anchor: PageCommentAnchor | null,
     body: string,
-    attachments?: readonly string[]
+    attachments?: readonly string[],
+    kind?: PageCommentKind
   ) => Promise<boolean>
   reply: (threadId: string, body: string) => Promise<boolean>
   setStatus: (threadId: string, status: PageCommentStatus) => Promise<boolean>
@@ -98,12 +100,13 @@ export function usePageComments(
   )
   const api = window.api.projectPages
   const actions: PageCommentActions = {
-    add: (anchor, body, attachments) =>
+    add: (anchor, body, attachments, kind) =>
       run(
         api.addComment(scopeKey, pageId, {
           anchor,
           body,
-          ...(attachments?.length ? { attachments: [...attachments] } : {})
+          ...(attachments?.length ? { attachments: [...attachments] } : {}),
+          ...(kind ? { kind } : {})
         })
       ),
     reply: (threadId, body) => run(api.replyComment(scopeKey, pageId, threadId, { body })),

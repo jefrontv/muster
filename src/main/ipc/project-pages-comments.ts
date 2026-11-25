@@ -51,7 +51,8 @@ export function registerProjectPagesCommentHandlers(): void {
         {
           anchor: (input.anchor ?? null) as PageCommentAnchor | null,
           body: text(input.body),
-          attachments: attachments(input.attachments)
+          attachments: attachments(input.attachments),
+          kind: input.kind === 'delete' || input.kind === 'looks_good' ? input.kind : undefined
         },
         USER
       )

@@ -90,6 +90,21 @@ describe('buildPageReviewResult', () => {
     expect(result.edits).toBeUndefined()
   })
 
+  it('keeps a remove or looks-good kind, text or not', () => {
+    const result = buildPageReviewResult({
+      request: request(),
+      decision: 'annotated',
+      threads: [thread('d', { kind: 'delete', body: '' }), thread('ok', { kind: 'looks_good' })],
+      since: OPENED,
+      baseline: PLAN,
+      current: PLAN
+    })
+    expect(result.annotations.map((a) => [a.kind, a.body])).toEqual([
+      ['delete', ''],
+      ['looks_good', 'Note']
+    ])
+  })
+
   it('sends edits as a diff, applied to disk only for a page the agent named', () => {
     const current = PLAN.replace('Save the plan.', 'Save the plan as a page.')
     const args = {
