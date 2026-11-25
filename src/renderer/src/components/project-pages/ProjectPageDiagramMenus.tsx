@@ -27,12 +27,12 @@ const t = (key: string, fallback: string): string =>
 const exportFormats = createLocalizedCatalog((): { id: DiagramExportFormat; label: string }[] => [
   {
     id: 'svg',
-    label: translate('auto.components.projectPages.diagram.export.svg', 'SVG (opens in draw.io)')
+    label: translate('auto.components.projectPages.diagram.exportFormat.svg', 'SVG (opens in draw.io)')
   },
   { id: 'png', label: 'PNG' },
   {
     id: 'png2x',
-    label: translate('auto.components.projectPages.diagram.export.png2x', 'PNG at 2x')
+    label: translate('auto.components.projectPages.diagram.exportFormat.png2x', 'PNG at 2x')
   },
   { id: 'pdf', label: 'PDF' }
 ])
@@ -103,7 +103,7 @@ export function ProjectPageDiagramMenus({
               void exportDiagram(graph, format.id, title, writeDiagramXml(snapshotDiagram(graph)))
             }
           >
-            {t(`export.${format.id}`, format.label)}
+            {format.label}
           </DropdownMenuItem>
         ))}
       </Menu>

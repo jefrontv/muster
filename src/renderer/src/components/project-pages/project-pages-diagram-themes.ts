@@ -17,7 +17,7 @@ export const diagramThemes = createLocalizedCatalog((): DiagramTheme[] => [
   {
     id: 'muster',
     label: translate(
-      'auto.components.projectPages.diagram.theme.muster',
+      'auto.components.projectPages.diagram.themeOption.muster',
       'Muster (follows light and dark)'
     ),
     vertex: CLEAR,
@@ -30,7 +30,7 @@ export const diagramThemes = createLocalizedCatalog((): DiagramTheme[] => [
   },
   {
     id: 'blueprint',
-    label: translate('auto.components.projectPages.diagram.theme.blueprint', 'Blueprint'),
+    label: translate('auto.components.projectPages.diagram.themeOption.blueprint', 'Blueprint'),
     vertex: {
       fillColor: '#0f2a47',
       strokeColor: '#7fb8ff',
@@ -46,7 +46,7 @@ export const diagramThemes = createLocalizedCatalog((): DiagramTheme[] => [
   },
   {
     id: 'mono',
-    label: translate('auto.components.projectPages.diagram.theme.mono', 'Monochrome'),
+    label: translate('auto.components.projectPages.diagram.themeOption.mono', 'Monochrome'),
     vertex: {
       fillColor: '#ffffff',
       strokeColor: '#1f1f1f',
@@ -62,7 +62,7 @@ export const diagramThemes = createLocalizedCatalog((): DiagramTheme[] => [
   },
   {
     id: 'contrast',
-    label: translate('auto.components.projectPages.diagram.theme.contrast', 'High contrast'),
+    label: translate('auto.components.projectPages.diagram.themeOption.contrast', 'High contrast'),
     vertex: { fillColor: '#000000', strokeColor: '#ffffff', fontColor: '#ffffff', strokeWidth: 2 },
     edge: {
       strokeColor: '#ffd400',

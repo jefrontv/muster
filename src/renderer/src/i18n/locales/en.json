@@ -15234,18 +15234,7 @@
           "noShapes": "No matching shapes",
           "addConnected": "Add a connected shape",
           "canvas": "Diagram canvas",
-          "export": {
-            "svg": "SVG (opens in draw.io)",
-            "png2x": "PNG at 2x"
-          },
           "newTitle": "Diagram",
-          "layout": {
-            "down": "Flow top to bottom",
-            "right": "Flow left to right",
-            "tree": "Tree",
-            "organic": "Organic",
-            "circle": "Circle"
-          },
           "shape": {
             "rect": "Rectangle",
             "rounded": "Rounded",
@@ -15263,13 +15252,24 @@
             "start": "Start",
             "end": "End"
           },
-          "theme": {
+          "reloaded": "This diagram changed elsewhere, so it was reloaded.",
+          "layoutOption": {
+            "down": "Flow top to bottom",
+            "right": "Flow left to right",
+            "tree": "Tree",
+            "organic": "Organic",
+            "circle": "Circle"
+          },
+          "themeOption": {
             "muster": "Muster (follows light and dark)",
             "blueprint": "Blueprint",
             "mono": "Monochrome",
             "contrast": "High contrast"
           },
-          "reloaded": "This diagram changed elsewhere, so it was reloaded."
+          "exportFormat": {
+            "svg": "SVG (opens in draw.io)",
+            "png2x": "PNG at 2x"
+          }
         },
         "titleLabel": "Page title",
         "bodyPlaceholder": "Type / for blocks, @ to link a page, # to tag.",

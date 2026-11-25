@@ -17,20 +17,20 @@ export const diagramLayouts = createLocalizedCatalog(
   (): { id: DiagramLayoutKind; label: string }[] => [
     {
       id: 'down',
-      label: translate('auto.components.projectPages.diagram.layout.down', 'Flow top to bottom')
+      label: translate('auto.components.projectPages.diagram.layoutOption.down', 'Flow top to bottom')
     },
     {
       id: 'right',
-      label: translate('auto.components.projectPages.diagram.layout.right', 'Flow left to right')
+      label: translate('auto.components.projectPages.diagram.layoutOption.right', 'Flow left to right')
     },
-    { id: 'tree', label: translate('auto.components.projectPages.diagram.layout.tree', 'Tree') },
+    { id: 'tree', label: translate('auto.components.projectPages.diagram.layoutOption.tree', 'Tree') },
     {
       id: 'organic',
-      label: translate('auto.components.projectPages.diagram.layout.organic', 'Organic')
+      label: translate('auto.components.projectPages.diagram.layoutOption.organic', 'Organic')
     },
     {
       id: 'circle',
-      label: translate('auto.components.projectPages.diagram.layout.circle', 'Circle')
+      label: translate('auto.components.projectPages.diagram.layoutOption.circle', 'Circle')
     }
   ]
 )
