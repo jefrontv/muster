@@ -2960,6 +2960,9 @@
             "unsaved": "Unsaved changes",
             "review": "Needs review",
             "changed": "Changed"
+          },
+          "TabStripAllTabsMenu": {
+            "allTabs": "All tabs"
           }
         }
       },

@@ -93,6 +93,12 @@ vi.mock('@dnd-kit/sortable', () => ({
   }
 }))
 
+vi.mock('./TabStrip', () => ({
+  TabStrip: function TabStrip(props: { children?: unknown; trailingControls?: unknown }) {
+    return [props.children, props.trailingControls]
+  }
+}))
+
 vi.mock('./tab-strip-drag-scroll', () => ({
   useTabStripDragScrollHandlers: () => ({
     isTabDragActive: false,
@@ -237,6 +243,9 @@ function findChildrenByType(node: unknown, typeName: string): ReactElementLike[]
     if (el.props && 'children' in el.props) {
       visit(el.props.children)
     }
+    if (el.props && 'trailingControls' in el.props) {
+      visit(el.props.trailingControls)
+    }
   }
   visit(node)
   return results
@@ -351,29 +360,20 @@ describe('TabBar context menu wiring', () => {
     expect(sortable[0].props.tabCount).toBe(2)
   })
 
-  it('keeps the tab strip content-sized until horizontal scrolling is needed', async () => {
+  it('hands every tab to the strip with menu entries in strip order', async () => {
     const element = await renderTabBar({
       tabs: [TERMINAL_TAB],
       editorFiles: [EDITOR_FILE],
       browserTabs: [],
       tabBarOrder: ['term-1', 'unified-editor-1']
     })
-    const divs = findChildrenByType(element, 'div')
-    const stripWrapper = divs.find((candidate) =>
-      String(candidate.props.className ?? '').includes('flex-[0_1_auto]')
-    )
-    const strip = divs.find((candidate) =>
-      String(candidate.props.className ?? '').includes('terminal-tab-strip')
-    )
+    const [strip] = findChildrenByType(element, 'TabStrip')
 
-    expect(stripWrapper).toBeTruthy()
-    expect(stripWrapper?.props.className).toContain('min-w-0')
-    expect(stripWrapper?.props.className).toContain('max-w-full')
     expect(strip).toBeTruthy()
-    expect(strip?.props.className).toContain('min-w-0')
-    expect(strip?.props.className).toContain('flex-1')
-    expect(strip?.props.className).toContain('overflow-x-auto')
-    expect(strip?.props.className).not.toContain('scrollbar-sleek')
+    expect(strip.props.sortableIds).toEqual(['term-1', 'unified-editor-1'])
+    expect(
+      (strip.props.menuEntries as { id: string; type: string }[]).map((entry) => entry.type)
+    ).toEqual(['terminal', 'editor'])
   })
 
   it('passes the editor unifiedTabId when EditorFileTab triggers onCloseToRight', async () => {

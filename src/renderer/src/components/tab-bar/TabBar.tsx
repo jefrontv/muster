@@ -1,16 +1,7 @@
 /* oxlint-disable max-lines -- Why: per-type tab render branches (terminal/browser/editor) share little beyond drag data; consolidating costs more clarity than the ~5 lines it saves. */
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { SortableContext } from '@dnd-kit/sortable'
-import {
-  ChevronLeft,
-  ChevronRight,
-  FilePlus,
-  FileText,
-  Globe,
-  Plus,
-  TerminalSquare
-} from 'lucide-react'
+import { FilePlus, FileText, Globe, Plus, TerminalSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import type {
   BrowserTab as BrowserTabState,
@@ -63,17 +54,13 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import type { TabCreateEntryArgs } from './tab-create-entry-action'
 import { buildTabAgentLaunchOptions, orderTabLaunchAgents } from './tab-agent-launch-options'
 import { buildTabCreateMenuOptions, type TabCreateMenuOption } from './tab-create-menu-options'
 import { translate } from '@/i18n/i18n'
-import { TabStripScrollIndicator } from './TabStripScrollIndicator'
-import { getTabStripScrollMaskClassName } from './tab-strip-scroll-metrics'
-import { useTabStripOverflowNavigation } from './tab-strip-overflow-navigation'
+import { TabStrip } from './TabStrip'
 import { TAB_BAR_CONTAINER_CLASSES } from './tab-width-rules'
-import { useTabStripDragScrollHandlers } from './tab-strip-drag-scroll'
 import { shouldShowWindowsShellMenu } from './windows-shell-menu-visibility'
 import { canToggleNativeChat } from '../native-chat/native-chat-availability'
 import { isNativeChatTranscriptLocalReadable } from '@/lib/native-chat-transcript-readability'
@@ -816,16 +803,26 @@ function TabBarInner({
     pinTab(item.unifiedTabId)
   }
 
-  const { tabStripRef, tabStripOverflowState, scrollTabStrip } = useTabStripOverflowNavigation({
-    activeVisibleTabId,
-    layoutKey: tabStripLayoutKey,
-    tabCount: orderedItems.length,
-    worktreeId
-  })
-  const tabStripDragScroll = useTabStripDragScrollHandlers(scrollTabStrip, {
-    start: tabStripOverflowState.canScrollStart,
-    end: tabStripOverflowState.canScrollEnd
-  })
+  const menuEntries = useMemo(
+    () =>
+      orderedItems.map((item) => ({
+        id: item.id,
+        label: getTabDragLabel(item, generatedTabTitlesEnabled),
+        type: item.type,
+        isActive: item.id === activeVisibleTabId
+      })),
+    [activeVisibleTabId, generatedTabTitlesEnabled, orderedItems]
+  )
+  const selectMenuEntry = (id: string): void => {
+    const item = orderedItems.find((candidate) => candidate.id === id)
+    if (item?.type === 'terminal') {
+      onActivate(item.id)
+    } else if (item?.type === 'browser') {
+      onActivateBrowserTab?.(item.id)
+    } else if (item) {
+      onActivateFile?.(item.id)
+    }
+  }
 
   return (
     <div
@@ -834,259 +831,189 @@ function TabBarInner({
       // Why: preload routes native OS drops by this marker — only the tab strip opens files in the editor, not terminal panes.
       data-native-file-drop-target="editor"
     >
-      {tabStripOverflowState.hasOverflow ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              className="mx-0.5 my-auto text-muted-foreground disabled:opacity-35"
-              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-              aria-label={translate(
-                'auto.components.tab.bar.TabBar.7a9b4af2af',
-                'Scroll tabs left'
-              )}
-              aria-disabled={!tabStripOverflowState.canScrollStart}
-              disabled={
-                !tabStripDragScroll.isTabDragActive && !tabStripOverflowState.canScrollStart
-              }
-              onClick={() => scrollTabStrip('start')}
-              onPointerEnter={tabStripDragScroll.onDragScrollStartEnter}
-              onPointerLeave={tabStripDragScroll.onDragScrollLeave}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={6}>
-            {translate('auto.components.tab.bar.TabBar.7a9b4af2af', 'Scroll tabs left')}
-          </TooltipContent>
-        </Tooltip>
-      ) : null}
-      {/* Why: no strategy stops dnd-kit animating siblings, so tabs stay anchored during drag; only the insertion bar moves. */}
-      <SortableContext items={sortableIds}>
-        {/* Why: no-drag lets tab interactions work inside the titlebar's drag region (outer container stays window-draggable). */}
-        <div
-          className="relative flex min-h-0 min-w-0 max-w-full flex-[0_1_auto]"
-          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-        >
-          <div
-            ref={tabStripRef}
-            // Why: only `border-r` here — a strip-level `border-l` would render a heavier L-corner than the first tab's own `border-l`.
-            className={[
-              'terminal-tab-strip flex h-full min-w-0 max-w-full flex-1 items-stretch overflow-x-auto overflow-y-hidden border-r border-border/70',
-              getTabStripScrollMaskClassName(tabStripOverflowState)
-            ]
-              .filter(Boolean)
-              .join(' ')}
+      <TabStrip
+        worktreeId={worktreeId}
+        activeVisibleTabId={activeVisibleTabId}
+        layoutKey={tabStripLayoutKey}
+        sortableIds={sortableIds}
+        menuEntries={menuEntries}
+        onSelectMenuEntry={selectMenuEntry}
+        trailingControls={
+          <DropdownMenu
+            open={newTabMenuOpen}
+            onOpenChange={setNewTabMenuOpen}
+            // Why: non-modal like every other dropdown in the app — modal sets
+            // pointer-events:none on body, swallowing clicks on overlays (toasts,
+            // tooltips) portalled outside the menu.
+            modal={false}
           >
-            {orderedItems.map((item, index) => {
-              const dragData: TabDragItemData = {
-                kind: 'tab',
-                worktreeId,
-                groupId: resolvedGroupId,
-                unifiedTabId: item.unifiedTabId,
-                visibleTabId: item.id,
-                tabType: item.type,
-                label: getTabDragLabel(item, generatedTabTitlesEnabled),
-                iconPath: item.type === 'editor' ? item.data.filePath : undefined,
-                color: item.type === 'terminal' ? (item.data.color ?? null) : null
-              }
-              if (item.type === 'terminal') {
-                const terminalTab = {
-                  ...item.data,
-                  title: resolveTerminalTabTitle(
-                    item.data,
-                    generatedTabTitlesEnabled,
-                    item.data.title
-                  )
-                }
-                const unifiedTabForItem = unifiedTabByVisibleId.get(item.id)
-                // Carry the agent *identity* (not just "an agent exists") so the native-chat gate can reject agents like Grok.
-                const resolvedAgent =
-                  resolveCommittedTitleAgentType(unifiedTabForItem?.label ?? '') ??
-                  resolveCommittedTitleAgentType(terminalTab.title)
-                // Key the live-agent lookup by the backing terminal tab id: agent-status pane keys use it, not the unified tab id.
-                const detectedAgent = tabAgentTypesByTabId[terminalTab.id] ?? null
-                const tabWideFallbackSafe =
-                  nativeChatTabWideFallbackUnsafeTabsById[terminalTab.id] !== true
-                const canToggleViewMode =
-                  unifiedTabForItem !== undefined &&
-                  canToggleNativeChat({
-                    experimentalNativeChatEnabled: nativeChatEnabled,
-                    contentType: 'terminal',
-                    launchAgent: tabWideFallbackSafe ? terminalTab.launchAgent : null,
-                    detectedAgent,
-                    resolvedAgent: tabWideFallbackSafe ? resolvedAgent : null,
-                    nativeChatTranscriptIsLocalReadable,
-                    isChatViewMode: unifiedTabForItem.viewMode === 'chat'
-                  })
-                return (
-                  <SortableTab
-                    key={item.id}
-                    tab={terminalTab}
-                    unifiedTabId={item.unifiedTabId}
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-md"
+                // Why: 28px matches the quick commands split beside it.
+                className="ml-2 my-auto text-muted-foreground"
+                style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+                title={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
+                // Why: aria-label matches the tooltip so E2E can locate the "+" via getByRole('button', { name: 'New tab' }).
+                aria-label={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
+              >
+                <Plus />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              sideOffset={6}
+              className="w-72 max-w-[calc(100vw-1rem)]"
+              onCloseAutoFocus={(e) => {
+                // Why: Radix restores focus to the "+" trigger on close, stealing it from the freshly-mounted terminal.
+                e.preventDefault()
+                runPendingNewTabMenuFocusAfterClose()
+              }}
+            >
+              {!terminalOnly && onOpenEntry ? (
+                <>
+                  <TabBarCreateEntry
+                    worktreeId={worktreeId}
                     groupId={resolvedGroupId}
-                    tabCount={orderedItems.length}
-                    canToggleViewMode={canToggleViewMode}
-                    isChatView={nativeChatEnabled && unifiedTabForItem?.viewMode === 'chat'}
-                    onToggleViewMode={
-                      unifiedTabForItem ? () => toggleTabViewMode(unifiedTabForItem.id) : undefined
-                    }
-                    hasTabsToRight={index < orderedItems.length - 1}
-                    isActive={activeTabType === 'terminal' && item.id === activeTabId}
-                    isPinned={item.isPinned}
-                    isExpanded={expandedPaneByTabId[item.id] === true}
-                    onActivate={onActivate}
-                    onClose={onClose}
-                    onCloseOthers={onCloseOthers}
-                    onCloseToRight={onCloseToRight}
-                    onSetCustomTitle={onSetCustomTitle}
-                    onSetTabColor={onSetTabColor}
-                    onTogglePin={() => togglePinned(item)}
-                    onToggleExpand={onTogglePaneExpand}
-                    dragData={dragData}
-                    dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
-                    includeTopTabBorder={includeTopTabBorder}
+                    menuOpen={newTabMenuOpen}
+                    menuOptions={createMenuOptions}
+                    agentOptions={agentLaunchOptions}
+                    onLaunchAgent={launchAgentFromNewTabEntry}
+                    onOpenDefaultTerminal={() => {
+                      queueNewActiveTerminalFocusAfterNewTabMenuClose()
+                      onNewTerminalTab()
+                    }}
+                    onOpenEntry={onOpenEntry}
+                    onQueryChange={setCreateMenuQuery}
+                    onSelectMenuOption={handleSelectCreateMenuOption}
+                    onDidOpenEntry={() => setNewTabMenuOpen(false)}
                   />
-                )
-              }
-              if (item.type === 'browser') {
-                return (
-                  <BrowserTab
-                    key={item.id}
-                    tab={item.data}
-                    isActive={activeTabType === 'browser' && activeBrowserTabId === item.id}
-                    isPinned={item.isPinned}
-                    hasTabsToRight={index < orderedItems.length - 1}
-                    onActivate={() => onActivateBrowserTab?.(item.id)}
-                    onClose={() => onCloseBrowserTab?.(item.id)}
-                    onCloseToRight={() => onCloseToRight(item.id)}
-                    onDuplicate={() => onDuplicateBrowserTab?.(item.id)}
-                    onTogglePin={() => togglePinned(item)}
-                    dragData={dragData}
-                    dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
-                    includeTopTabBorder={includeTopTabBorder}
+                  {showStaticCreateMenuItems ? <DropdownMenuSeparator /> : null}
+                </>
+              ) : null}
+              {showStaticCreateMenuItems ? standardCreateMenuItems : null}
+              {showStaticCreateMenuItems && showAgentLaunchItems ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <QuickLaunchAgentMenuItems
+                    worktreeId={worktreeId}
+                    groupId={resolvedGroupId}
+                    onFocusTerminal={queueTerminalTabFocusAfterNewTabMenuClose}
                   />
-                )
-              }
-              return (
-                <EditorFileTab
-                  key={item.id}
-                  file={item.data}
-                  isActive={activeTabType === 'editor' && activeFileId === item.id}
-                  isPinned={item.isPinned}
-                  hasTabsToRight={index < orderedItems.length - 1}
-                  statusByRelativePath={statusByRelativePath}
-                  onActivate={() => onActivateFile?.(item.id)}
-                  onClose={() => onCloseFile?.(item.id)}
-                  onCloseToRight={() => onCloseToRight(item.id)}
-                  onCloseAll={() => onCloseAllFiles?.()}
-                  onMakePermanent={() =>
-                    onMakePreviewFilePermanent?.(item.data.id, item.data.tabId)
-                  }
-                  onTogglePin={() => togglePinned(item)}
-                  dragData={dragData}
-                  dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
-                  includeTopTabBorder={includeTopTabBorder}
-                />
-              )
-            })}
-          </div>
-          <TabStripScrollIndicator metrics={tabStripOverflowState} />
-        </div>
-      </SortableContext>
-      {tabStripOverflowState.hasOverflow ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              className="mx-0.5 my-auto text-muted-foreground disabled:opacity-35"
-              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-              aria-label={translate(
-                'auto.components.tab.bar.TabBar.232e075b07',
-                'Scroll tabs right'
-              )}
-              aria-disabled={!tabStripOverflowState.canScrollEnd}
-              disabled={!tabStripDragScroll.isTabDragActive && !tabStripOverflowState.canScrollEnd}
-              onClick={() => scrollTabStrip('end')}
-              onPointerEnter={tabStripDragScroll.onDragScrollEndEnter}
-              onPointerLeave={tabStripDragScroll.onDragScrollLeave}
-            >
-              <ChevronRight className="size-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={6}>
-            {translate('auto.components.tab.bar.TabBar.232e075b07', 'Scroll tabs right')}
-          </TooltipContent>
-        </Tooltip>
-      ) : null}
-      <DropdownMenu
-        open={newTabMenuOpen}
-        onOpenChange={setNewTabMenuOpen}
-        // Why: non-modal like every other dropdown in the app — modal sets
-        // pointer-events:none on body, swallowing clicks on overlays (toasts,
-        // tooltips) portalled outside the menu.
-        modal={false}
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
       >
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon-md"
-            // Why: 28px matches the quick commands split beside it.
-            className="ml-2 my-auto text-muted-foreground"
-            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-            title={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
-            // Why: aria-label matches the tooltip so E2E can locate the "+" via getByRole('button', { name: 'New tab' }).
-            aria-label={translate('auto.components.tab.bar.TabBar.b1a132357f', 'New tab')}
-          >
-            <Plus />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          sideOffset={6}
-          className="w-72 max-w-[calc(100vw-1rem)]"
-          onCloseAutoFocus={(e) => {
-            // Why: Radix restores focus to the "+" trigger on close, stealing it from the freshly-mounted terminal.
-            e.preventDefault()
-            runPendingNewTabMenuFocusAfterClose()
-          }}
-        >
-          {!terminalOnly && onOpenEntry ? (
-            <>
-              <TabBarCreateEntry
-                worktreeId={worktreeId}
+        {orderedItems.map((item, index) => {
+          const dragData: TabDragItemData = {
+            kind: 'tab',
+            worktreeId,
+            groupId: resolvedGroupId,
+            unifiedTabId: item.unifiedTabId,
+            visibleTabId: item.id,
+            tabType: item.type,
+            label: getTabDragLabel(item, generatedTabTitlesEnabled),
+            iconPath: item.type === 'editor' ? item.data.filePath : undefined,
+            color: item.type === 'terminal' ? (item.data.color ?? null) : null
+          }
+          if (item.type === 'terminal') {
+            const terminalTab = {
+              ...item.data,
+              title: resolveTerminalTabTitle(item.data, generatedTabTitlesEnabled, item.data.title)
+            }
+            const unifiedTabForItem = unifiedTabByVisibleId.get(item.id)
+            // Carry the agent *identity* (not just "an agent exists") so the native-chat gate can reject agents like Grok.
+            const resolvedAgent =
+              resolveCommittedTitleAgentType(unifiedTabForItem?.label ?? '') ??
+              resolveCommittedTitleAgentType(terminalTab.title)
+            // Key the live-agent lookup by the backing terminal tab id: agent-status pane keys use it, not the unified tab id.
+            const detectedAgent = tabAgentTypesByTabId[terminalTab.id] ?? null
+            const tabWideFallbackSafe =
+              nativeChatTabWideFallbackUnsafeTabsById[terminalTab.id] !== true
+            const canToggleViewMode =
+              unifiedTabForItem !== undefined &&
+              canToggleNativeChat({
+                experimentalNativeChatEnabled: nativeChatEnabled,
+                contentType: 'terminal',
+                launchAgent: tabWideFallbackSafe ? terminalTab.launchAgent : null,
+                detectedAgent,
+                resolvedAgent: tabWideFallbackSafe ? resolvedAgent : null,
+                nativeChatTranscriptIsLocalReadable,
+                isChatViewMode: unifiedTabForItem.viewMode === 'chat'
+              })
+            return (
+              <SortableTab
+                key={item.id}
+                tab={terminalTab}
+                unifiedTabId={item.unifiedTabId}
                 groupId={resolvedGroupId}
-                menuOpen={newTabMenuOpen}
-                menuOptions={createMenuOptions}
-                agentOptions={agentLaunchOptions}
-                onLaunchAgent={launchAgentFromNewTabEntry}
-                onOpenDefaultTerminal={() => {
-                  queueNewActiveTerminalFocusAfterNewTabMenuClose()
-                  onNewTerminalTab()
-                }}
-                onOpenEntry={onOpenEntry}
-                onQueryChange={setCreateMenuQuery}
-                onSelectMenuOption={handleSelectCreateMenuOption}
-                onDidOpenEntry={() => setNewTabMenuOpen(false)}
+                tabCount={orderedItems.length}
+                canToggleViewMode={canToggleViewMode}
+                isChatView={nativeChatEnabled && unifiedTabForItem?.viewMode === 'chat'}
+                onToggleViewMode={
+                  unifiedTabForItem ? () => toggleTabViewMode(unifiedTabForItem.id) : undefined
+                }
+                hasTabsToRight={index < orderedItems.length - 1}
+                isActive={activeTabType === 'terminal' && item.id === activeTabId}
+                isPinned={item.isPinned}
+                isExpanded={expandedPaneByTabId[item.id] === true}
+                onActivate={onActivate}
+                onClose={onClose}
+                onCloseOthers={onCloseOthers}
+                onCloseToRight={onCloseToRight}
+                onSetCustomTitle={onSetCustomTitle}
+                onSetTabColor={onSetTabColor}
+                onTogglePin={() => togglePinned(item)}
+                onToggleExpand={onTogglePaneExpand}
+                dragData={dragData}
+                dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+                includeTopTabBorder={includeTopTabBorder}
               />
-              {showStaticCreateMenuItems ? <DropdownMenuSeparator /> : null}
-            </>
-          ) : null}
-          {showStaticCreateMenuItems ? standardCreateMenuItems : null}
-          {showStaticCreateMenuItems && showAgentLaunchItems ? (
-            <>
-              <DropdownMenuSeparator />
-              <QuickLaunchAgentMenuItems
-                worktreeId={worktreeId}
-                groupId={resolvedGroupId}
-                onFocusTerminal={queueTerminalTabFocusAfterNewTabMenuClose}
+            )
+          }
+          if (item.type === 'browser') {
+            return (
+              <BrowserTab
+                key={item.id}
+                tab={item.data}
+                isActive={activeTabType === 'browser' && activeBrowserTabId === item.id}
+                isPinned={item.isPinned}
+                hasTabsToRight={index < orderedItems.length - 1}
+                onActivate={() => onActivateBrowserTab?.(item.id)}
+                onClose={() => onCloseBrowserTab?.(item.id)}
+                onCloseToRight={() => onCloseToRight(item.id)}
+                onDuplicate={() => onDuplicateBrowserTab?.(item.id)}
+                onTogglePin={() => togglePinned(item)}
+                dragData={dragData}
+                dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+                includeTopTabBorder={includeTopTabBorder}
               />
-            </>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            )
+          }
+          return (
+            <EditorFileTab
+              key={item.id}
+              file={item.data}
+              isActive={activeTabType === 'editor' && activeFileId === item.id}
+              isPinned={item.isPinned}
+              hasTabsToRight={index < orderedItems.length - 1}
+              statusByRelativePath={statusByRelativePath}
+              onActivate={() => onActivateFile?.(item.id)}
+              onClose={() => onCloseFile?.(item.id)}
+              onCloseToRight={() => onCloseToRight(item.id)}
+              onCloseAll={() => onCloseAllFiles?.()}
+              onMakePermanent={() => onMakePreviewFilePermanent?.(item.data.id, item.data.tabId)}
+              onTogglePin={() => togglePinned(item)}
+              dragData={dragData}
+              dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+              includeTopTabBorder={includeTopTabBorder}
+            />
+          )
+        })}
+      </TabStrip>
     </div>
   )
 }

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { TAB_DRAG_ACTIVATION_DISTANCE_PX } from '../tab-group/useTabDragSplit'
-import { beginTabStripPointerGesture } from './tab-strip-pointer-gesture'
+import {
+  beginTabStripPointerGesture,
+  markTabStripPointerActivation
+} from './tab-strip-pointer-gesture'
 
 /**
  * Defer tab activation to pointer-up and suppress it when the press turns into a
@@ -68,6 +71,7 @@ export function useTabStripPointerActivation({
         // Why: packaged Chromium can deliver a stale first pointermove after
         // focus; the final release position is the click/drag authority.
         if (!wasDrag) {
+          markTabStripPointerActivation()
           onActivateRef.current()
         }
       }

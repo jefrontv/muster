@@ -5,7 +5,11 @@ import {
   sameTabStripScrollMetrics,
   type TabStripScrollMetrics
 } from './tab-strip-scroll-metrics'
-import { isTabStripPointerGestureActive } from './tab-strip-pointer-gesture'
+import {
+  isTabStripPointerGestureActive,
+  takeTabStripPointerActivation
+} from './tab-strip-pointer-gesture'
+import { getVisibleFraction, shouldScrollActiveTabIntoView } from './tab-strip-scroll-policy'
 
 const TAB_STRIP_SCROLL_FRACTION = 0.75
 const TAB_STRIP_MIN_SCROLL_STEP_PX = 120
@@ -33,6 +37,10 @@ const EMPTY_TAB_STRIP_OVERFLOW_STATE: TabStripScrollMetrics = {
   thumbOffsetFraction: 0
 }
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
 export function useTabStripOverflowNavigation({
   activeVisibleTabId,
   layoutKey,
@@ -49,8 +57,7 @@ export function useTabStripOverflowNavigation({
   scrollTabStrip: (direction: 'start' | 'end', behavior?: ScrollBehavior) => void
 } {
   const tabStripRef = useRef<HTMLDivElement>(null)
-  const prevStripLenRef = useRef<{ worktreeId: string; len: number } | null>(null)
-  const stickToEndRef = useRef(false)
+  const scrolledWorktreeRef = useRef<string | null>(null)
   const [tabStripOverflowState, setTabStripOverflowState] = useState<TabStripScrollMetrics>(
     EMPTY_TAB_STRIP_OVERFLOW_STATE
   )
@@ -88,86 +95,20 @@ export function useTabStripOverflowNavigation({
       }
     }
     el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [updateTabStripOverflowState])
-
-  useEffect(() => {
-    const el = tabStripRef.current
-    if (!el) {
-      return
-    }
-    const isAtEnd = (): boolean => {
-      const max = Math.max(0, el.scrollWidth - el.clientWidth)
-      return el.scrollLeft >= max - 2
-    }
-    const onScroll = (): void => {
-      // Only keep sticking while the user hasn't intentionally scrolled away.
-      stickToEndRef.current = isAtEnd()
-      updateTabStripOverflowState()
-    }
-    el.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-
-    const handleStripResize = (): void => {
-      updateTabStripOverflowState()
-      // If the user is pinned to the right edge, keep it pinned even as tab
-      // labels (e.g. "Terminal 5" -> branch name) expand and change scrollWidth.
-      if (!stickToEndRef.current) {
-        return
-      }
-      if (isTabStripPointerGestureActive()) {
-        return
-      }
-      el.scrollLeft = Math.max(0, el.scrollWidth - el.clientWidth)
-    }
-
-    const disconnectResizeObservers = bindTabStripContentResizeObservers(el, handleStripResize)
-
+    el.addEventListener('scroll', updateTabStripOverflowState, { passive: true })
+    updateTabStripOverflowState()
+    const disconnectResizeObservers = bindTabStripContentResizeObservers(
+      el,
+      updateTabStripOverflowState
+    )
     return () => {
-      el.removeEventListener('scroll', onScroll)
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('scroll', updateTabStripOverflowState)
       disconnectResizeObservers()
     }
   }, [updateTabStripOverflowState])
 
   useLayoutEffect(() => {
-    const strip = tabStripRef.current
-    const prev = prevStripLenRef.current
-    if (!strip) {
-      prevStripLenRef.current = { worktreeId, len: tabCount }
-      return
-    }
-    if (!prev || prev.worktreeId !== worktreeId) {
-      prevStripLenRef.current = { worktreeId, len: tabCount }
-      updateTabStripOverflowState()
-      return
-    }
-    const pointerGestureActive = isTabStripPointerGestureActive()
-    if (stickToEndRef.current && !pointerGestureActive) {
-      const scrollToEnd = (): void => {
-        const el = tabStripRef.current
-        if (!el) {
-          return
-        }
-        el.scrollLeft = Math.max(0, el.scrollWidth - el.clientWidth)
-        updateTabStripOverflowState()
-      }
-      scrollToEnd()
-      requestAnimationFrame(scrollToEnd)
-    }
-    if (tabCount > prev.len && !pointerGestureActive) {
-      const scrollToEnd = (): void => {
-        const el = tabStripRef.current
-        if (!el) {
-          return
-        }
-        el.scrollLeft = Math.max(0, el.scrollWidth - el.clientWidth)
-        stickToEndRef.current = true
-        updateTabStripOverflowState()
-      }
-      scrollToEnd()
-      requestAnimationFrame(scrollToEnd)
-    }
-    prevStripLenRef.current = { worktreeId, len: tabCount }
     updateTabStripOverflowState()
     requestAnimationFrame(updateTabStripOverflowState)
   }, [layoutKey, tabCount, updateTabStripOverflowState, worktreeId])
@@ -184,14 +125,26 @@ export function useTabStripOverflowNavigation({
       return
     }
     if (isTabStripPointerGestureActive()) {
-      // Why: active-tab preview changes during a tab press must not move the
-      // strip under a stationary pointer before the release decides click/drag.
+      // Why: a press must not move the strip under a stationary pointer before release decides click or drag.
       requestAnimationFrame(updateTabStripOverflowState)
       return
     }
-    activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    const worktreeChanged = scrolledWorktreeRef.current !== worktreeId
+    scrolledWorktreeRef.current = worktreeId
+    const source = takeTabStripPointerActivation() ? 'pointer' : 'other'
+    const visibleFraction = getVisibleFraction(
+      activeTab.getBoundingClientRect(),
+      strip.getBoundingClientRect()
+    )
+    if (shouldScrollActiveTabIntoView({ source, visibleFraction })) {
+      activeTab.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        behavior: worktreeChanged || prefersReducedMotion() ? 'auto' : 'smooth'
+      })
+    }
     requestAnimationFrame(updateTabStripOverflowState)
-  }, [activeVisibleTabId, updateTabStripOverflowState])
+  }, [activeVisibleTabId, updateTabStripOverflowState, worktreeId])
 
   return { tabStripRef, tabStripOverflowState, scrollTabStrip }
 }

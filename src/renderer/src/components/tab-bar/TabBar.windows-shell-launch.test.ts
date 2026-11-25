@@ -157,6 +157,12 @@ vi.mock('@dnd-kit/sortable', () => ({
   }
 }))
 
+vi.mock('./TabStrip', () => ({
+  TabStrip: function TabStrip(props: { children?: unknown; trailingControls?: unknown }) {
+    return [props.children, props.trailingControls]
+  }
+}))
+
 vi.mock('./tab-strip-drag-scroll', () => ({
   useTabStripDragScrollHandlers: () => ({
     isTabDragActive: false,
