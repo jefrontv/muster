@@ -29,6 +29,11 @@ vi.mock('./TabGroupPanel', () => ({
   default: (props: unknown) => ({ __mock: 'TabGroupPanel', props })
 }))
 
+vi.mock('./tab-drag-overlay-motion', () => ({
+  TAB_DRAG_OVERLAY_MODIFIERS: [],
+  useTabDropSettle: () => null
+}))
+
 vi.mock('./useTabDragSplit', () => ({
   useTabDragSplit: () => ({
     activeDrag: null,

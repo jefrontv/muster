@@ -20,6 +20,7 @@ import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
 import { TabLeadingSlot, TabTrailingSlot } from './tab-chrome-slots'
 import { getTabAccessibleName } from './tab-strip-labels'
 import { getTabColorStyle } from './tab-colors'
+import { getTabSlideStyle, type TabSlide } from './tab-strip-slide'
 import { resolveTabTrailingState } from './tab-trailing-state'
 import {
   hasUnreadAgentCompletionForTerminalTab,
@@ -46,6 +47,7 @@ type SortableTabProps = {
   onToggleExpand: (tabId: string) => void
   dragData: TabDragItemData
   dropIndicator?: DropIndicator
+  dragSlide?: TabSlide
   /** True when this agent terminal can switch to native chat view; surfaces the "Switch view" context-menu item. */
   canToggleViewMode?: boolean
   /** True when the tab is currently showing the native chat view. */
@@ -75,6 +77,7 @@ export default function SortableTab({
   onToggleExpand,
   dragData,
   dropIndicator,
+  dragSlide,
   canToggleViewMode = false,
   isChatView = false,
   onToggleViewMode
@@ -115,7 +118,7 @@ export default function SortableTab({
     data: { ...dragData, agent: tabAgent }
   })
 
-  // Why: no transform/transition/opacity so tabs stay anchored during drag, only the insertion bar moves (see TabBar.tsx).
+  // Why: tabs ignore dnd-kit's sortable transform; dragSlide previews the drop with whole-slot slides instead.
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPoint, setMenuPoint] = useState({ x: 0, y: 0 })
   const [isEditing, setIsEditing] = useState(false)
@@ -225,7 +228,7 @@ export default function SortableTab({
         hasUnreadActivity: showUnreadActivity
       })}
       onKeyDown={onTabKeyDown}
-      style={getTabColorStyle(tab.color)}
+      style={{ ...getTabColorStyle(tab.color), ...getTabSlideStyle(dragSlide) }}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onDoubleClick={(e) => {
         if (isEditing) {

@@ -134,6 +134,10 @@ vi.mock('../right-sidebar/status-display', () => ({
   buildStatusMap: () => new Map()
 }))
 
+vi.mock('../tab-group/tab-drag-context', () => ({
+  useTabDragSource: () => null
+}))
+
 vi.mock('../tab-group/tab-insertion', () => ({
   resolveTabIndicatorEdges: () => []
 }))

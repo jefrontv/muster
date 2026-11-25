@@ -47,7 +47,7 @@ export function TabStrip({
 
   return (
     <>
-      {/* Why: no strategy stops dnd-kit animating siblings, so tabs stay anchored during drag; only the insertion bar moves. */}
+      {/* Why: tabs ignore dnd-kit's sortable transforms; TabBar's dragSlide drives the slide so it matches the drop index. */}
       <SortableContext items={sortableIds}>
         <div
           className="relative flex min-h-0 min-w-0 max-w-full flex-[0_1_auto]"

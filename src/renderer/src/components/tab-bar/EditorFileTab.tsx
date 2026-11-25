@@ -23,6 +23,7 @@ import { EditorFileTabContextMenu } from './EditorFileTabContextMenu'
 import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { getTabColorStyle, useUnifiedTabColor } from './tab-colors'
+import { getTabSlideStyle, type TabSlide } from './tab-strip-slide'
 import { getEditorTabIcon } from './editor-tab-icon'
 import {
   getCloseTabAccessibleName,
@@ -50,6 +51,7 @@ export default function EditorFileTab({
   onTogglePin,
   dragData,
   dropIndicator,
+  dragSlide,
   nameHint
 }: {
   file: OpenFile & { tabId?: string }
@@ -65,13 +67,13 @@ export default function EditorFileTab({
   onTogglePin: () => void
   dragData: TabDragItemData
   dropIndicator?: DropIndicator
+  dragSlide?: TabSlide
   /** Parent folder telling this tab apart from a same-named one. */
   nameHint?: string
 }): React.JSX.Element {
   const worktree = useWorktreeById(file.worktreeId)
   const repo = useRepoById(worktree?.repoId ?? null)
-  // Why: no transform/transition/isDragging styling — the drag design is
-  // that tabs stay visually anchored; only the blue insertion bar moves.
+  // Why: tabs ignore dnd-kit's sortable transform; dragSlide previews the drop with whole-slot slides instead.
   const { attributes, listeners, setNodeRef } = useSortable({
     // Why: split groups can duplicate the same open file into multiple visible
     // tabs. Using the unified tab ID keeps each rendered tab draggable as a
@@ -256,7 +258,7 @@ export default function EditorFileTab({
         isPreview: file.isPreview
       })}
       onKeyDown={onTabKeyDown}
-      style={getTabColorStyle(tabColor)}
+      style={{ ...getTabColorStyle(tabColor), ...getTabSlideStyle(dragSlide) }}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(

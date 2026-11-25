@@ -6,6 +6,7 @@ import TabGroupPanel from './TabGroupPanel'
 import TabDragPreview from '../tab-bar/TabDragPreview'
 import { TabDragProvider } from './tab-drag-context'
 import TabPaneColumnSplitDragOverlay from './TabPaneColumnSplitDragOverlay'
+import { TAB_DRAG_OVERLAY_MODIFIERS, useTabDropSettle } from './tab-drag-overlay-motion'
 import { type HoveredTabInsertion, useTabDragSplit } from './useTabDragSplit'
 
 const MIN_RATIO = 0.15
@@ -274,11 +275,13 @@ export default function TabGroupSplitLayout({
 }): React.JSX.Element {
   const dragSplit = useTabDragSplit({ worktreeId, enabled: isWorktreeActive })
   const hasSplits = layout.type === 'split'
+  const settleDrop = useTabDropSettle(dragSplit.activeDrag)
 
   return (
     <TabDragProvider
       isTabDragActive={dragSplit.activeDrag !== null}
       isTabDragActiveRef={dragSplit.isTabDragActiveRef}
+      dragSource={dragSplit.activeDrag}
     >
       <DndContext
         sensors={dragSplit.sensors}
@@ -336,13 +339,8 @@ export default function TabGroupSplitLayout({
             />
           </div>
         </div>
-        {/* Why: the sortable tab is anchored inside its source tab strip (no
-          transform while dragging), and that strip uses overflow-hidden so
-          the tab is invisible once the cursor leaves it. DragOverlay
-          renders a ghost in a document-level portal that tracks the cursor
-          across the whole window — the source tab keeps its spot, the
-          ghost follows the cursor. */}
-        <DragOverlay dropAnimation={null}>
+        {/* Why: the source strip clips overflow, so a document-level overlay carries the dragged tab across groups. */}
+        <DragOverlay dropAnimation={settleDrop} modifiers={TAB_DRAG_OVERLAY_MODIFIERS}>
           {dragSplit.activeDrag ? <TabDragPreview drag={dragSplit.activeDrag} /> : null}
         </DragOverlay>
         {dragSplit.hoveredDropTarget &&

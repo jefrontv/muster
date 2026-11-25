@@ -25,6 +25,11 @@ vi.mock('./TabGroupPanel', () => ({
   default: ({ groupId }: { groupId: string }) => <div data-testid={`panel-${groupId}`} />
 }))
 
+vi.mock('./tab-drag-overlay-motion', () => ({
+  TAB_DRAG_OVERLAY_MODIFIERS: [],
+  useTabDropSettle: () => null
+}))
+
 vi.mock('./useTabDragSplit', () => ({
   useTabDragSplit: () => ({
     activeDrag: null,

@@ -25,6 +25,7 @@ import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TabLeadingSlot, TabTrailingSlot } from './tab-chrome-slots'
 import { getCloseTabAccessibleName, getTabAccessibleName } from './tab-strip-labels'
 import { getTabColorStyle, useUnifiedTabColor } from './tab-colors'
+import { getTabSlideStyle, type TabSlide } from './tab-strip-slide'
 import { UnifiedTabColorMenuSection } from './TabColorMenuSection'
 import { resolveTabTrailingState } from './tab-trailing-state'
 
@@ -112,7 +113,8 @@ export default function BrowserTab({
   onDuplicate,
   onTogglePin,
   dragData,
-  dropIndicator
+  dropIndicator,
+  dragSlide
 }: {
   tab: BrowserTabState
   isActive: boolean
@@ -125,9 +127,9 @@ export default function BrowserTab({
   onTogglePin: () => void
   dragData: TabDragItemData
   dropIndicator?: DropIndicator
+  dragSlide?: TabSlide
 }): React.JSX.Element {
-  // Why: no transform/transition/isDragging styling — the drag design is
-  // that tabs stay visually anchored; only the blue insertion bar moves.
+  // Why: tabs ignore dnd-kit's sortable transform; dragSlide previews the drop with whole-slot slides instead.
   const { attributes, listeners, setNodeRef } = useSortable({
     id: tab.id,
     data: dragData
@@ -189,7 +191,7 @@ export default function BrowserTab({
       tabIndex={isActive ? 0 : -1}
       aria-label={getTabAccessibleName(tabLabel, { isPinned })}
       onKeyDown={onTabKeyDown}
-      style={getTabColorStyle(tabColor)}
+      style={{ ...getTabColorStyle(tabColor), ...getTabSlideStyle(dragSlide) }}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(

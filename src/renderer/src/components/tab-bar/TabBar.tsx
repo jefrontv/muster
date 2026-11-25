@@ -24,6 +24,8 @@ import type { DropIndicator } from './drop-indicator'
 import { reconcileTabOrder } from './reconcile-order'
 import type { HoveredTabInsertion, TabDragItemData } from '../tab-group/useTabDragSplit'
 import { resolveTabIndicatorEdges } from '../tab-group/tab-insertion'
+import { useTabDragSource } from '../tab-group/tab-drag-context'
+import { computeTabSlides } from './tab-strip-slide'
 import { getEditorDisplayLabel } from '@/components/editor/editor-labels'
 import TabBarCreateEntry from './TabBarCreateEntry'
 import { ShellIcon } from './shell-icons'
@@ -752,8 +754,18 @@ function TabBarInner({
 
   const activeIndicator =
     hoveredTabInsertion?.groupId === resolvedGroupId ? hoveredTabInsertion : null
+  const dragSource = useTabDragSource()
+  const dragSourceId = dragSource?.groupId === resolvedGroupId ? dragSource.visibleTabId : null
+  const slideByVisibleId = useMemo(
+    () => computeTabSlides(sortableIds, dragSourceId, activeIndicator),
+    [activeIndicator, dragSourceId, sortableIds]
+  )
   const dropIndicatorByVisibleId = useMemo(() => {
     const indicators = new Map<string, DropIndicator>()
+    // Why: the source strip previews the drop by sliding tabs, so only other strips draw the bar.
+    if (dragSourceId !== null) {
+      return indicators
+    }
     for (const edge of resolveTabIndicatorEdges(
       orderedItems.map((item) => item.id),
       activeIndicator
@@ -761,7 +773,7 @@ function TabBarInner({
       indicators.set(edge.visibleTabId, edge.side)
     }
     return indicators
-  }, [activeIndicator, orderedItems])
+  }, [activeIndicator, dragSourceId, orderedItems])
 
   const activeVisibleTabId = useMemo(() => {
     const activeItem = orderedItems.find((item) => {
@@ -975,6 +987,7 @@ function TabBarInner({
                 onToggleExpand={onTogglePaneExpand}
                 dragData={dragData}
                 dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+                dragSlide={slideByVisibleId.get(item.id)}
               />
             )
           }
@@ -993,6 +1006,7 @@ function TabBarInner({
                 onTogglePin={() => togglePinned(item)}
                 dragData={dragData}
                 dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+                dragSlide={slideByVisibleId.get(item.id)}
               />
             )
           }
@@ -1012,6 +1026,7 @@ function TabBarInner({
               onTogglePin={() => togglePinned(item)}
               dragData={dragData}
               dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+              dragSlide={slideByVisibleId.get(item.id)}
               nameHint={duplicateNameHints.get(item.id)}
             />
           )
