@@ -15111,7 +15111,10 @@
         "sidebarEmptyBody": "Comments your bots and agents draft show up here for you to post.",
         "showOther": "Show {{value0}} from other projects",
         "arrived": "{{value0}} drafted a comment",
-        "review": "Review"
+        "review": "Review",
+        "toastTask": "Task #{{value0}}",
+        "toastMore": "+{{value0}} more",
+        "later": "Later"
       },
       "projectPages": {
         "addProperty": "Add property",
@@ -15265,7 +15268,8 @@
           "waiting": "{{value0}} more waiting",
           "dismiss": "Dismiss",
           "later": "Later",
-          "review": "Review plan"
+          "review": "Review plan",
+          "reviewShort": "Review"
         },
         "sidebar": {
           "review": "Review",
