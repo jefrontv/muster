@@ -2,6 +2,7 @@
 // chat's workspace folder, so a chat in a project folder works on that project's pages.
 import type { Tool } from '@modelcontextprotocol/sdk/types.js'
 import { splitToolImage } from '../../shared/tool-result-image'
+import { pagesToolArgs } from '../sites/mcp/site-mcp-pages-tool-args'
 import { pagesToolOp, SITE_MCP_PAGES_TOOLS } from '../sites/mcp/site-mcp-pages-tools'
 import {
   toolFail,
@@ -42,7 +43,7 @@ export async function callChatConnectorPagesTool(
     return toolFail('Muster Pages are turned off for agents in Settings.')
   }
   try {
-    const value = await pages.run(op, args, {
+    const value = await pages.run(op, pagesToolArgs(name, args), {
       cwd: ctx.workspace?.directories[0] ?? '',
       agent: CHAT_CONNECTOR_PAGES_AGENT,
       worktreeId: null,

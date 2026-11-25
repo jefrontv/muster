@@ -81,7 +81,7 @@ describe('database tools', () => {
         properties: { status: 'Fixed', Closed: true }
       })
     ).resolves.toMatchObject({ created: true, properties: { status: 'Fixed', Closed: true } })
-    const rows = (await run('query_database', { database: 'Bugs' })) as Rows
+    const rows = (await run('query_database', { page: 'Bugs' })) as Rows
     expect(rows.rows[0].properties).toEqual({ status: 'Fixed', Closed: true })
   })
 

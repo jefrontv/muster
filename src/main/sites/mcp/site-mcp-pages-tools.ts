@@ -3,6 +3,7 @@
 import type { ProjectPagesToolOp } from '../../project-pages/project-pages-tool-ops'
 import { SiteMcpToolError } from './site-mcp-arguments'
 import type { SiteMcpTool } from './site-mcp-context'
+import { pagesToolArgs, registerPagesToolArgs } from './site-mcp-pages-tool-args'
 import { PROJECT_PROPERTY } from './site-mcp-project-resolve'
 import { sitePagesDiagramTools } from './site-mcp-pages-diagram-tools'
 import { objectSchema } from './site-mcp-schemas'
@@ -41,19 +42,30 @@ function pagesTool(
   op: ProjectPagesToolOp,
   description: string,
   properties: Record<string, unknown>,
-  required: string[] = []
+  required: string[] = [],
+  aliases: Record<string, string> = {}
 ): SiteMcpTool {
   OPS_BY_TOOL.set(name, op)
+  const aliased = new Set(Object.values(aliases))
+  registerPagesToolArgs(name, {
+    accepted: Object.keys(properties).filter((key) => !(key in aliases)),
+    required,
+    aliases
+  })
   return {
     name,
     description,
     pagesAccess: READ_TOOL_OPS.has(op) ? 'read' : 'write',
-    inputSchema: objectSchema({ ...properties, ...PROJECT_PROPERTY }, required),
+    // An argument with an alias can't be schema-required, or the alias would be refused.
+    inputSchema: objectSchema(
+      { ...properties, ...PROJECT_PROPERTY },
+      required.filter((key) => !aliased.has(key))
+    ),
     run: (context, args) => {
       if (!context.projectPagesTool) {
         throw new SiteMcpToolError('This Muster build has no pages.')
       }
-      return context.projectPagesTool(op, args)
+      return context.projectPagesTool(op, pagesToolArgs(name, args))
     }
   }
 }
@@ -84,6 +96,7 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     'Exact text hits: body lines (as read_page from_line counts), diagram shapes, database cells.',
     {
       query: { type: 'string' },
+      pattern: { type: 'string', description: 'Alias of query.' },
       regex: { type: 'boolean' },
       case_sensitive: { type: 'boolean' },
       folder: { type: 'string', description: 'Page id or path to search under.' },
@@ -92,7 +105,8 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
       context: { type: 'number', description: 'Lines around hits, 0-3.' },
       comments: { type: 'boolean' }
     },
-    ['query']
+    ['query'],
+    { pattern: 'query' }
   ),
   pagesTool(
     'read_page',
@@ -214,7 +228,8 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
     'query_database',
     'List rows of a database page with their properties. Add rows with create_page under it.',
     {
-      database: PAGE,
+      page: PAGE,
+      database: { type: 'string', description: 'Alias of page.' },
       view: { type: 'string' },
       filter: {
         type: 'object',
@@ -222,7 +237,8 @@ export const SITE_MCP_PAGES_TOOLS: readonly SiteMcpTool[] = [
       },
       sort: { type: 'object', description: '{property, direction: asc|desc}' }
     },
-    ['database']
+    ['page'],
+    { database: 'page' }
   ),
   pagesTool(
     'set_page_properties',

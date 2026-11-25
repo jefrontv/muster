@@ -40,7 +40,9 @@ describe('chat connector pages tools', () => {
     expect(read).toEqual([
       'list_pages',
       'search_pages',
+      'grep_pages',
       'read_page',
+      'list_page_comments',
       'query_database',
       'related_pages',
       'list_page_tags',
@@ -83,10 +85,29 @@ describe('chat connector pages tools', () => {
     })
     const stale = await callChatConnectorTool({
       name: 'update_page',
-      args: {},
+      args: { page: 'A', base_revision: 3 },
       threadId: 't1',
       deps: deps('write', failing).deps
     })
     expect(stale.content[0].text).toBe('Page changed. (current revision 4)')
+  })
+
+  it('renames aliases and names missing arguments before running the op', async () => {
+    const { deps: d, run } = deps('write')
+    await callChatConnectorTool({
+      name: 'grep_pages',
+      args: { pattern: 'x' },
+      threadId: 't1',
+      deps: d
+    })
+    expect(run).toHaveBeenCalledWith('grep', { query: 'x' }, expect.anything())
+    const missing = await callChatConnectorTool({
+      name: 'query_database',
+      args: {},
+      threadId: 't1',
+      deps: d
+    })
+    expect(missing.content[0].text).toMatch(/^query_database needs "page" \(accepts: page, view/)
+    expect(run).toHaveBeenCalledTimes(1)
   })
 })

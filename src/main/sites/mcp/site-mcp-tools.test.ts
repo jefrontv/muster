@@ -200,8 +200,8 @@ describe('site MCP tool table', () => {
     const bytes = (tools: typeof all): number => Buffer.byteLength(JSON.stringify(tools), 'utf8')
     // Pages tools only appear once the user turns Pages on, so they get their own budget.
     expect(bytes(all.filter((tool) => !pages.has(tool.name)))).toBeLessThan(47_000)
-    // Twenty-six pages tools (four for diagrams, three for comments, one each for Trash and grep), each with the project selector.
-    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(15_000)
+    // Twenty-six pages tools (four for diagrams, three for comments, one each for Trash and grep), each with the project selector and argument aliases.
+    expect(bytes(all.filter((tool) => pages.has(tool.name)))).toBeLessThan(15_500)
   })
 })
 

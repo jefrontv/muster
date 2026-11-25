@@ -227,7 +227,7 @@ export function runProjectPagesDatabaseOp(
       }
     }
     case 'query_database': {
-      const page = ctx.pageRef('database')
+      const page = ctx.pageRef(ctx.args.page === undefined ? 'database' : 'page')
       const database = databases.readDatabase(scopeKey, page.id)
       const view = chosenView(database, args)
       const rows: DatabaseRow[] = database.rows.map((r) => ({

@@ -55,4 +55,38 @@ describe('pages MCP tools', () => {
     expect(refused.isError).toBe(true)
     expect(calls).toHaveLength(1)
   })
+
+  it('renames argument aliases and names a missing argument with the accepted ones', async () => {
+    const calls: unknown[] = []
+    const context: SiteMcpContext = {
+      ...createFakeContext(),
+      projectPagesTool: (op, args) => {
+        calls.push([op, args])
+        return Promise.resolve({ ok: true })
+      }
+    }
+    await dispatchSiteMcpTool(context, findSiteMcpTool('grep_pages')!, { pattern: 'x' })
+    await dispatchSiteMcpTool(context, findSiteMcpTool('query_database')!, { database: 'Bugs' })
+    await dispatchSiteMcpTool(context, findSiteMcpTool('query_database')!, { page: 'Bugs' })
+    expect(calls).toEqual([
+      ['grep', { query: 'x' }],
+      ['query_database', { page: 'Bugs' }],
+      ['query_database', { page: 'Bugs' }]
+    ])
+    const missing = await dispatchSiteMcpTool(context, findSiteMcpTool('grep_pages')!, {
+      regex: true
+    })
+    expect(missing.isError).toBe(true)
+    expect(JSON.parse((missing.content[0] as { text: string }).text).error).toBe(
+      'grep_pages needs "query" (accepts: query, regex, case_sensitive, folder, tag, limit, context, comments)'
+    )
+    expect(calls).toHaveLength(3)
+  })
+
+  it('keeps aliased arguments out of the schema required list', () => {
+    const schema = (name: string): unknown => findSiteMcpTool(name)!.inputSchema
+    expect(schema('grep_pages')).toMatchObject({ required: [] })
+    expect(schema('query_database')).toMatchObject({ required: [] })
+    expect(schema('read_page')).toMatchObject({ required: ['page'] })
+  })
 })
