@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
-import { Globe, X, ExternalLink, Copy, Pin, PinOff, PanelRightClose } from 'lucide-react'
+import { Globe, X, ExternalLink, Copy, Pin, PinOff, PanelRightClose, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +27,8 @@ import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
 import { TabWorkspaceLayoutMenuSection } from './TabWorkspaceLayoutMenuSection'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
+import { TabLeadingSlot, TabTrailingSlot } from './tab-chrome-slots'
+import { resolveTabTrailingState } from './tab-trailing-state'
 
 function formatBrowserTabUrlLabel(url: string): string {
   if (url === ORCA_BROWSER_BLANK_URL || url === 'about:blank') {
@@ -92,13 +94,13 @@ function BrowserTabFavicon({
         draggable={false}
         // Why: transparent dark/light-mode favicons can disappear against tab
         // chrome; a token-colored 1px shadow keeps the 12px mark legible.
-        className="size-3 mr-1 shrink-0 rounded-sm object-contain drop-shadow-[0_0_1px_var(--foreground)]"
+        className="size-3.5 rounded-sm object-contain drop-shadow-[0_0_1px_var(--foreground)]"
         onError={() => setFailedFavicon({ tabId, faviconUrl: displayFaviconUrl })}
       />
     )
   }
 
-  return <Globe className="size-3 mr-1 shrink-0 text-status-info" />
+  return <Globe className="size-3.5 text-status-info" />
 }
 
 export default function BrowserTab({
@@ -181,7 +183,7 @@ export default function BrowserTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...listeners}
-      className={`group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`group relative flex items-center gap-1 h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
           e,
@@ -213,28 +215,15 @@ export default function BrowserTab({
           browser tabs at a glance even when the strip is saturated. We
           keep full color on both active and inactive tabs — dimming to
           muted-foreground made the icon read as "disabled" in practice. */}
-      <BrowserTabFavicon tabId={tab.id} faviconUrl={tab.faviconUrl} />
-      {isPinned && <Pin className="mr-1 size-3 shrink-0 text-muted-foreground" aria-hidden />}
-      <span className={`${TAB_LABEL_WIDTH_CLASSES} mr-1`}>{tabLabel}</span>
-      {tab.loading && !tab.loadError && !isBlankBrowserTab(tab) && (
-        <span className="mr-1 size-1.5 rounded-full bg-status-info/80 shrink-0" />
-      )}
-      {!isPinned && (
-        <button
-          className={`hit-area flex items-center justify-center w-4 h-4 rounded-full shrink-0 ${
-            isActive
-              ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              : 'text-transparent group-hover:text-muted-foreground hover:!text-foreground hover:!bg-muted'
-          }`}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation()
-            onClose()
-          }}
-        >
-          <X className="w-3 h-3" />
-        </button>
-      )}
+      <TabLeadingSlot>
+        {tab.loading && !tab.loadError && !isBlankBrowserTab(tab) ? (
+          <Loader2 className="size-3.5 animate-spin text-status-info" aria-hidden />
+        ) : (
+          <BrowserTabFavicon tabId={tab.id} faviconUrl={tab.faviconUrl} />
+        )}
+      </TabLeadingSlot>
+      <span className={TAB_LABEL_WIDTH_CLASSES}>{tabLabel}</span>
+      <TabTrailingSlot state={resolveTabTrailingState({ isActive, isPinned })} onClose={onClose} />
     </div>
   )
 

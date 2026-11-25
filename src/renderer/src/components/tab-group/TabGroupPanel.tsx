@@ -168,9 +168,9 @@ export default function TabGroupPanel({
 
   const menuButtonClassName =
     'my-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'
-  // Why: focused-only so quick commands and Close split pane stay with the active pane and unfocused strips stay compact.
-  const focusedActionChromeClassName = `flex shrink-0 items-center gap-0.5 overflow-hidden transition-[opacity] duration-150 ${
-    isFocused ? 'ml-1.5 pointer-events-auto opacity-100' : 'pointer-events-none opacity-0 w-0'
+  // Why: focused-only actions fade but keep their width, so moving focus between split groups never resizes a tab bar.
+  const focusedActionChromeClassName = `ml-1.5 flex shrink-0 items-center gap-0.5 transition-[opacity] duration-150 ${
+    isFocused ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
   }`
   return (
     <div
@@ -218,11 +218,9 @@ export default function TabGroupPanel({
             className="ml-1.5 flex shrink-0 items-center gap-0.5"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
           >
-            <div className={focusedActionChromeClassName}>
-              {isFocused ? (
-                <TabBarQuickCommandsButton worktreeId={worktreeId} groupId={groupId} />
-              ) : null}
-              {isFocused && hasSplitGroups ? (
+            <div className={focusedActionChromeClassName} inert={!isFocused}>
+              <TabBarQuickCommandsButton worktreeId={worktreeId} groupId={groupId} />
+              {hasSplitGroups ? (
                 <Tooltip>
                   <DropdownMenu modal={false}>
                     <TooltipTrigger asChild>

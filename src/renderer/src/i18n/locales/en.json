@@ -2967,6 +2967,22 @@
           },
           "TerminalTabLeadingIcon": {
             "7ab2964bea": "Unread agent completion"
+          },
+          "TabCloseButton": {
+            "closeTab": "Close tab"
+          },
+          "editorTabTooltip": {
+            "modified": "Modified",
+            "added": "Added",
+            "deleted": "Deleted",
+            "renamed": "Renamed",
+            "untracked": "Untracked",
+            "copied": "Copied",
+            "deletedOnDisk": "Deleted on disk",
+            "renamedOnDisk": "Renamed on disk",
+            "unsaved": "Unsaved changes",
+            "review": "Needs review",
+            "changed": "Changed"
           }
         }
       },

@@ -12,6 +12,7 @@ import type { TabDragItemData } from '../tab-group/useTabDragSplit'
 import BrowserTab from './BrowserTab'
 import EditorFileTab from './EditorFileTab'
 import SortableTab from './SortableTab'
+import { TAB_CONTAINER_WIDTH_CLASSES } from './tab-width-rules'
 
 let mockTabAgent: TuiAgent | null = null
 
@@ -188,7 +189,7 @@ function textSpanHtml(markup: string, text: string): string {
 
 function expectTabContainerWidth(markup: string, root: string): void {
   const container = firstOpeningTag(markup)
-  const widthClasses = 'min-w-[88px] max-w-[280px] flex-[1_1_180px] min-[1280px]:flex-[1_1_220px]'
+  const widthClasses = TAB_CONTAINER_WIDTH_CLASSES
   expect(container).toContain(widthClasses)
   expect(root).not.toContain('min-w-[88px]')
   expect(root).not.toContain('max-w-[280px]')
@@ -364,7 +365,9 @@ describe('tab title tooltips', () => {
 
     expectTooltipContent(markup, 'VeryLongEditorFileName.tsx')
     expect(markup).toContain('line-through')
-    expect(markup).toContain('renamed')
+    // Why: mutation state lives in the tooltip so it cannot widen the tab.
+    expect(markup).toContain('Renamed on disk')
+    expect(markup).toContain('data-tab-trailing-slot')
     const root = openingTag(markup, 'data-sortable-id', 'editor-tab-1')
     expect(root).toContain('data-tooltip-trigger="true"')
     expect(root).toContain('role="tab"')

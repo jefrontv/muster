@@ -72,6 +72,7 @@ import { translate } from '@/i18n/i18n'
 import { TabStripScrollIndicator } from './TabStripScrollIndicator'
 import { getTabStripScrollMaskClassName } from './tab-strip-scroll-metrics'
 import { useTabStripOverflowNavigation } from './tab-strip-overflow-navigation'
+import { TAB_BAR_CONTAINER_CLASSES } from './tab-width-rules'
 import { useTabStripDragScrollHandlers } from './tab-strip-drag-scroll'
 import { shouldShowWindowsShellMenu } from './windows-shell-menu-visibility'
 import { canToggleNativeChat } from '../native-chat/native-chat-availability'
@@ -829,7 +830,7 @@ function TabBarInner({
   return (
     <div
       ref={clearPendingNewTabMenuFocusOnUnmount}
-      className="flex items-stretch h-full overflow-hidden flex-1 min-w-0"
+      className={`flex items-stretch h-full overflow-hidden flex-1 min-w-0 ${TAB_BAR_CONTAINER_CLASSES}`}
       // Why: preload routes native OS drops by this marker — only the tab strip opens files in the editor, not terminal panes.
       data-native-file-drop-target="editor"
     >

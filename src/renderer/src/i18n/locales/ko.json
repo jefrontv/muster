@@ -2944,6 +2944,22 @@
           },
           "TerminalTabLeadingIcon": {
             "7ab2964bea": "읽지 않은 에이전트 완료"
+          },
+          "TabCloseButton": {
+            "closeTab": "Close tab"
+          },
+          "editorTabTooltip": {
+            "modified": "Modified",
+            "added": "Added",
+            "deleted": "Deleted",
+            "renamed": "Renamed",
+            "untracked": "Untracked",
+            "copied": "Copied",
+            "deletedOnDisk": "Deleted on disk",
+            "renamedOnDisk": "Renamed on disk",
+            "unsaved": "Unsaved changes",
+            "review": "Needs review",
+            "changed": "Changed"
           }
         }
       },

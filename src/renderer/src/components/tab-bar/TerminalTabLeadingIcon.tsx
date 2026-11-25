@@ -42,6 +42,9 @@ function activityDotState(status: TerminalTabActivityStatus): AgentDotState | nu
   }
 }
 
+const STATE_BADGE_CLASSES =
+  'absolute -right-1.5 -bottom-1 inline-flex rounded-full bg-card ring-1 ring-card'
+
 /** Keep the provider glyph treatment identical across every terminal-tab state. */
 function TerminalTabAgentIdentityIcon({
   agent,
@@ -75,10 +78,16 @@ export function TerminalTabLeadingIcon({
           'auto.components.tab.bar.TerminalTabLeadingIcon.7ab2964bea',
           'Unread agent completion'
         )}
-        className="mr-1 inline-flex shrink-0 items-center gap-1"
+        className="relative inline-flex"
       >
-        <FilledBellIcon className="size-3 text-status-attention drop-shadow-sm" />
-        {agent ? <TerminalTabAgentIdentityIcon agent={agent} isActive={isActive} /> : null}
+        {agent ? (
+          <>
+            <TerminalTabAgentIdentityIcon agent={agent} isActive={isActive} />
+            <FilledBellIcon className={cn(STATE_BADGE_CLASSES, 'size-2.5 text-status-attention')} />
+          </>
+        ) : (
+          <FilledBellIcon className="size-3 text-status-attention drop-shadow-sm" />
+        )}
       </span>
     )
   }
@@ -89,27 +98,32 @@ export function TerminalTabLeadingIcon({
       <span
         data-testid="tab-agent-activity-indicator"
         data-agent-activity-status={activityStatus}
-        className="mr-1 inline-flex shrink-0 items-center gap-1"
+        className="relative inline-flex"
       >
-        <AgentStateDot state={dotState} size="md" />
-        {/* Why: status and identity answer different questions. Keep the agent
-            logo beside the state glyph so parallel tabs remain scannable. */}
-        {agent ? <TerminalTabAgentIdentityIcon agent={agent} isActive={isActive} /> : null}
+        {/* Why: identity stays the main glyph; state rides as a corner badge so the slot never widens. */}
+        {agent ? (
+          <>
+            <TerminalTabAgentIdentityIcon agent={agent} isActive={isActive} />
+            <span className={STATE_BADGE_CLASSES}>
+              <AgentStateDot state={dotState} size="sm" />
+            </span>
+          </>
+        ) : (
+          <AgentStateDot state={dotState} size="md" />
+        )}
       </span>
     )
   }
 
   if (agent) {
-    return (
-      <TerminalTabAgentIdentityIcon agent={agent} isActive={isActive} className="mr-1 shrink-0" />
-    )
+    return <TerminalTabAgentIdentityIcon agent={agent} isActive={isActive} />
   }
 
   // Why: ShellIcon renders a colored brand-style tile for PowerShell, CMD,
   // Git Bash, and WSL while retaining the generic terminal fallback elsewhere.
   return (
     <span
-      className={`mr-1 inline-flex shrink-0 ${isActive ? '' : 'opacity-70'}`}
+      className={`inline-flex ${isActive ? '' : 'opacity-70'}`}
       data-shell-icon={shell ?? 'generic'}
       aria-hidden
     >

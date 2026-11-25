@@ -66,6 +66,9 @@ vi.mock('lucide-react', () => ({
   Globe: function Globe(props: Record<string, unknown>) {
     return { type: 'Globe', props }
   },
+  Loader2: function Loader2(props: Record<string, unknown>) {
+    return { type: 'Loader2', props }
+  },
   Pin: function Pin(props: Record<string, unknown>) {
     return { type: 'Pin', props }
   },
@@ -126,6 +129,10 @@ vi.mock('@/components/ui/tooltip', () => ({
   TooltipTrigger: function TooltipTrigger(props: { children?: unknown }) {
     return props.children
   }
+}))
+
+vi.mock('@/hooks/useShortcutLabel', () => ({
+  useOptionalShortcutLabel: () => null
 }))
 
 vi.mock('../browser-pane/browser-runtime', () => ({
@@ -246,7 +253,7 @@ describe('BrowserTab favicon', { timeout: 30_000 }, () => {
     expect(images[0].props.alt).toBe('')
     expect(images[0].props['aria-hidden']).toBe(true)
     expect(images[0].props.draggable).toBe(false)
-    expect(images[0].props.className).toContain('size-3 mr-1 shrink-0')
+    expect(images[0].props.className).toContain('size-3.5')
     expect(images[0].props.className).toContain('object-contain')
     expect(images[0].props.className).toContain('drop-shadow-[0_0_1px_var(--foreground)]')
     expect(findElementsByType(element, 'Globe')).toHaveLength(0)
@@ -264,7 +271,7 @@ describe('BrowserTab favicon', { timeout: 30_000 }, () => {
     expect(findElementsByType(element, 'img')).toHaveLength(0)
     const globes = findElementsByType(element, 'Globe')
     expect(globes).toHaveLength(1)
-    expect(globes[0].props.className).toContain('size-3 mr-1 shrink-0')
+    expect(globes[0].props.className).toContain('size-3.5')
     expect(globes[0].props.className).toContain('text-status-info')
   })
 

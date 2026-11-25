@@ -4,7 +4,6 @@ import {
   GitCompareArrows,
   Eye,
   ShieldAlert,
-  Pin,
   ListChecks,
   FileText,
   ClipboardCheck
@@ -19,7 +18,7 @@ import { detectLanguage } from '@/lib/language-detect'
 import { getFileTypeIcon } from '@/lib/file-type-icons'
 import { useRepoById, useWorktreeById } from '@/store/selectors'
 import { useAppStore } from '@/store'
-import { STATUS_COLORS, STATUS_LABELS } from '../right-sidebar/status-display'
+import { STATUS_COLORS } from '../right-sidebar/status-display'
 import type { GitFileStatus } from '../../../../shared/types'
 import type { OpenFile } from '../../store/slices/editor'
 import { getUntitledFileRoot } from '@/components/editor/untitled-file-rename-path'
@@ -37,8 +36,10 @@ import { canOpenMarkdownPreview } from '@/components/editor/markdown-preview-con
 import { EditorFileTabContextMenu } from './EditorFileTabContextMenu'
 import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
-import { EditorFileTabCloseButton } from './EditorFileTabCloseButton'
-import { TabAttentionDot, useTabAttention } from './TabAttentionDot'
+import { useTabAttention } from './TabStateDot'
+import { TabLeadingSlot, TabTooltipBody, TabTrailingSlot } from './tab-chrome-slots'
+import { resolveTabTrailingState } from './tab-trailing-state'
+import { getEditorTabTooltipDetails } from './editor-tab-tooltip-details'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 
 export default function EditorFileTab({
@@ -92,6 +93,17 @@ export default function EditorFileTab({
   const isPlanReview = file.mode === 'plan-review'
   const attention = useTabAttention(file.worktreeId, file.tabId)
   const isMarkdownPreviewTab = file.mode === 'markdown-preview'
+  const EditorTabIcon = isCheckDetails
+    ? ListChecks
+    : isPlanReview
+      ? ClipboardCheck
+      : isProjectPages
+        ? FileText
+        : isDiff
+          ? GitCompareArrows
+          : isMarkdownPreviewTab
+            ? Eye
+            : FileIcon
   // Why: only deleted/renamed mean the file is gone from its path, which is
   // what strikethrough conveys. 'changed' keeps a normal label — its surface
   // is the changed-on-disk banner inside the editor.
@@ -199,6 +211,18 @@ export default function EditorFileTab({
       : (statusByRelativePath.get(normalizeRelativePath(file.relativePath)) ?? null)
   const tabStatusColor = tabStatus ? STATUS_COLORS[tabStatus] : undefined
   const tabLabel = getEditorDisplayLabel(file)
+  const tooltipDetails = getEditorTabTooltipDetails({
+    status: tabStatus,
+    externalMutation: file.externalMutation,
+    isDirty: file.isDirty,
+    attention
+  })
+  const trailingState = resolveTabTrailingState({
+    isActive,
+    isPinned,
+    isDirty: file.isDirty,
+    attention
+  })
 
   useEffect(() => {
     const closeMenu = (): void => setMenuOpen(false)
@@ -235,7 +259,7 @@ export default function EditorFileTab({
       data-pinned={isPinned ? 'true' : 'false'}
       {...attributes}
       {...dragListeners}
-      className={`group relative flex items-center h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
+      className={`group relative flex items-center gap-1 h-full px-1.5 text-xs cursor-pointer select-none outline-none focus:outline-none focus-visible:outline-none ${getTabStripBorderClasses(hasTabsToRight, { includeTopBorder: includeTopTabBorder })} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabRootStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
           e,
@@ -265,37 +289,18 @@ export default function EditorFileTab({
       }}
     >
       {isActive && <span className={ACTIVE_TAB_INDICATOR_CLASSES} aria-hidden />}
-      {isConflictReview ? (
-        <ShieldAlert
-          className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-orange-400' : 'text-orange-400/70'}`}
-        />
-      ) : isCheckDetails ? (
-        <ListChecks
-          className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
-        />
-      ) : isPlanReview ? (
-        <ClipboardCheck
-          className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
-        />
-      ) : isProjectPages ? (
-        <FileText
-          className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
-        />
-      ) : isDiff ? (
-        <GitCompareArrows
-          className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
-        />
-      ) : isMarkdownPreviewTab ? (
-        <Eye
-          className={`w-3.5 h-3.5 mr-1.5 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
-        />
-      ) : (
-        <FileIcon
-          className={`w-3 h-3 mr-1 shrink-0 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
-        />
-      )}
-      {isPinned && <Pin className="mr-1 size-3 shrink-0 text-muted-foreground" aria-hidden />}
-      <span className="mr-1 flex min-w-0 flex-1 items-baseline gap-1">
+      <TabLeadingSlot>
+        {isConflictReview ? (
+          <ShieldAlert
+            className={`size-3.5 ${isActive ? 'text-status-attention' : 'text-status-attention/70'}`}
+          />
+        ) : (
+          <EditorTabIcon
+            className={`size-3.5 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
+          />
+        )}
+      </TabLeadingSlot>
+      <span className="flex min-w-0 flex-1 items-baseline">
         {isRenaming ? (
           <Input
             ref={setRenameInputElement}
@@ -356,36 +361,8 @@ export default function EditorFileTab({
             {tabLabel}
           </span>
         )}
-        {isMissingFileMutation && !isRenaming && (
-          <span className="shrink-0 text-[11px] leading-none font-semibold tracking-wide text-muted-foreground">
-            {file.externalMutation}
-          </span>
-        )}
-        {tabStatus && !isRenaming && !isMissingFileMutation && (
-          <span
-            className="shrink-0 text-[11px] leading-none font-semibold tracking-wide"
-            style={{ color: tabStatusColor }}
-          >
-            {STATUS_LABELS[tabStatus]}
-          </span>
-        )}
       </span>
-      {/* Dirty dot and close button share the same slot to prevent tab width shift during auto-save.
-         When dirty: dot is shown, close button appears on hover (replacing the dot).
-         When clean: close button is shown normally (visible on active tab, on hover for others). */}
-      <div className="relative flex items-center justify-center w-4 h-4 shrink-0">
-        {file.isDirty && (
-          <span className="absolute size-1.5 rounded-full bg-foreground/60 group-hover:hidden group-focus-within:hidden" />
-        )}
-        {attention && !file.isDirty && <TabAttentionDot attention={attention} />}
-        {!isPinned && (
-          <EditorFileTabCloseButton
-            fileIsDirty={file.isDirty || Boolean(attention)}
-            showsSelectionChrome={isActive}
-            onClose={onClose}
-          />
-        )}
-      </div>
+      <TabTrailingSlot state={trailingState} onClose={onClose} />
     </div>
   )
 
@@ -410,7 +387,7 @@ export default function EditorFileTab({
               sideOffset={6}
               className="max-w-80 whitespace-normal break-words text-left"
             >
-              {tabLabel}
+              <TabTooltipBody label={tabLabel} details={tooltipDetails} />
             </TooltipContent>
           </Tooltip>
         )}

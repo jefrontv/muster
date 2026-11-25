@@ -1,6 +1,8 @@
-// Why: tab strips should reveal as much title as space allows, then shrink to
-// a readable floor before horizontal overflow takes over.
-export const TAB_CONTAINER_WIDTH_CLASSES =
-  'min-w-[88px] max-w-[280px] flex-[1_1_180px] min-[1280px]:flex-[1_1_220px]'
+// Why: width depends only on the tab bar's own width (container query), so labels, badges
+// and tab count never reflow the strip; overflow scrolls instead of shrinking tabs.
+export const TAB_CONTAINER_WIDTH_CLASSES = 'flex-none w-44 @max-[480px]/tab-bar:w-34'
 
 export const TAB_LABEL_WIDTH_CLASSES = 'min-w-0 flex-1 truncate'
+
+/** Marks the tab bar root as the container the tab width step reads. */
+export const TAB_BAR_CONTAINER_CLASSES = '@container/tab-bar'
