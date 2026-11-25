@@ -11,9 +11,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ROW_HOVER } from '@/components/ui/hover-fill-classes'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import type { ProjectPageMeta, ProjectPageMoveInput } from '../../../../shared/project-pages-types'
 import { ancestorIds, buildPageTree, pageTitle, trashedPages } from './project-pages-tree-model'
+import { ProjectPageKindIcon } from './ProjectPageKindIcon'
+import { trashRowDetail } from './project-pages-trash-detail'
 import { ProjectPagesTreeRow } from './ProjectPagesTreeRow'
 import { useProjectPagesTreeDrag } from './use-project-pages-tree-drag'
 
@@ -175,7 +178,18 @@ export function ProjectPagesSidebar({
                   key={page.id}
                   className={`flex h-7 items-center gap-1 rounded-md pr-1 pl-2 text-xs text-muted-foreground ${ROW_HOVER}`}
                 >
-                  <span className="min-w-0 flex-1 truncate">{pageTitle(page)}</span>
+                  <ProjectPageKindIcon page={page} className="size-3.5 shrink-0" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="min-w-0 flex-1 truncate">
+                        {pageTitle(page)}
+                        <span className="sr-only">, {trashRowDetail(page, pages)}</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={6}>
+                      {trashRowDetail(page, pages)}
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     variant="ghost"
                     size="icon-xs"

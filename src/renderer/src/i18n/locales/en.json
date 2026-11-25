@@ -15453,7 +15453,15 @@
           "heading": "Heading",
           "toggleHeading": "Toggle heading"
         },
-        "agentPanelResize": "Resize Ask agent"
+        "agentPanelResize": "Resize Ask agent",
+        "trashKind": {
+          "folder": "Folder",
+          "diagram": "Diagram",
+          "page": "Page"
+        },
+        "trashInsideOne": "1 page inside",
+        "trashInside": "{{value0}} pages inside",
+        "trashDeleted": "Deleted {{value0}}"
       },
       "planAnnotation": {
         "tab": {
