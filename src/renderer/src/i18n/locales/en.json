@@ -2989,6 +2989,11 @@
           },
           "TabStripAllTabsMenu": {
             "allTabs": "All tabs"
+          },
+          "tabStripLabels": {
+            "pages": "Pages",
+            "planReview": "Plan review",
+            "markdownPreview": "Markdown preview"
           }
         }
       },

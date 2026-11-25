@@ -11,7 +11,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { basename, normalizeRelativePath } from '@/lib/path'
-import { getEditorDisplayLabel } from '@/components/editor/editor-labels'
 import { renameFileOnDisk } from '@/lib/rename-file'
 import { isImeCompositionKeyDown } from '@/lib/ime-composition-keyboard-event'
 import { detectLanguage } from '@/lib/language-detect'
@@ -31,6 +30,7 @@ import { canOpenMarkdownPreview } from '@/components/editor/markdown-preview-con
 import { EditorFileTabContextMenu } from './EditorFileTabContextMenu'
 import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
+import { getTabStripEditorContextLines, getTabStripEditorLabel } from './tab-strip-labels'
 import { useTabAttention } from './TabStateDot'
 import { TabLeadingSlot, TabTooltipBody, TabTrailingSlot } from './tab-chrome-slots'
 import { resolveTabTrailingState } from './tab-trailing-state'
@@ -50,7 +50,8 @@ export default function EditorFileTab({
   onMakePermanent,
   onTogglePin,
   dragData,
-  dropIndicator
+  dropIndicator,
+  nameHint
 }: {
   file: OpenFile & { tabId?: string }
   isActive: boolean
@@ -65,6 +66,8 @@ export default function EditorFileTab({
   onTogglePin: () => void
   dragData: TabDragItemData
   dropIndicator?: DropIndicator
+  /** Parent folder telling this tab apart from a same-named one. */
+  nameHint?: string
 }): React.JSX.Element {
   const worktree = useWorktreeById(file.worktreeId)
   const repo = useRepoById(worktree?.repoId ?? null)
@@ -203,13 +206,16 @@ export default function EditorFileTab({
       ? null
       : (statusByRelativePath.get(normalizeRelativePath(file.relativePath)) ?? null)
   const tabStatusColor = tabStatus ? STATUS_COLORS[tabStatus] : undefined
-  const tabLabel = getEditorDisplayLabel(file)
-  const tooltipDetails = getEditorTabTooltipDetails({
-    status: tabStatus,
-    externalMutation: file.externalMutation,
-    isDirty: file.isDirty,
-    attention
-  })
+  const tabLabel = getTabStripEditorLabel(file)
+  const tooltipDetails = [
+    ...getTabStripEditorContextLines(file, tabLabel),
+    ...getEditorTabTooltipDetails({
+      status: tabStatus,
+      externalMutation: file.externalMutation,
+      isDirty: file.isDirty,
+      attention
+    })
+  ]
   const trailingState = resolveTabTrailingState({
     isActive,
     isPinned,
@@ -332,7 +338,7 @@ export default function EditorFileTab({
           />
         ) : (
           <span
-            className={`${TAB_LABEL_WIDTH_CLASSES}${file.isPreview ? ' italic' : ''}${isMissingFileMutation ? ' line-through' : ''}`}
+            className={`${nameHint ? 'min-w-0 truncate' : TAB_LABEL_WIDTH_CLASSES}${file.isPreview ? ' italic' : ''}${isMissingFileMutation ? ' line-through' : ''}`}
             style={tabStatusColor ? { color: tabStatusColor } : undefined}
             onDoubleClick={(e) => {
               if (file.isPreview && onMakePermanent) {
@@ -353,6 +359,9 @@ export default function EditorFileTab({
             {tabLabel}
           </span>
         )}
+        {nameHint && !isRenaming ? (
+          <span className="min-w-8 flex-1 truncate pl-1 text-muted-foreground">{nameHint}</span>
+        ) : null}
       </span>
       <TabTrailingSlot state={trailingState} onClose={onClose} />
     </div>

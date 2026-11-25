@@ -60,6 +60,7 @@ import { buildTabAgentLaunchOptions, orderTabLaunchAgents } from './tab-agent-la
 import { buildTabCreateMenuOptions, type TabCreateMenuOption } from './tab-create-menu-options'
 import { translate } from '@/i18n/i18n'
 import { TabStrip } from './TabStrip'
+import { toDuplicateNameEntry, useDuplicateNameHints } from './tab-duplicate-name-hints'
 import { TAB_BAR_CONTAINER_CLASSES } from './tab-width-rules'
 import { shouldShowWindowsShellMenu } from './windows-shell-menu-visibility'
 import { canToggleNativeChat } from '../native-chat/native-chat-availability'
@@ -743,6 +744,11 @@ function TabBarInner({
   ])
 
   const sortableIds = useMemo(() => orderedItems.map((item) => item.id), [orderedItems])
+  const duplicateNameHints = useDuplicateNameHints(
+    orderedItems.flatMap((item) =>
+      item.type === 'editor' ? [toDuplicateNameEntry(item.id, item.data)] : []
+    )
+  )
 
   const activeIndicator =
     hoveredTabInsertion?.groupId === resolvedGroupId ? hoveredTabInsertion : null
@@ -1003,6 +1009,7 @@ function TabBarInner({
               onTogglePin={() => togglePinned(item)}
               dragData={dragData}
               dropIndicator={dropIndicatorByVisibleId.get(item.id) ?? null}
+              nameHint={duplicateNameHints.get(item.id)}
             />
           )
         })}
