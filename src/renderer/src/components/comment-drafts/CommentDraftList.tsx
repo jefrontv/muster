@@ -33,13 +33,14 @@ function DraftRow({
   const bodyId = `comment-draft-${draft.id}`
 
   return (
-    <li className="border-b border-border px-3 py-2.5 last:border-b-0">
+    <li className="border-b border-border px-3 py-2.5 transition-colors last:border-b-0 hover:bg-accent/30 has-[button:focus-visible]:bg-accent/40">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={bodyId}
         onClick={onToggle}
-        className="flex w-full min-w-0 flex-col gap-0.5 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        // Focus tints the whole row (on the li) instead of drawing a rounded ring round the header.
+        className="flex w-full min-w-0 flex-col gap-0.5 text-left outline-none"
       >
         <span className="flex w-full min-w-0 items-baseline gap-2">
           <span
