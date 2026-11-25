@@ -94,6 +94,18 @@ describe('grep_pages', () => {
     expect(limited).toMatchObject({ count: 5, truncated: true })
   })
 
+  it('is not truncated when the hits exactly fill the limit', async () => {
+    page('Few', 'needle\nneedle\nneedle')
+    expect(await run('grep', { query: 'needle', limit: 3 })).toMatchObject({
+      count: 3,
+      truncated: false
+    })
+    expect(await run('grep', { query: 'needle', limit: 2 })).toMatchObject({
+      count: 2,
+      truncated: true
+    })
+  })
+
   it('finds diagram shapes by cell id instead of outline lines', async () => {
     const id = page('Map')
     const { page: meta } = deps.diagrams!.enableDiagram(SCOPE, id, USER)

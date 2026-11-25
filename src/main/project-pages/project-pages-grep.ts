@@ -152,6 +152,11 @@ export function grepPages(
       if (at < 0) {
         continue
       }
+      // Truncated only when a match past the limit exists.
+      if (count >= options.limit) {
+        stop = 'limit'
+        break
+      }
       if (group.hits.length >= GREP_LIMITS.perPage) {
         group.more = (group.more ?? 0) + 1
         continue
@@ -168,10 +173,7 @@ export function grepPages(
         break
       }
       group.hits.push(hit)
-      if (++count >= options.limit) {
-        stop = 'limit'
-        break
-      }
+      count++
     }
     if (group.hits.length > 0 || group.more) {
       result.push(group)
