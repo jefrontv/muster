@@ -37,12 +37,13 @@ describe('loadPlanText', () => {
     )
   })
 
-  it('takes inline content as-is, with no path to diff against', () => {
+  it('takes inline content as-is, titled by its first heading', () => {
     expect(loadPlanText({ path: '', content: '# Inline', cwd: dir })).toEqual({
       planPath: null,
-      title: 'Plan',
+      title: 'Inline',
       content: '# Inline'
     })
+    expect(loadPlanText({ path: '', content: 'no heading', cwd: dir }).title).toBe('Plan')
   })
 
   it('refuses both sources and neither, with one code', () => {
