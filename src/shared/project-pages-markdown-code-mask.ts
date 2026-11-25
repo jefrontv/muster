@@ -67,6 +67,12 @@ export function maskMarkdownCode(markdown: string): string {
       out.push(blank(line))
       continue
     }
+    // Code spans can't cross a blank line, so an unmatched backtick stops at its paragraph.
+    if (line.trim() === '') {
+      flushProse()
+      out.push(line)
+      continue
+    }
     prose.push(line)
   }
   flushProse()

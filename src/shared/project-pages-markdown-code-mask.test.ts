@@ -10,6 +10,14 @@ describe('maskMarkdownCode', () => {
     expect(kept(markdown)).toBe('a b [y]] e')
   })
 
+  it('keeps an unmatched backtick inside its paragraph', () => {
+    const markdown =
+      'Press ` to open.\n\nSee [[Roadmap]] and [x](muster-page://abc).\n\nRun `npm i` now.'
+    expect(kept(markdown)).toBe(
+      'Press ` to open. See [[Roadmap]] and [x](muster-page://abc). Run now.'
+    )
+  })
+
   it('treats an unclosed fence as code to the end and a lone backtick as text', () => {
     expect(kept('a ` b\n~~~~\n[[x]]\n~~~\n[[y]]')).toBe('a ` b')
   })
