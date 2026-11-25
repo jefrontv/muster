@@ -15,7 +15,7 @@ export function isProjectPagesGrepOp(op: string): op is GrepOp {
   return PROJECT_PAGES_GREP_OPS.includes(op as GrepOp)
 }
 
-export function runProjectPagesGrepOp(ctx: {
+export async function runProjectPagesGrepOp(ctx: {
   search: ProjectPagesSearchIndex
   databases?: ProjectPagesDatabases
   comments?: ProjectPagesComments
@@ -23,14 +23,14 @@ export function runProjectPagesGrepOp(ctx: {
   project: { id: string; name: string }
   args: ToolArgs
   pages: () => ProjectPageMeta[]
-}): unknown {
+}): Promise<unknown> {
   const { args, scopeKey } = ctx
   const query = toolText(args, 'query', true)
   if (!query.trim()) {
     throw new ProjectPagesError('invalid', 'query is required.')
   }
   const folder = toolText(args, 'folder')
-  const result = grepPages(
+  const result = await grepPages(
     {
       snapshot: ctx.search.snapshot(scopeKey),
       database: ctx.databases

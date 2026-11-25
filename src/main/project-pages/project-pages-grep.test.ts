@@ -82,6 +82,20 @@ describe('grep_pages', () => {
     expect(tagged.pages.map((p) => p.path)).toEqual(['Specs', 'Outside'])
   })
 
+  it('stops a catastrophic regex at the deadline and keeps earlier hits', async () => {
+    page('Early', 'aaa')
+    page('Bomb', `${'a'.repeat(40)}b`)
+    const started = Date.now()
+    const result = await run('grep', { query: '(a+)+$', regex: true, context: 0 })
+    expect(Date.now() - started).toBeLessThan(1_000)
+    expect(result).toMatchObject({
+      count: 1,
+      truncated: true,
+      note: expect.stringContaining('regex')
+    })
+    expect(result.pages.map((p) => p.path)).toEqual(['Early'])
+  })
+
   it('caps hits per page and in total, and skips the Trash', async () => {
     page('Many', Array.from({ length: 30 }, () => 'needle').join('\n'))
     const gone = page('Gone', 'needle')
