@@ -1,4 +1,4 @@
-// The decision bar pinned above a page while a plan review of that page is open.
+// The decision bar pinned below a page while a plan review of that page is open.
 import { Check, GitCompareArrows, Send } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
@@ -9,6 +9,7 @@ import type {
   PlanAnnotationDecision,
   PlanAnnotationRequest
 } from '../../../../shared/plan-annotation-types'
+import { restoreTitleHeading } from '../../../../shared/plan-page-heading'
 import { livePageEditor } from '../project-pages/page-editor-registry'
 import { loadPageComments, usePageComments } from '../project-pages/use-page-comments'
 import { serializePageMarkdown } from './page-review-baseline'
@@ -35,7 +36,8 @@ function useEditedPage(review: PlanAnnotationRequest, scopeKey: string, pageId: 
     const check = (): void => {
       void window.api.projectPages.read(scopeKey, pageId).then((result) => {
         if (!stale && result.ok) {
-          setEdited(!samePlanText(result.value.markdown, review.content))
+          const text = restoreTitleHeading(result.value.markdown, review.content)
+          setEdited(!samePlanText(text, review.content))
         }
       })
     }
@@ -66,6 +68,8 @@ async function settlePageReview(
     const stored = await window.api.projectPages.read(scopeKey, pageId)
     current = stored.ok ? stored.value.markdown : review.content
   }
+  // The page title holds the plan's H1; put it back so the diff and line numbers match the plan.
+  current = restoreTitleHeading(current, review.content)
   const baseline =
     current === review.content ? review.content : serializePageMarkdown(review.content, scopeKey)
   const result = buildPageReviewResult({
@@ -122,7 +126,7 @@ export function ProjectPageReviewBar({
   return (
     <div
       data-page-review-bar=""
-      className="flex shrink-0 items-center gap-2 border-b border-border bg-[var(--editor-surface)] px-4 py-2"
+      className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-[var(--editor-surface)] px-4 py-2"
     >
       <span className="size-1.5 shrink-0 rounded-full bg-status-attention motion-safe:animate-pulse" />
       <p className="flex min-w-0 flex-1 items-center gap-2 text-[12px]">
