@@ -82,9 +82,10 @@ export function bindPlanReviewPage(
     )
     return settings?.experimentalProjectPages === true && exists ? input.page : null
   }
-  const allowed = options.force
-    ? settings?.experimentalProjectPages === true
-    : planReviewsSaveToPages(settings)
+  // A plan already on a page (Add to Pages) stays there next round, whatever the setting.
+  const allowed =
+    settings?.experimentalProjectPages === true &&
+    (options.force === true || prior !== null || planReviewsSaveToPages(settings))
   if (!allowed || !input.cwd) {
     return null
   }

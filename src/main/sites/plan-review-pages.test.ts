@@ -92,6 +92,13 @@ describe('plan reviews saved to Pages', () => {
     expect(bindPlanReviewPage(setup({}).deps, input('v1'), null, { force: true })).toBeNull()
   })
 
+  it('keeps updating a page added on request in later rounds with the setting off', () => {
+    const { store, deps } = setup({ experimentalProjectPages: true })
+    const first = bindPlanReviewPage(deps, input('v1'), null, { force: true })
+    expect(bindPlanReviewPage(deps, input('v2'), first)).toEqual(first)
+    expect(store.readPage(SCOPE, first!.pageId).markdown).toBe('v2')
+  })
+
   it('files the page in a named folder path, creating what is missing', () => {
     const { store, deps } = setup()
     const ref = bindPlanReviewPage(deps, input('v1', { pagesFolder: 'Specs / Q4' }), null)
