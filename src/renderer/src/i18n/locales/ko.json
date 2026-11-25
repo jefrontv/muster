@@ -9434,7 +9434,9 @@
             "alwaysAllowTitle": "Allowed without asking",
             "alwaysAllowDescription": "Setup changes you chose to always allow. Remove one to be asked again.",
             "planReviewTabTitle": "Open plan reviews in a project tab",
-            "planReviewTabDescription": "A plan an agent sends for review opens as a tab in its project instead of over your work. Off opens it full screen."
+            "planReviewTabDescription": "A plan an agent sends for review opens as a tab in its project instead of over your work. Off opens it full screen.",
+            "planReviewPagesTitle": "Save plan reviews to Pages",
+            "planReviewPagesDescription": "A plan review is saved as a page in the project's Plans folder and reviewed there. Off uses the plan review tab."
           }
         },
         "confirmations": {
@@ -15230,6 +15232,24 @@
         "changedInside": "Changed by an agent",
         "outline": {
           "label": "Page outline"
+        },
+        "comments": {
+          "new": "Comment",
+          "cancel": "Cancel",
+          "wholePage": "Whole page",
+          "you": "You",
+          "replyPlaceholder": "Reply",
+          "reply": "Reply",
+          "reopen": "Reopen",
+          "resolve": "Resolve",
+          "delete": "Delete thread",
+          "title": "Comments",
+          "hide": "Hide comments",
+          "placeholder": "Add a comment",
+          "submit": "Comment",
+          "textChanged": "Text changed",
+          "resolved": "Resolved ({{count}})",
+          "wholePageAction": "Comment on page"
         }
       },
       "planAnnotation": {
@@ -15251,6 +15271,21 @@
           "review": "Review",
           "reviewTooltip": "Plan waiting: {{value0}}",
           "projectDot": "Plan waiting for review"
+        },
+        "pageReview": {
+          "oneNote": "1 note",
+          "notes": "{{count}} notes",
+          "edited": "edited",
+          "title": "Plan review",
+          "round": "round {{round}}",
+          "waiting": "{{count}} more waiting",
+          "ready": "{{summary}}, ready to send",
+          "hint": "Select text to comment, or edit the page",
+          "changes": "Changes",
+          "close": "Close",
+          "approveNotes": "Approve with notes",
+          "approve": "Approve",
+          "send": "Send feedback"
         }
       }
     },
