@@ -919,7 +919,10 @@ function TabBarInner({
             tabType: item.type,
             label: getTabDragLabel(item, generatedTabTitlesEnabled),
             iconPath: item.type === 'editor' ? item.data.filePath : undefined,
-            color: item.type === 'terminal' ? (item.data.color ?? null) : null
+            color:
+              item.type === 'terminal'
+                ? (item.data.color ?? null)
+                : (unifiedTabByVisibleId.get(item.id)?.color ?? null)
           }
           if (item.type === 'terminal') {
             const terminalTab = {

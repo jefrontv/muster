@@ -17,6 +17,10 @@ const storeMock = vi.hoisted(() => ({
   } as Record<string, unknown>
 }))
 
+vi.mock('./TabColorMenuSection', () => ({
+  TabColorMenuSection: () => null
+}))
+
 vi.mock('@/hooks/useShortcutLabel', () => ({
   formatShortcutLabel: () => '⌘D',
   useOptionalShortcutLabel: () => '⌘D'

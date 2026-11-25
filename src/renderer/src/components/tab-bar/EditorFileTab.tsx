@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
-import {
-  GitCompareArrows,
-  Eye,
-  ShieldAlert,
-  ListChecks,
-  FileText,
-  ClipboardCheck
-} from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { basename, normalizeRelativePath } from '@/lib/path'
 import { renameFileOnDisk } from '@/lib/rename-file'
 import { isImeCompositionKeyDown } from '@/lib/ime-composition-keyboard-event'
 import { detectLanguage } from '@/lib/language-detect'
-import { getFileTypeIcon } from '@/lib/file-type-icons'
 import { useRepoById, useWorktreeById } from '@/store/selectors'
 import { useAppStore } from '@/store'
 import { STATUS_COLORS } from '../right-sidebar/status-display'
@@ -30,6 +22,8 @@ import { canOpenMarkdownPreview } from '@/components/editor/markdown-preview-con
 import { EditorFileTabContextMenu } from './EditorFileTabContextMenu'
 import { translate } from '@/i18n/i18n'
 import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-width-rules'
+import { getTabColorStyle, useUnifiedTabColor } from './tab-colors'
+import { getEditorTabIcon } from './editor-tab-icon'
 import {
   getCloseTabAccessibleName,
   getTabAccessibleName,
@@ -76,7 +70,6 @@ export default function EditorFileTab({
 }): React.JSX.Element {
   const worktree = useWorktreeById(file.worktreeId)
   const repo = useRepoById(worktree?.repoId ?? null)
-  const FileIcon = getFileTypeIcon(file.filePath)
   // Why: no transform/transition/isDragging styling — the drag design is
   // that tabs stay visually anchored; only the blue insertion bar moves.
   const { attributes, listeners, setNodeRef } = useSortable({
@@ -87,24 +80,10 @@ export default function EditorFileTab({
     data: dragData
   })
 
-  const isDiff = file.mode === 'diff'
   const isConflictReview = file.mode === 'conflict-review'
-  const isCheckDetails = file.mode === 'check-details'
-  const isProjectPages = file.mode === 'project-pages'
-  const isPlanReview = file.mode === 'plan-review'
   const attention = useTabAttention(file.worktreeId, file.tabId)
-  const isMarkdownPreviewTab = file.mode === 'markdown-preview'
-  const EditorTabIcon = isCheckDetails
-    ? ListChecks
-    : isPlanReview
-      ? ClipboardCheck
-      : isProjectPages
-        ? FileText
-        : isDiff
-          ? GitCompareArrows
-          : isMarkdownPreviewTab
-            ? Eye
-            : FileIcon
+  const tabColor = useUnifiedTabColor(file.worktreeId, dragData.unifiedTabId)
+  const EditorTabIcon = getEditorTabIcon(file)
   // Why: only deleted/renamed mean the file is gone from its path, which is
   // what strikethrough conveys. 'changed' keeps a normal label — its surface
   // is the changed-on-disk banner inside the editor.
@@ -277,6 +256,7 @@ export default function EditorFileTab({
         isPreview: file.isPreview
       })}
       onKeyDown={onTabKeyDown}
+      style={getTabColorStyle(tabColor)}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(

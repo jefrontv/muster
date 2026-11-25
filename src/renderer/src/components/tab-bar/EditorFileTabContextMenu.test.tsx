@@ -2,6 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const shortcutLabelMock = vi.hoisted(() => vi.fn())
 
+vi.mock('./TabColorMenuSection', () => ({
+  UnifiedTabColorMenuSection: () => null
+}))
+
 vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: function DropdownMenu(props: { children?: unknown }) {
     return { type: 'DropdownMenu', props }

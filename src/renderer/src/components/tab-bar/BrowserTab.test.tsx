@@ -6,6 +6,15 @@ const reactHookRuntime = vi.hoisted(() => ({
   index: 0
 }))
 
+vi.mock('./tab-colors', () => ({
+  useUnifiedTabColor: () => null,
+  getTabColorStyle: () => undefined
+}))
+
+vi.mock('./TabColorMenuSection', () => ({
+  UnifiedTabColorMenuSection: () => null
+}))
+
 vi.mock('react', async () => {
   const actual = await vi.importActual<typeof import('react')>('react') // eslint-disable-line @typescript-eslint/consistent-type-imports -- vi.importActual requires inline import()
   return {

@@ -137,6 +137,15 @@
   --color-status-success-background: var(--status-success-background);
   --color-status-success-border: var(--status-success-border);
   --color-status-attention: var(--status-attention);
+  --color-tab-blue: var(--tab-color-blue);
+  --color-tab-purple: var(--tab-color-purple);
+  --color-tab-pink: var(--tab-color-pink);
+  --color-tab-red: var(--tab-color-red);
+  --color-tab-orange: var(--tab-color-orange);
+  --color-tab-yellow: var(--tab-color-yellow);
+  --color-tab-green: var(--tab-color-green);
+  --color-tab-teal: var(--tab-color-teal);
+  --color-tab-gray: var(--tab-color-gray);
   --color-status-attention-background: var(--status-attention-background);
   --color-status-attention-border: var(--status-attention-border);
   --color-status-danger: var(--status-danger);
@@ -343,6 +352,16 @@
      card/editor surfaces when panes are side-by-side or stacked. Default must
      meet >=3:1 against `--card`, not only the hover/drag strong state. */
   --tab-group-split-divider: #868690;
+  /* Tab colours: one lightness and chroma per theme so every hue reads as a 1px ring and a 12% tint. */
+  --tab-color-blue: oklch(0.58 0.15 255);
+  --tab-color-purple: oklch(0.56 0.16 300);
+  --tab-color-pink: oklch(0.6 0.16 350);
+  --tab-color-red: oklch(0.58 0.16 25);
+  --tab-color-orange: oklch(0.64 0.14 55);
+  --tab-color-yellow: oklch(0.7 0.13 90);
+  --tab-color-green: oklch(0.6 0.13 150);
+  --tab-color-teal: oklch(0.6 0.1 190);
+  --tab-color-gray: oklch(0.6 0.015 260);
   --tab-group-split-divider-strong: #71717a;
   /* Chat surface tokens (docs/STYLEGUIDE.md "Chat surface"). */
   --chat-row-height: 24px;
@@ -515,6 +534,15 @@
   --markdown-search-match-active: #fb923c;
   /* Brighter than terminal defaults so the always-visible line clears 3:1 on `--card`. */
   --tab-group-split-divider: #71717a;
+  --tab-color-blue: oklch(0.74 0.12 255);
+  --tab-color-purple: oklch(0.74 0.13 300);
+  --tab-color-pink: oklch(0.76 0.12 350);
+  --tab-color-red: oklch(0.72 0.13 25);
+  --tab-color-orange: oklch(0.78 0.12 55);
+  --tab-color-yellow: oklch(0.84 0.12 90);
+  --tab-color-green: oklch(0.77 0.12 150);
+  --tab-color-teal: oklch(0.78 0.09 190);
+  --tab-color-gray: oklch(0.74 0.012 260);
   --tab-group-split-divider-strong: #a1a1aa;
   --chat-bubble: rgb(44 44 46);
   --chat-ink-secondary: #d4d4d4;

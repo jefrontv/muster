@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { useAppStore } from '@/store'
+import { UnifiedTabColorMenuSection } from './TabColorMenuSection'
 import { showLocalPathOpenBlockedToast } from '@/lib/local-path-open-guard'
 import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import type { OpenFile } from '../../store/slices/editor'
@@ -229,6 +230,8 @@ export function EditorFileTabContextMenu({
           <ExternalLink className="size-3.5" />
           {revealLabel}
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <UnifiedTabColorMenuSection worktreeId={file.worktreeId} unifiedTabId={unifiedTabId} />
       </DropdownMenuContent>
     </DropdownMenu>
   )

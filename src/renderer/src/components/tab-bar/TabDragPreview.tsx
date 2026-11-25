@@ -2,6 +2,7 @@ import { Globe, Terminal as TerminalIcon } from 'lucide-react'
 import { getFileTypeIcon } from '@/lib/file-type-icons'
 import { AgentIcon } from '@/lib/agent-catalog'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
+import { getTabColorStyle } from './tab-colors'
 
 // Why: a terminal tab running an agent leads with the provider glyph so the
 // ghost matches the resting tab; plain terminals keep the generic icon.
@@ -28,14 +29,14 @@ function LeadingIcon({ drag }: { drag: TabDragItemData }): React.JSX.Element {
 export default function TabDragPreview({ drag }: { drag: TabDragItemData }): React.JSX.Element {
   return (
     <div className="pointer-events-none h-full w-full rounded-full bg-card-solid shadow-floating">
-      <div className="flex size-full items-center gap-1 rounded-full bg-foreground/[0.1] px-2 text-xs text-foreground">
+      <div
+        className="flex size-full items-center gap-1 rounded-full bg-foreground/[0.1] px-2 text-xs text-foreground"
+        style={getTabColorStyle(drag.color)}
+      >
         <span className="grid size-4 shrink-0 place-items-center">
           <LeadingIcon drag={drag} />
         </span>
         <span className="min-w-0 flex-1 truncate">{drag.label}</span>
-        {drag.color ? (
-          <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: drag.color }} />
-        ) : null}
       </div>
     </div>
   )

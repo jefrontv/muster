@@ -24,6 +24,8 @@ import { TabWorkspaceLayoutMenuSection } from './TabWorkspaceLayoutMenuSection'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TabLeadingSlot, TabTrailingSlot } from './tab-chrome-slots'
 import { getCloseTabAccessibleName, getTabAccessibleName } from './tab-strip-labels'
+import { getTabColorStyle, useUnifiedTabColor } from './tab-colors'
+import { UnifiedTabColorMenuSection } from './TabColorMenuSection'
 import { resolveTabTrailingState } from './tab-trailing-state'
 
 function formatBrowserTabUrlLabel(url: string): string {
@@ -145,6 +147,7 @@ export default function BrowserTab({
     // invalid URL — leave disabled
   }
   const tabLabel = getBrowserTabLabel(tab)
+  const tabColor = useUnifiedTabColor(dragData.worktreeId, dragData.unifiedTabId)
 
   useEffect(() => {
     const closeMenu = (): void => setMenuOpen(false)
@@ -186,6 +189,7 @@ export default function BrowserTab({
       tabIndex={isActive ? 0 : -1}
       aria-label={getTabAccessibleName(tabLabel, { isPinned })}
       onKeyDown={onTabKeyDown}
+      style={getTabColorStyle(tabColor)}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onPointerDown={(e) => {
         onTabPointerDown(
@@ -302,6 +306,11 @@ export default function BrowserTab({
             <ExternalLink className="size-3.5" />
             {translate('auto.components.tab.bar.BrowserTab.6e0bc8f3a8', 'Open in browser')}
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <UnifiedTabColorMenuSection
+            worktreeId={dragData.worktreeId}
+            unifiedTabId={dragData.unifiedTabId}
+          />
         </DropdownMenuContent>
       </DropdownMenu>
     </>

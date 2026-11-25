@@ -19,6 +19,7 @@ import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
 import { TabLeadingSlot, TabTrailingSlot } from './tab-chrome-slots'
 import { getTabAccessibleName } from './tab-strip-labels'
+import { getTabColorStyle } from './tab-colors'
 import { resolveTabTrailingState } from './tab-trailing-state'
 import {
   hasUnreadAgentCompletionForTerminalTab,
@@ -224,6 +225,7 @@ export default function SortableTab({
         hasUnreadActivity: showUnreadActivity
       })}
       onKeyDown={onTabKeyDown}
+      style={getTabColorStyle(tab.color)}
       className={`${TAB_PILL_CLASSES} ${getDropIndicatorClasses(dropIndicator ?? null)} ${getTabStateClasses(isActive)}`}
       onDoubleClick={(e) => {
         if (isEditing) {
@@ -263,11 +265,7 @@ export default function SortableTab({
         // Why: a real DOM child keeps both drop-indicator pseudo-elements free and pointer events reaching the tab.
         <span aria-hidden className={TAB_UNREAD_FILL_CLASSES} />
       )}
-      <TabLeadingSlot
-        className={tab.color ? 'rounded-full' : undefined}
-        // Why: tab colour rides on the icon slot so it costs no label width.
-        style={tab.color ? { boxShadow: `0 0 0 1.5px ${tab.color}` } : undefined}
-      >
+      <TabLeadingSlot>
         <span className={isExpanded && !isEditing ? 'contents group-hover:invisible' : 'contents'}>
           <TerminalTabLeadingIcon
             agent={tabAgent}
