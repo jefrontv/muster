@@ -2,11 +2,13 @@
 // not: a kind (comment / remove / looks good) and image attachments.
 
 import type React from 'react'
+import type { Editor } from '@tiptap/react'
 import { useRef, useState } from 'react'
 import { Image as ImageIcon, MessageSquare, ThumbsUp, Trash2, X } from 'lucide-react'
 import type { PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
 import { DiffCommentPopover } from '../diff-comments/DiffCommentPopover'
 import { isStandaloneKind } from './plan-review-comments'
+import { forwardNoteShortcut } from './plan-review-note-shortcuts'
 import type { PlanNoteDraft } from './use-plan-review-annotations'
 
 const PASSAGE_KINDS: { kind: PlanAnnotationKind; label: string; icon: typeof MessageSquare }[] = [
@@ -44,15 +46,15 @@ async function saveImages(files: readonly File[]): Promise<string[]> {
 
 export function PlanReviewNotePopover({
   draft,
-  showKinds = true,
+  editor,
   wholeTitle = 'Whole plan',
   notePlaceholder = 'Add note for the agent',
   onCancel,
   onSubmit
 }: {
   draft: PlanNoteDraft
-  /** Off for page comments outside a review, which have no remove / looks good. */
-  showKinds?: boolean
+  /** The annotated editor, so Cmd+C and formatting keys still reach it while the box has focus. */
+  editor?: Editor | null
   wholeTitle?: string
   notePlaceholder?: string
   onCancel: () => void
@@ -68,85 +70,92 @@ export function PlanReviewNotePopover({
   }
 
   const lineNumber = isPassage ? draft.target.lineNumber : 1
+  const quote = isPassage ? draft.target.selectedText : ''
   return (
-    <DiffCommentPopover
-      key={isPassage ? `${draft.target.from}:${draft.target.to}` : 'whole-plan'}
-      lineNumber={lineNumber}
-      startLine={isPassage ? draft.target.startLine : undefined}
-      top={isPassage ? draft.target.top : draft.top}
-      left={isPassage ? draft.target.left : draft.left}
-      lineHeight={isPassage ? draft.flipHeight : 0}
-      title={isPassage ? 'Selected text' : wholeTitle}
-      placeholder={
-        kind === 'comment' || kind === 'global' ? notePlaceholder : 'Add a reason (optional)'
-      }
-      allowEmptySubmit={isStandaloneKind(kind) || attachments.length > 0}
-      onFiles={attach}
-      onCancel={onCancel}
-      onSubmit={async (body) => onSubmit(kind, body, attachments)}
-      beforeInput={
-        isPassage && showKinds ? (
-          <div className="flex items-center gap-1" role="radiogroup" aria-label="Note kind">
-            {PASSAGE_KINDS.map((entry) => (
-              <button
-                key={entry.kind}
-                type="button"
-                role="radio"
-                aria-checked={kind === entry.kind}
-                onClick={() => setKind(entry.kind)}
-                className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors ${
-                  kind === entry.kind
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
-                }`}
+    // display: contents, so the popover still positions against the editor's box.
+    <div
+      className="contents"
+      onKeyDownCapture={(event) => forwardNoteShortcut(event, editor, quote)}
+    >
+      <DiffCommentPopover
+        key={isPassage ? `${draft.target.from}:${draft.target.to}` : 'whole-plan'}
+        lineNumber={lineNumber}
+        startLine={isPassage ? draft.target.startLine : undefined}
+        top={isPassage ? draft.target.top : draft.top}
+        left={isPassage ? draft.target.left : draft.left}
+        lineHeight={isPassage ? draft.flipHeight : 0}
+        title={isPassage ? 'Selected text' : wholeTitle}
+        placeholder={
+          kind === 'comment' || kind === 'global' ? notePlaceholder : 'Add a reason (optional)'
+        }
+        allowEmptySubmit={isStandaloneKind(kind) || attachments.length > 0}
+        onFiles={attach}
+        onCancel={onCancel}
+        onSubmit={async (body) => onSubmit(kind, body, attachments)}
+        beforeInput={
+          isPassage ? (
+            <div className="flex items-center gap-1" role="radiogroup" aria-label="Note kind">
+              {PASSAGE_KINDS.map((entry) => (
+                <button
+                  key={entry.kind}
+                  type="button"
+                  role="radio"
+                  aria-checked={kind === entry.kind}
+                  onClick={() => setKind(entry.kind)}
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors ${
+                    kind === entry.kind
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+                  }`}
+                >
+                  <entry.icon className="size-3" />
+                  {entry.label}
+                </button>
+              ))}
+            </div>
+          ) : null
+        }
+        footerStart={
+          <div className="mr-auto flex min-w-0 items-center gap-1.5">
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(event) => {
+                attach([...(event.target.files ?? [])])
+                event.target.value = ''
+              }}
+            />
+            <button
+              type="button"
+              aria-label="Attach image"
+              title="Attach image, or drop or paste one"
+              onClick={() => fileInput.current?.click()}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ImageIcon className="size-3.5" />
+            </button>
+            {attachments.map((path) => (
+              <span
+                key={path}
+                className="flex min-w-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground"
               >
-                <entry.icon className="size-3" />
-                {entry.label}
-              </button>
+                <span className="max-w-[90px] truncate">{path.split(/[\\/]/).pop()}</span>
+                <button
+                  type="button"
+                  aria-label="Remove attachment"
+                  onClick={() => setAttachments((current) => current.filter((p) => p !== path))}
+                  className="hover:text-foreground"
+                >
+                  <X className="size-2.5" />
+                </button>
+              </span>
             ))}
           </div>
-        ) : null
-      }
-      footerStart={
-        <div className="mr-auto flex min-w-0 items-center gap-1.5">
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(event) => {
-              attach([...(event.target.files ?? [])])
-              event.target.value = ''
-            }}
-          />
-          <button
-            type="button"
-            aria-label="Attach image"
-            title="Attach image, or drop or paste one"
-            onClick={() => fileInput.current?.click()}
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ImageIcon className="size-3.5" />
-          </button>
-          {attachments.map((path) => (
-            <span
-              key={path}
-              className="flex min-w-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground"
-            >
-              <span className="max-w-[90px] truncate">{path.split(/[\\/]/).pop()}</span>
-              <button
-                type="button"
-                aria-label="Remove attachment"
-                onClick={() => setAttachments((current) => current.filter((p) => p !== path))}
-                className="hover:text-foreground"
-              >
-                <X className="size-2.5" />
-              </button>
-            </span>
-          ))}
-        </div>
-      }
-    />
+        }
+      />
+    </div>
   )
 }

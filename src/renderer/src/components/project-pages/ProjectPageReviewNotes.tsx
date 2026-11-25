@@ -118,6 +118,7 @@ export function ProjectPageReviewNotes({
               {annotations.draft ? (
                 <PlanReviewNotePopover
                   draft={annotations.draft}
+                  editor={editor}
                   onCancel={annotations.cancelDraft}
                   onSubmit={annotations.submitDraft}
                 />

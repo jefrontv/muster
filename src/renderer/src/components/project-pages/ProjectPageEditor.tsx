@@ -415,7 +415,7 @@ export function ProjectPageEditor({
           <ProjectPageCommentsToggle controller={comments} />
         </div>
         <ProjectPageComments controller={comments} overlay={comments.narrow} />
-        <ProjectPageCommentInput controller={comments} />
+        <ProjectPageCommentInput controller={comments} editor={editor} />
       </div>
     </div>
   )

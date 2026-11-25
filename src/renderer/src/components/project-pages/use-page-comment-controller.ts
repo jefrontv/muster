@@ -1,5 +1,5 @@
-// Wires page comments to the editor: highlights, the selection bubble, ⌘⌥M and the note box.
-// The note box is the plan review's own (PlanReviewNotePopover), so page reviews take notes alike.
+// Wires page comments to the editor: highlights, the note box, ⌘⌥M and Mod+Shift+A.
+// The note box is the plan review's own (PlanReviewNotePopover), so pages take notes like reviews.
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PlanAnnotationKind } from '../../../../shared/plan-annotation-types'
@@ -25,7 +25,6 @@ import {
 import { usePlanReviewFront } from '../plan-annotation/use-plan-review-queue'
 
 export const DRAFT_THREAD_ID = '__draft'
-const BUBBLE_OFFSET_PX = 36
 /** Below this the column floats over the page instead of squeezing it. */
 const NARROW_PX = 760
 const NOTE_WIDTH_PX = 420
@@ -92,7 +91,6 @@ export function usePageCommentController({
     order: [],
     missing: []
   })
-  const [bubble, setBubble] = useState<{ top: number; left: number } | null>(null)
   const layoutKey = useRef('')
   const [narrow, setNarrow] = useState(false)
   useEffect(() => {
@@ -133,35 +131,13 @@ export function usePageCommentController({
         layoutKey.current = key
         setLayout(next)
       }
-      const { from, to, empty } = editor.state.selection
-      const root = rootRef.current
-      // Under review the note box opens on selection, so the chip would only duplicate it.
-      const quiet = inReviewRef.current || noteRef.current !== null
-      if (
-        quiet ||
-        empty ||
-        !editor.isFocused ||
-        !root ||
-        !editor.state.doc.textBetween(from, to).trim()
-      ) {
-        setBubble(null)
-        return
-      }
-      const end = editor.view.coordsAtPos(to)
-      const box = root.getBoundingClientRect()
-      setBubble({
-        top: Math.max(0, end.top - box.top - BUBBLE_OFFSET_PX),
-        left: end.left - box.left
-      })
     }
     sync()
     editor.on('transaction', sync)
-    editor.on('blur', sync)
     return () => {
       editor.off('transaction', sync)
-      editor.off('blur', sync)
     }
-  }, [editor, rootRef])
+  }, [editor])
 
   const startWholePage = useCallback(() => {
     if (inReviewRef.current) {
@@ -175,7 +151,6 @@ export function usePageCommentController({
       left: Math.max(WHOLE_PAGE_NOTE_TOP_PX, width - NOTE_WIDTH_PX - 24)
     })
     setDraft({ anchor: null })
-    setBubble(null)
   }, [rootRef])
   useWholePageCommentRequests(pageId, startWholePage)
 
@@ -207,22 +182,20 @@ export function usePageCommentController({
         flipHeight: place?.flipHeight ?? 0
       })
       setDraft({ anchor: anchorForSelection(editor.state.doc, target.from, target.to) })
-      setBubble(null)
       return true
     },
     [editor, rootRef, startWholePage]
   )
 
-  useOpenNoteOnMouseSelection(rootRef, editor, inReview, startComment)
+  useOpenNoteOnMouseSelection(rootRef, editor, startComment)
 
   const isMac = navigator.userAgent.includes('Mac')
   const onKeyDownCapture = useCallback(
     (event: React.KeyboardEvent) => {
       const mod = isMac ? event.metaKey : event.ctrlKey
       const pageKey = mod && event.altKey && !event.shiftKey && event.code === 'KeyM'
-      // The plan review's own add-note shortcut works here too while the page is under review.
-      const reviewKey =
-        inReviewRef.current && editorShortcutMatches('editor.addReviewNote', event.nativeEvent)
+      // The plan review's add-note shortcut (Mod+Shift+A) opens the same box on any page.
+      const reviewKey = editorShortcutMatches('editor.addReviewNote', event.nativeEvent)
       if ((pageKey || reviewKey) && !event.repeat && startComment(reviewKey && !pageKey)) {
         event.preventDefault()
         event.stopPropagation()
@@ -249,10 +222,10 @@ export function usePageCommentController({
     setNote(null)
   }, [])
   const submitNote = useCallback(
-    // Outside a review the note box shows no kinds, so every note here is a plain comment.
-    (_kind: PlanAnnotationKind, body: string, attachments: string[]) => {
+    (kind: PlanAnnotationKind, body: string, attachments: string[]) => {
       const anchor = draft?.anchor ?? null
-      void actions.add(anchor, body, attachments).then((ok) => {
+      const pageKind = anchor && (kind === 'delete' || kind === 'looks_good') ? kind : undefined
+      void actions.add(anchor, body, attachments, pageKind).then((ok) => {
         if (ok) {
           cancelDraft()
           window.getSelection()?.removeAllRanges()
@@ -289,7 +262,6 @@ export function usePageCommentController({
     cancelDraft,
     collapsed,
     setCollapsed,
-    bubble,
     startComment,
     onKeyDownCapture,
     shortcutLabel: isMac ? '⌘⌥M' : 'Ctrl+Alt+M'
