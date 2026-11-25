@@ -17,7 +17,8 @@ import {
 } from '../sites/plan-annotation-requests'
 import type {
   PlanAnnotationRequest,
-  PlanAnnotationResult
+  PlanAnnotationResult,
+  PlanReviewPageRef
 } from '../../shared/plan-annotation-types'
 
 export const PLAN_ANNOTATION_REQUEST_CHANNEL = 'planAnnotation:request'
@@ -72,15 +73,15 @@ export function registerPlanAnnotationHandlers(): void {
     }
   )
 
-  // Returns the page id, or null when Pages is off or no project holds the agent's folder.
+  // Returns the page, or null when Pages is off or no project holds the agent's folder.
   ipcMain.handle(
     'planAnnotation:saveToPages',
-    (_event, args: { requestId?: unknown; folder?: unknown }): string | null => {
+    (_event, args: { requestId?: unknown; folder?: unknown }): PlanReviewPageRef | null => {
       if (typeof args?.requestId !== 'string' || args.requestId === '') {
         throw new Error('planAnnotation: requestId must be a non-empty string')
       }
       const folder = typeof args.folder === 'string' && args.folder.trim() ? args.folder : null
-      return savePlanAnnotationToPages(args.requestId, folder)?.pageId ?? null
+      return savePlanAnnotationToPages(args.requestId, folder)
     }
   )
 
