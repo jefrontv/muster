@@ -132,7 +132,9 @@ function hostnameValue(): string | undefined {
 
 beforeEach(() => {
   listBranchesMock = vi.fn().mockResolvedValue({ ok: true, value: [] })
-  Reflect.set(globalThis.window, 'api', { sites: { listBranches: listBranchesMock } })
+  // SiteStepLibrarySection loads the shared step library on mount.
+  const stepLibrary = { list: vi.fn().mockResolvedValue({ ok: true, value: [] }) }
+  Reflect.set(globalThis.window, 'api', { sites: { listBranches: listBranchesMock, stepLibrary } })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
