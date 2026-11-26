@@ -31,6 +31,7 @@ import {
 } from './ProjectPagesPanelToggle'
 import { useProjectPagesScopes } from './use-project-pages-scopes'
 import { useProjectPagesTree } from './use-project-pages-tree'
+import { createProjectPage } from './project-pages-create'
 import { lastPageIn, lastPagesScope, rememberPagesLocation } from './project-pages-location'
 import { useAgentChangedPages } from './project-pages-seen'
 import { useProjectPagesEmbed, type ProjectPagesEmbed } from './use-project-pages-embed'
@@ -139,13 +140,10 @@ export default function ProjectPagesPage({
     if (!scopeKey) {
       return
     }
-    const result = await window.api.projectPages.create(scopeKey, { parentId, folder })
-    if (result.ok && diagram) {
-      report(await window.api.projectPages.enableDiagram(scopeKey, result.value.meta.id))
-    }
+    const result = await createProjectPage(scopeKey, { parentId, folder, diagram })
     if (result.ok) {
-      setSelectedId(result.value.meta.id)
-      setFresh(result.value.meta.id)
+      setSelectedId(result.value.id)
+      setFresh(result.value.id)
     } else {
       report(result)
     }

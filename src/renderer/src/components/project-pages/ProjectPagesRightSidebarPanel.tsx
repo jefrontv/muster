@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
+import { createProjectPage } from './project-pages-create'
 import { lastPageIn, rememberPagesLocation } from './project-pages-location'
 import { useAgentChangedPages } from './project-pages-seen'
 import { buildProjectPagesTabId } from './project-pages-tab'
@@ -79,10 +80,10 @@ export default function ProjectPagesRightSidebarPanel(): React.JSX.Element {
         changedIds={changedIds}
         selectedId={tabPageId ?? lastPageIn(activeKey) ?? null}
         onSelect={open}
-        onCreate={(parentId, folder) =>
-          void window.api.projectPages.create(activeKey, { parentId, folder }).then((result) => {
+        onCreate={(parentId, folder, diagram) =>
+          void createProjectPage(activeKey, { parentId, folder, diagram }).then((result) => {
             if (result.ok) {
-              open(result.value.meta.id)
+              open(result.value.id)
             } else {
               report(result)
             }
