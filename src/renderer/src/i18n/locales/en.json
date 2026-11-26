@@ -14178,7 +14178,10 @@
           "cloneNoConnector": "Connect Bitbucket to clone this repository.",
           "cloneNotFound": "Muster could not find this repository to clone it. Use an existing checkout instead.",
           "cloneLookupFailed": "Muster could not look up this repository: {{error}}",
-          "openIntegrations": "Open integrations"
+          "openIntegrations": "Open integrations",
+          "credentialsDetails": "Show link details",
+          "changeFolder": "Change folder",
+          "folderCloneSummary": "Clone into {{path}}"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -14338,7 +14341,28 @@
           "installingAgentLocal": "Installing Agent Local…",
           "getDdev": "Get DDEV",
           "getLocalWp": "Get LocalWP",
-          "importAfterClone": "Add the server details after setup to pull the database and files."
+          "importAfterClone": "Add the server details after setup to pull the database and files.",
+          "cloneBranchTitle": "Environment",
+          "cloneBranchSummary": "{{environment}} · will clone {{branch}}",
+          "cloneBranchDefault": "the default branch",
+          "cloneBranchLoading": "Loading branches…",
+          "cloneBranchListFailed": "Couldn't list branches",
+          "cloneBranchExisting": "Uses the branch already checked out",
+          "cloneBranchMismatch": "Not the {{environment}} branch",
+          "cloneBranchMismatchDetail": "You chose to clone {{branch}}. Server details and imports still target {{environment}}, and deploys from this branch need confirming.",
+          "cloneBranchEditLabel": "Change branch",
+          "cloneBranchLabel": "Branch to clone",
+          "serveEnable": "Serve this site locally",
+          "serveOff": "Not served locally",
+          "httpsEditLabel": "Change HTTPS",
+          "httpsOff": "No HTTPS",
+          "importEditLabel": "Change import",
+          "importOff": "Not importing",
+          "importStepsSummary": "From {{environment}} · {{count}} of {{total}} steps",
+          "cloneBranchFilter": "Find a branch",
+          "cloneBranchFromLink": "{{environment}} link",
+          "cloneBranchDefaultBadge": "default",
+          "cloneBranchNoMatch": "No branches match"
         },
         "SiteSetupSourceScreen": {
           "destinationLabel": "Clone into",

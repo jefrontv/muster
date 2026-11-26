@@ -51,7 +51,7 @@ export async function runClone(ctx: StepContext): Promise<void> {
         ? {
             url: source.target.cloneUrl,
             destination: source.target.root,
-            branch: source.pending.fields.checkoutBranch
+            branch: ctx.choices.cloneBranch || source.pending.fields.checkoutBranch
           }
         : null
   if (!target) {

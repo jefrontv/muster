@@ -14110,7 +14110,10 @@
           "cloneNoConnector": "Connect Bitbucket to clone this repository.",
           "cloneNotFound": "Muster could not find this repository to clone it. Use an existing checkout instead.",
           "cloneLookupFailed": "Muster could not look up this repository: {{error}}",
-          "openIntegrations": "Open Integrations"
+          "openIntegrations": "Open Integrations",
+          "credentialsDetails": "Mostrar detalles del enlace",
+          "changeFolder": "Cambiar carpeta",
+          "folderCloneSummary": "Clonar en {{path}}"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -14314,7 +14317,28 @@
           "installingAgentLocal": "Installing Agent Local…",
           "getDdev": "Get DDEV",
           "getLocalWp": "Get LocalWP",
-          "importAfterClone": "Add the server details after setup to pull the database and files."
+          "importAfterClone": "Add the server details after setup to pull the database and files.",
+          "cloneBranchTitle": "Entorno",
+          "cloneBranchSummary": "{{environment}} · se clonará {{branch}}",
+          "cloneBranchDefault": "la rama predeterminada",
+          "cloneBranchLoading": "Cargando ramas…",
+          "cloneBranchListFailed": "No se pudieron listar las ramas",
+          "cloneBranchExisting": "Usa la rama que ya está activa",
+          "cloneBranchMismatch": "No es la rama de {{environment}}",
+          "cloneBranchMismatchDetail": "Elegiste clonar {{branch}}. Los datos del servidor y las importaciones siguen apuntando a {{environment}}, y los despliegues desde esta rama requieren confirmación.",
+          "cloneBranchEditLabel": "Cambiar rama",
+          "cloneBranchLabel": "Rama a clonar",
+          "serveEnable": "Servir este sitio localmente",
+          "serveOff": "No se servirá localmente",
+          "httpsEditLabel": "Cambiar HTTPS",
+          "httpsOff": "Sin HTTPS",
+          "importEditLabel": "Cambiar importación",
+          "importOff": "Sin importación",
+          "importStepsSummary": "Desde {{environment}} · {{count}} de {{total}} pasos",
+          "cloneBranchFilter": "Buscar una rama",
+          "cloneBranchFromLink": "enlace de {{environment}}",
+          "cloneBranchDefaultBadge": "predeterminada",
+          "cloneBranchNoMatch": "Ninguna rama coincide"
         },
         "SiteSetupSourceScreen": {
           "destinationLabel": "Clone into",

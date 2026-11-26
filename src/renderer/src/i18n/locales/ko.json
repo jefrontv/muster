@@ -14110,7 +14110,10 @@
           "cloneNoConnector": "Connect Bitbucket to clone this repository.",
           "cloneNotFound": "Muster could not find this repository to clone it. Use an existing checkout instead.",
           "cloneLookupFailed": "Muster could not look up this repository: {{error}}",
-          "openIntegrations": "Open Integrations"
+          "openIntegrations": "Open Integrations",
+          "credentialsDetails": "링크 세부정보 보기",
+          "changeFolder": "폴더 변경",
+          "folderCloneSummary": "{{path}}에 클론"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -14314,7 +14317,28 @@
           "installingAgentLocal": "Installing Agent Local…",
           "getDdev": "Get DDEV",
           "getLocalWp": "Get LocalWP",
-          "importAfterClone": "Add the server details after setup to pull the database and files."
+          "importAfterClone": "Add the server details after setup to pull the database and files.",
+          "cloneBranchTitle": "환경",
+          "cloneBranchSummary": "{{environment}} · {{branch}} 클론 예정",
+          "cloneBranchDefault": "기본 브랜치",
+          "cloneBranchLoading": "브랜치를 불러오는 중…",
+          "cloneBranchListFailed": "브랜치 목록을 가져올 수 없습니다",
+          "cloneBranchExisting": "이미 체크아웃된 브랜치를 사용합니다",
+          "cloneBranchMismatch": "{{environment}} 브랜치가 아님",
+          "cloneBranchMismatchDetail": "{{branch}}를 클론하도록 선택했습니다. 서버 정보와 가져오기는 계속 {{environment}}를 대상으로 하며, 이 브랜치에서 배포하려면 확인이 필요합니다.",
+          "cloneBranchEditLabel": "브랜치 변경",
+          "cloneBranchLabel": "클론할 브랜치",
+          "serveEnable": "이 사이트를 로컬에서 제공",
+          "serveOff": "로컬에서 제공하지 않음",
+          "httpsEditLabel": "HTTPS 변경",
+          "httpsOff": "HTTPS 없음",
+          "importEditLabel": "가져오기 변경",
+          "importOff": "가져오지 않음",
+          "importStepsSummary": "{{environment}}에서 · {{total}}단계 중 {{count}}단계",
+          "cloneBranchFilter": "브랜치 찾기",
+          "cloneBranchFromLink": "{{environment}} 링크",
+          "cloneBranchDefaultBadge": "기본",
+          "cloneBranchNoMatch": "일치하는 브랜치 없음"
         },
         "SiteSetupSourceScreen": {
           "destinationLabel": "Clone into",

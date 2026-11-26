@@ -9,6 +9,7 @@
 import type React from 'react'
 import { Children } from 'react'
 import { cn } from '@/lib/utils'
+import { SiteSetupRowExpand } from './SiteSetupRowExpand'
 
 export type SiteSetupRowProps = {
   icon: React.ReactNode
@@ -85,9 +86,12 @@ export function SiteSetupRow({
         {control}
       </div>
       {/* Callers pass conditional children; an all-null slot must not leave its padding behind. */}
-      {!unavailable && Children.toArray(children).length > 0 ? (
-        <div className="col-start-2 col-span-2 space-y-2 pt-2">{children}</div>
-      ) : null}
+      <SiteSetupRowExpand
+        open={!unavailable && Children.toArray(children).length > 0}
+        className="col-start-2 col-span-2"
+      >
+        <div className="space-y-2 pt-2">{children}</div>
+      </SiteSetupRowExpand>
       {unavailable && fixes ? (
         <div className="col-start-2 col-span-2 flex flex-wrap gap-2 pt-2">{fixes}</div>
       ) : null}

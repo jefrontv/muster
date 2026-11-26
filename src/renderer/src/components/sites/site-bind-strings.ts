@@ -43,6 +43,15 @@ export const getSiteBindStrings = createLocalizedCatalog(() => ({
     'auto.components.sites.SiteBindDialog.openIntegrations',
     'Open integrations'
   ),
+  credentialsDetails: translate(
+    'auto.components.sites.SiteBindDialog.credentialsDetails',
+    'Show link details'
+  ),
+  changeFolder: translate('auto.components.sites.SiteBindDialog.changeFolder', 'Change folder'),
+  folderCloneSummary: translate(
+    'auto.components.sites.SiteBindDialog.folderCloneSummary',
+    'Clone into {{path}}'
+  ),
   allFields: translate(
     'auto.components.sites.SiteBindDialog.allFields',
     'All fields from the link ({{count}})'

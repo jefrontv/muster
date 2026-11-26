@@ -44,6 +44,22 @@ afterEach(() => {
 })
 
 describe('SiteSetupLinkTargetRows', () => {
+  it('starts collapsed on the picked folder and expands from the edit button', () => {
+    render(
+      <SiteSetupLinkTargetRows
+        pending={pending()}
+        primaryRoot="/Users/tester/Sites"
+        cloneUrl="git@bitbucket.org:efront_au/flex.git"
+        value={{ kind: 'clone', root: '/Users/tester/Sites' }}
+        onChange={vi.fn()}
+      />
+    )
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+    expect(screen.getByText(/^Clone into .*flex$/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Change folder' }))
+    expect(screen.getByRole('radiogroup')).toBeInTheDocument()
+  })
+
   it('clones into a folder the user picks when no projects folder exists yet', async () => {
     pickDirectory.mockResolvedValue('/Users/tester/Work')
     const onChange = vi.fn()

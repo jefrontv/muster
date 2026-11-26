@@ -157,6 +157,11 @@ describe('SiteSetupReview', () => {
     await render(view(latest))
     expect(document.body.textContent).toContain('HTTPS')
 
+    await act(async () => {
+      document.body
+        .querySelector<HTMLButtonElement>('[aria-controls="site-setup-serve-editor"]')
+        ?.click()
+    })
     const serveCheckbox = document.body.querySelector<HTMLButtonElement>('button[role="checkbox"]')
     expect(serveCheckbox).not.toBeNull()
     await act(async () => {
@@ -189,8 +194,14 @@ describe('SiteSetupReview', () => {
         onChange={() => {}}
       />
     )
-    const importCheckbox =
-      document.body.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]')[2]
+    await act(async () => {
+      document.body
+        .querySelector<HTMLButtonElement>('[aria-controls="site-setup-import-editor"]')
+        ?.click()
+    })
+    const importCheckbox = document.body.querySelector<HTMLButtonElement>(
+      '#site-setup-import-editor button[role="checkbox"]'
+    )
     expect(importCheckbox?.disabled).toBe(false)
     expect(document.body.textContent).toContain('no matching environment')
     expect(document.body.textContent).not.toContain('Import anyway')
@@ -208,8 +219,10 @@ describe('SiteSetupReview', () => {
         lockedSteps={['serve']}
       />
     )
-    const serveCheckbox = document.body.querySelector<HTMLButtonElement>('button[role="checkbox"]')
-    expect(serveCheckbox?.disabled).toBe(true)
+    const pencil = document.body.querySelector<HTMLButtonElement>(
+      '[aria-controls="site-setup-serve-editor"]'
+    )
+    expect(pencil?.disabled).toBe(true)
   })
 
   it('toggling an import toggle flips only that key', async () => {
@@ -226,6 +239,11 @@ describe('SiteSetupReview', () => {
         }}
       />
     )
+    await act(async () => {
+      document.body
+        .querySelector<HTMLButtonElement>('[aria-controls="site-setup-import-editor"]')
+        ?.click()
+    })
     const filesLabel = Array.from(document.body.querySelectorAll('label')).find((label) =>
       label.textContent?.includes('Pull server files')
     )

@@ -1295,6 +1295,10 @@ const api = {
     probe: (args) => ipcRenderer.invoke('repoHeadBranch:probe', args)
   } satisfies PreloadApi['repoHeadBranch'],
 
+  remoteBranches: {
+    list: (args) => ipcRenderer.invoke('remoteBranches:list', args)
+  } satisfies PreloadApi['remoteBranches'],
+
   siteMcp: {
     status: (args) => ipcRenderer.invoke('siteMcp:status', args),
     register: (args) => ipcRenderer.invoke('siteMcp:register', args),

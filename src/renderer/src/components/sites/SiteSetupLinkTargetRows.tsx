@@ -6,14 +6,14 @@
 // The options are a selectable list in the row's own style (check mark, name first, path muted
 // beneath), not native radios - those read as a form dropped into a summary.
 
-import { Check, ChevronRight, FolderOpen, KeyRound, ShieldCheck, ShieldOff } from 'lucide-react'
+import { Check, ChevronDown, FolderOpen, KeyRound, ShieldCheck, ShieldOff } from 'lucide-react'
 import type React from 'react'
+import { useState } from 'react'
 import { abbreviateHome, describeFolder } from '../../../../shared/folder-display'
 import type { PendingSiteBind, SiteBindFields } from '../../../../shared/site-bind-types'
 import { repoSlug } from '../../../../shared/site-local-domain'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { getSiteBindFieldLabels, getSiteBindStrings } from './site-bind-strings'
 import { joinDisplayPath } from './site-display-path'
@@ -143,6 +143,15 @@ export function SiteSetupLinkTargetRows({
   onOpenIntegrations
 }: SiteSetupLinkTargetRowsProps): React.JSX.Element {
   const strings = getSiteBindStrings()
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [folderOpen, setFolderOpen] = useState(false)
+  // Nothing picked yet: the list is the question, so it stays open.
+  const folderListOpen = folderOpen || value === null
+  const choose = (target: SiteSetupLinkTarget): void => {
+    onChange(target)
+    setFolderOpen(false)
+  }
+  const passwordText = pending.passwordProvided ? strings.passwordNotice : strings.noPasswordNotice
   const candidates = pending.candidates.filter((candidate) => candidate.exists)
   const staleCount = pending.candidates.length - candidates.length
   const cloneTarget = joinDisplayPath(primaryRoot, repoSlug(pending.fields.reponame))
@@ -160,7 +169,6 @@ export function SiteSetupLinkTargetRows({
     value?.kind === 'existing' && !candidates.some((candidate) => candidate.path === value.path)
   const customCloneSelected = value?.kind === 'clone' && value.root !== primaryRoot
 
-  const visibleFields = SUMMARY_FIELDS.filter((key) => summaryValue(pending.fields, key).length > 0)
   const credentialParts = [
     pending.fields.username.length > 0 && pending.fields.hostname.length > 0
       ? `${pending.fields.username}@${pending.fields.hostname}`
@@ -172,7 +180,7 @@ export function SiteSetupLinkTargetRows({
   const pickAnotherFolder = async (): Promise<void> => {
     const path = await window.api.repos.pickDirectory()
     if (path) {
-      onChange({ kind: 'existing', path })
+      choose({ kind: 'existing', path })
     }
   }
 
@@ -180,7 +188,7 @@ export function SiteSetupLinkTargetRows({
   const pickCloneFolder = async (): Promise<void> => {
     const path = await window.api.repos.pickDirectory()
     if (path) {
-      onChange({ kind: 'clone', root: path })
+      choose({ kind: 'clone', root: path })
     }
   }
 
@@ -198,71 +206,106 @@ export function SiteSetupLinkTargetRows({
       <SiteSetupRow
         icon={<FolderOpen className="size-4" />}
         title={strings.folderTitle}
-        summary={hasKnownTarget ? strings.chooseFolder : strings.noCandidates}
+        summary={
+          value === null
+            ? hasKnownTarget
+              ? strings.chooseFolder
+              : strings.noCandidates
+            : value.kind === 'clone'
+              ? strings.folderCloneSummary.replace(
+                  '{{path}}',
+                  abbreviateHome(joinDisplayPath(value.root, repoSlug(pending.fields.reponame)))
+                )
+              : `${
+                  candidates.find((candidate) => candidate.path === value.path)?.displayName ??
+                  describeFolder(value.path).name
+                } · ${abbreviateHome(value.path)}`
+        }
+        control={
+          value === null ? null : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={strings.changeFolder}
+              aria-expanded={folderListOpen}
+              aria-controls="site-setup-folder-options"
+              data-state={folderListOpen ? 'open' : 'closed'}
+              onClick={() => setFolderOpen((open) => !open)}
+            >
+              <ChevronDown className={cn('transition-transform', folderListOpen && 'rotate-180')} />
+            </Button>
+          )
+        }
       >
-        <div
-          role="radiogroup"
-          aria-label={strings.folderTitle}
-          className="divide-y divide-border overflow-hidden rounded-xl border border-border"
-        >
-          {candidates.map((candidate) => (
+        {folderListOpen ? (
+          <div
+            id="site-setup-folder-options"
+            role="radiogroup"
+            aria-label={strings.folderTitle}
+            className="divide-y divide-border overflow-hidden rounded-xl border border-border"
+          >
+            {candidates.map((candidate) => (
+              <TargetOption
+                key={candidate.path}
+                selected={value?.kind === 'existing' && value.path === candidate.path}
+                onSelect={() => choose({ kind: 'existing', path: candidate.path })}
+                name={candidate.displayName}
+                badge={strings.existingCheckout}
+                detail={abbreviateHome(candidate.path)}
+                note={candidate.siteId ? strings.updatesExisting : undefined}
+              />
+            ))}
+            {canCloneIntoRoot ? (
+              <TargetOption
+                selected={value?.kind === 'clone' && value.root === primaryRoot}
+                onSelect={() => choose({ kind: 'clone', root: primaryRoot })}
+                name={strings.cloneOption.replace('{{repo}}', pending.fields.reponame)}
+                detail={`→ ${abbreviateHome(cloneTarget)}`}
+              />
+            ) : null}
+            {cloneUrl.length > 0 ? (
+              <TargetOption
+                selected={customCloneSelected}
+                onSelect={() => void pickCloneFolder()}
+                icon={
+                  customCloneSelected ? (
+                    <Check className="size-3.5" aria-hidden />
+                  ) : (
+                    <FolderOpen className="size-3.5 text-muted-foreground" aria-hidden />
+                  )
+                }
+                name={strings.cloneIntoFolder}
+                detail={
+                  customCloneSelected && value?.kind === 'clone'
+                    ? `→ ${abbreviateHome(joinDisplayPath(value.root, repoSlug(pending.fields.reponame)))}`
+                    : undefined
+                }
+              />
+            ) : null}
             <TargetOption
-              key={candidate.path}
-              selected={value?.kind === 'existing' && value.path === candidate.path}
-              onSelect={() => onChange({ kind: 'existing', path: candidate.path })}
-              name={candidate.displayName}
-              badge={strings.existingCheckout}
-              detail={abbreviateHome(candidate.path)}
-              note={candidate.siteId ? strings.updatesExisting : undefined}
-            />
-          ))}
-          {canCloneIntoRoot ? (
-            <TargetOption
-              selected={value?.kind === 'clone' && value.root === primaryRoot}
-              onSelect={() => onChange({ kind: 'clone', root: primaryRoot })}
-              name={strings.cloneOption.replace('{{repo}}', pending.fields.reponame)}
-              detail={`→ ${abbreviateHome(cloneTarget)}`}
-            />
-          ) : null}
-          {cloneUrl.length > 0 ? (
-            <TargetOption
-              selected={customCloneSelected}
-              onSelect={() => void pickCloneFolder()}
+              selected={customSelected}
+              onSelect={() => void pickAnotherFolder()}
               icon={
-                customCloneSelected ? (
+                customSelected ? (
                   <Check className="size-3.5" aria-hidden />
                 ) : (
                   <FolderOpen className="size-3.5 text-muted-foreground" aria-hidden />
                 )
               }
-              name={strings.cloneIntoFolder}
+              name={
+                customSelected && value?.kind === 'existing'
+                  ? describeFolder(value.path).name
+                  : strings.chooseAnother
+              }
               detail={
-                customCloneSelected && value?.kind === 'clone'
-                  ? `→ ${abbreviateHome(joinDisplayPath(value.root, repoSlug(pending.fields.reponame)))}`
+                customSelected && value?.kind === 'existing'
+                  ? abbreviateHome(value.path)
                   : undefined
               }
             />
-          ) : null}
-          <TargetOption
-            selected={customSelected}
-            onSelect={() => void pickAnotherFolder()}
-            icon={
-              customSelected ? (
-                <Check className="size-3.5" aria-hidden />
-              ) : (
-                <FolderOpen className="size-3.5 text-muted-foreground" aria-hidden />
-              )
-            }
-            name={
-              customSelected && value?.kind === 'existing'
-                ? describeFolder(value.path).name
-                : strings.chooseAnother
-            }
-            detail={
-              customSelected && value?.kind === 'existing' ? abbreviateHome(value.path) : undefined
-            }
-          />
-        </div>
+          </div>
+        ) : null}
         {cloneProblemText ? (
           <div className="flex flex-wrap items-center gap-2">
             <p className="min-w-0 flex-1 text-xs break-words text-muted-foreground">
@@ -289,30 +332,41 @@ export function SiteSetupLinkTargetRows({
         icon={<KeyRound className="size-4" />}
         title={strings.credentialsTitle}
         summary={credentialParts.join(' · ')}
-      >
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {pending.passwordProvided ? (
-            <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
-          ) : (
-            <ShieldOff className="size-3.5 shrink-0" aria-hidden />
-          )}
-          {pending.passwordProvided ? strings.passwordNotice : strings.noPasswordNotice}
-        </p>
-        <Collapsible className="group/fields">
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              size="xs"
-              className="-ml-1.5 h-6 gap-1 px-1.5 text-xs text-muted-foreground"
+        control={
+          <>
+            <span
+              className="flex size-7 items-center justify-center text-muted-foreground"
+              title={passwordText}
+              aria-label={passwordText}
+              role="img"
             >
-              <ChevronRight className="size-3 transition-transform group-data-[state=open]/fields:rotate-90" />
-              {strings.allFields.replace('{{count}}', String(visibleFields.length))}
+              {pending.passwordProvided ? (
+                <ShieldCheck className="size-3.5" />
+              ) : (
+                <ShieldOff className="size-3.5" />
+              )}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={strings.credentialsDetails}
+              aria-expanded={detailsOpen}
+              aria-controls="site-setup-credentials-details"
+              data-state={detailsOpen ? 'open' : 'closed'}
+              onClick={() => setDetailsOpen((open) => !open)}
+            >
+              <ChevronDown className={cn('transition-transform', detailsOpen && 'rotate-180')} />
             </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-1.5">
+          </>
+        }
+      >
+        {detailsOpen ? (
+          <div id="site-setup-credentials-details" className="space-y-2">
+            <p className="text-xs text-muted-foreground">{passwordText}</p>
             <BindSummary fields={pending.fields} />
-          </CollapsibleContent>
-        </Collapsible>
+          </div>
+        ) : null}
       </SiteSetupRow>
     </>
   )

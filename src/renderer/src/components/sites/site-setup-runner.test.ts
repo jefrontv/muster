@@ -474,6 +474,27 @@ describe('createSiteSetupRunner', () => {
     expect(runner.snapshot().phase).toBe('failed')
   })
 
+  it('clones the branch picked on the review instead of the link branch', async () => {
+    const api = fakeApi({ calls, plan: plan({}, false) })
+    const runner = createSiteSetupRunner(api)
+    await runner.start(
+      {
+        kind: 'link',
+        pending: {
+          requestId: 'req-1',
+          receivedAt: 0,
+          fields: { reponame: 'efront_au/flex', checkoutBranch: 'staging' } as never,
+          passwordProvided: true,
+          candidates: [],
+          suggestedCloneUrl: ''
+        },
+        target: { kind: 'clone', root: '/Sites', cloneUrl: 'git@bitbucket.org:efront_au/flex.git' }
+      },
+      choices({ cloneBranch: 'feature/x', serve: { enabled: false, stack: 'localwp', domain: '' } })
+    )
+    expect(api.repos.clone).toHaveBeenCalledWith(expect.objectContaining({ branch: 'feature/x' }))
+  })
+
   it('binds through siteBind.confirm for a link source with an existing checkout, and never clones', async () => {
     const api = fakeApi({ calls, plan: plan({}, false) })
     ;(api.siteBind.confirm as unknown as ReturnType<typeof vi.fn>).mockImplementation(async () => {

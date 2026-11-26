@@ -27,10 +27,12 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { getSiteSetupDialogStrings } from './site-setup-dialog-strings'
+import { siteSetupDialogHeading, type SiteSetupScreen } from './site-setup-dialog-heading'
 import type { SetupRunStepId, SiteSetupSource } from './site-setup-choices'
 import { SiteSetupDone } from './SiteSetupDone'
 import { openSiteProject } from './open-site-project'
 import { SiteSetupLinkTargetRows } from './SiteSetupLinkTargetRows'
+import { SiteSetupCloneBranchRow } from './SiteSetupCloneBranchRow'
 import { SiteSetupAgentLinkRow } from './SiteSetupAgentLinkRow'
 import { useAgentSetupSync } from './use-agent-setup-sync'
 import { SiteSetupMinimizeButton } from './SiteSetupMinimizeButton'
@@ -56,7 +58,7 @@ export type SiteSetupRequest =
   | { kind: 'link'; pending: PendingSiteBind; agent?: SiteSetupAgentContext }
   | { kind: 'site'; siteId: string; label: string; agent?: SiteSetupAgentContext }
 
-type Screen = 'source' | 'review' | 'running' | 'done'
+type Screen = SiteSetupScreen
 
 export function SiteSetupDialog({
   request,
@@ -237,31 +239,13 @@ export function SiteSetupDialog({
     (request.kind !== 'link' ||
       (linkTarget !== null && (linkTarget.kind === 'existing' || linkCloneUrl.length > 0)))
 
-  const title =
-    screen === 'source'
-      ? strings.sourceTitle
-      : screen === 'review'
-        ? strings.reviewTitle.replace('{{label}}', label)
-        : screen === 'running'
-          ? strings.runningTitle.replace('{{label}}', label)
-          : snapshot.steps.some((step) => step.state === 'failed')
-            ? strings.finishedWithProblemsTitle.replace('{{label}}', label)
-            : strings.doneTitle.replace('{{label}}', label)
-  const description =
-    screen === 'source'
-      ? strings.sourceDescription
-      : screen === 'review'
-        ? request.agent
-          ? strings.reviewAgentDescription.replace(
-              '{{agent}}',
-              request.agent.name ?? strings.anAgent
-            )
-          : request.kind === 'repo'
-            ? strings.reviewRepoDescription.replace('{{repo}}', repo?.fullName ?? '')
-            : request.kind === 'link'
-              ? strings.reviewLinkDescription
-              : strings.reviewSiteDescription
-        : null
+  const { title, description } = siteSetupDialogHeading({
+    screen,
+    label,
+    request,
+    repo,
+    steps: snapshot.steps
+  })
 
   return (
     <Dialog
@@ -334,15 +318,25 @@ export function SiteSetupDialog({
                   }
                   sourceRows={
                     request.kind === 'link' ? (
-                      <SiteSetupLinkTargetRows
-                        pending={request.pending}
-                        primaryRoot={destinationRoot}
-                        cloneUrl={linkCloneUrl}
-                        value={linkTarget}
-                        onChange={setLinkTarget}
-                        cloneProblem={linkCloneProblem}
-                        onOpenIntegrations={openIntegrations}
-                      />
+                      <>
+                        <SiteSetupLinkTargetRows
+                          pending={request.pending}
+                          primaryRoot={destinationRoot}
+                          cloneUrl={linkCloneUrl}
+                          value={linkTarget}
+                          onChange={setLinkTarget}
+                          cloneProblem={linkCloneProblem}
+                          onOpenIntegrations={openIntegrations}
+                        />
+                        <SiteSetupCloneBranchRow
+                          pending={request.pending}
+                          targetKind={linkTarget?.kind ?? null}
+                          cloneUrl={linkCloneUrl}
+                          choices={choices}
+                          onChange={setChoices}
+                          locked={lockedSteps.includes('clone')}
+                        />
+                      </>
                     ) : undefined
                   }
                 />

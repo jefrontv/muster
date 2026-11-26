@@ -12,14 +12,14 @@ import { useEffect, useState } from 'react'
 import { repoSlug } from '../../../../shared/site-local-domain'
 import type { LocalWpCertStatus } from '../../../../shared/localwp-cert-types'
 import type { SiteSetupPlan } from '../../../../shared/site-setup-flow-types'
-import { SITE_IMPORT_TOGGLES, type SiteLocalStack } from '../../../../shared/site-types'
-import { Checkbox } from '@/components/ui/checkbox'
+import type { SiteLocalStack } from '../../../../shared/site-types'
 import type { SetupRunStepId, SiteSetupChoices, SiteSetupSource } from './site-setup-choices'
 import { getSiteSetupReviewStrings } from './site-setup-review-strings'
-import { getSiteToggleLabels } from './site-toggle-labels'
 import { joinDisplayPath } from './site-display-path'
 import { SiteSetupNoStackFixes } from './SiteSetupNoStackFixes'
 import { SiteSetupRow, SiteSetupRowList } from './SiteSetupRow'
+import { SiteSetupImportRow } from './SiteSetupImportRow'
+import { SiteSetupRowEditButton, SiteSetupRowSwitch } from './SiteSetupRowEditButton'
 import { SiteSetupServeEditToggle, SiteSetupServeEditor } from './SiteSetupServeEditor'
 import { domainForStack } from './site-setup-stack-domain'
 import { useAgentLocalSuffix } from './use-agent-local-suffix'
@@ -68,8 +68,8 @@ export function SiteSetupReview({
 }): React.JSX.Element {
   const agentLocalSuffix = useAgentLocalSuffix()
   const strings = getSiteSetupReviewStrings()
-  const toggleLabels = getSiteToggleLabels()
   const [serveEditing, setServeEditing] = useState(promptStackChoice)
+  const [httpsEditing, setHttpsEditing] = useState(false)
   useEffect(() => {
     if (promptStackChoice) {
       setServeEditing(true)
@@ -146,25 +146,24 @@ export function SiteSetupReview({
         <SiteSetupRow
           icon={<Server className="size-4" />}
           title={strings.serveTitle}
-          summary={serveSummary}
+          summary={choices.serve.enabled ? serveSummary : strings.serveOff}
           state={stepState('serve')}
           control={
-            <>
-              <SiteSetupServeEditToggle
-                expanded={serveEditing}
-                onToggle={() => setServeEditing((open) => !open)}
-                disabled={stepState('serve') === 'locked' || !choices.serve.enabled}
-              />
-              <Checkbox
-                checked={choices.serve.enabled}
-                disabled={stepState('serve') === 'locked'}
-                onCheckedChange={(checked) =>
-                  onChange({ ...choices, serve: { ...choices.serve, enabled: checked === true } })
-                }
-              />
-            </>
+            <SiteSetupServeEditToggle
+              expanded={serveEditing}
+              onToggle={() => setServeEditing((open) => !open)}
+              disabled={stepState('serve') === 'locked'}
+            />
           }
         >
+          {serveEditing ? (
+            <SiteSetupRowSwitch
+              checked={choices.serve.enabled}
+              onChange={(enabled) => onChange({ ...choices, serve: { ...choices.serve, enabled } })}
+            >
+              {strings.serveEnable}
+            </SiteSetupRowSwitch>
+          ) : null}
           {(serveEditing || serveDomainError) && choices.serve.enabled ? (
             <SiteSetupServeEditor
               error={serveDomainError}
@@ -207,16 +206,31 @@ export function SiteSetupReview({
           <SiteSetupRow
             icon={<Lock className="size-4" />}
             title={strings.httpsTitle}
-            summary={httpsSummary}
-            state={httpsAlreadyTrusted ? 'locked' : stepState('https')}
+            summary={httpsAlreadyTrusted || choices.https ? httpsSummary : strings.httpsOff}
+            state={httpsAlreadyTrusted ? 'available' : stepState('https')}
             control={
-              <Checkbox
-                checked={httpsAlreadyTrusted ? true : choices.https}
-                disabled={httpsAlreadyTrusted || stepState('https') === 'locked'}
-                onCheckedChange={(checked) => onChange({ ...choices, https: checked === true })}
-              />
+              httpsAlreadyTrusted ? null : (
+                <SiteSetupRowEditButton
+                  expanded={httpsEditing}
+                  onToggle={() => setHttpsEditing((open) => !open)}
+                  label={strings.httpsEditLabel}
+                  controls="site-setup-https-editor"
+                  disabled={stepState('https') === 'locked'}
+                />
+              )
             }
-          />
+          >
+            {httpsEditing && !httpsAlreadyTrusted ? (
+              <div id="site-setup-https-editor">
+                <SiteSetupRowSwitch
+                  checked={choices.https}
+                  onChange={(https) => onChange({ ...choices, https })}
+                >
+                  {strings.httpsTrust.replace('{{domain}}', serveDomain)}
+                </SiteSetupRowSwitch>
+              </div>
+            ) : null}
+          </SiteSetupRow>
         ))}
 
       {cloneHasNoServer || importBlockedReason ? (
@@ -228,51 +242,12 @@ export function SiteSetupReview({
           reason={cloneHasNoServer ? strings.importAfterClone : (importBlockedReason ?? '')}
         />
       ) : (
-        <SiteSetupRow
-          icon={<Download className="size-4" />}
-          title={strings.importTitle}
-          summary={strings.importFrom.replace('{{environment}}', choices.import.environment)}
-          state={stepState('import')}
-          control={
-            <Checkbox
-              checked={choices.import.enabled}
-              disabled={importCheckboxDisabled}
-              onCheckedChange={(checked) =>
-                onChange({
-                  ...choices,
-                  import: { ...choices.import, enabled: checked === true }
-                })
-              }
-            />
-          }
-        >
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-            {SITE_IMPORT_TOGGLES.map((toggle) => (
-              <label
-                key={toggle.key}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground"
-              >
-                <Checkbox
-                  checked={choices.import.toggles[toggle.key]}
-                  disabled={!choices.import.enabled || stepState('import') === 'locked'}
-                  onCheckedChange={(checked) =>
-                    onChange({
-                      ...choices,
-                      import: {
-                        ...choices.import,
-                        toggles: { ...choices.import.toggles, [toggle.key]: checked === true }
-                      }
-                    })
-                  }
-                />
-                {toggleLabels[toggle.key]}
-              </label>
-            ))}
-          </div>
-          {importBranchNote.length > 0 ? (
-            <p className="text-xs text-muted-foreground">{importBranchNote}</p>
-          ) : null}
-        </SiteSetupRow>
+        <SiteSetupImportRow
+          choices={choices}
+          onChange={onChange}
+          locked={importCheckboxDisabled}
+          branchNote={importBranchNote}
+        />
       )}
     </SiteSetupRowList>
   )

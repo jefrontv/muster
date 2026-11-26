@@ -14110,7 +14110,10 @@
           "cloneNoConnector": "Connect Bitbucket to clone this repository.",
           "cloneNotFound": "Muster could not find this repository to clone it. Use an existing checkout instead.",
           "cloneLookupFailed": "Muster could not look up this repository: {{error}}",
-          "openIntegrations": "Open Integrations"
+          "openIntegrations": "Open Integrations",
+          "credentialsDetails": "リンクの詳細を表示",
+          "changeFolder": "フォルダを変更",
+          "folderCloneSummary": "{{path}} にクローン"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -14314,7 +14317,28 @@
           "installingAgentLocal": "Installing Agent Local…",
           "getDdev": "Get DDEV",
           "getLocalWp": "Get LocalWP",
-          "importAfterClone": "Add the server details after setup to pull the database and files."
+          "importAfterClone": "Add the server details after setup to pull the database and files.",
+          "cloneBranchTitle": "環境",
+          "cloneBranchSummary": "{{environment}} · {{branch}} をクローン",
+          "cloneBranchDefault": "デフォルトブランチ",
+          "cloneBranchLoading": "ブランチを読み込み中…",
+          "cloneBranchListFailed": "ブランチを一覧表示できませんでした",
+          "cloneBranchExisting": "チェックアウト済みのブランチを使用します",
+          "cloneBranchMismatch": "{{environment}} のブランチではありません",
+          "cloneBranchMismatchDetail": "{{branch}} をクローンするよう選択しました。サーバー情報とインポートは引き続き {{environment}} を対象とし、このブランチからのデプロイには確認が必要です。",
+          "cloneBranchEditLabel": "ブランチを変更",
+          "cloneBranchLabel": "クローンするブランチ",
+          "serveEnable": "このサイトをローカルで配信",
+          "serveOff": "ローカルでは配信しません",
+          "httpsEditLabel": "HTTPS を変更",
+          "httpsOff": "HTTPS なし",
+          "importEditLabel": "インポートを変更",
+          "importOff": "インポートしません",
+          "importStepsSummary": "{{environment}} から · {{total}} 件中 {{count}} 件",
+          "cloneBranchFilter": "ブランチを検索",
+          "cloneBranchFromLink": "{{environment}} のリンク",
+          "cloneBranchDefaultBadge": "デフォルト",
+          "cloneBranchNoMatch": "一致するブランチはありません"
         },
         "SiteSetupSourceScreen": {
           "destinationLabel": "Clone into",

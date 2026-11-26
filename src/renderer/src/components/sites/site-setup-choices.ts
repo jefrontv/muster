@@ -35,6 +35,8 @@ export type SiteSetupChoices = {
     domain: string
   }
   https: boolean
+  /** Link clones only: the branch picked on the review; unset clones the link's branch. */
+  cloneBranch?: string
   import: {
     enabled: boolean
     environment: string

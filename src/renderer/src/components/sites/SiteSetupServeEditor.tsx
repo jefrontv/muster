@@ -2,7 +2,7 @@
 // a popover - the popover was a cramped second surface floating over the list, and the row's
 // children slot already gives the fields the full text column.
 
-import { Pencil } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,7 +52,7 @@ export function SiteSetupServeEditToggle({
       disabled={disabled}
       onClick={onToggle}
     >
-      <Pencil />
+      <ChevronDown className={cn('transition-transform', expanded && 'rotate-180')} />
     </Button>
   )
 }

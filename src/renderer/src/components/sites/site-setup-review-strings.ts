@@ -8,6 +8,78 @@ import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 
 export const getSiteSetupReviewStrings = createLocalizedCatalog(() => ({
+  serveEnable: translate(
+    'auto.components.sites.SiteSetupReview.serveEnable',
+    'Serve this site locally'
+  ),
+  serveOff: translate('auto.components.sites.SiteSetupReview.serveOff', 'Not served locally'),
+  httpsEditLabel: translate('auto.components.sites.SiteSetupReview.httpsEditLabel', 'Change HTTPS'),
+  httpsOff: translate('auto.components.sites.SiteSetupReview.httpsOff', 'No HTTPS'),
+  importEditLabel: translate(
+    'auto.components.sites.SiteSetupReview.importEditLabel',
+    'Change import'
+  ),
+  importOff: translate('auto.components.sites.SiteSetupReview.importOff', 'Not importing'),
+  importStepsSummary: translate(
+    'auto.components.sites.SiteSetupReview.importStepsSummary',
+    'From {{environment}} · {{count}} of {{total}} steps'
+  ),
+  cloneBranchFilter: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchFilter',
+    'Find a branch'
+  ),
+  cloneBranchFromLink: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchFromLink',
+    '{{environment}} link'
+  ),
+  cloneBranchDefaultBadge: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchDefaultBadge',
+    'default'
+  ),
+  cloneBranchNoMatch: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchNoMatch',
+    'No branches match'
+  ),
+  cloneBranchTitle: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchTitle',
+    'Environment'
+  ),
+  cloneBranchEditLabel: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchEditLabel',
+    'Change branch'
+  ),
+  cloneBranchLabel: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchLabel',
+    'Branch to clone'
+  ),
+  cloneBranchSummary: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchSummary',
+    '{{environment}} · will clone {{branch}}'
+  ),
+  cloneBranchDefault: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchDefault',
+    'the default branch'
+  ),
+  cloneBranchLoading: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchLoading',
+    'Loading branches…'
+  ),
+  cloneBranchListFailed: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchListFailed',
+    "Couldn't list branches"
+  ),
+  cloneBranchExisting: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchExisting',
+    'Uses the branch already checked out'
+  ),
+  cloneBranchMismatch: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchMismatch',
+    'Not the {{environment}} branch'
+  ),
+  cloneBranchMismatchDetail: translate(
+    'auto.components.sites.SiteSetupReview.cloneBranchMismatchDetail',
+    'You chose to clone {{branch}}. Server details and imports still target {{environment}}, and deploys from this branch need confirming.'
+  ),
   cloneTitle: translate('auto.components.sites.SiteSetupReview.cloneTitle', 'Clone'),
   serveTitle: translate('auto.components.sites.SiteSetupReview.serveTitle', 'Serve locally'),
   serveCreateLocalWp: translate(

@@ -14110,7 +14110,10 @@
           "cloneNoConnector": "Connect Bitbucket to clone this repository.",
           "cloneNotFound": "Muster could not find this repository to clone it. Use an existing checkout instead.",
           "cloneLookupFailed": "Muster could not look up this repository: {{error}}",
-          "openIntegrations": "Open Integrations"
+          "openIntegrations": "Open Integrations",
+          "credentialsDetails": "显示链接详情",
+          "changeFolder": "更改文件夹",
+          "folderCloneSummary": "克隆到 {{path}}"
         },
         "SiteRunHistory": {
           "title": "Run history",
@@ -14314,7 +14317,28 @@
           "installingAgentLocal": "Installing Agent Local…",
           "getDdev": "Get DDEV",
           "getLocalWp": "Get LocalWP",
-          "importAfterClone": "Add the server details after setup to pull the database and files."
+          "importAfterClone": "Add the server details after setup to pull the database and files.",
+          "cloneBranchTitle": "环境",
+          "cloneBranchSummary": "{{environment}} · 将克隆 {{branch}}",
+          "cloneBranchDefault": "默认分支",
+          "cloneBranchLoading": "正在加载分支…",
+          "cloneBranchListFailed": "无法列出分支",
+          "cloneBranchExisting": "使用已检出的分支",
+          "cloneBranchMismatch": "不是 {{environment}} 分支",
+          "cloneBranchMismatchDetail": "你选择了克隆 {{branch}}。服务器信息和导入仍指向 {{environment}}，从此分支部署需要确认。",
+          "cloneBranchEditLabel": "更改分支",
+          "cloneBranchLabel": "要克隆的分支",
+          "serveEnable": "在本地运行此站点",
+          "serveOff": "不在本地运行",
+          "httpsEditLabel": "更改 HTTPS",
+          "httpsOff": "不使用 HTTPS",
+          "importEditLabel": "更改导入",
+          "importOff": "不导入",
+          "importStepsSummary": "来自 {{environment}} · {{total}} 步中的 {{count}} 步",
+          "cloneBranchFilter": "查找分支",
+          "cloneBranchFromLink": "{{environment}} 链接",
+          "cloneBranchDefaultBadge": "默认",
+          "cloneBranchNoMatch": "没有匹配的分支"
         },
         "SiteSetupSourceScreen": {
           "destinationLabel": "Clone into",
