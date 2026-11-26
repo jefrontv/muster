@@ -4,13 +4,30 @@ import { MessageSquareText } from 'lucide-react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
+import { activateAndRevealWorktree } from '@/lib/worktree-activation'
+import { readActiveCollabRepoProject } from '../../../../shared/activecollab-repo-project-binding'
+import type { BotsCommentDraft } from '../../../../shared/bots-comment-draft-types'
 import { ActionToast } from '@/components/toasts/ActionToast'
 import { commentDraftAuthorLabel } from './comment-draft-author'
+import { commentDraftWorktreeId } from './comment-draft-worktree'
 import { onCommentDraftsArrived, useCommentDraftsFeed } from './comment-drafts-feed'
 
-export function openCommentDraftsTab(): void {
+/** Opens the drafts tab, first switching to the project that shows `draft` when one does. */
+export function openCommentDraftsTab(draft?: BotsCommentDraft): void {
   const store = useAppStore.getState()
   store.setActiveView('terminal')
+  const worktreeId = draft
+    ? commentDraftWorktreeId(
+        draft,
+        store.allWorktrees(),
+        (repoId) => readActiveCollabRepoProject(store.settings, repoId),
+        store.activeWorktreeId
+      )
+    : null
+  if (worktreeId && worktreeId !== store.activeWorktreeId) {
+    activateAndRevealWorktree(worktreeId)
+  }
+  // After activation, which restores the project's own sidebar tab.
   store.setRightSidebarTab('comment-drafts')
   store.setRightSidebarOpen(true)
 }
@@ -59,7 +76,7 @@ export function useAgentDraftArrivalToast(): void {
               title: draftPreviewLine(first.bodyText),
               meta: meta.join(' · '),
               primaryLabel: translate('auto.components.commentDrafts.review', 'Review'),
-              onPrimary: openCommentDraftsTab,
+              onPrimary: () => openCommentDraftsTab(first),
               secondaryLabel: translate('auto.components.commentDrafts.later', 'Later')
             }),
           { duration: 10_000 }
